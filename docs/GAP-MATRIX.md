@@ -799,3 +799,23 @@ open against a state that no longer exists. Its report is `.scratch/reports/veri
 five further rows could not be judged from the two captures it had and name the crops they need.
 
 Read against each other: 86 rows are matched today and exist here as regression guards; 12 have nothing in 0.22.0 to match; 8 wait on a hosted service and 15 on a renderer decision — 23 rows that are open work but cannot be closed by drawing alone. That leaves 504 plain OPEN rows, 155 of them P0 and 194 P1, which is the real backlog this document exists to order.
+
+## Verification ledger
+
+Three verification passes have been run, each by a child agent that decoded the captures rather
+than reading the code, and each has been acted on in the same session.
+
+| pass | scope | rows judged | outcome | what it changed |
+| --- | --- | --- | --- | --- |
+| wave 1 | Shell | 13 | 4 pass, 4 fail, 5 cannot-tell | one **false DONE**: row 8 claimed the sidebar's left column matched while the reference's 1 px `--brand-gradient-border` rule was not drawn and the code asserted it did not exist. Rows 1–3 were stale, describing a 24-point padding and 36-point rows from an older build; closed against measurement. A real drawing bug surfaced: the checklist row's wash was composited over the ground instead of over the card, so a row was invisible against its own card. |
+| wave 2 | Discover | 69 | 7 pass, 59 fail, 3 stale, 7 new | the page column (88/72, 1028 wide), the pill bar (636x46, radius 23, w-fit, active pill `#24553d` with `#1bd96a` lettering — the first reading had the fill and the ink swapped, and laid the label out in the fill's colour so it was invisible), the full-width 48-point search field, the sort row at y 182 with 256/144 controls and two-span labels, and the 1028x142 card with a 100-point icon and a 20-point title. |
+| wave 3 | Settings | 73 | 60 pass, 3 fail, 2 stale, 8 new | the header is 84 (24 + a 36-point close button + 24), not 80; the rail keeps the reference's 40-point rows and 4-point gaps and scrolls instead of compressing to 30; the body's fill no longer paints over the plate's right border, which it had erased on all 585 body rows. |
+
+What the passes agree on is worth stating plainly: **the audits were good at finding gaps and bad at
+knowing which ones were already closed**, and one DONE row was simply false. Any future claim that a
+row is finished needs a capture and a decoded measurement behind it, not a reading of the diff.
+
+Rows the passes could not settle, and the capture that would settle each: the sidebar scrolled 100
+points (row 7); the Discover browse sidebar with a filter selected (rows 10–12); a running instance
+(row 13); a typed query and a failed request (seven Discover behaviour rows); and Settings row 221,
+which needs a re-capture because the reference PNG predates the Appearance section rule.

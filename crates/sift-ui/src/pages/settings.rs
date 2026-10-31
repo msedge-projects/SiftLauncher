@@ -936,7 +936,10 @@ const HEADING_LINE: f32 = 32.0;
 
 /// The header's total height: `24 + 32 + 24` -- `p-6` above and below the title's line
 /// (`NewModal.vue:50-54`).
-const HEADER_HEIGHT: f32 = HEADER_PADDING + HEADING_LINE + HEADER_PADDING;
+// The reference's header is `p-6` around a 36-point close button, so it is 24 + 36 + 24 =
+// 84, not the 80 the title's line box gives. The capture puts the rule under the header at
+// y 84 and the plate's own height at 671 -- 84 more than the body it was drawn with.
+const HEADER_HEIGHT: f32 = HEADER_PADDING + CLOSE_SIZE + HEADER_PADDING;
 
 /// A 1-point rule: the header's `border-b` (`NewModal.vue:50`) and the rail's `border-r`
 /// (`TabbedModal.vue:152`), i.e. `theme::STROKE_WIDTH`.
@@ -2520,9 +2523,12 @@ fn rail_rect(dialog: Rect) -> Rect {
 
 /// The body's column, right of the rail and below the header.
 fn content_rect(dialog: Rect) -> Rect {
+    // One point short of the plate's right edge: the body's own fill used to cover the
+    // plate's border for every row of the pane (the verifier found it erased at x 1183 on all
+    // 585 body rows).
     Rect::from_min_max(
         pos2(dialog.left() + RAIL_WIDTH, dialog.top() + HEADER_HEIGHT),
-        dialog.max,
+        pos2(dialog.right() - RULE_STROKE, dialog.bottom() - RULE_STROKE),
     )
 }
 
@@ -2586,26 +2592,16 @@ fn rail_rows(dialog: Rect, scroll: f32) -> [RailRow; TAB_COUNT] {
         row: Rect::NOTHING,
     }; TAB_COUNT];
 
-    // The rail has fourteen rows in four categories, which does not fit the pane at 900
-    // points of window: the last three tabs used to be laid out past the dialog's edge and
-    // skipped as targets, so Syncing, Resources and Troubleshooting could not be reached at
-    // all. The rail is compressed to fit instead -- the reference's own size when it fits, a
-    // proportionally tighter pitch when it does not -- because a settings rail that hides
-    // tabs is a settings rail with unreachable settings.
-    // Sized rather than merely scaled: a uniform scale put the rows at 29 points, under a
-    // comfortable target, because it shrank the headings and the gaps as hard as the rows.
-    // The headings, the category gaps and the padding are fixed costs, so the rows take what
-    // is left over -- the source's 40 when the pane is generous, never less than 30.
-    let available = rail.height() - 2.0 * RAIL_PADDING;
+    // The rail keeps the reference's own 40-point rows and 4-point gaps. It used to compress
+    // them to 30 so that fourteen tabs fitted a 608-point pane, which made every row half
+    // again as tall as the capture's (the measurement: 218x30 at y 240 where the reference is
+    // 218x40 at y 246). The rail scrolls instead -- `scroll` is already threaded through --
+    // because a row that is the wrong height is wrong on every visit, while a rail that needs
+    // a wheel is only inconvenient.
     let category_line = CATEGORY_LINE + CATEGORY_PADDING;
     let category_gap = CATEGORY_TOP_GAP;
-    let fixed = 4.0 * category_line + 3.0 * category_gap;
-    // The row is the thing a reader aims at, so it keeps its 30-point floor and the gap gives
-    // way: at 4 points of gap the fourteen rows and their fixed costs come to 616 in a
-    // 608-point pane, which put Resources and everything after it outside the rail.
-    let per_row = (available - fixed) / TAB_COUNT as f32;
-    let row_height = (per_row - RAIL_ROW_GAP).clamp(30.0, RAIL_ROW_HEIGHT);
-    let row_gap = (per_row - row_height).clamp(0.0, RAIL_ROW_GAP);
+    let row_height = RAIL_ROW_HEIGHT;
+    let row_gap = RAIL_ROW_GAP;
 
     let mut y = rail.top() + RAIL_PADDING - scroll;
     let mut previous: Option<Tab> = None;
@@ -4036,10 +4032,14 @@ mod tests {
         assert!((dialog.left() - screen.left() - (screen.right() - dialog.right())).abs() < 0.001);
         assert!((dialog.top() - screen.top() - (screen.bottom() - dialog.bottom())).abs() < 0.001);
 
-        // 928 wide, and 80 of header plus min(65% of 900, 640) = 585 of body.
+        // 928 wide, and 84 of header (24 + a 36-point close button + 24) plus
+        // min(65% of 900, 640) = 585 of body.
         assert!((dialog.width() - DIALOG_WIDTH).abs() < 0.001);
-        assert!((dialog.height() - 665.0).abs() < 0.001);
-        assert!((header_rect(dialog).height() - 80.0).abs() < 0.001);
+        assert!((dialog.height() - 669.0).abs() < 0.001);
+        assert!((header_rect(dialog).height() - 84.0).abs() < 0.001);
+        // The reference's plate measures 664 tall, five less than this arithmetic gives. The
+        // five points are not explained by any rule in the source; they are recorded in
+        // docs/GAP-MATRIX.md as an open row rather than absorbed into a constant here.
     }
 
     /// The body stops growing at the source's cap, and the plate gives way to the screen's
