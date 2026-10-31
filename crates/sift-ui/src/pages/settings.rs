@@ -990,7 +990,9 @@ const RAIL_TEXT_SIZE: f32 = 16.0;
 const CATEGORY_LINE: f32 = 20.0;
 
 /// A category heading's drawn size: `text-sm` (`TabbedModal.vue:179`).
-const CATEGORY_TEXT_SIZE: f32 = 12.0; // uppercase group labels are text-xs
+// The capture's group labels have 11 points of ink, which is a 14-point semibold face; at 12
+// they measured 9. `tracking-wide` in the source is a letter-spacing this renderer does not do.
+const CATEGORY_TEXT_SIZE: f32 = 14.0;
 
 /// The space under a category heading: `pb-1.5` (`TabbedModal.vue:179`).
 const CATEGORY_PADDING: f32 = 6.0;
@@ -1384,6 +1386,10 @@ const FEATURES_BLOCKS: &[Block] = &[
         big: false,
         control: Some(Control::Switch { on: false }),
     },
+    // The reference separates the sync row from the Instances section with a rule
+    // (`features-settings.vue`), and wave seven measured the gap it leaves: the rule at y 316
+    // and "Instances" at 348. Without it the heading landed 39 points high.
+    Block::Rule,
     Block::Heading {
         text: INSTANCES_HEADING,
         description: None,
@@ -2812,10 +2818,13 @@ fn draw_rail(
             fonts::body(14.0),
             theme.SECONDARY,
         );
+        // The reference prints the platform and its build string ("Linux 20261025.0.616225").
+        // This launcher's own build number is its crate version, which is the same fact about
+        // a different product rather than an invented string.
         foot.text(
             pos2(footer.left(), footer.top() + 20.0),
             Align2::LEFT_TOP,
-            "Linux",
+            format!("Linux {}", env!("CARGO_PKG_VERSION")),
             fonts::body(12.0),
             theme.SECONDARY,
         );
@@ -4478,7 +4487,9 @@ mod tests {
     fn every_tab_carries_the_blocks_this_pass_ported() {
         let ported: [(Tab, usize); TAB_COUNT] = [
             (Tab::Appearance, 6),
-            (Tab::Features, 13),
+            // Fourteen, not thirteen: the reference separates its sync row from the Instances
+            // section with a rule (wave seven measured it at y 316), and a rule is a block.
+            (Tab::Features, 14),
             (Tab::Behavior, 14),
             (Tab::Language, 4),
             (Tab::Profile, 5),

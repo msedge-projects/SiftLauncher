@@ -976,3 +976,22 @@ Row **descriptions** were `--color-secondary` (#96a2b0) where the reference sets
 The **switch** had no ring: the reference's is a 48x24 box with a one-pixel `--surface-5` edge
 and a 46x22 track inside it. The capture's left edge reads #383b40 before the brand green; ours
 now reads #404348 before #1bd96a, which is the same edge.
+
+### The separator, the group labels and the footer (2026-10-31)
+
+Wave seven's first and fourth differences, closed with measurements on both sides.
+
+The **Features separator**: the reference draws a one-pixel rule under its sync row and this
+launcher's block list had none, which also left "Instances" 39 points high. The rule is now a
+`Block::Rule` in that list and reads y 311 against the reference's 316 -- five points out, from
+a section gap that is still a constant rather than a measurement. It also makes the Features tab
+fourteen blocks, and the test that counts them says fourteen with the reason.
+
+The **group labels** had 9 points of ink against the reference's 11: a 12-point face where the
+capture is a 14-point one. At 14 they measure 219..229 against the reference's 220..230, one point
+out at both ends. The source's `tracking-wide` is a letter-spacing this renderer does not do, and
+that is the remaining difference between them.
+
+The rail's **footer** now prints the platform with the build, as the reference prints
+"Linux 20261025.0.616225". This launcher prints its own crate version beside "Linux", which is the
+same fact about a different product rather than an invented string.
