@@ -1429,3 +1429,17 @@ nothing and is discounted.
 
 Every future run should click one of these numbers and then look at the frame before cropping,
 which is now written down twice in this document because it has cost four rounds.
+
+### Confirmed on a correctly aimed run, and one API dead end (2026-10-31)
+
+Aimed at Discover (y 102) with the window focused by `xdotool windowfocus`, clicked into the
+search field and typed `sodium`: the field still reads *Search modpacks...*. So the app-wide
+keyboard row stands on a run whose framing was verified first.
+
+The obvious eframe-side fix does not exist in this version: `ViewportBuilder` here has no
+`with_focused` and no `with_active`, so the change was reverted the moment the compiler said so --
+leaving the tree building is worth more than an experiment that cannot compile.
+
+What remains to try, in order: a window manager in the container (openbox on :99) to prove the
+app is fine and the lab is not; failing that, reading how this eframe/winit version decides a
+window is focused before it routes key events, since the reference beside it receives them.
