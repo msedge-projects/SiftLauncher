@@ -889,3 +889,16 @@ where the second moves 88, so the first row's description is overrun by the next
 fault is in the ThemeCards arm's returned height or the loop's gap bookkeeping after it, not in
 the type sizes. Raising the type is therefore still blocked on that, and the sizes stay at
 14 over 12 until it is fixed -- with the number that proves where the bug is.
+
+#### The advance is not the arm's return (2026-10-31, second probe)
+
+Capturing the row's own height in a local before the control match and returning that -- the
+obvious suspect -- changed nothing: the first row after the theme cards still advances 56
+points against a measured height of 64, while the row after it advances 88. So the loop is not
+using the arm's value for that transition at all, and the two numbers worth chasing next are
+`ROW_HIT_BAND` (46) and the gap bookkeeping in the block loop: 56 is a hair above the hit band,
+and the hit band is the one constant in this file that is a row's height without being its
+height.
+
+Recording it this way because the alternative -- raising the type and shipping the overlap --
+is how a "font problem" gets invented.

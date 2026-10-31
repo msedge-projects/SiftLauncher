@@ -3312,6 +3312,11 @@ fn draw_body(
                     Some(control),
                     ROW_LABEL_SIZE,
                 );
+                // Captured here, not read at the end: the control match below binds its own
+                // heights, and the arm's return used to pick one of those up -- which is why
+                // a row measured at 64 advanced only 56 and the next title landed on its
+                // description's second line. The text height is the row's height.
+                let row_height = height;
                 if let Control::Text { placeholder } = control {
                     place_field(ui, state, label, placeholder, rect_for_field(right, y));
                 }
@@ -3355,7 +3360,7 @@ fn draw_body(
                         state.consumed = true;
                     }
                 }
-                height + ROW_GAP
+                row_height + ROW_GAP
             }
             Block::Standalone(control) => {
                 // A button that has just done its job says so, in its own place: the reference's
