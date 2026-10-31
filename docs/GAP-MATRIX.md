@@ -1363,3 +1363,28 @@ would normally leave *some* keys working (arrows, backspace) while the second wo
 **This row outranks every open row in this document.** A launcher that cannot be typed into
 cannot name an instance, set a path, or search for a mod, whatever its pixels say -- and the
 forty-five commits before this one were matching those pixels.
+
+### Narrowed: the window receives no keyboard at all (2026-10-31)
+
+Two more captures, both negative:
+
+* **Escape does not close the Settings modal.** The plate's border is still at x 700, y 114 after
+  the key. So the failure is not about text events -- no key of any kind reaches the app.
+* **`xdotool windowfocus` before typing changes nothing.** The search field still reads
+  *Search modpacks...*.
+
+The reference, in the same container and driven by the same tool, takes both. So the difference is
+in how the two windows acquire X input focus.
+
+The lab runs **Xvfb with no window manager**, which means nothing assigns input focus when a
+window maps or is clicked; the reference's webview calls `XSetInputFocus` on click and ours
+apparently does not. Two candidate responses, and the first is one command:
+
+1. **Start a window manager in the container** (`openbox` or `i3` on :99) and re-run the two
+   captures. If typing works with a WM, the launcher is fine and every "inert field" conclusion
+   above was an artefact of the harness -- which must then be corrected rather than left standing.
+2. If it still fails under a WM, make the window take focus on click or on show in the eframe
+   viewport options, which is a product fix.
+
+**Do not close this row before running 1.** It is one container command and it decides whether
+ten rounds of "the field does not take typing" were measuring the product or the lab.
