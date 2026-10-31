@@ -1002,7 +1002,15 @@ const CATEGORY_PADDING: f32 = 6.0;
 const CATEGORY_TOP_GAP: f32 = 12.0;
 
 /// The body's inset: `px-6 pt-6` on the scroll content (`TabbedModal.vue:249`).
+// Measured against the pane's own top edge: the reference's first heading ink sits 117 points
+// below its plate's top, this pane's sat at 113 with a 24-point padding. The four points are the
+// padding, and they are reported relative to the plate because the plate itself is three points
+// short -- a separate row in the matrix.
 const CONTENT_PADDING: f32 = 24.0;
+/// The pane's top inset, which the capture puts four points above the horizontal one: the
+/// reference's first heading ink sits 117 points below its plate's top edge, and its cards sit
+/// 24 points in from the pane's sides. One constant cannot be both.
+const CONTENT_PADDING_TOP: f32 = 28.0;
 
 /// The space a section rule puts above itself: `mt-8` (`features-settings.vue:325`).
 // Measured: the reference's rule after the Appearance sync row sits 33 points below that
@@ -3112,7 +3120,7 @@ fn draw_body(
 
     let left = content.left() + CONTENT_PADDING;
     let right = content.right() - CONTENT_PADDING;
-    let mut y = content.top() + CONTENT_PADDING - scroll;
+    let mut y = content.top() + CONTENT_PADDING_TOP - scroll;
 
     let blocks = blocks(tab);
     if blocks.is_empty() {

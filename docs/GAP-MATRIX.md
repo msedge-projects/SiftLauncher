@@ -1074,3 +1074,17 @@ put the type on the wrong side of its own measurement, and one changed a scrim t
 **The measurement that would settle each**: for the plate, the top and bottom edges at x 700 in
 one frame (672 total); for the padding, the header rule and the heading's *line box* rather than
 its ink, since a 20-point semibold's ascent is not the same as its ink top.
+
+### The pane's padding is two constants, not one (2026-10-31)
+
+The measurement that settled it: the reference's first heading ink sits **117 points** below its
+plate's top edge, and its theme cards sit **24 points** in from the pane's sides. One constant
+cannot be both, and this pane had one -- 24 for both axes.
+
+Split into a horizontal 24 and a top 28, the gap from the plate's top reads **117 in both
+captures**. The first attempt set the single constant to 28 and immediately failed the test that
+proves three theme cards fit their row, which is the test doing its job: the cards need the
+pane's full 628 points of usable width.
+
+The two points that remain in absolute terms belong to the plate itself -- 116 here against 114,
+because our plate is three points shorter -- and that is its own row.
