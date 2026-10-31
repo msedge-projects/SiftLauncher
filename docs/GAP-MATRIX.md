@@ -873,3 +873,19 @@ description's line count, which is where the missing 22 points live.
 
 The order of work is therefore: fix the height, then raise the type. Raising the type first is
 what produces an overlap that looks like a font problem and is not.
+
+#### Measured with a probe, not guessed (2026-10-31)
+
+A temporary `SIFT_SETTINGS_PROBE` print in the settings row arm, run and removed, says exactly
+what the type-size experiment could not:
+
+    row "Sync theme across devices" y=643.5 height=64.0    (at 18 over 16)
+    row "Advanced rendering"       y=699.5 height=64.0
+    row "System window frame"      y=787.5 height=64.0
+
+`draw_labelled` measures correctly -- 64 points for a title and a two-line description. What
+is wrong is the **advance**: the first row after the theme-card block moves down 56 points
+where the second moves 88, so the first row's description is overrun by the next title. The
+fault is in the ThemeCards arm's returned height or the loop's gap bookkeeping after it, not in
+the type sizes. Raising the type is therefore still blocked on that, and the sizes stay at
+14 over 12 until it is fixed -- with the number that proves where the bug is.
