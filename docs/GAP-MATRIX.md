@@ -1088,3 +1088,15 @@ pane's full 628 points of usable width.
 
 The two points that remain in absolute terms belong to the plate itself -- 116 here against 114,
 because our plate is three points shorter -- and that is its own row.
+
+### The rail footer: the block was already right, the ink offset is not (2026-10-31)
+
+Tried and reverted in the same round. The capture's footer ink runs 733..763; ours runs 739..749
+and 759..767. Setting the footer block from 48 to 50 points moved our first line by **one**
+point, which is the measurement saying the block height was never the problem: the six points
+are the text's own ascent offset where the line is drawn from the block's top, and the ten-point
+spread between our two lines against the reference's tight pair is the line spacing.
+
+Reverted, because a constant changed to fix something it does not control is worse than the
+original constant -- it makes the next reader think the footer's height was measured when the
+thing that needed measuring was the baseline. Open, with the four numbers above.
