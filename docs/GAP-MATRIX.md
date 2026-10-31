@@ -1237,3 +1237,24 @@ y 222..540, within three points at both ends.
 The geometry is the capture's rather than a computed thumb, because the rail's scroll is still a
 wheel handler with no fraction to draw from. That is stated in the code so the next slice knows
 to replace a constant with a computation rather than a second constant.
+
+### Settings surveyed: seven of ten captured tabs are matched (2026-10-31)
+
+Three more tabs captured on both sides in one pass -- Social, Privacy and Launch hooks -- and all
+three are structurally matched, row for row:
+
+* **Social**: Friend requests, Shared instance invites and Hosting access invites, each with its
+  Everyone / Mutual / No one chip group, then Blocked users and its description.
+* **Privacy**: the ads paragraph with its Manage preferences button, then Telemetry and Discord
+  Rich Presence, each a row with a description and an engaged switch.
+* **Launch hooks**: Pre-launch, Wrapper and Post-exit, three label-description-field rows, then
+  the paragraph about where hooks run.
+
+That makes the tally across ten captured tabs -- Appearance, Features, Window, Social, Privacy,
+Launch hooks matched; **Java and memory structurally wrong** (per-version field plus toolbar);
+**Profile drawn in the wrong state** (signed-in form where the reference is signed out). Three
+tabs remain uncaptured: Language, Flags, and the version/downloads panel.
+
+So the earlier note that "Settings is further from done than it looked" was too dark in one
+direction and right in another: six of ten match closely, and the two that do not are the two
+where the launcher is drawing a different *thing* rather than the same thing at the wrong size.
