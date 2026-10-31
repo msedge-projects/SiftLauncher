@@ -1334,3 +1334,32 @@ layer, and a field that cannot be typed into is the visible edge of it.
 **The next test is one capture**: type into the Discover search field. If that is empty too, the
 bug is application-wide and every text field in every page is affected -- a far more important row
 than this one, and one that no amount of tab-by-tab surveying would have found.
+
+## P0: no text field in this launcher accepts typing (2026-10-31)
+
+The one capture the last note asked for, taken: Discover's search field, clicked and typed into
+with `sodium`, still reads "*Search modpacks...*". The reference, driven identically, shows the
+characters it is given (its Java 25 field reads `/opt/java25` with a focus ring).
+
+So this is not a Settings bug and not a Java-block bug. **Every text input in the application is
+inert**: the search field, the Window tab's width and height, the Launch hooks' three commands,
+the Java paths, the Profile username and bio, and every other field the captures above show as a
+plate with a placeholder.
+
+What the probe established before this capture: the click arrives (`hovered=true`, `clicked=true`),
+the clip rectangle is the whole screen, and an explicit widget id changes nothing.
+
+What that leaves, in order:
+
+1. **A global key handler consuming printable keys** before any widget sees them. This launcher
+   has a shortcut layer for the brief's keyboard requirements, and one that runs on every frame
+   before the UI would swallow exactly this.
+2. **The window never forwarding text events to egui** -- an eframe/window-builder setting on the
+   winit side, which would be a one-line fix but needs the app's setup code read.
+
+Both are testable in one build each, and the second is the cheaper to rule out because the first
+would normally leave *some* keys working (arrows, backspace) while the second would leave none.
+
+**This row outranks every open row in this document.** A launcher that cannot be typed into
+cannot name an instance, set a path, or search for a mod, whatever its pixels say -- and the
+forty-five commits before this one were matching those pixels.
