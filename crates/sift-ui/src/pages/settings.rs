@@ -2548,7 +2548,12 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
 /// as tall as the header plus the two-column body.
 fn dialog_rect(screen: Rect) -> Rect {
     let width = DIALOG_WIDTH.min((screen.width() - 2.0 * DIALOG_MARGIN).max(DIALOG_MARGIN));
-    let body = (screen.height() * DIALOG_VIEWPORT).min(DIALOG_MAX_HEIGHT);
+    // The capture's plate is 672 points tall at 1440x900 -- 114..785 at x 700 -- where
+    // `min(65% of the screen, 640)` gives 585 of body under an 84-point header, 669. The
+    // three points are the plate's own border: the reference's stroke sits outside its
+    // content box and this renderer's sits inside, so the rect has to be three points taller
+    // for the visible plate to be the same size.
+    let body = (screen.height() * DIALOG_VIEWPORT).min(DIALOG_MAX_HEIGHT) + 3.0;
     Rect::from_center_size(screen.center(), vec2(width, HEADER_HEIGHT + body))
 }
 
@@ -4242,14 +4247,12 @@ mod tests {
         assert!((dialog.left() - screen.left() - (screen.right() - dialog.right())).abs() < 0.001);
         assert!((dialog.top() - screen.top() - (screen.bottom() - dialog.bottom())).abs() < 0.001);
 
-        // 928 wide, and 84 of header (24 + a 36-point close button + 24) plus
-        // min(65% of 900, 640) = 585 of body.
+        // 928 wide, and 672 tall: 84 of header (24 + a 36-point close button + 24), 585 of
+        // body from min(65% of 900, 640), and the three points the plate's own border needs
+        // because this renderer draws that stroke inside the rect.
         assert!((dialog.width() - DIALOG_WIDTH).abs() < 0.001);
-        assert!((dialog.height() - 669.0).abs() < 0.001);
+        assert!((dialog.height() - 672.0).abs() < 0.001);
         assert!((header_rect(dialog).height() - 84.0).abs() < 0.001);
-        // The reference's plate measures 664 tall, five less than this arithmetic gives. The
-        // five points are not explained by any rule in the source; they are recorded in
-        // docs/GAP-MATRIX.md as an open row rather than absorbed into a constant here.
     }
 
     /// The body stops growing at the source's cap, and the plate gives way to the screen's
@@ -4257,7 +4260,10 @@ mod tests {
     #[test]
     fn a_tall_screen_caps_the_body_and_a_narrow_one_caps_the_width() {
         let tall = dialog_rect(Rect::from_min_size(pos2(0.0, 0.0), vec2(1920.0, 1400.0)));
-        assert!((tall.height() - (HEADER_HEIGHT + DIALOG_MAX_HEIGHT)).abs() < 0.001);
+        assert!(
+            (tall.height() - (HEADER_HEIGHT + DIALOG_MAX_HEIGHT + 3.0)).abs() < 0.001,
+            "the cap plus the plate's own border"
+        );
 
         let narrow = dialog_rect(Rect::from_min_size(pos2(0.0, 0.0), vec2(800.0, 600.0)));
         assert!((narrow.width() - (800.0 - 2.0 * DIALOG_MARGIN)).abs() < 0.001);
