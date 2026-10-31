@@ -2678,7 +2678,7 @@ fn draw_header(painter: &egui::Painter, dialog: Rect, theme: &theme::Theme) {
     painter.hline(
         (header.left() + inset)..=(header.right() - inset),
         header.bottom(),
-        Stroke::new(RULE_STROKE, theme.DIVIDER),
+        Stroke::new(RULE_STROKE, theme.SURFACE_5),
     );
 
     let close = close_rect(dialog);
@@ -3146,7 +3146,11 @@ fn draw_body(
             // the reason a row's text could overlap the next one at 18 over 16.
             y += gap;
             gap = 0.0;
-            y += CONTENT_SECTION_GAP;
+            // The pending gap already ended in `ROW_GAP`, and the rule's margin is measured
+            // from the row's *bottom*, so only the difference is added. Adding the whole
+            // CONTENT_SECTION_GAP put every rule 21 to 24 points low, which is exactly what
+            // wave seven measured on both captured tabs.
+            y += (CONTENT_SECTION_GAP - ROW_GAP).max(0.0);
             body.hline(
                 left..=right,
                 y,

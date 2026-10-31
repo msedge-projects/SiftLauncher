@@ -944,3 +944,23 @@ black, and every switch in the modal follows.
 The **default states** differ: the reference ships "Show Screenshots tab in instances" off and
 "Show Worlds/Files" on, where this launcher has all three on. That is a settings-default mismatch
 rather than a drawing one -- open, and recorded here so it is not mistaken for a rendering bug.
+
+### Wave seven: three passes, two fails, and the rule fixed properly (2026-10-31)
+
+Wave seven scored the commits since wave six. Passes: the row type at 18/16 (title ink 14, description
+15, band for band on both captured tabs), the plate's `--surface-5` edge, the 9% scrim
+(#141619 over the #16181c page), and the engaged switch knob (#000000 against the reference's
+#03150a). Fails: the rule after a row sat 21-24 points low, and the Features tab has no separator
+where the reference draws one at y 316.
+
+The rule fail was mine and it was the *first* fix's fault, not the original bug's: applying the
+pending gap and then adding the whole `CONTENT_SECTION_GAP` counts `ROW_GAP` twice, because the
+pending gap already ends in it. The rule now adds only the difference, which moves it up by
+exactly those 24 points -- our rule reads y 739 against the reference's 746, where it was 763.
+The header rule under "Settings" got the same `--surface-5` swap the plate had, one rule up, and
+now reads the reference's grey.
+
+Still open from this pass, in its own order: the Features separator itself, the theme-card mock
+tones (`#dfdfdf/#212327/#0c0c0c` against `#f8f8f8/#27292e/#101013`), descriptions at
+`#96a2b0` where the reference is `#b0bac5`, the rail's extra "Window" row and 4-13 point short
+rows, and the switches' missing one-pixel ring.
