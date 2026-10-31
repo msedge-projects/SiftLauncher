@@ -1194,3 +1194,19 @@ arm print that instead of the hint when the state holds nothing; then delete the
 The lesson is the same one this session keeps paying for: two fixes were aimed at a function that
 looks like the right one instead of the one the capture's element is drawn by, and the render was
 the only thing that could tell them apart.
+
+### The window defaults: the code is live and the field is still empty (2026-10-31)
+
+Last round's note said these rows do not go through `place_field`. That was wrong, and the source
+says so: the Row arm calls `place_field(ui, state, label, placeholder, rect_for_field(right, y))`
+for every `Control::Text`, and `Control::draw`'s Text arm paints the plate alone -- the text comes
+from the `TextEdit` that `place_field` puts on it.
+
+The seeding is in place, with the empty-string case handled. It is not what the capture shows, and
+the binary is not the explanation: `/proc/<pid>/exe` points at
+`/scratch/crates/sift-ui/target/release/SiftUi` with a 22:36 timestamp matching the build, and
+`lab.sh ours` rebuilds and relaunches before every shoot.
+
+So the value is being dropped between `state.texts` and the drawn field, and the fastest way to
+find where is a probe inside `place_field` printing `key`, the resolved `text` and whether the
+state held an entry -- one build, three numbers, and no more guessing at which layer eats it.
