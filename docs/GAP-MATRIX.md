@@ -1128,3 +1128,28 @@ the ink of a product's logo means copying an accident of their artwork, and a 1:
 turns its own brand grey to look like another's has copied the wrong thing. The mean of the
 reference's mark pixels is (120,130,141) and ours is (78,159,43) -- the difference is the brand,
 not the layout, and it stays.
+
+### The Java and memory tab is a different page, not a different size (2026-10-31, P0)
+
+Third tab captured, and the risk noted last round was right: this tab is not the shared row layout
+with different content. It is a different structure.
+
+**Reference**, per Java version ("Java 25", "Java 21", "Java 17"), each a block:
+* an 18-point semibold label at x 533;
+* a full-width text field, x 533..1109, 36 points tall, placeholder `/path/to/java`, with a red
+  circular **✕** at x 1120..1148 that clears it;
+* a row of three buttons under the field at y 350..378: **Install recommended** (x 530..742),
+  **Detect** (752..860), **Browse** (863..966).
+
+**Ours**: one row per version with the label on the left and a 197-point field (x 960..1157) on
+the right, no ✕, no per-version buttons; then a single "Detect Java" and "Browse for a Java
+folder" at the panel's foot, then Memory allocation with a slider.
+
+So this tab needs a block type that does not exist yet: a full-width field with a trailing action
+and a three-button toolbar beneath it, repeated per version and separated by the section rule.
+Until it exists, every row on this tab is wrong in shape rather than in spacing, and the
+"all thirteen tabs share the layout" claim written in the last three commits is an inference from
+two tabs that this capture contradicts.
+
+The first capture of the tab is `.scratch/cap/ref-settings-java.png` beside
+`ours-settings-java.png`; the numbers above are read from the two crops at 1:1.
