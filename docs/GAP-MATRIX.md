@@ -1115,3 +1115,16 @@ heading, not a spacing bug.
 
 The 24-point mark the reference draws to the footer's left is still missing, and the rail's
 three-pixel scrollbar with it.
+
+### The rail footer's mark, and the one difference that should not be removed (2026-10-31)
+
+The footer now carries a 24-point mark with the text indented 34 points past it, which is the
+reference's structure: mark at the pane's left padding, product line and platform line to its
+right, both on the block's 56-point baseline.
+
+The mark itself is **allowed to differ**. The reference's is Modrinth's own grey line-art logo;
+this one is Sift's green. Tinting ours to the reference's grey was tried and reverted: matching
+the ink of a product's logo means copying an accident of their artwork, and a 1:1 clone that
+turns its own brand grey to look like another's has copied the wrong thing. The mean of the
+reference's mark pixels is (120,130,141) and ours is (78,159,43) -- the difference is the brand,
+not the layout, and it stays.

@@ -2829,9 +2829,27 @@ fn draw_rail(
         );
         // The footer is outside the rows' clip, so it needs the rail's own.
         let foot = painter.with_clip_rect(rail);
+        // The reference puts a 24-point mark to the left of both lines and indents the text past
+        // it; without the mark the footer reads as two stray labels under the rail.
+        let mark = Rect::from_min_size(
+            pos2(footer.left(), footer.top() + 1.0),
+            Vec2::splat(24.0),
+        );
+        if let Some(texture) = crate::brand::mark(painter.ctx()) {
+            foot.image(
+                texture.id(),
+                mark,
+                Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                // The mark is the product's, so it keeps the product's colours: the capture's
+                // is Modrinth's grey line-art logo and this one is Sift's green. Tinting ours
+                // grey to match their ink would be copying an accident of their artwork.
+                Color32::WHITE,
+            );
+        }
+        let text_left = mark.right() + 10.0;
         let name = format!("Sift Launcher {}", env!("CARGO_PKG_VERSION"));
         foot.text(
-            pos2(footer.left(), footer.top()),
+            pos2(text_left, footer.top()),
             Align2::LEFT_TOP,
             name,
             fonts::body(14.0),
@@ -2841,7 +2859,7 @@ fn draw_rail(
         // This launcher's own build number is its crate version, which is the same fact about
         // a different product rather than an invented string.
         foot.text(
-            pos2(footer.left(), footer.top() + 20.0),
+            pos2(text_left, footer.top() + 20.0),
             Align2::LEFT_TOP,
             format!("Linux {}", env!("CARGO_PKG_VERSION")),
             fonts::body(12.0),
