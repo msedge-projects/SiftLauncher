@@ -1031,3 +1031,19 @@ baseline is about two points high.
 None of those three is worth a commit on its own, and all three are recorded here so the next
 pass does not re-derive them. The mock row is now as close as a drawn imitation of a product's
 own artwork is going to get without the artwork.
+
+### Settings: a measured section gap and a two-point global offset (2026-10-31)
+
+The section gap is a measurement now, not a constant of convenience: the reference's rule after
+the Appearance sync row sits **33 points** below that row's own bottom (description ink ends 713,
+the rule at 746), and `ROW_GAP` already supplies 24 of them. At 33 the rule lands at 740 against
+746.
+
+The remaining six points are not the gap. They are a global two-to-three point offset that
+everything in the pane carries: the "Color theme" heading's ink starts at 229 here against 231
+in the reference, and the first card's top edge at 287 against 290. Chasing that through three
+more constants would trade a visible six-point offset for a chance of a regression in every tab,
+so it is recorded instead.
+
+**What it would take to close**: one capture cropped at the pane's top edge with the header's
+rule and the first heading in the same frame, measuring *rule to ink* rather than ink to ink.

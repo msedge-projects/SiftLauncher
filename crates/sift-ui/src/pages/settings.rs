@@ -1005,7 +1005,10 @@ const CATEGORY_TOP_GAP: f32 = 12.0;
 const CONTENT_PADDING: f32 = 24.0;
 
 /// The space a section rule puts above itself: `mt-8` (`features-settings.vue:325`).
-const CONTENT_SECTION_GAP: f32 = 32.0;
+// Measured: the reference's rule after the Appearance sync row sits 33 points below that
+// row's own bottom (description ink ends 713, rule at 746). `ROW_GAP` already supplies 24 of
+// them, so the section gap is 33 and the rule adds the difference.
+const CONTENT_SECTION_GAP: f32 = 33.0;
 
 /// The space a section rule puts below itself: `pt-6` (`features-settings.vue:325`).
 const CONTENT_SECTION_PADDING: f32 = 24.0;
