@@ -1461,3 +1461,25 @@ focused.
 Dockerfile gains it or the lab's image is rebuilt before anyone trusts a capture taken in it --
 recorded here because a capture lab that drifts from its recipe is how three of this session's
 wrong conclusions started.
+
+### The app is alive, repainting, and receiving nothing (2026-10-31)
+
+Under openbox the frame did not change after a double rail click and a typed word -- and the two
+captures hash identically, which is the important detail: `ps` shows the process alive at 9.9%
+CPU for the full minute, so it is repainting at speed while **not one input event reaches it**.
+
+The two configurations now read like this:
+
+| lab | mouse | keyboard |
+| --- | --- | --- |
+| Xvfb only, no window manager | page changes work | nothing, ever |
+| Xvfb + openbox | nothing | nothing |
+
+So there is an input path that works (mouse, no WM) and fails as soon as a real window manager
+owns the keyboard focus -- and a keyboard path that never worked in either.
+
+**The next probe is one build and one line**: in `Shell::update`, print
+`ctx.input(|i| (i.events.len(), i.pointer.any_click(), i.focused))` whenever any of them is
+non-default. That answers whether the events arrive at egui at all, or die between X and the
+toolkit -- and it is the same probe discipline that closed the window-defaults seam in one build
+after reasoning had failed twice.
