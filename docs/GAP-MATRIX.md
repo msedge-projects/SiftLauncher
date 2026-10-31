@@ -1292,3 +1292,23 @@ So: the wiring exists and compiles, the typing is unproven, and the likely fix i
 `ui.memory_mut(|m| m.request_focus(id))` on the click that lands in the field -- a three-line
 change and one capture to prove it. Recorded rather than claimed, because a draw-only field and a
 field that takes input look identical in a screenshot.
+
+### focus_on_click did not fix the Java field either (2026-10-31)
+
+`output.clicked() -> output.request_focus()` is in `place_field` now -- it is the canonical egui
+fix and it belongs there whatever the outcome -- and the field still does not take typing: the
+capture after clicking it, typing `/opt/java25` and waiting shows the placeholder.
+
+So the click is not reaching the `TextEdit` at all. The remaining candidates, in order:
+
+1. the `ui` that `place_field` receives has a clip rectangle that does not contain the field, so
+   egui refuses to interact with a widget it considers clipped -- likely, because the settings
+   body is drawn through a clipped painter and the `ui` is the pane's, not the row's;
+2. something drawn *after* the field covers its rect and takes the click -- the three buttons sit
+   below it, and the clear circle to its right, so this is unlikely but cheap to rule out;
+3. the window is not receiving key events at all, which would also explain the empty result and
+   would mean the reference would show the same if driven identically -- worth testing against
+   the reference first, since it is free.
+
+**The next probe**: print `ui.clip_rect()`, `output.hovered()` and `output.clicked()` from inside
+`place_field` while clicking the field once. Three values, one build.

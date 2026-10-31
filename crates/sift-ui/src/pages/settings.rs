@@ -3132,6 +3132,13 @@ fn place_field(
             .hint_text(placeholder)
             .desired_width(rect.width()),
     );
+    // `ui.put` places the field at a rectangle the layout cursor never visits, and egui does
+    // not move focus on a click that lands there unless it is asked to. Without this the field
+    // draws and takes no typing -- which is indistinguishable from a working field in a
+    // screenshot, and cost a round to find.
+    if output.clicked() {
+        output.request_focus();
+    }
     if output.changed() {
         match state.texts.iter_mut().find(|(known, _)| *known == key) {
             Some((_, typed)) => *typed = text,
