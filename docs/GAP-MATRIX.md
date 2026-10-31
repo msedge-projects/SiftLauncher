@@ -910,3 +910,21 @@ and returned it, which was right and changed nothing. The third probe looked at 
 showed the gap being dropped, but the print sat *before* `y += gap`, so the number it showed
 belonged to the previous block and the arm was blamed again. The bug was visible in the source
 all along: an early `continue` that skipped the line every other block goes through.
+
+### The modal's edge and its scrim (2026-10-31)
+
+The plate is edged in `--surface-5` (#42444a), not the divider grey -- the capture reads
+`#42444a` at x 256 on both sides now, where ours was `#34363c`.
+
+The scrim is the one place where an honest copy is impossible in this renderer. The reference
+uses `backdrop-filter: blur(5px)` under a very light veil: its page reads **#141e1f** behind the
+modal against **#16181c** at rest -- barely darker, and *greener*, because a blurred sidebar
+gradient is showing through. A 55%-black overlay (what this had) is not that; it reads #0a0b0d.
+A 9% veil now reads #141619, which is the closest a flat fill gets. The blur itself is recorded
+as **RENDERER-RISK**: a software rasteriser cannot do a 5 px backdrop blur for free, and
+imitating it with a flat fill would be a lie about what the reference does.
+
+Note for whoever reads the tile RMS: lightening the scrim to the measured value *raised* the
+whole-modal RMS from 24.2 to 27.4, because a sharp backdrop differs from a blurred one wherever
+the content has detail. The mean per channel fell (9.2/14.1/13.3 -> 8.3/10.6/9.4), which is the
+honest signal; the RMS is dominated by the sidebar tiles the blur would have softened.

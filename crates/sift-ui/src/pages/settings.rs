@@ -1099,7 +1099,12 @@ const CLOSE_GLYPH: f32 = 20.0;
 /// The scrim's alpha. The reference has no `--overlay` token; its scrim is
 /// `.modal-overlay.standard`'s gradient, `rgba(29, 48, 43, 0.52)` to `rgba(14, 21, 26, 0.95)`
 /// (`NewModal.vue:679`). 140/255 is 0.549, the top stop's alpha.
-const SCRIM_ALPHA: u8 = 140;
+// The reference's scrim is a `backdrop-filter: blur(5px)` under a very light veil: the
+// capture's page reads #141e1f behind the modal against #16181c at rest -- barely darker, and
+// greener, because a blurred sidebar gradient is showing through. A 55%-black overlay is not
+// that; this is a 9% veil, the closest a flat fill gets without the blur, which is recorded as
+// renderer-risk rather than imitated.
+const SCRIM_ALPHA: u8 = 24;
 
 // ---------------------------------------------------------------------------
 // The body's blocks
@@ -2139,10 +2144,12 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
     let painter = ui.painter().clone();
         painter.rect_filled(screen, 0, Color32::from_black_alpha(SCRIM_ALPHA));
         painter.rect_filled(dialog, PLATE_RADIUS, theme.RAISED_BG);
+        // `--surface-5`, not the divider: the capture's plate is edged in #42444a, the same
+        // grey as the header's rule and the rail's.
         painter.rect_stroke(
             dialog,
             PLATE_RADIUS,
-            Stroke::new(RULE_STROKE, theme.DIVIDER),
+            Stroke::new(RULE_STROKE, theme.SURFACE_5),
             egui::StrokeKind::Inside,
         );
         draw_header(&painter, dialog, theme);
