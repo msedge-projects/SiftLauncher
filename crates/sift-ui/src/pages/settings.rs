@@ -3055,23 +3055,12 @@ fn place_area(
     limit: usize,
     rect: Rect,
 ) {
-    // The reference's window fields arrive *filled* with the defaults an instance would use --
-    // 854 and 480, which are Modrinth's own -- where this drew the placeholder and an empty
-    // string. A default belongs to the field, not to the reader.
-    let fallback = match key {
-        WINDOW_WIDTH_LABEL => "854",
-        WINDOW_HEIGHT_LABEL => "480",
-        _ => "",
-    };
-    // An entry that exists but is empty is the same as no entry: the state seeds every field
-    // with a blank string, so "no value typed yet" arrives as `Some("")` and a plain
-    // `unwrap_or_else` never sees it.
     let mut text = state
         .texts
         .iter()
-        .find(|(known, typed)| *known == key && !typed.is_empty())
+        .find(|(known, _)| *known == key)
         .map(|(_, typed)| typed.clone())
-        .unwrap_or_else(|| fallback.to_owned());
+        .unwrap_or_default();
     let footer = Rect::from_min_size(
         egui::pos2(rect.left(), rect.bottom() + 2.0),
         egui::vec2(rect.width(), 16.0),
@@ -3114,12 +3103,25 @@ fn place_field(
     placeholder: &str,
     rect: Rect,
 ) {
+    // The reference's window fields arrive *filled* with the defaults an instance would use --
+    // 854 and 480, Modrinth's own -- where this drew the placeholder over an empty string.
+    //
+    // Three rounds went into this one seam because the first two edits landed in `place_area`,
+    // the textarea helper directly above this function, which no window field ever calls. The
+    // probe that printed `key`, the held value and the resolved text found it in one build.
+    let fallback = if key == WINDOW_WIDTH_LABEL {
+        "854"
+    } else if key == WINDOW_HEIGHT_LABEL {
+        "480"
+    } else {
+        ""
+    };
     let mut text = state
         .texts
         .iter()
-        .find(|(known, _)| *known == key)
+        .find(|(known, typed)| *known == key && !typed.is_empty())
         .map(|(_, typed)| typed.clone())
-        .unwrap_or_default();
+        .unwrap_or_else(|| fallback.to_owned());
     let output = ui.put(
         rect,
         egui::TextEdit::singleline(&mut text)

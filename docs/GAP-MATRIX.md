@@ -1210,3 +1210,20 @@ the binary is not the explanation: `/proc/<pid>/exe` points at
 So the value is being dropped between `state.texts` and the drawn field, and the fastest way to
 find where is a probe inside `place_field` printing `key`, the resolved `text` and whether the
 state held an entry -- one build, three numbers, and no more guessing at which layer eats it.
+
+### The window defaults, found by probe (2026-10-31)
+
+The two edits of the last two rounds had landed in **`place_area`** -- the multiline-field helper
+that sits directly above `place_field` in the source and that no window field ever calls. The
+probe settled it in one build:
+
+    field key="Width"  held=None resolved=""      <- before
+    field key="Width"  held=None resolved="854"   <- after the edit moved one function down
+
+The capture now shows **854** and **480** in both the reference's fields and ours, aligned to the
+same rows.
+
+Three rounds on two numbers, and the lesson is not "be more careful": it is that a probe printing
+three values costs one build and stops a loop that reasoning had already failed four times. Both
+earlier attempts were plausible -- the second was even correct in substance -- and neither could
+have been distinguished from the right one without running the program.
