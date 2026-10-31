@@ -2536,7 +2536,7 @@ fn content_rect(dialog: Rect) -> Rect {
     // plate's border for every row of the pane (the verifier found it erased at x 1183 on all
     // 585 body rows).
     Rect::from_min_max(
-        pos2(dialog.left() + RAIL_WIDTH, dialog.top() + HEADER_HEIGHT),
+        pos2(dialog.left() + RAIL_WIDTH + RULE_STROKE, dialog.top() + HEADER_HEIGHT),
         pos2(dialog.right() - RULE_STROKE, dialog.bottom() - RULE_STROKE),
     )
 }
@@ -2692,10 +2692,19 @@ fn draw_rail(
     let clipped = painter.with_clip_rect(scrollable);
 
     // The rail's `border-r` (`TabbedModal.vue:152`).
-    clipped.vline(
+    // Inside the rail's own column: a stroke is centred on its coordinate, so a line at
+    // `rail.right()` is half covered by the pane's fill, which is why the verifier found no
+    // rule at x 506 in ours and a #42444a one in the reference. `--surface-5`, not the
+    // divider's #34363c.
+    // On the rail's own right edge: the content column now starts one rule-width further
+    // right, so this pixel is the rail's and not the pane's -- which is what puts the line at
+    // x 506 in a 1440-wide capture, where the reference has it.
+    // Drawn on the dialog's own painter, not the rail's clipped one: the clip ends at
+    // `rail.right()`, so a stroke centred there is half-clipped away and the rule disappears.
+    painter.vline(
         rail.right(),
         rail.top()..=rail.bottom(),
-        Stroke::new(RULE_STROKE, theme.DIVIDER),
+        Stroke::new(RULE_STROKE, theme.SURFACE_5),
     );
 
     for entry in rail_rows(dialog, scroll) {

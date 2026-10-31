@@ -819,3 +819,19 @@ Rows the passes could not settle, and the capture that would settle each: the si
 points (row 7); the Discover browse sidebar with a filter selected (rows 10–12); a running instance
 (row 13); a typed query and a failed request (seven Discover behaviour rows); and Settings row 221,
 which needs a re-capture because the reference PNG predates the Appearance section rule.
+
+### Wave 4 — Discover and Settings re-verified after the fixes
+
+134 rows judged: 32 pass, 1 fail, 101 still open (Discover 69: 21 pass / 0 fail / 48 open;
+Settings 65: 11 / 1 / 53). The single failure was Settings row 204: the rail's one-pixel
+`--surface-5` rule at x 506 was still being erased by the pane's fill. It is fixed and measured
+(#42444a at x 506, #1d1f23 from x 507, the same three pixels the reference has), and the fix
+needed three attempts that are worth recording because each one taught the same lesson: a
+stroke is centred on its coordinate, so a line drawn on a clip boundary is half clipped away;
+inset the content column first, then draw on the unclipped painter.
+
+The pass also caught a commit claim that had not landed. The commit said the Discover column
+had moved to x 88 and the capture showed it still at x 64 — the strip was 622 wide where the
+reference is 636 and the search field 1059 where it is 1028. Both are now on
+`TEXT_LEFT`/`CONTENT_INSET` and measure 1028. **A commit message is not evidence; only the
+next capture is**, and this document now says so twice.
