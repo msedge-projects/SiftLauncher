@@ -1227,3 +1227,13 @@ Three rounds on two numbers, and the lesson is not "be more careful": it is that
 three values costs one build and stops a loop that reasoning had already failed four times. Both
 earlier attempts were plausible -- the second was even correct in substance -- and neither could
 have been distinguished from the right one without running the program.
+
+### The rail's scrollbar, drawn from the capture (2026-10-31)
+
+Measured, not invented: 3 points wide at **x 497..499**, colour **#2d2f35**, running **y 223..543**
+-- 320 points, which is the share of the fourteen rows that fit the rail. Ours reads x 497..499,
+y 222..540, within three points at both ends.
+
+The geometry is the capture's rather than a computed thumb, because the rail's scroll is still a
+wheel handler with no fraction to draw from. That is stated in the code so the next slice knows
+to replace a constant with a computation rather than a second constant.

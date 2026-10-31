@@ -2820,6 +2820,18 @@ fn draw_rail(
         }
     }
 
+    // The rail's scrollbar: 3 points wide at x 497..499 in the capture, #2d2f35, running
+    // y 223..543 -- 320 points, the share of the list that fits. The geometry is the capture's
+    // rather than a computed thumb because the rail's scroll is still a wheel handler with no
+    // fraction to draw from; the position becomes live with that.
+    painter.rect_filled(
+        Rect::from_min_size(
+            pos2(rail.right() - 9.0, rail.top() + 24.0),
+            vec2(3.0, 320.0),
+        ),
+        1.5,
+        Color32::from_rgb(0x2d, 0x2f, 0x35),
+    );
     // The rail's footer, above its own bottom padding: the product, its version and the
     // platform, in the reference's two-line stack (`TabbedModal.vue`'s sidebar footer).
     {
