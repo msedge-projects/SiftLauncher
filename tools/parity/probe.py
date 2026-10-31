@@ -299,6 +299,38 @@ def cmd_text(args):
     print("%d words" % len(rows))
 
 
+def cmd_bbox(args):
+    """The bounding box of every pixel within a tolerance of one colour.
+
+    `boxes` finds flat regions row by row and is good for plates; this answers the
+    blunter question a layout comparison asks -- where is the green thing, exactly --
+    and it is the one to cite when a number in `geometry.rs` or a page has to be
+    checked against the reference.
+    """
+    im = load(args.path)
+    if args.crop:
+        x0, y0, x1, y1 = (int(v) for v in args.crop.split(","))
+        im = im.crop((x0, y0, x1, y1))
+    else:
+        x0 = y0 = 0
+        x1, y1 = im.size
+    want = tuple(int(args.hex[i:i + 2], 16) for i in (1, 3, 5))
+    minx, miny, maxx, maxy, n = 1 << 30, 1 << 30, -1, -1, 0
+    for y in range(im.size[1]):
+        for x in range(im.size[0]):
+            p = im.getpixel((x, y))
+            if all(abs(p[i] - want[i]) <= args.tolerance for i in range(3)):
+                n += 1
+                minx = min(minx, x); maxx = max(maxx, x)
+                miny = min(miny, y); maxy = max(maxy, y)
+    if not n:
+        print("no pixel within %d of %s" % (args.tolerance, args.hex))
+        return
+    print("bbox %s: x %d..%d (%d) y %d..%d (%d) px %d"
+          % (args.hex, x0 + minx, x0 + maxx, maxx - minx + 1, y0 + miny, y0 + maxy,
+             maxy - miny + 1, n))
+
+
 def main():
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -365,6 +397,13 @@ def main():
     s.add_argument("--crop")
     s.add_argument("--min-conf", type=float, default=40.0)
     s.set_defaults(func=cmd_text)
+
+    s = sub.add_parser("bbox")
+    s.add_argument("path")
+    s.add_argument("hex")
+    s.add_argument("--tolerance", type=int, default=3)
+    s.add_argument("--crop")
+    s.set_defaults(func=cmd_bbox)
 
     args = p.parse_args()
     args.func(args)

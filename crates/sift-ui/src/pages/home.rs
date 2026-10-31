@@ -27,7 +27,7 @@
 //! folder names only -- see [`read_worlds`] for what that can and cannot say, and why a world
 //! row's press is a toast rather than a launch.
 
-use eframe::egui::{Align2, Rect, Sense, Stroke, Ui, Vec2};
+use eframe::egui::{Align2, Rect, Sense, Stroke, Ui, Vec2, Color32};
 
 use crate::data::Entry;
 use crate::fonts;
@@ -354,79 +354,244 @@ pub fn draw(
     }
 }
 
-/// The fresh-install state: centred mark, welcome, the create button and the hint.
+/// The fresh-install state, at the reference's own rhythm.
+///
+/// \`WelcomeScreen.vue\` is a column with \`px-6 pb-6 pt-16\` -- 64 px down from the title
+/// bar and 24 px off the floor -- that centres a hero block and then prints the
+/// "Escaping another launcher?" prompt underneath it. The block itself is
+/// \`flex flex-col items-center gap-6\`: a 100 px mark (\`size-[6.25rem]\`), then a
+/// \`gap-2\` title pair (24 px semibold over 16 px), then a \`w-72 flex flex-col gap-4\`
+/// column holding the create button and its key hint.
+///
+/// Captured at 1440x900 (\`.scratch/cap/ref-home.png\`, \`probe.py text\` and \`probe.py
+/// bbox\`): mark 313..413, title line 437..469, description 477..501, create button
+/// 526..564 (212x40, radius 14), key hint 583..599, prompt line 800..820, import button
+/// 836..876. Those are the numbers the arithmetic below reproduces; the two it does not
+/// are the hero's 1 px and the button's, which come from the icon's own inset.
+///
+/// The button is \`Button size="lg"\` from the reference's design system
+/// (\`packages/ui/src/components/base/buttons/ButtonFrame.vue:32\`): \`h-10\`,
+/// \`rounded-[14px]\`, \`px-4\`, \`gap-2\`, \`text-base font-semibold\`, \`[&>svg]:size-5\`,
+/// filled with the button's colour and lettered in \`--color-accent-contrast\`.
 fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Action {
     let painter = ui.painter();
     let centre_x = rect.center().x;
 
-    // The mark plate: 64 points, rounded, with the product mark inside it. The mark is the
-    // generated `logo512.png` texture (`brand::install` uploads it at startup), not a glyph
-    // and not a path beside the exe. When there is no texture -- a headless context, or a
-    // decode that failed -- the plate the mark sits on is what this frame draws: a frame
-    // must still draw something, and an empty hole in the hero reads as a broken build.
-    let plate = Rect::from_center_size(
-        egui::pos2(centre_x, rect.top() + 250.0),
-        Vec2::splat(64.0),
-    );
-    if !crate::brand::paint_mark(painter, ui.ctx(), plate) {
-        painter.rect_filled(plate, 16, theme.RAISED_BG);
-        painter.rect_stroke(
-            plate,
-            16,
-            Stroke::new(1.0, theme.ACCENT_CONTRAST.gamma_multiply(0.4)),
-            egui::StrokeKind::Inside,
-        );
-    }
-    let _ = icons_cache;
+    // The rhythm, in the page's own points.
+    const PT: f32 = 64.0; // pt-16
+    const PB: f32 = 24.0; // pb-6
+    const GAP_6: f32 = 24.0;
+    const GAP_4: f32 = 16.0;
+    const GAP_2: f32 = 8.0;
+    const MARK: f32 = 100.0; // size-[6.25rem]
+    const TITLE_LINE: f32 = 32.0; // text-2xl leading-8
+    const BODY_LINE: f32 = 24.0; // text-base leading-6
+    const HINT_LINE: f32 = 20.0; // text-sm leading-5
+    const BUTTON_H: f32 = 40.0; // h-10
+    const BUTTON_PAD: f32 = 16.0; // px-4
+    const BUTTON_GAP: f32 = 8.0; // gap-2
+    const BUTTON_ICON: f32 = 20.0; // [&>svg]:size-5
+    const BUTTON_RADIUS: u8 = 14; // rounded-[14px]
+    const FOOTER: f32 = HINT_LINE + GAP_4 + BUTTON_H; // prompt, gap-4, button
 
+    let area_top = rect.top() + PT;
+    let area_bottom = rect.bottom() - PB - FOOTER;
+    let block = MARK
+        + GAP_6
+        + TITLE_LINE
+        + GAP_2
+        + BODY_LINE
+        + GAP_6
+        + BUTTON_H
+        + GAP_4
+        + HINT_LINE;
+    let top = area_top + (area_bottom - area_top - block) / 2.0;
+
+    // The dotted field behind the mark: \`29.875rem\` by \`min(25.9375rem, 80vw)\`,
+    // \`-top-52\` from the block, \`rounded-2xl\`, faded by an elliptical mask. It is the
+    // only decoration on the page and it reads as the page being empty on purpose.
+    dotted_field(painter, rect, top, theme);
+
+    // The mark. \`brand::paint_mark\` draws the texture \`brand::install\` uploads at
+    // startup; the plate is the frame's fallback so the hero keeps its anchor when there
+    // is no texture (a headless run, or a decode that failed).
+    let mark = Rect::from_min_size(
+        egui::pos2(centre_x - MARK / 2.0, top),
+        Vec2::splat(MARK),
+    );
+    // The reference's hero mark is one PNG: a dark-green rounded square with the brand
+    // ring drawn inside it (`assets/welcome/modrinth-social-icon.png`, rendered at
+    // `size-[6.25rem]`). This tree has no equivalent asset, so the plate is drawn and the
+    // mark is set inside it at the same proportion the capture shows -- the plate is
+    // #103524 at (620,320) and the green glyph occupies 72 of the 100 points. The colour
+    // is sampled from the reference, not chosen: the asset is the only place it exists.
+    painter.rect_filled(mark, 24, Color32::from_rgb(0x10, 0x35, 0x24));
+    let glyph = Rect::from_center_size(mark.center(), Vec2::splat(72.0));
+    if !crate::brand::paint_mark(painter, ui.ctx(), glyph) {
+        painter.rect_filled(glyph, 18, theme.BRAND);
+    }
+
+    // The title pair: \`gap-2\` between a 24 px semibold line and a 16 px body line.
+    let title_top = top + MARK + GAP_6;
     painter.text(
-        egui::pos2(centre_x, plate.bottom() + 34.0),
+        egui::pos2(centre_x, title_top + TITLE_LINE / 2.0),
         Align2::CENTER_CENTER,
         "Welcome to Sift Launcher",
-        fonts::heading(24.0),
+        fonts::semibold(24.0),
         theme.CONTRAST,
     );
+    let desc_top = title_top + TITLE_LINE + GAP_2;
     painter.text(
-        egui::pos2(centre_x, plate.bottom() + 62.0),
+        egui::pos2(centre_x, desc_top + BODY_LINE / 2.0),
         Align2::CENTER_CENTER,
         "Ready to start playing?",
-        fonts::body(14.0),
-        theme.SECONDARY,
+        fonts::body(16.0),
+        theme.BASE,
     );
 
-    // `+ Create an instance`, the page's one primary action.
-    let create = Rect::from_center_size(
-        egui::pos2(centre_x, plate.bottom() + 106.0),
-        egui::vec2(196.0, 40.0),
+    // \`+ Create an instance\`: the page's one primary action, sized by its own label.
+    let label = painter.layout_no_wrap(
+        "Create an instance".to_owned(),
+        fonts::semibold(16.0),
+        theme.ACCENT_CONTRAST,
     );
-    painter.rect_filled(create, 8, theme.BUTTON_BG_SELECTED);
+    let width = BUTTON_PAD * 2.0 + BUTTON_ICON + BUTTON_GAP + label.size().x;
+    let create = Rect::from_min_size(
+        egui::pos2(
+            centre_x - width / 2.0,
+            desc_top + BODY_LINE + GAP_6,
+        ),
+        egui::vec2(width, BUTTON_H),
+    );
+    painter.rect_filled(create, BUTTON_RADIUS, theme.BRAND);
+    // \`button-frame--colored::before\`: a one-pixel inner gradient from 30% white to
+    // nothing, which is what gives the reference's buttons their lit top edge.
+    painter.rect_stroke(
+        create,
+        BUTTON_RADIUS,
+        Stroke::new(1.0, theme.ACCENT_CONTRAST.gamma_multiply(0.0)),
+        egui::StrokeKind::Inside,
+    );
+    let gloss = Rect::from_min_size(create.min, egui::vec2(create.width(), create.height() / 2.0));
+    painter.add(egui::Shape::mesh({
+        let mut mesh = egui::Mesh::default();
+        let base = mesh.vertices.len() as u32;
+        let lit = Color32::from_rgba_unmultiplied(255, 255, 255, 77);
+        let clear = Color32::from_rgba_unmultiplied(255, 255, 255, 0);
+        mesh.colored_vertex(gloss.left_top(), lit);
+        mesh.colored_vertex(gloss.right_top(), lit);
+        mesh.colored_vertex(gloss.left_bottom(), clear);
+        mesh.colored_vertex(gloss.right_bottom(), clear);
+        mesh.add_triangle(base, base + 1, base + 2);
+        mesh.add_triangle(base + 1, base + 2, base + 3);
+        mesh
+    }));
     icons::draw(
         painter,
         Glyph::Plus,
         Rect::from_center_size(
-            egui::pos2(create.left() + 22.0, create.center().y),
-            Vec2::splat(16.0),
+            egui::pos2(create.left() + BUTTON_PAD + BUTTON_ICON / 2.0, create.center().y),
+            Vec2::splat(BUTTON_ICON),
         ),
-        theme.BUTTON_TEXT_SELECTED,
+        theme.ACCENT_CONTRAST,
     );
-    painter.text(
-        egui::pos2(create.center().x + 8.0, create.center().y),
-        Align2::CENTER_CENTER,
-        "Create an instance",
-        fonts::semibold(14.0),
-        theme.BUTTON_TEXT_SELECTED,
+    painter.galley(
+        egui::pos2(
+            create.left() + BUTTON_PAD + BUTTON_ICON + BUTTON_GAP,
+            create.center().y - label.size().y / 2.0,
+        ),
+        label,
+        theme.ACCENT_CONTRAST,
     );
 
-    painter.text(
-        egui::pos2(centre_x, create.bottom() + 24.0),
-        Align2::CENTER_CENTER,
-        "Press N to quick create an instance",
-        fonts::body(12.0),
+    // \`Press <kbd>N</kbd> to quick create an instance\`: 14 px secondary text with a
+    // 20 px keycap -- \`h-5 min-w-5 rounded-md border border-solid border-surface-5
+    // bg-button-bg px-1 text-xs\`.
+    let hint_top = create.bottom() + GAP_4;
+    let before = painter.layout_no_wrap("Press".to_owned(), fonts::body(14.0), theme.SECONDARY);
+    let after = painter.layout_no_wrap(
+        "to quick create an instance".to_owned(),
+        fonts::body(14.0),
         theme.SECONDARY,
     );
+    let key_label = painter.layout_no_wrap("N".to_owned(), fonts::body(12.0), theme.BASE);
+    let key_w = (key_label.size().x + 8.0).max(20.0);
+    let row_w = before.size().x + 4.0 + key_w + 4.0 + after.size().x;
+    let mut x = centre_x - row_w / 2.0;
+    let mid = hint_top + HINT_LINE / 2.0;
+    let before_w = before.size().x;
+    let before_h = before.size().y;
+    let after_w = after.size().x;
+    let after_h = after.size().y;
+    let key_label_w = key_label.size().x;
+    let key_label_h = key_label.size().y;
+    painter.galley(egui::pos2(x, mid - before_h / 2.0), before, theme.SECONDARY);
+    x += before_w + 4.0;
+    let key = Rect::from_min_size(egui::pos2(x, mid - 10.0), egui::vec2(key_w, 20.0));
+    painter.rect_filled(key, 6, theme.BUTTON_BG);
+    painter.rect_stroke(
+        key,
+        6,
+        Stroke::new(1.0, theme.BUTTON_BORDER),
+        egui::StrokeKind::Inside,
+    );
+    painter.galley(
+        egui::pos2(key.center().x - key_label_w / 2.0, key.center().y - key_label_h / 2.0),
+        key_label,
+        theme.BASE,
+    );
+    x += key_w + 4.0;
+    painter.galley(egui::pos2(x, mid - after_h / 2.0), after, theme.SECONDARY);
 
-    // The button is a target now. `N` is the reference's own shortcut for the same action, and
-    // it is read here rather than in the shell because the page is what advertises it.
+    // The prompt under the hero, \`gap-4\` above its own button, \`pb-6\` under it.
+    let import_bottom = rect.bottom() - PB;
+    let import_label = painter.layout_no_wrap(
+        "Import from launcher".to_owned(),
+        fonts::label(16.0),
+        theme.BASE,
+    );
+    let import_w = BUTTON_PAD * 2.0 + BUTTON_ICON + BUTTON_GAP + import_label.size().x;
+    let import = Rect::from_min_size(
+        egui::pos2(centre_x - import_w / 2.0, import_bottom - BUTTON_H),
+        egui::vec2(import_w, BUTTON_H),
+    );
+    painter.text(
+        egui::pos2(centre_x, import.top() - GAP_4 - HINT_LINE / 2.0),
+        Align2::CENTER_CENTER,
+        "Escaping another launcher?",
+        fonts::body(14.0),
+        theme.SECONDARY,
+    );
+    // \`Button\` with the default \`type="base"\`: \`--color-button-bg\` under an inset
+    // one-pixel \`--surface-5\` ring (\`button-frame--base\`).
+    painter.rect_filled(import, BUTTON_RADIUS, theme.BUTTON_BG);
+    painter.rect_stroke(
+        import,
+        BUTTON_RADIUS,
+        Stroke::new(1.0, theme.BUTTON_BORDER),
+        egui::StrokeKind::Inside,
+    );
+    icons::draw(
+        painter,
+        Glyph::BoxImport,
+        Rect::from_center_size(
+            egui::pos2(import.left() + BUTTON_PAD + BUTTON_ICON / 2.0, import.center().y),
+            Vec2::splat(BUTTON_ICON),
+        ),
+        theme.BASE,
+    );
+    painter.galley(
+        egui::pos2(
+            import.left() + BUTTON_PAD + BUTTON_ICON + BUTTON_GAP,
+            import.center().y - import_label.size().y / 2.0,
+        ),
+        import_label,
+        theme.BASE,
+    );
+
+    // The two presses. \`N\` is the reference's own shortcut for the same action, and it is
+    // read here rather than in the shell because the page is what advertises it.
+    let _ = icons_cache;
     let mut action = Action::None;
     if ui
         .interact(create, egui::Id::new("home-create"), Sense::click())
@@ -435,41 +600,55 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
     {
         action = Action::Create;
     }
-
-    // The launcher-escape prompt, pinned above the window's bottom edge.
-    let import = Rect::from_center_size(
-        egui::pos2(centre_x, rect.bottom() - 96.0),
-        egui::vec2(220.0, 36.0),
-    );
-    painter.text(
-        egui::pos2(centre_x, import.top() - 18.0),
-        Align2::CENTER_CENTER,
-        "Escaping another launcher?",
-        fonts::body(12.0),
-        theme.SECONDARY,
-    );
-    painter.rect_filled(import, 8, theme.RAISED_BG);
-    icons::draw(
-        painter,
-        Glyph::BoxImport,
-        Rect::from_center_size(
-            egui::pos2(import.left() + 20.0, import.center().y),
-            Vec2::splat(14.0),
-        ),
-        theme.BASE,
-    );
-    painter.text(
-        egui::pos2(import.center().x + 6.0, import.center().y),
-        Align2::CENTER_CENTER,
-        "Import from launcher",
-        fonts::body(13.0),
-        theme.BASE,
-    );
-
-    // A hover on the create button is the only thing that moves, and it is not animated yet:
-    // nothing here is in flight, so the frame after this one is not owed.
-    let _ = Sense::hover();
+    if ui
+        .interact(import, egui::Id::new("home-import"), Sense::click())
+        .clicked()
+    {
+        action = Action::Import;
+    }
     action
+}
+
+/// The dotted field behind the hero mark.
+///
+/// \`WelcomeScreen.vue\`'s \`.dot-pattern\`: a radial-gradient dot every \`0.5625rem\` at 25%
+/// of \`--color-text-primary\` and \`opacity: 0.8\`, masked by
+/// \`radial-gradient(ellipse at center, black 10%, transparent 68%)\` inside a
+/// \`29.875rem\` by \`min(25.9375rem, 80vw)\` box that sits \`-top-52\` from the block.
+fn dotted_field(painter: &egui::Painter, rect: Rect, block_top: f32, theme: &Theme) {
+    // The stylesheet says `h-[29.875rem] w-[min(25.9375rem,80vw)]` at `-top-52`, which
+    // is 478x415 at 208 above the block. The capture disagrees: the dots are visible over
+    // 369x387 centred on the content column at y 320, and with the 68% mask that is a box
+    // of 543x569 starting 277 above the block. The render is the spec, so these are the
+    // capture's numbers and the stylesheet's are not used.
+    const PITCH: f32 = 9.0; // 0.5625rem
+    let w = 543.0;
+    let h = 569.0;
+    let cx = rect.center().x;
+    let top = block_top - 277.0;
+    let field = Rect::from_min_size(egui::pos2(cx - w / 2.0, top), egui::vec2(w, h));
+    let ink = theme.CONTRAST;
+    let mut y = field.top();
+    while y < field.bottom() {
+        let mut x = field.left();
+        while x < field.right() {
+            let dx = (x - field.center().x) / (w / 2.0);
+            let dy = (y - field.center().y) / (h / 2.0);
+            let d = (dx * dx + dy * dy).sqrt();
+            // black 10% .. transparent 68%: full inside 10%, gone past 68%.
+            let fade = ((0.68 - d) / (0.68 - 0.10)).clamp(0.0, 1.0);
+            if fade > 0.0 {
+                let alpha = (0.25 * 0.8 * fade * 255.0) as u8;
+                painter.circle_filled(
+                    egui::pos2(x, y),
+                    0.5,
+                    Color32::from_rgba_unmultiplied(ink.r(), ink.g(), ink.b(), alpha),
+                );
+            }
+            x += PITCH;
+        }
+        y += PITCH;
+    }
 }
 
 /// The installed state: the reference's instance cards, newest-played first, then the worlds

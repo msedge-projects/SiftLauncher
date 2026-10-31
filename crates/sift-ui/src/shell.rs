@@ -76,11 +76,11 @@ impl Rail {
     /// The glyph the reference draws for this destination.
     pub fn glyph(self) -> Glyph {
         match self {
-            Rail::Home => Glyph::Home,
+            Rail::Home => Glyph::Play,
             Rail::Discover => Glyph::Compass,
             Rail::Skins => Glyph::Shirt,
             Rail::Screenshots => Glyph::Image,
-            Rail::Servers => Glyph::Server,
+            Rail::Servers => Glyph::ServerStack,
         }
     }
 }
@@ -435,7 +435,17 @@ impl Shell {
         // The reference labels the destination under the pointer with a small pill beside it.
         // Here rather than with the rail for the toast's own reason: the rail is painted before
         // the content column, so a tooltip drawn there is covered by the page.
-        if let Some(destination) = self.hovered {
+        // `providers/tooltip.ts:35-36` waits 300 ms before showing and 400 ms before hiding;
+        // the pill itself enters over 0.1 s from scale 0.9 with ease-out
+        // (`assets/styles/classes.scss:644-665`). The delay is the part a reader notices, so
+        // it is the part wired here; the 400 ms hide delay is not, and the pill leaves on
+        // the frame the pointer does.
+        let held = self
+            .hovered
+            .map(|_| crate::motion::held_for(ui.ctx(), egui::Id::new("rail-tooltip"), true))
+            .unwrap_or(None);
+        let tooltip_due = held.map(|ms| ms >= 300.0).unwrap_or(false);
+        if let Some(destination) = self.hovered.filter(|_| tooltip_due) {
             let painter = ui.painter();
             let index = Rail::ALL
                 .iter()
@@ -516,9 +526,13 @@ impl Shell {
         // Cut the corner: fill the square back in with the chrome's own colour, then put
         // the surface's colour back as a disc inscribed in it.
         let r = g::RADIUS_XL;
+        // The square's outer half is chrome; the disc that carves it is centred on the
+        // square's bottom-right, so its arc is the corner's arc. (Centring it on the square
+        // itself would put a 20 px disc where a 10 px quarter belongs, which shows up as a
+        // notch with a straight diagonal edge.)
         let corner = Rect::from_min_size(surface.min, Vec2::splat(r));
         painter.rect_filled(corner, 0, self.theme.RAISED_BG);
-        painter.circle_filled(corner.center(), r, self.theme.BG);
+        painter.circle_filled(corner.right_bottom(), r, self.theme.BG);
 
     }
 
@@ -647,21 +661,63 @@ impl Shell {
             self.theme.CONTRAST,
         );
 
-        // The running-instance line, right-aligned into the six pixels before the controls:
-        // \`app.action-bar.no-instances-running.message\`, 14 px, secondary.
+        // The action bar's two pills, measured off the capture: the Update pill spans
+        // x 999..1096 and the status pill x 1110..1285, both 34 px tall (h-8 plus the ring)
+        // and fully rounded. Update is brand text on a brand ring; the status pill is
+        // --color-secondary text after an 8 px dot, on a --surface-5 ring.
+        let pill_top = (g::TITLE_BAR - 34.0) / 2.0;
+        let update = Rect::from_min_size(egui::pos2(999.0, pill_top), egui::vec2(98.0, 34.0));
+        painter.rect_stroke(
+            update,
+            17,
+            Stroke::new(1.0, self.theme.BRAND),
+            egui::StrokeKind::Inside,
+        );
+        icons::draw(
+            painter,
+            Glyph::Download,
+            Rect::from_center_size(
+                egui::pos2(update.left() + 20.0, update.center().y),
+                Vec2::splat(16.0),
+            ),
+            self.theme.BRAND,
+        );
         painter.text(
-            egui::pos2(g::CONTROLS_LEFT - 6.0, bar.center().y),
-            Align2::RIGHT_CENTER,
+            egui::pos2(update.left() + 42.0, update.center().y),
+            Align2::LEFT_CENTER,
+            "Update",
+            crate::fonts::semibold(14.0),
+            self.theme.BRAND,
+        );
+
+        let status = Rect::from_min_size(egui::pos2(1110.0, pill_top), egui::vec2(176.0, 34.0));
+        painter.rect_stroke(
+            status,
+            17,
+            Stroke::new(1.0, self.theme.SURFACE_5),
+            egui::StrokeKind::Inside,
+        );
+        painter.circle_filled(
+            egui::pos2(status.left() + 12.0, status.center().y),
+            4.0,
+            self.theme.SECONDARY,
+        );
+        painter.text(
+            egui::pos2(status.left() + 25.0, status.center().y),
+            Align2::LEFT_CENTER,
             self.game.status().to_string(),
             crate::fonts::body(14.0),
             self.theme.SECONDARY,
         );
 
-        // The window controls. Two 48 px buttons and a 60 px close button fill the bar's
         // height; the reference's hover is a circle the size of the button, and the close
         // button's hover turns it red (\`.titlebar-button.close.hover:before\`).
-        let widths = [48.0, 48.0, g::CLOSE_BUTTON];
-        let mut x = g::CONTROLS_LEFT;
+        // Three 44 px buttons whose icon centres the capture puts at 1327.5, 1371.5 and
+        // 1415.5: the last one ends two pixels inside the window edge. The stylesheet says
+        // `width: 3rem` and a 3.75rem close button; the running client disagrees, and the
+        // render is the spec.
+        let widths = [44.0, 44.0, 44.0];
+        let mut x = 1306.0;
         for (index, glyph) in [Glyph::Minus, Glyph::Square, Glyph::X]
             .into_iter()
             .enumerate()
@@ -751,12 +807,17 @@ impl Shell {
             } else if response.hovered() {
                 painter.circle_filled(button.center(), g::RAIL_BUTTON / 2.0, self.theme.BUTTON_BG);
             }
+            // The active icon is `--color-button-text-selected`, which in dark mode is
+            // `--color-brand` itself: the capture's play triangle is #1bd96a on the
+            // #24553d plate. A resting icon is `--color-base` (#b0bac5), not the dimmer
+            // `--color-secondary` -- that is the difference between the rail reading as a
+            // set of destinations and reading as disabled ones.
             let ink = if selected {
                 self.theme.BUTTON_TEXT_SELECTED
             } else if response.hovered() {
                 self.theme.CONTRAST
             } else {
-                self.theme.SECONDARY
+                self.theme.BASE
             };
             icons::draw(
                 painter,
@@ -768,6 +829,14 @@ impl Shell {
 
         // The create button continues the same column: it is not a page, it makes one, and
         // in the reference it is a NavButton with a \`+\` after Hosting.
+        // The switcher's own rule: `h-px w-8 bg-surface-5` immediately above the create
+        // button. The capture puts a 32 px line of #42444a at y 320, centred in the rail.
+        painter.hline(
+            (g::RAIL / 2.0 - 16.0)..=(g::RAIL / 2.0 + 16.0),
+            320.0,
+            Stroke::new(1.0, self.theme.SURFACE_5),
+        );
+
         // The create button is not the next slot in the column: it lives inside the
         // reference's `QuickInstanceSwitcher`, under a 32 px divider row
         // (`h-px w-8` inside `gap-1` and `py-2`), which the capture puts at y 348. Its
@@ -803,7 +872,7 @@ impl Shell {
         }
 
         // The bottom pair: Settings and the account, \`mt-auto\`, eight pixels off the floor.
-        for (index, glyph) in [Glyph::Settings, Glyph::CircleUser].into_iter().enumerate() {
+        for (index, glyph) in [Glyph::Settings, Glyph::LogIn].into_iter().enumerate() {
             let button = Rect::from_min_size(
                 egui::pos2(
                     g::RAIL_PAD,
@@ -822,7 +891,7 @@ impl Shell {
                 if response.hovered() {
                     self.theme.CONTRAST
                 } else {
-                    self.theme.SECONDARY
+                    self.theme.BASE
                 },
             );
             if response.clicked() {
@@ -838,6 +907,9 @@ impl Shell {
         if hovered != self.hovered {
             self.hovered = hovered;
             animating = true;
+        }
+        if self.hovered.is_none() {
+            crate::motion::held_for(ui.ctx(), egui::Id::new("rail-tooltip"), false);
         }
         animating
     }
