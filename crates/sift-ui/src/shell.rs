@@ -1270,14 +1270,41 @@ impl Shell {
         ui.painter().rect_filled(content, 0, self.theme.BG);
 
         let painter = ui.painter();
-        // The tab strip: a rounded container holding six pills, the first of which is the
-        // page's own type and is active. Measured at 2x from `top.jpg`: the container starts
-        // 8 px left of the content column at 48 down, its pills are 36 tall and start 6 in.
+        // The tab strip, measured on the running client (`.scratch/cap/ref-discover.png`):
+        // a **w-fit** pill bar at x 88..725, y 74..122 -- 48 tall, radius 24, one
+        // `--color-raised-bg` plate -- with six 36-tall pills six points in and four apart.
+        // It is not a full-width strip: the reference's bar is only as wide as its pills,
+        // which is why a full-width one reads as a toolbar instead of a tab bar.
+        const KINDS_PRE: [&str; 6] = [
+            "Modpacks",
+            "Mods",
+            "Resource Packs",
+            "Data Packs",
+            "Shaders",
+            "Servers",
+        ];
+        // The plate is as wide as its pills: measure them first, then draw it, then draw
+        // them. A full-width plate was the old shape and it read as a toolbar.
+        let mut strip_width = 12.0;
+        for label in KINDS_PRE {
+            let galley = painter.layout_no_wrap(
+                label.to_owned(),
+                crate::fonts::semibold(14.0),
+                self.theme.BASE,
+            );
+            strip_width += galley.size().x + 32.0 + 4.0;
+        }
         let strip = Rect::from_min_size(
-            egui::pos2(content.left() - 8.0, g::TAB_CONTAINER_TOP),
-            egui::vec2(content.width() + 8.0, g::TAB_CONTAINER),
+            egui::pos2(content.left(), 72.0),
+            egui::vec2(strip_width - 4.0, 46.0),
         );
-        painter.rect_filled(strip, 12, self.theme.RAISED_BG);
+        painter.rect_filled(strip, 23, self.theme.RAISED_BG);
+        painter.rect_stroke(
+            strip,
+            23,
+            Stroke::new(1.0, self.theme.SURFACE_4),
+            egui::StrokeKind::Inside,
+        );
         let mut x = strip.left() + 6.0;
         // The reference's six kinds. `Servers` has no search facet of its own -- it is a
         // destination, not a project type -- so it keeps the plugins facet the API does have
@@ -1294,17 +1321,27 @@ impl Shell {
             let galley = painter.layout_no_wrap(
                 label.to_owned(),
                 crate::fonts::semibold(14.0),
+                // The active pill's lettering is `--color-accent-contrast`: laying it out in
+                // the brand colour, as this did, is green text on a green fill and reads as an
+                // empty pill.
                 if kind == self.project_type {
                     self.theme.BUTTON_TEXT_SELECTED
                 } else {
-                    self.theme.BASE
+                    self.theme.CONTRAST
                 },
             );
             let pill = Rect::from_min_size(
-                egui::pos2(x, strip.top() + 8.0),
-                egui::vec2(galley.size().x + 32.0, g::TAB_PILL),
+                egui::pos2(x, strip.top() + 5.0),
+                egui::vec2(galley.size().x + 32.0, 36.0),
             );
             let selected = kind == self.project_type;
+            // The active pill is the brand itself with `--color-accent-contrast` lettering
+            // (`NavTabs.vue`), not a translucent plate: the capture's active pill is #1bd96a
+            // with near-black text.
+            // The plate is `--color-button-bg-selected` -- #24553d over the raised strip --
+            // and the lettering is `--color-button-text-selected` (#1bd96a). The pill region
+            // of the capture is 2189 pixels of #24553d and its glyphs are #1bd96a, so the
+            // bright-green-fill reading was wrong.
             if selected {
                 painter.rect_filled(pill, 18, self.theme.BUTTON_BG_SELECTED);
             }
@@ -1326,20 +1363,26 @@ impl Shell {
             painter.galley(
                 egui::pos2(pill.center().x - galley.size().x / 2.0, pill.center().y - galley.size().y / 2.0),
                 galley.clone(),
-                self.theme.BASE,
+                if selected {
+                    self.theme.ACCENT_CONTRAST
+                } else {
+                    self.theme.BASE
+                },
             );
-            x = pill.right() + 8.0;
+            x = pill.right();
         }
 
-        // The search row: the field, the sort and view selects, the result count and the
-        // pager, in the reference's order. Heights are the reference's 40-point controls.
-        let row = Rect::from_min_size(
-            egui::pos2(content.left(), strip.bottom() + 12.0),
-            egui::vec2(content.width(), g::SEARCH_ROW),
-        );
+        // The search field is a row of its own and the full width of the column: the capture
+        // puts it at x 88..1113, y 126..174 -- 48 tall (`size="large"`), radius 14,
+        // `--surface-4` inside a one-pixel `--surface-5` ring. The sort and view selects and
+        // the pager sit on the *next* row, at y 182 and 36 tall.
         let field = Rect::from_min_size(
-            row.min,
-            egui::vec2(row.width() * 0.50, g::SEARCH_ROW),
+            egui::pos2(content.left(), 126.0),
+            egui::vec2(content.width(), 48.0),
+        );
+        let row = Rect::from_min_size(
+            egui::pos2(content.left(), 182.0),
+            egui::vec2(content.width(), 36.0),
         );
         // The field is a widget with state now: focus, a caret that blinks and a clear button.
         // Its return value is frame debt -- true while it is focused, because the caret is
@@ -1426,26 +1469,45 @@ impl Shell {
         let mut select_rects = [Rect::NOTHING; 2];
         for index in 0..2 {
             let select = Rect::from_min_size(
-                egui::pos2(field.right() + 12.0 + index as f32 * (select_w + 8.0), row.top()),
-                egui::vec2(select_w, g::SEARCH_ROW),
+                egui::pos2(
+                    content.left() + if index == 0 { 0.0 } else { 256.0 + 8.0 },
+                    row.top(),
+                ),
+                egui::vec2(if index == 0 { 256.0 } else { 144.0 }, 36.0),
             );
-            let label = if index == 0 {
+            // `Sort by: ` in `--color-base` then the value in `--color-contrast` semibold 16:
+            // two spans, not one 13-point string, which is what the capture shows.
+            let (prefix, value) = if index == 0 {
                 let name = SORTS
                     .iter()
                     .find(|(_, value)| *value == self.sort_index)
                     .map(|(name, _)| *name)
                     .unwrap_or("Relevance");
-                format!("Sort by:  {name}")
+                ("Sort by: ", name.to_owned())
             } else {
-                format!("View: {}", self.page_size)
+                ("View: ", self.page_size.to_string())
             };
-            painter.rect_filled(select, 8, self.theme.RAISED_BG);
-            painter.text(
-                egui::pos2(select.left() + 12.0, select.center().y),
-                Align2::LEFT_CENTER,
-                label,
-                crate::fonts::body(13.0),
+            painter.rect_filled(select, 12, self.theme.SURFACE_4);
+            painter.rect_stroke(
+                select,
+                12,
+                Stroke::new(1.0, self.theme.SURFACE_5),
+                egui::StrokeKind::Inside,
+            );
+            let prefix_galley =
+                painter.layout_no_wrap(prefix.to_owned(), crate::fonts::body(16.0), self.theme.BASE);
+            let value_width = prefix_galley.size().x;
+            painter.galley(
+                egui::pos2(select.left() + 12.0, select.center().y - prefix_galley.size().y / 2.0),
+                prefix_galley,
                 self.theme.BASE,
+            );
+            painter.text(
+                egui::pos2(select.left() + 12.0 + value_width, select.center().y),
+                Align2::LEFT_CENTER,
+                value,
+                crate::fonts::semibold(16.0),
+                self.theme.CONTRAST,
             );
             icons::draw(
                 painter,
@@ -1742,7 +1804,15 @@ fn card(
 
     // The icon tile. The reference draws the project's icon here; until images load, a
     // plate in the accent carries the same weight and the same 12-point radius.
-    let tile = Rect::from_min_size(rect.min + egui::vec2(16.0, 16.0), Vec2::splat(64.0));
+    // The reference's card is 1028x142 at radius 16 with a one-pixel ring, a 100-point icon
+    // sixteen points in from the corner, and a 20-point title starting 129 in.
+    painter.rect_stroke(
+        rect,
+        16,
+        Stroke::new(1.0, theme.SURFACE_4),
+        egui::StrokeKind::Inside,
+    );
+    let tile = Rect::from_min_size(rect.min + egui::vec2(16.0, 16.0), Vec2::splat(100.0));
     painter.rect_filled(tile, 12, theme.BUTTON_BG);
     // The project's own icon once it has arrived; the plate until then, and for ever if the
     // fetch failed. Rounded corners are the tile's: a texture drawn into a square rect inside
@@ -1760,14 +1830,14 @@ fn card(
     // The title, the author and the link glyph, on one baseline.
     let title = painter.layout_no_wrap(
         result.title.clone(),
-        crate::fonts::title(17.0),
+        crate::fonts::title(20.0),
         theme.CONTRAST,
     );
-    let title_at = egui::pos2(rect.left() + 96.0, rect.top() + 18.0);
+    let title_at = egui::pos2(rect.left() + 129.0, rect.top() + 16.0);
     painter.galley(title_at, title.clone(), theme.CONTRAST);
     let by = painter.layout_no_wrap(
         format!("by {}", result.author),
-        crate::fonts::body(13.0),
+        crate::fonts::body(16.0),
         theme.SECONDARY,
     );
     let by_at = egui::pos2(title_at.x + title.size().x + 10.0, title_at.y + 3.0);

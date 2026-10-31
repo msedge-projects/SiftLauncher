@@ -117,7 +117,7 @@ pub const SEARCH_ROW: f32 = 40.0;
 pub const TAB_STRIP: f32 = 36.0;
 
 /// A result card's height.
-pub const CARD: f32 = 148.0;
+pub const CARD: f32 = 142.0;
 
 /// The gap between two result cards.
 pub const CARD_GAP: f32 = 12.0;
