@@ -902,3 +902,24 @@ height.
 
 Recording it this way because the alternative -- raising the type and shipping the overlap --
 is how a "font problem" gets invented.
+
+#### The loop probe: the row arm advances y itself and reports zero (2026-10-31)
+
+A probe in the block loop -- before `y += gap`, printing y, gap and the block -- gives the whole
+mechanism:
+
+    loop y=223.5 gap=0.0   block=Color theme
+    loop y=223.5 gap=59.0  block=themecards
+    loop y=282.5 gap=357.0 block=Sync theme across devices
+    loop y=695.5 gap=0.0   block=Advanced rendering
+    loop y=695.5 gap=75.0  block=System window frame
+
+"Sync theme across devices" is drawn at 282.5 + 357 = 639.5, which is right. The next block is
+drawn at 695.5, and its printed gap is **0.0** -- so the 56 points between them were not added by
+the loop at all. The row arm moves `y` itself and returns zero, and its step is the *control's*
+height plus the gap (a 32-point switch plus 24), not the row's measured text height (64).
+
+That is the bug, exactly: a row advances by whichever of its control and its text is shorter,
+because the arm does the advance internally with the control's height and tells the loop it owes
+nothing. The fix is to delete the arm's own step and return `row_height + ROW_GAP` like every
+other block, which is why the type sizes stay where they are until it lands.
