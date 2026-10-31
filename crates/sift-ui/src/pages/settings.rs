@@ -990,7 +990,7 @@ const RAIL_TEXT_SIZE: f32 = 16.0;
 const CATEGORY_LINE: f32 = 20.0;
 
 /// A category heading's drawn size: `text-sm` (`TabbedModal.vue:179`).
-const CATEGORY_TEXT_SIZE: f32 = 14.0;
+const CATEGORY_TEXT_SIZE: f32 = 12.0; // uppercase group labels are text-xs
 
 /// The space under a category heading: `pb-1.5` (`TabbedModal.vue:179`).
 const CATEGORY_PADDING: f32 = 6.0;
@@ -1019,6 +1019,13 @@ const SECTION_HEADING_SIZE: f32 = 18.0;
 /// inherit the 16-point base; this pass draws the 14/12 pair the brief asks for, so the
 /// wrapped line count of a long description is the one thing that will move when the rows
 /// are raised to the source's sizes.
+// The reference's setting rows are `text-lg` over `text-base` -- 18 over 16 -- not the
+// 14 over 12 this had, which made every row on all thirteen tabs read at label size.
+// The source is `text-lg` over `text-base` (18 over 16); this draws 14 over 12 because the
+// row's height is computed by `draw_labelled` and does not include the wrapped description --
+// at 18/16 the second line of "Sync theme across devices" was drawn under "Advanced
+// rendering"'s title. Raised only after that measurement is fixed; docs/GAP-MATRIX.md row
+// carries it as open with this cause.
 const ROW_LABEL_SIZE: f32 = 14.0;
 
 /// A row's description size: `text-secondary` with no size class of its own

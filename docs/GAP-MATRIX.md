@@ -861,3 +861,15 @@ Two things this taught that the code now says:
 Still open in this block, and measured: our cards start at y 284 against the reference's 291,
 which moves every row under them, and the row titles below are 14 points where the source's are
 16 to 18.
+
+### Row type is a measurement bug, not a size bug (found 2026-10-31)
+
+The settings rows draw 14 over 12 where the source says `text-lg` over `text-base` -- 18 over
+16. Raising them was tried and reverted the same hour, because the two sizes are not the
+problem: `draw_labelled` returns a height that does not include a *wrapped* description, so at
+18/16 the second line of "Sync theme across devices" is drawn underneath "Advanced rendering"'s
+title. The row arm adds `HEADING_TO_ROWS` to the returned height rather than measuring the
+description's line count, which is where the missing 22 points live.
+
+The order of work is therefore: fix the height, then raise the type. Raising the type first is
+what produces an overlap that looks like a font problem and is not.
