@@ -1100,3 +1100,18 @@ spread between our two lines against the reference's tight pair is the line spac
 Reverted, because a constant changed to fix something it does not control is worse than the
 original constant -- it makes the next reader think the footer's height was measured when the
 thing that needed measuring was the baseline. Open, with the four numbers above.
+
+### The rail footer lands where the reference's does (2026-10-31)
+
+The block is **56 points from the pane's floor**, and with it both footers' first lines start at
+y 733 and their second at 753/752. Two attempts got this wrong in the same direction before the
+sign was read: the first moved the ink by one point, the second moved it eight points the *wrong*
+way, and both were guesses at which end of the rail the constant measures from.
+
+What remains in this element is ink height, not position: the reference's product line runs
+733..749 and ours 733..743. That is the face -- the source sets the product name in a 14-point
+semibold and this draws a 14-point regular -- and it is the difference between a label and a
+heading, not a spacing bug.
+
+The 24-point mark the reference draws to the footer's left is still missing, and the rail's
+three-pixel scrollbar with it.

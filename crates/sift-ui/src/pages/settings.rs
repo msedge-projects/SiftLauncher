@@ -961,7 +961,10 @@ const RAIL_PADDING: f32 = 16.0;
 /// The gap between rail children: `gap-1` on the scroll column (`TabbedModal.vue:173`).
 /// The rail's footer block: two 20-point lines, so 40. The capture puts the product line at
 /// the rail's bottom edge less its padding, with the platform line under it.
-const RAIL_FOOTER: f32 = 48.0;
+// Measured from the capture: the product line's ink runs 733..749 and the platform's 752..763 in
+// a pane ending at 783, so the block is 56 points tall from the floor. (Two attempts at this
+// constant moved the ink the wrong way before the sign was read rather than guessed.)
+const RAIL_FOOTER: f32 = 56.0;
 
 const RAIL_ROW_GAP: f32 = 4.0;
 
