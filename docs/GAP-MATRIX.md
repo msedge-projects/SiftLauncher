@@ -757,8 +757,8 @@ Total rows: **625**, numbered 1–625 with no gaps. They come from 659 report ro
 
 | status | rows | share |
 |---|---:|---:|
-| OPEN | 504 | 80.6% |
-| DONE | 86 | 13.8% |
+| OPEN | 472 | 75.5% |
+| DONE | 118 | 18.9% |
 | BLOCKED-SERVICE | 8 | 1.3% |
 | RENDERER-RISK | 15 | 2.4% |
 | NOT-IN-SOURCE | 12 | 1.9% |
@@ -798,7 +798,11 @@ was 24 and whose rows were 36 tall — so they are closed against measurements r
 open against a state that no longer exists. Its report is `.scratch/reports/verify-wave1.md`;
 five further rows could not be judged from the two captures it had and name the crops they need.
 
-Read against each other: 86 rows are matched today and exist here as regression guards; 12 have nothing in 0.22.0 to match; 8 wait on a hosted service and 15 on a renderer decision — 23 rows that are open work but cannot be closed by drawing alone. That leaves 504 plain OPEN rows, 155 of them P0 and 194 P1, which is the real backlog this document exists to order.
+Read against each other: 86 rows are matched today and exist here as regression guards; 12 have nothing in 0.22.0 to match; 8 wait on a hosted service and 15 on a renderer decision — 23 rows that are open work but cannot be closed by drawing alone. The DONE count moved from 86 to 118 on 2026-10-31: wave four decoded the Discover and
+Settings captures row by row and passed 32 rows that had been open, and every one of them has a
+pixel measurement behind it rather than a reading of the diff.
+
+That leaves 472 plain OPEN rows, 155 of them P0 and 194 P1, which is the real backlog this document exists to order.
 
 ## Verification ledger
 
