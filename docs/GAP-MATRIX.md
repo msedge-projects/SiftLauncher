@@ -1153,3 +1153,24 @@ two tabs that this capture contradicts.
 
 The first capture of the tab is `.scratch/cap/ref-settings-java.png` beside
 `ours-settings-java.png`; the numbers above are read from the two crops at 1:1.
+
+### Two more tabs captured: one close, one wrong state (2026-10-31)
+
+**Window** is close enough to call matched in structure: Fullscreen with its switch, then Width and
+Height, each a label, a description and a field at the panel's right edge. One difference, and it
+is data rather than drawing: the reference's fields hold **854** and **480** -- its defaults --
+where ours show the placeholders `Enter width...` and `Enter height...`. The fields need those
+defaults seeded; the row layout, type and control geometry all match.
+
+**Profile** is showing the wrong state. The reference is signed out and draws an empty state: a
+character illustration, "Modrinth account required", "Sign in with a Modrinth account to customize
+your public profile.", and a brand **Sign in** button -- centred in an otherwise empty pane. Ours
+draws the signed-in form: Profile picture with Upload and Remove image, a Username field, and a
+"Tell us about yourself..." textarea with a 0/160 counter.
+
+So the pane has been built for the state the launcher is never in. That is a P0: the empty state
+is what a new user sees, and it needs the illustration, which is a 1:1 copy of Modrinth's own
+character art -- a renderer-risk row, not a layout one.
+
+The captures are `ref-settings-window.png`/`ours-settings-window.png` and
+`ref-settings-profile.png`/`ours-settings-profile.png`.
