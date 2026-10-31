@@ -1511,3 +1511,25 @@ points away from where the reader aimed, which matches the click landing on noth
 
 **The events prove the pipe is open. The next round should read how the shell converts pointer
 positions into its own rects -- not the input path, which is now known to work.**
+
+### The shell uses \`ui.interact\`, and the app is given a bare \`ui\` (2026-10-31)
+
+The located suspect, read from the source: every clickable element in the shell is
+\`ui.interact(rect, id, Sense::click())\` -- the rail buttons, the utility pair, the kind tabs, the
+search selects, the pager cells, the result cards. That call registers a widget only when the
+\`Ui\` it is made on owns an interactive layer and its clip rectangle contains the rect.
+
+This app's entry point is
+
+    impl eframe::App for App {
+        fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) { ... }
+    }
+
+-- a bare \`Ui\` handed in, not a panel the app creates. Painting through it works, which is why
+every capture in this session looked right; \`interact\` through it may register nothing, which is
+why the events arrive (proved last round) and no widget reacts.
+
+The experiment -- wrapping the shell in \`CentralPanel::default().show(&ctx, ...)\` -- did not
+compile in the ten minutes left (`show` wants `&Context`, and the closure needs `&mut self` while
+\`self.log\` borrows it), so it was reverted rather than left broken. **That is the one change to
+make next**: draw the shell inside a panel, then click the rail and watch the breadcrumb.
