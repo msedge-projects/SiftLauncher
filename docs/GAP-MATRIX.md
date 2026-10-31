@@ -1407,3 +1407,25 @@ and `xdotool windowfocus` does set it to this window -- 2097156 -- and `getwindo
 Discover, confirm the capture shows the search field, then `windowfocus` the window, then type,
 then capture the **whole frame** and crop only after seeing it. Three of this session's wrong
 conclusions came from a crop taken before the frame was checked; the fourth came from this one.
+
+### The rail's click targets, mapped after three aim errors (2026-10-31)
+
+Three runs this session clicked the rail at a guessed y and hit the wrong page. The map, read off
+the fifty-pixel pitch the rail actually uses:
+
+| y | destination |
+| --- | --- |
+| 62 | Play / Home |
+| **102** | **Discover** |
+| 142 | Skins |
+| 182 | Screenshots |
+| 222 | Servers |
+| 815 | Settings (gear, at the floor) |
+
+So (32,120) landed on Discover -- which is why that run's capture showed the search field, and
+its empty-after-typing result still stands as the evidence for the app-wide keyboard row. And
+(32,202) landed on **Screenshots**, which is what this round's frame shows; that run proves
+nothing and is discounted.
+
+Every future run should click one of these numbers and then look at the frame before cropping,
+which is now written down twice in this document because it has cost four rounds.
