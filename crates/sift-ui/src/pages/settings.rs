@@ -1212,11 +1212,13 @@ impl ThemeChoice {
             // light surface in this window, so it is spelled out rather than looked up --
             // there is one scheme in the product so far.
             ThemeChoice::Dark => theme.BG,
-            ThemeChoice::Light => egui::Color32::from_rgb(0xf2, 0xf2, 0xf4),
+            // The capture's light preview is #ebebeb, not the #f2f2f4 this had.
+            ThemeChoice::Light => egui::Color32::from_rgb(0xeb, 0xeb, 0xeb),
             ThemeChoice::Oled => egui::Color32::BLACK,
-            // The card previews what the system would pick, which on this build is the light
-            // scheme it would fall back to.
-            ThemeChoice::System => theme.BG,
+            // The card previews what the system would pick. The capture's fourth card is
+            // **light** -- a #ebebeb preview, not the dark ground it was drawn with -- so this
+            // build previews the light scheme, which is also the one it would fall back to.
+            ThemeChoice::System => egui::Color32::from_rgb(0xeb, 0xeb, 0xeb),
         }
     }
 
@@ -3611,12 +3613,10 @@ fn draw_body(
                 for (index, choice) in ThemeChoice::ALL.into_iter().enumerate() {
                     let column = index % COLUMNS;
                     let row = index / COLUMNS;
-                    let wide = index == COLUMNS;
-                    let width = if wide {
-                        THEME_CARD_WIDTH * COLUMNS as f32 + THEME_CARD_GAP * (COLUMNS as f32 - 1.0)
-                    } else {
-                        THEME_CARD_WIDTH
-                    };
+                    // The fourth card is a card, not a banner: the capture puts "Sync with
+                    // system" at x 531..730, the same width as the three above it. It used to
+                    // stretch across the row, which made it read as a different kind of control.
+                    let width = THEME_CARD_WIDTH;
                     let card = Rect::from_min_size(
                         pos2(
                             left + column as f32 * (THEME_CARD_WIDTH + THEME_CARD_GAP),
@@ -3626,16 +3626,14 @@ fn draw_body(
                     );
                     height = height.max(card.bottom() - y);
                     let chosen = choice == state.theme;
+                    // The selected card carries **no** ring: the capture's dark card is edged
+                    // in the same #2e3036 as the two beside it, and the choice is shown by the
+                    // radio alone.
                     body.rect_filled(card, THEME_CARD_RADIUS, theme.SURFACE_4);
                     body.rect_stroke(
                         card,
                         THEME_CARD_RADIUS,
-                        Stroke::new(
-                            // A washed brand ring, not the solid brand: the capture's selected
-                            // card is outlined in the highlight rather than drawn on.
-                            1.0,
-                            if chosen { theme.BUTTON_BG_SELECTED } else { theme.RAISED_BG },
-                        ),
+                        Stroke::new(1.0, theme.RAISED_BG),
                         egui::StrokeKind::Inside,
                     );
                     // The preview is the theme's own page colour with a mock window inside it:
@@ -3664,42 +3662,45 @@ fn draw_body(
                             (plate.b() as f32 + (target - plate.b() as f32) * amount) as u8,
                         )
                     };
-                    let window = Rect::from_center_size(
-                        preview.center(),
-                        vec2(122.0, 64.0),
+                    // The capture's mock is 149x66 with a 32-point avatar plate at 573,332 and
+                    // two bars to its right -- 73x8 in #b0bac5 and 43x8 in #96a2b0, which are
+                    // `--color-base` and `--color-secondary`. It is a card layout, not a
+                    // titlebar and two hairlines.
+                    let window = Rect::from_center_size(preview.center(), vec2(149.0, 66.0));
+                    body.rect_filled(window, 8, lighten(0.05));
+                    // The avatar and the bars are steps of the *previewed* theme, not of the
+                    // one the window is drawn in: on a light card the avatar is white and the
+                    // bars dark, which a fixed `--surface-4` cannot express.
+                    let avatar = Rect::from_min_size(
+                        window.min + egui::vec2(17.0, 17.0),
+                        Vec2::splat(32.0),
                     );
-                    body.rect_filled(window, 8, lighten(0.08));
+                    body.rect_filled(avatar, 6, lighten(0.18));
                     body.rect_filled(
-                        Rect::from_min_size(window.min, vec2(window.width(), 20.0)),
-                        8,
-                        lighten(0.16),
-                    );
-                    let bar_ink = lighten(0.30);
-                    body.rect_filled(
-                        Rect::from_min_size(
-                            pos2(window.left() + 12.0, window.top() + 30.0),
-                            vec2(window.width() - 24.0, 8.0),
-                        ),
+                        Rect::from_min_size(pos2(avatar.right() + 8.0, avatar.top() + 4.0), vec2(73.0, 8.0)),
                         4,
-                        bar_ink,
+                        lighten(0.55),
                     );
                     body.rect_filled(
-                        Rect::from_min_size(
-                            pos2(window.left() + 12.0, window.top() + 44.0),
-                            vec2((window.width() - 24.0) * 0.55, 8.0),
-                        ),
+                        Rect::from_min_size(pos2(avatar.right() + 8.0, avatar.top() + 24.0), vec2(43.0, 8.0)),
                         4,
-                        bar_ink,
+                        lighten(0.38),
                     );
                     let footer = Rect::from_min_max(
                         pos2(card.left() + 1.0, card.bottom() - THEME_FOOTER),
                         pos2(card.right() - 1.0, card.bottom() - 1.0),
                     );
                     body.rect_filled(footer, THEME_CARD_RADIUS - 1, theme.SURFACE_4);
-                    let radio = pos2(footer.left() + 17.0, footer.center().y);
-                    body.circle_stroke(radio, 7.0, Stroke::new(1.0, theme.SECONDARY));
+                    // A ring with a dot in it, not a filled disc: the capture's chosen radio is
+                    // brand-edged with a brand dot at an 11-point inset from the card's edge.
+                    let radio = pos2(footer.left() + 18.0, footer.center().y);
+                    body.circle_stroke(
+                        radio,
+                        6.5,
+                        Stroke::new(1.5, if chosen { theme.BRAND } else { theme.SECONDARY }),
+                    );
                     if chosen {
-                        body.circle_filled(radio, 7.0, theme.BRAND);
+                        body.circle_filled(radio, 3.0, theme.BRAND);
                     }
                     let label = body.layout_no_wrap(
                         choice.label().to_owned(),
