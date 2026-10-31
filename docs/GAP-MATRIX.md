@@ -1443,3 +1443,21 @@ leaving the tree building is worth more than an experiment that cannot compile.
 What remains to try, in order: a window manager in the container (openbox on :99) to prove the
 app is fine and the lab is not; failing that, reading how this eframe/winit version decides a
 window is focused before it routes key events, since the reference beside it receives them.
+
+### A window manager changes the picture and does not fix it (2026-10-31)
+
+`openbox` installed in the lab container and started on :99. Under it the launcher maps with a
+titlebar and decorations, the content shifts down twenty points -- and **the app responds to
+nothing**: a click on the rail and a typed `sodium` both leave the frame byte-identical (the two
+captures hash the same). Before the window manager the app at least changed pages on a click.
+
+So the keyboard failure and the new click failure share a cause, and it is on the app's side of
+the window: this build is not processing input events in either configuration. That is a smaller
+question than "does X deliver keys" and it is the first one worth answering -- whether the event
+loop is driven by a repaint-on-demand path that never runs when the window is not considered
+focused.
+
+**Lab note**: the container now has `openbox`, which the committed Dockerfile does not. Either the
+Dockerfile gains it or the lab's image is rebuilt before anyone trusts a capture taken in it --
+recorded here because a capture lab that drifts from its recipe is how three of this session's
+wrong conclusions started.
