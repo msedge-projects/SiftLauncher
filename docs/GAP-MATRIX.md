@@ -964,3 +964,15 @@ Still open from this pass, in its own order: the Features separator itself, the 
 tones (`#dfdfdf/#212327/#0c0c0c` against `#f8f8f8/#27292e/#101013`), descriptions at
 `#96a2b0` where the reference is `#b0bac5`, the rail's extra "Window" row and 4-13 point short
 rows, and the switches' missing one-pixel ring.
+
+### Two inks that were a step off on every tab (2026-10-31)
+
+Wave seven's third and fifth differences, fixed in one slice because both are shared by all
+thirteen settings tabs.
+
+Row **descriptions** were `--color-secondary` (#96a2b0) where the reference sets them in
+`--color-base` (#b0bac5). One grey step, on every row of every tab.
+
+The **switch** had no ring: the reference's is a 48x24 box with a one-pixel `--surface-5` edge
+and a 46x22 track inside it. The capture's left edge reads #383b40 before the brand green; ours
+now reads #404348 before #1bd96a, which is the same edge.

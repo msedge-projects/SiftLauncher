@@ -3821,13 +3821,16 @@ fn draw_labelled(
     );
     if let Some(description) = description {
         y += ROW_DESCRIPTION_GAP;
+        // `--color-base` (#b0bac5), not the dimmer secondary: wave seven measured every row's
+        // description at #96a2b0 against the reference's #b0bac5, which is a whole grey step
+        // across thirteen tabs.
         y += text(
             painter,
             left,
             y,
             description,
             fonts::body(ROW_DESCRIPTION_SIZE),
-            theme.SECONDARY,
+            theme.BASE,
             text_width,
         );
     }
@@ -4103,7 +4106,16 @@ fn switch(painter: &egui::Painter, track: Rect, theme: &theme::Theme, on: bool) 
         // `SUPER_RAISED_BG` and `BUTTON_BG`.
         theme.SUPER_RAISED_BG
     };
-    painter.rect_filled(track, SWITCH_RADIUS, fill);
+    // The reference's switch is a 48x24 box with a one-pixel `--surface-5` ring and a 46x22
+    // track inside it; without the ring the control reads as a floating pill.
+    painter.rect_stroke(
+        track,
+        SWITCH_RADIUS,
+        Stroke::new(1.0, theme.SURFACE_5),
+        egui::StrokeKind::Inside,
+    );
+    let inner = track.shrink(1.0);
+    painter.rect_filled(inner, SWITCH_RADIUS, fill);
 
     let knob = switch_knob(if on { 1.0 } else { 0.0 }, track);
     // `bg-black/90` on the brand track and `bg-secondary` off it (`Toggle.vue:24-25`). This
