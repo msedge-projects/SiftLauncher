@@ -1047,3 +1047,30 @@ so it is recorded instead.
 
 **What it would take to close**: one capture cropped at the pane's top edge with the header's
 rule and the first heading in the same frame, measuring *rule to ink* rather than ink to ink.
+
+### The settings pane's four point measurements, and why none of them is a constant yet (2026-10-31)
+
+The crop the last note asked for, taken as four numbers from the two captures:
+
+| what | reference | ours | difference |
+| --- | --- | --- | --- |
+| plate's top edge | y 114 | y 116 | ours 2 low |
+| header rule | y 114 | y 116 | follows the plate |
+| "Color theme" heading ink | y 231..244 | y 229..242 | ours 2 high |
+| first card's top edge | y 290 | y 287 | ours 3 high |
+| rule after the sync row | y 746 | y 740 | ours 6 high |
+
+Read together they say the plate is **three points shorter** (wave seven measured 672 against
+669) and that the pane's own top padding is **four points larger** in the reference than here:
+rule-to-heading is 117 in the reference and 113 here. The two errors pull in opposite
+directions, which is why the heading is 2 high while the cards below it are 3 high and the rule
+below those is 6.
+
+Fixing them means two changes -- the plate's height and the content's top padding -- and both
+are shared by thirteen tabs. They are recorded rather than guessed because the last three
+attempts to "just nudge" a shared constant each cost a round: one counted `ROW_GAP` twice, one
+put the type on the wrong side of its own measurement, and one changed a scrim that was correct.
+
+**The measurement that would settle each**: for the plate, the top and bottom edges at x 700 in
+one frame (672 total); for the padding, the header rule and the heading's *line box* rather than
+its ink, since a 20-point semibold's ascent is not the same as its ink top.
