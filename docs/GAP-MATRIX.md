@@ -1312,3 +1312,25 @@ So the click is not reaching the `TextEdit` at all. The remaining candidates, in
 
 **The next probe**: print `ui.clip_rect()`, `output.hovered()` and `output.clicked()` from inside
 `place_field` while clicking the field once. Three values, one build.
+
+### Three candidates eliminated, and a bigger one appears (2026-10-31)
+
+The probe that should have been run two rounds ago, run at last:
+
+    probe key="Java 25 location" rect=[[531,296]-[1115,332]] clip=[[0,0]-[1440,900]]
+          hovered=true clicked=true
+
+* The **click arrives**: `hovered` and `clicked` are both true, so nothing is covering the field.
+* The **clip is the whole screen**, so egui is not refusing the widget as clipped.
+* An explicit `egui::Id::new(key)` -- the third attempt -- changed nothing either, so it is not a
+  per-frame identity problem.
+
+What that leaves is bigger than the Java tab. The reference, driven identically, shows
+`/opt/java25` in its field **with a brand-green focus ring**, so the harness delivers keystrokes
+to that window. Ours receives the click and no characters, which is the signature of a global key
+handler consuming printable keys before any widget sees them -- this launcher has a shortcut
+layer, and a field that cannot be typed into is the visible edge of it.
+
+**The next test is one capture**: type into the Discover search field. If that is empty too, the
+bug is application-wide and every text field in every page is affected -- a far more important row
+than this one, and one that no amount of tab-by-tab surveying would have found.

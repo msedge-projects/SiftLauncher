@@ -3128,7 +3128,12 @@ fn place_field(
         .unwrap_or_else(|| fallback.to_owned());
     let output = ui.put(
         rect,
+        // An explicit id. Without it the field's identity is derived from where it lands, and
+        // a `ui.put` inside a redrawn pane can hand the same field a different id on the next
+        // frame -- which takes the focus away between the click and the first keystroke. The
+        // probe confirmed the click arrives (hovered=true clicked=true) while no character did.
         egui::TextEdit::singleline(&mut text)
+            .id(egui::Id::new(key))
             .hint_text(placeholder)
             .desired_width(rect.width()),
     );
@@ -3138,6 +3143,14 @@ fn place_field(
     // screenshot, and cost a round to find.
     if output.clicked() {
         output.request_focus();
+    }
+    if std::env::var_os("SIFT_FIELD_PROBE").is_some()
+        && ui.input(|input| input.pointer.any_click())
+    {
+        eprintln!(
+            "probe key={:?} rect={:?} clip={:?} hovered={} clicked={}",
+            key, rect, ui.clip_rect(), output.hovered(), output.clicked()
+        );
     }
     if output.changed() {
         match state.texts.iter_mut().find(|(known, _)| *known == key) {
