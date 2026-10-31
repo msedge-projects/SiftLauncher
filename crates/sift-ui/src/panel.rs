@@ -135,7 +135,7 @@ const STEP_SIZE: f32 = 16.0;
 // ---------------------------------------------------------------------------
 
 /// The art plate's height: 128 points, from the reference's measurement.
-const ART_H: f32 = 128.0; // guess: re-measure
+const ART_H: f32 = 150.0; // guess: re-measure
 
 /// The gap between the `News` heading and the card: the section's heading is `mb-4`
 /// (`App.vue:2531`), 16 points.
@@ -158,7 +158,7 @@ const TITLE_LINE: f32 = 18.0;
 const TITLE_TO_COPY: f32 = 8.0;
 
 /// The copy's size: 12 points, from the reference's measurement.
-const COPY_SIZE: f32 = 12.0;
+const COPY_SIZE: f32 = 14.0;
 
 /// How many lines the copy takes in the reference: the article's summary wraps twice at
 /// the panel's inner width, which is why the card reserves room for two.
@@ -175,7 +175,7 @@ const COPY_H: f32 = COPY_LINE * COPY_LINES as f32;
 const COPY_TO_DATE: f32 = 8.0;
 
 /// The date's size: 12 points.
-const DATE_SIZE: f32 = 12.0; // guess: re-measure
+const DATE_SIZE: f32 = 14.0; // guess: re-measure
 
 /// The date's line box.
 const DATE_LINE: f32 = 16.0; // guess: re-measure
@@ -384,6 +384,17 @@ pub fn draw(
         crate::shell::tint(theme.BG, (55, 137, 73), 0.10),
         crate::shell::tint(theme.BG, (14, 35, 19), 0.20),
     );
+    // `sidebar/index.vue:89`: `border-l-[1px] border-[--brand-gradient-border]`. The
+    // capture confirms it -- x 1140 is #223328 at y 60 and #1e2a24 at y 880, a continuous
+    // one-pixel rule, against #1a2420 / #141a1a one pixel in. An earlier comment here
+    // claimed the reference had no rule; that was wrong and is why the seam read as a
+    // join rather than an edge.
+    painter.vline(
+        rect.left() + 0.5,
+        rect.y_range(),
+        Stroke::new(1.0, crate::shell::tint(theme.BG, (155, 255, 160), 0.08)),
+    );
+
 
     // The copy is laid out before the plan, because the card's rows start where the copy
     // ends. `COPY_H` is the floor: if a future summary wraps to a third line, the date
@@ -469,7 +480,11 @@ pub fn draw(
         let hovered = over;
         // The row is the card plus another 8% white: #3a4341 at the checklist's own height,
         // which is what the capture measures inside the card's #2c3431.
-        let base = raised_at(rect, row.center().y, theme);
+        let base = crate::shell::tint(
+            raised_at(rect, row.center().y, theme),
+            (255, 255, 255),
+            0.08,
+        );
         let fill = if hovered {
             theme.hovered(base)
         } else {
