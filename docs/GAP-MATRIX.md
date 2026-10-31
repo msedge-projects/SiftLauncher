@@ -1533,3 +1533,27 @@ The experiment -- wrapping the shell in \`CentralPanel::default().show(&ctx, ...
 compile in the ten minutes left (`show` wants `&Context`, and the closure needs `&mut self` while
 \`self.log\` borrows it), so it was reverted rather than left broken. **That is the one change to
 make next**: draw the shell inside a panel, then click the rail and watch the breadcrumb.
+
+### The panel wrap needs a different entry point, not a different borrow (2026-10-31)
+
+Second attempt at drawing the shell inside a panel: splitting `&mut self` into `&mut shell` and
+`&mut log` fixed the borrow, and the compiler then refused `CentralPanel::show(&ctx, ...)` with
+"types differ in mutability" -- in this egui build the panel's `show` wants a **mutable** context
+reference, and `eframe::App::ui` hands out an immutable one.
+
+That is not a borrow puzzle to solve; it is the entry point saying the panel does not belong in
+`ui`. The shape the API is pointing at is the other one:
+
+    impl eframe::App for App {
+        fn update(&mut self, ctx: &mut egui::Context, frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(ctx, |ui| self.shell.ui(ui));
+        }
+    }
+
+**This is the next change and it should be the whole round**: implement `update` instead of `ui`,
+give it the mutable context the panel wants, and click the rail. If the breadcrumb moves, the
+eight-round thread is closed by a function signature; if it does not, the panel was not the cause
+and the `ui.interact` hypothesis dies with it.
+
+The tree is green and the two failed attempts are recorded rather than hidden, because the next
+person will otherwise try the same wrapper and hit the same wall.
