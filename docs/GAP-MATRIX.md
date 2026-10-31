@@ -995,3 +995,21 @@ that is the remaining difference between them.
 The rail's **footer** now prints the platform with the build, as the reference prints
 "Linux 20261025.0.616225". This launcher prints its own crate version beside "Linux", which is the
 same fact about a different product rather than an invented string.
+
+### The mock window's tones, and the limit of point sampling (2026-10-31)
+
+Wave seven gave the mock's tones card by card -- inner plate `#27292e` inside a `#16181c` dark
+card, `#f8f8f8` inside a `#ebebeb` light one, `#101013` inside black, with bars at `#b0bac5`
+and `#96a2b0` on dark and `#2c2e31` and `#484d54` on light. The old code mixed toward a
+luma-dependent target, which got both relationships backwards: it darkened the light card's
+window and lightened its bars.
+
+It now mixes toward white for the plate on every theme and picks the bars for contrast, which is
+what the four measurements describe. Verified only weakly: the modal's per-channel mean moved
+from 8.3/10.6/9.4 to 8.2/10.6/9.3, inside the noise of the other two changes in the same commit,
+and point samples at the window's interior keep landing on the avatar instead of the plate
+because the two apps' mocks differ internally by a few points.
+
+**The lesson for the next pass**: a 149x66 mock with four internal elements cannot be checked by
+sampling three coordinates. Crop the card, compare the crop, and count pixels per colour band --
+which is what wave six did to produce the numbers in the first place.

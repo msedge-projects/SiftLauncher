@@ -3683,23 +3683,36 @@ fn draw_body(
                     // A light theme steps *down* toward black rather than up toward white: the
                     // reference's Light card is a white page with a grey window, and lightening
                     // a white plate leaves the mock window invisible.
+                    // The capture's mock, card by card: the inner plate is a step *toward
+                    // white* on every theme -- #27292e inside a #16181c dark card, #f8f8f8
+                    // inside a #ebebeb light one, #101013 inside black -- and the bars take
+                    // whatever contrasts with that plate (#b0bac5 and #96a2b0 on dark,
+                    // #2c2e31 and #484d54 on light). Mixing toward a luma-dependent target got
+                    // both relationships backwards.
                     let luma = (0.2126 * plate.r() as f32 + 0.7152 * plate.g() as f32
                         + 0.0722 * plate.b() as f32)
                         / 255.0;
-                    let target = if luma > 0.5 { 0.0_f32 } else { 255.0_f32 };
-                    let lighten = |amount: f32| -> egui::Color32 {
-                        egui::Color32::from_rgb(
-                            (plate.r() as f32 + (target - plate.r() as f32) * amount) as u8,
-                            (plate.g() as f32 + (target - plate.g() as f32) * amount) as u8,
-                            (plate.b() as f32 + (target - plate.b() as f32) * amount) as u8,
-                        )
+                    let towards = |to: f32, amount: f32| -> egui::Color32 {
+                        let mix = |c: u8| (c as f32 + (to - c as f32) * amount) as u8;
+                        egui::Color32::from_rgb(mix(plate.r()), mix(plate.g()), mix(plate.b()))
+                    };
+                    let light = luma > 0.5;
+                    let window_fill = if light {
+                        towards(255.0, 0.55)
+                    } else {
+                        towards(255.0, 0.10)
+                    };
+                    let bar_ink = if light {
+                        towards(0.0, 0.85)
+                    } else {
+                        towards(255.0, 0.62)
                     };
                     // The capture's mock is 149x66 with a 32-point avatar plate at 573,332 and
                     // two bars to its right -- 73x8 in #b0bac5 and 43x8 in #96a2b0, which are
                     // `--color-base` and `--color-secondary`. It is a card layout, not a
                     // titlebar and two hairlines.
                     let window = Rect::from_center_size(preview.center(), vec2(149.0, 66.0));
-                    body.rect_filled(window, 8, lighten(0.05));
+                    body.rect_filled(window, 8, window_fill);
                     // The avatar and the bars are steps of the *previewed* theme, not of the
                     // one the window is drawn in: on a light card the avatar is white and the
                     // bars dark, which a fixed `--surface-4` cannot express.
@@ -3707,16 +3720,16 @@ fn draw_body(
                         window.min + egui::vec2(17.0, 17.0),
                         Vec2::splat(32.0),
                     );
-                    body.rect_filled(avatar, 6, lighten(0.18));
+                    body.rect_filled(avatar, 6, if light { towards(0.0, 0.12) } else { towards(255.0, 0.20) });
                     body.rect_filled(
                         Rect::from_min_size(pos2(avatar.right() + 8.0, avatar.top() + 4.0), vec2(73.0, 8.0)),
                         4,
-                        lighten(0.55),
+                        bar_ink,
                     );
                     body.rect_filled(
                         Rect::from_min_size(pos2(avatar.right() + 8.0, avatar.top() + 24.0), vec2(43.0, 8.0)),
                         4,
-                        lighten(0.38),
+                        if light { towards(0.0, 0.62) } else { towards(255.0, 0.42) },
                     );
                     let footer = Rect::from_min_max(
                         pos2(card.left() + 1.0, card.bottom() - THEME_FOOTER),
