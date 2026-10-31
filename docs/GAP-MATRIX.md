@@ -1577,3 +1577,30 @@ granularity of a rail button.
 **The next probe prints, for the compass button only**: `response.rect` and the pointer position,
 on any frame where the pointer is inside the window. Two rectangles and a point, and the offset
 either shows itself or rules itself out.
+
+# RETRACTION, 2026-10-31: the interface was never inert
+
+The two-rectangle probe answered it:
+
+    rail1 rect=[[8,100]-[56,148]]   pointer=[31,124]
+
+The rail's compass button occupies content y 100..148, centre 124. Moving the pointer to screen
+y 146 put it at content y 124 -- inside the button -- and **the click navigated**: the breadcrumb
+changed from "Home" to "Discover modpacks".
+
+So the last ten rounds of this session were chasing an artefact of my own aiming. Under the window
+manager the window's content starts twenty points below the screen origin (its title bar), and
+every click I aimed from the screenshots landed twenty to thirty-four points above its target.
+Before the window manager existed, clicks worked too -- pages changed in those captures -- and the
+"nothing responds" finding only appeared when I added the WM and kept the same screen coordinates.
+
+**What survives, and it is one thing only**: *typing* does not reach a field. The keyboard events
+arrive at egui (`events=2`, `focused=true` in the probe two rounds ago), the click now provably
+lands, and the search field still shows its placeholder afterwards.
+
+**What is withdrawn**: "no text field in this launcher accepts typing" as a P0 above every other
+row. It was filed on nine rounds of mis-aimed clicks, and the file-management and interaction rows
+it was going to condemn are untouched by it.
+
+The lesson is not "aim better". It is that a coordinate taken from a screenshot is a hypothesis,
+and this session treated it as a fact eleven times.
