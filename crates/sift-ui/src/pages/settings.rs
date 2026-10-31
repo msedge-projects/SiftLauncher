@@ -1307,6 +1307,14 @@ enum Block {
         /// The control on the right.
         control: Control,
     },
+    /// One row of the Java tab: a full-width path field with a clear action and the three
+    /// buttons `JavaSelector.vue` puts under it (`Install recommended`, `Detect`, `Browse`).
+    /// The reference does not lay this out as a label-left, field-right row; wave 19's capture
+    /// is the evidence.
+    JavaLocation {
+        /// The version this row is for, which is also the field's key.
+        version: u32,
+    },
     /// The data root's path, printed rather than edited: the folder itself is chosen through the
     /// picker the row below opens (`index.vue:86-103`).
     PathText,
@@ -1803,33 +1811,17 @@ const JAVA_AND_MEMORY_BLOCKS: &[Block] = &[
         big: true,
         control: None,
     },
-    Block::Row {
-        label: JAVA_LOCATION_25,
-        description: None,
-        control: Control::Text {
-            placeholder: JAVA_PATH_PLACEHOLDER,
-        },
+    Block::JavaLocation {
+        version: 25,
     },
-    Block::Row {
-        label: JAVA_LOCATION_21,
-        description: None,
-        control: Control::Text {
-            placeholder: JAVA_PATH_PLACEHOLDER,
-        },
+    Block::JavaLocation {
+        version: 21,
     },
-    Block::Row {
-        label: JAVA_LOCATION_17,
-        description: None,
-        control: Control::Text {
-            placeholder: JAVA_PATH_PLACEHOLDER,
-        },
+    Block::JavaLocation {
+        version: 17,
     },
-    Block::Row {
-        label: JAVA_LOCATION_8,
-        description: None,
-        control: Control::Text {
-            placeholder: JAVA_PATH_PLACEHOLDER,
-        },
+    Block::JavaLocation {
+        version: 8,
     },
     Block::Rule,
     Block::Standalone(Control::Button {
@@ -3451,6 +3443,73 @@ fn draw_body(
                 }
                 row_height + ROW_GAP
             }
+            Block::JavaLocation { version } => {
+                // Measured off `ref-settings-java.png`: an 18-point semibold label, a
+                // 578x36 field with a placeholder and a 28-point clear button 16 points to its
+                // right, then three 30-point buttons under the field with 10-point gaps.
+                let label = body.layout_no_wrap(
+                    format!("Java {version} location"),
+                    fonts::semibold(18.0),
+                    theme.CONTRAST,
+                );
+                let label_h = label.size().y;
+                body.galley(pos2(left, y), label, theme.CONTRAST);
+                let field = Rect::from_min_size(
+                    pos2(left, y + label_h + 8.0),
+                    vec2(right - left - 44.0, 36.0),
+                );
+                body.rect_filled(field, 8, theme.BUTTON_BG);
+                body.text(
+                    pos2(field.left() + 12.0, field.center().y),
+                    Align2::LEFT_CENTER,
+                    JAVA_PATH_PLACEHOLDER,
+                    fonts::body(14.0),
+                    theme.SECONDARY,
+                );
+                let clear = pos2(right - 14.0, field.center().y);
+                body.circle_stroke(clear, 11.0, Stroke::new(1.5, Color32::from_rgb(0xe0, 0x4f, 0x4f)));
+                body.text(
+                    clear,
+                    Align2::CENTER_CENTER,
+                    "×",
+                    fonts::body(14.0),
+                    Color32::from_rgb(0xe0, 0x4f, 0x4f),
+                );
+                let mut bx = left;
+                let by = field.bottom() + 10.0;
+                // The three buttons carry a glyph before their label, as the capture shows:
+                // a download arrow, a magnifier and a folder.
+                for (text, width, glyph) in [
+                    ("Install recommended", 216.0, Some(Glyph::Download)),
+                    ("Detect", 104.0, Some(Glyph::Search)),
+                    ("Browse", 104.0, Some(Glyph::Folder)),
+                ] {
+                    let button = Rect::from_min_size(pos2(bx, by), vec2(width, 30.0));
+                    body.rect_filled(button, 8, theme.SUPER_RAISED_BG);
+                    let mut text_left = button.left() + 12.0;
+                    if let Some(glyph) = glyph {
+                        crate::icons::draw(
+                            &body,
+                            glyph,
+                            Rect::from_center_size(
+                                pos2(text_left + 7.0, button.center().y),
+                                Vec2::splat(14.0),
+                            ),
+                            theme.BASE,
+                        );
+                        text_left += 22.0;
+                    }
+                    body.text(
+                        pos2(text_left, button.center().y),
+                        Align2::LEFT_CENTER,
+                        text,
+                        fonts::semibold(13.0),
+                        theme.BASE,
+                    );
+                    bx += width + 8.0;
+                }
+                label_h + 8.0 + 36.0 + 10.0 + 30.0 + ROW_GAP
+            }
             Block::Standalone(control) => {
                 // A button that has just done its job says so, in its own place: the reference's
                 // `Copied` for three seconds.
@@ -4596,6 +4655,9 @@ mod tests {
         for tab in Tab::ALL {
             for block in blocks(tab) {
                 match *block {
+                    // Its strings are the version number and the placeholder, both checked by
+                    // the capture that produced the block.
+                    Block::JavaLocation { .. } => {}
                     Block::Heading {
                         text,
                         description,

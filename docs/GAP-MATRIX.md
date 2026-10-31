@@ -1258,3 +1258,20 @@ tabs remain uncaptured: Language, Flags, and the version/downloads panel.
 So the earlier note that "Settings is further from done than it looked" was too dark in one
 direction and right in another: six of ten match closely, and the two that do not are the two
 where the launcher is drawing a different *thing* rather than the same thing at the wrong size.
+
+### The Java tab's block type exists now (2026-10-31)
+
+`Block::JavaLocation { version }` replaces the four label-left, field-right rows that wave 19
+measured as the wrong shape. Each block draws what the capture shows: an 18-point semibold
+label, a full-width path field with `/path/to/java` in it, a 28-point clear button to the
+field's right in the reference's red, and three 30-point buttons beneath carrying a glyph before
+their label -- a download arrow for `Install recommended`, a magnifier for `Detect`, a folder
+for `Browse`.
+
+Verified against `ref-settings-java.png` at 2x: the field, the clear button and the three
+buttons land in the same places. What the block does not yet do is behave -- the field takes no
+typing, the clear button clears nothing, and the three buttons open nothing. The geometry is the
+clone; the wiring is the next slice, and it is three interactions wide.
+
+The button glyphs, their order and the red of the clear action all come from that one capture;
+none of them was in the tree before it.
