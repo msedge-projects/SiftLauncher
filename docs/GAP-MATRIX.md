@@ -1483,3 +1483,31 @@ owns the keyboard focus -- and a keyboard path that never worked in either.
 non-default. That answers whether the events arrive at egui at all, or die between X and the
 toolkit -- and it is the same probe discipline that closed the window-defaults seam in one build
 after reasoning had failed twice.
+
+### The events arrive; the interface ignores them (2026-10-31)
+
+The probe, run under openbox:
+
+    input events=0 click=false focused=false   <- at start, window not focused
+    input events=8 click=true  focused=true    <- after the click: focus taken, click delivered
+    input events=2 click=false focused=true    <- typed characters arriving as Text events
+    input events=1 click=false focused=true
+
+**So egui receives the click, receives the characters, and knows it is focused.** And the frame
+afterwards is byte-identical to the one before: same page, same breadcrumb, same everything.
+
+That moves the fault out of X, out of focus and out of winit -- all three of which delivered what
+they should -- and into this launcher's own drawing code. Two candidates, both cheap to check in
+the source rather than in a capture:
+
+1. the widgets are drawn on a painter whose layer is not interactive (the shell paints into a
+   layer with `Sense::hover` or none at all), so a click never becomes a widget click;
+2. the click position the shell tests is not the window position egui reports -- a coordinate
+   transform applied twice, or an origin offset the shell adds for the title bar.
+
+Given the shell draws a custom 48-point title bar and a custom rail rather than using egui panels,
+(2) is the more likely: an offset the shell adds for its own chrome would put every click twenty
+points away from where the reader aimed, which matches the click landing on nothing at all.
+
+**The events prove the pipe is open. The next round should read how the shell converts pointer
+positions into its own rects -- not the input path, which is now known to work.**
