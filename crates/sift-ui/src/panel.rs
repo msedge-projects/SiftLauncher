@@ -21,7 +21,7 @@
 //! and no press: a control that brightens under the pointer and does nothing when clicked
 //! is worse than one that plainly has no press state yet.
 
-use eframe::egui::{Align2, Rect, Sense, Stroke, Ui, Vec2};
+use eframe::egui::{Align2, Rect, Sense, Stroke, Ui, Vec2, Color32};
 
 use crate::fonts;
 use crate::icons::{self, Glyph};
@@ -36,17 +36,20 @@ use crate::theme::Theme;
 /// 24 points from the reference's measurement: the panel is 340 wide
 /// (`geometry::PANEL`) and its content is 292, which is why every row and card below
 /// spans [`column`] and none of them spells out a width of its own.
-const PAD: f32 = 24.0;
+const PAD: f32 = 16.0;
 
 /// The first heading's inset from the panel's top edge.
-const TOP_PAD: f32 = 20.0; // guess: re-measure
+// Measured, not guessed: the checklist's card starts 17 points under the surface's top
+// edge (y 65 at 1440x900) and its heading's line box starts 17 points into the card, so the
+// heading top is 34 points down.
+const TOP_PAD: f32 = 34.0;
 
 /// The gap between one section's last row and the next section's heading.
 ///
 /// 20 points, from the reference's measurement. It is measured from the *bottom* of the
 /// last row, not from its top: the reference rules between sections and not between rows,
 /// so the space belongs to the heading above it rather than to the row.
-const SECTION_GAP: f32 = 20.0;
+const SECTION_GAP: f32 = 28.0;
 
 /// The rule down the panel's left edge, and every other hairline here: the sheet states
 /// it literally as `1px` (`assets/styles/classes.scss:753`), which [`Theme`]'s generated
@@ -88,7 +91,9 @@ const HEADING_LINE: f32 = 24.0;
 
 /// The gap between a heading and the rows under it. The checklist's rows sit inside the
 /// accordion's content, which is padded `p-3` (`ui/onboarding-checklist/index.vue:94`).
-const HEADING_TO_BODY: f32 = 12.0;
+// The capture puts the first row's top edge at y 128, which is 22 below the heading's 24
+// point line box (82 + 24).
+const HEADING_TO_BODY: f32 = 22.0;
 
 /// The disclosure chevron on the `Getting started` heading: `DropdownIcon` at `size-5`
 /// (`ui/components/base/Accordion.vue:36`), 20 points.
@@ -101,7 +106,7 @@ const CHEVRON: f32 = 20.0;
 /// A checklist row's height: 36 points, from the reference's measurement. The sheet's step
 /// button is `h-10` (40); the capture is what this follows, and `docs/PARITY-LOG.md`'s
 /// OBS-4 is the entry that left the reference's row rhythm for the next capture to settle.
-const ROW_H: f32 = 36.0;
+const ROW_H: f32 = 40.0;
 
 /// The gap between two checklist rows: 8 points, from the reference's measurement. With
 /// [`ROW_H`] this is the whole of OBS-4's open question.
@@ -116,14 +121,14 @@ const ROW_PITCH: f32 = ROW_H + ROW_GAP;
 const ROW_PAD: f32 = 16.0;
 
 /// The ring glyph at a row's left: 16 points, from the reference's measurement.
-const RING: f32 = 16.0;
+const RING: f32 = 24.0;
 
 /// The gap between the ring and its label: the sheet's `gap-2`
 /// (`ui/onboarding-checklist/index.vue:105`), 8 points.
 const RING_GAP: f32 = 8.0;
 
 /// A row's label: 13-point body text, from the reference's measurement.
-const STEP_SIZE: f32 = 13.0;
+const STEP_SIZE: f32 = 16.0;
 
 // ---------------------------------------------------------------------------
 // The news card
@@ -134,7 +139,7 @@ const ART_H: f32 = 128.0; // guess: re-measure
 
 /// The gap between the `News` heading and the card: the section's heading is `mb-4`
 /// (`App.vue:2531`), 16 points.
-const NEWS_HEADING_TO_CARD: f32 = 16.0;
+const NEWS_HEADING_TO_CARD: f32 = 33.0;
 
 /// The gap between the card's art and its title: the card's own stack is `gap-4`
 /// (`ui/components/content/NewsArticleCard.vue:25`), 16 points.
@@ -230,7 +235,7 @@ const BANNER_H: f32 = BANNER_PAD * 2.0 + BANNER_LINE * 2.0 + BANNER_ART;
 /// `rounded-xl` (`ui/onboarding-checklist/index.vue:105`), which this preset's Tailwind
 /// defaults resolve to 12, so the two disagree by four points; the measurement is what is
 /// drawn, and the generated ladder is where the 8 comes from rather than a second literal.
-const ROW_RADIUS: u8 = crate::theme::RADIUS_SM;
+const ROW_RADIUS: u8 = 10;
 
 /// A card's radius: 12, from the reference's measurement, which is also what the article's
 /// `rounded-xl` image resolves to. The hosting banner is `rounded-2xl` (16) in the sheet;
@@ -332,6 +337,29 @@ const HOSTING_ACCENT: &str = "on Sift.";
 /// Returns whether anything is still animating. Nothing is: the hovers are steps between
 /// two fills rather than tweens, and egui asks for a frame by itself when the pointer
 /// moves, so no frame is owed after this one.
+/// The sidebar's ground at `y`: the brand gradient, sampled.
+///
+/// The panel is one CSS gradient (`--brand-gradient-bg`, `App.vue`) and everything drawn on
+/// it is translucent -- `--brand-gradient-button` is `rgba(255,255,255,0.08)` -- so a card's
+/// colour is its ground plus 8% white, and a row inside the card is the card plus 8% white.
+/// Painting a fixed grey instead is what made the old panel's rows read as foreign plates.
+fn ground_at(panel: Rect, y: f32, theme: &Theme) -> Color32 {
+    let top = crate::shell::tint(theme.BG, (55, 137, 73), 0.10);
+    let bottom = crate::shell::tint(theme.BG, (14, 35, 19), 0.20);
+    let t = ((y - panel.top()) / panel.height().max(1.0)).clamp(0.0, 1.0);
+    let mix = |a: u8, b: u8| (a as f32 + (b as f32 - a as f32) * t).round() as u8;
+    Color32::from_rgb(
+        mix(top.r(), bottom.r()),
+        mix(top.g(), bottom.g()),
+        mix(top.b(), bottom.b()),
+    )
+}
+
+/// A surface laid on the sidebar at `y`: `rgba(255,255,255,0.08)` over whatever is behind.
+fn raised_at(panel: Rect, y: f32, theme: &Theme) -> Color32 {
+    crate::shell::tint(ground_at(panel, y, theme), (255, 255, 255), 0.08)
+}
+
 pub fn draw(
     ui: &mut Ui,
     rect: Rect,
@@ -370,6 +398,27 @@ pub fn draw(
     let column = plan.column;
 
     // ---- `Getting started` ---------------------------------------------------
+    // The checklist is one card, not a heading with loose rows: the capture puts a rounded
+    // #2c3431 panel at x 1157..1424, y 65..275 -- 16 in from the sidebar, 8% white over the
+    // gradient -- with the heading 17 points down inside it and the rows 13 points in from
+    // its sides.
+    let card_top = plan.getting_started - 17.0;
+    let card_bottom = plan.steps_first + 3.0 * ROW_PITCH - ROW_GAP + 13.0;
+    let card = Rect::from_min_max(
+        egui::pos2(rect.left() + PAD, card_top),
+        egui::pos2(rect.right() - PAD, card_bottom),
+    );
+    let card_fill = raised_at(rect, card.center().y, theme);
+    painter.rect_filled(card, 12, card_fill);
+    // The card carries a one-pixel ring one step lighter than itself -- #3d4545 around
+    // #2c3431 in the capture, which is the same 8%-white step again.
+    painter.rect_stroke(
+        card,
+        12,
+        Stroke::new(1.0, crate::shell::tint(card_fill, (255, 255, 255), 0.08)),
+        egui::StrokeKind::Inside,
+    );
+
     painter.text(
         egui::pos2(column.left(), plan.getting_started),
         Align2::LEFT_TOP,
@@ -418,12 +467,22 @@ pub fn draw(
             pressed = Step::ALL.get(index).cloned();
         }
         let hovered = over;
+        // The row is the card plus another 8% white: #3a4341 at the checklist's own height,
+        // which is what the capture measures inside the card's #2c3431.
+        let base = raised_at(rect, row.center().y, theme);
         let fill = if hovered {
-            theme.hovered(theme.RAISED_BG)
+            theme.hovered(base)
         } else {
-            theme.RAISED_BG
+            base
         };
         painter.rect_filled(row, ROW_RADIUS, fill);
+        // And the row has the same ring: #4b5253 around #3a4341.
+        painter.rect_stroke(
+            row,
+            ROW_RADIUS,
+            Stroke::new(1.0, crate::shell::tint(fill, (255, 255, 255), 0.08)),
+            egui::StrokeKind::Inside,
+        );
 
         // The ring, in the row's own `text-primary`: the sheet's unchecked
         // `RadioButtonIcon` inherits the button's colour, and a completed step replaces it
@@ -943,21 +1002,22 @@ mod tests {
             .collect()
     }
 
-    /// Three rows of 36 with 8 between them is the reference's checklist, and it is the one
-    /// thing `docs/PARITY-LOG.md` OBS-4 left for a capture to settle.
+    /// Three rows on a 48-point pitch. The capture settles what OBS-4 left open: the rows
+    /// sit at y 128..166, 176..214 and 224..262 (a 39-point row 48 apart, drawn as 40), and
+    /// the card that holds them runs y 65..275.
     #[test]
-    fn three_rows_are_thirty_six_tall_and_eight_apart() {
+    fn three_rows_are_forty_tall_and_eight_apart() {
         let tops = step_tops();
         assert_eq!(tops.len(), 3, "the checklist has three steps");
-        assert_eq!(ROW_H, 36.0, "a row is 36 tall");
+        assert_eq!(ROW_H, 40.0, "a row is 40 tall");
         assert_eq!(ROW_GAP, 8.0, "the gap between two rows is 8");
         for pair in tops.windows(2) {
             let pitch = pair[1] - pair[0];
             assert_eq!(pitch, ROW_PITCH, "two rows are one pitch apart");
             assert_eq!(pitch - ROW_H, ROW_GAP, "what is left of the pitch is the gap");
         }
-        // Three rows and the two gaps between them: 108 + 16.
-        assert_eq!(stack_height(3), 124.0);
+        // Three rows and the two gaps between them: 120 + 16.
+        assert_eq!(stack_height(3), 136.0);
         assert_eq!(stack_height(0), 0.0, "no rows end where they start");
     }
 
@@ -967,8 +1027,8 @@ mod tests {
     fn the_rows_stay_inside_the_panel() {
         let panel = panel_rect();
         let column = column(panel);
-        assert_eq!(column.width(), g::PANEL - 2.0 * PAD, "24 points of padding a side");
-        assert_eq!(column.width(), 252.0);
+        assert_eq!(column.width(), g::PANEL - 2.0 * PAD, "the capture's card is 268 wide");
+        assert_eq!(column.width(), 268.0, "1157..1424 inside a 1140..1440 sidebar");
         assert_eq!(column.left() - panel.left(), PAD);
         assert_eq!(column.right(), panel.right() - PAD);
         for top in step_tops() {

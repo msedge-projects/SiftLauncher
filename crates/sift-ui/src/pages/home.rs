@@ -464,28 +464,11 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
         egui::vec2(width, BUTTON_H),
     );
     painter.rect_filled(create, BUTTON_RADIUS, theme.BRAND);
-    // \`button-frame--colored::before\`: a one-pixel inner gradient from 30% white to
-    // nothing, which is what gives the reference's buttons their lit top edge.
-    painter.rect_stroke(
-        create,
-        BUTTON_RADIUS,
-        Stroke::new(1.0, theme.ACCENT_CONTRAST.gamma_multiply(0.0)),
-        egui::StrokeKind::Inside,
-    );
-    let gloss = Rect::from_min_size(create.min, egui::vec2(create.width(), create.height() / 2.0));
-    painter.add(egui::Shape::mesh({
-        let mut mesh = egui::Mesh::default();
-        let base = mesh.vertices.len() as u32;
-        let lit = Color32::from_rgba_unmultiplied(255, 255, 255, 77);
-        let clear = Color32::from_rgba_unmultiplied(255, 255, 255, 0);
-        mesh.colored_vertex(gloss.left_top(), lit);
-        mesh.colored_vertex(gloss.right_top(), lit);
-        mesh.colored_vertex(gloss.left_bottom(), clear);
-        mesh.colored_vertex(gloss.right_bottom(), clear);
-        mesh.add_triangle(base, base + 1, base + 2);
-        mesh.add_triangle(base + 1, base + 2, base + 3);
-        mesh
-    }));
+    // `button-frame--colored::before` is a one-pixel rim of
+    // `linear-gradient(180deg, rgba(255,255,255,0.3), transparent)` masked to the
+    // padding box. At 40 px tall on this radius the capture shows no rim at all: the
+    // button is flat brand green with an antialiased edge. A half-height gloss mesh was
+    // drawn here and is what made the button read as a different object, so it is gone.
     icons::draw(
         painter,
         Glyph::Plus,

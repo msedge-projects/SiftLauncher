@@ -9376,3 +9376,26 @@ installer (compiles and ships).
 3. **`Browse` buttons** (Java, app directory) -- need a folder-picker surface.
 4. Smaller: the cache limit as a number field, ad-details' tooltip, language flags and coverage,
    the profile's signed-out state, and upload/remove image doing anything.
+
+## R1 — can a software rasteriser carry the window? (2026-10-31)
+
+Measured, not estimated. The spike is at `.scratch/spike/softrender` (git-ignored, outside
+every workspace): winit 0.30 + egui 0.36 + egui-winit + softbuffer 0.4, a scanline triangle
+rasteriser with barycentric colour and UV interpolation, premultiplied source-over, per
+primitive clip rects and bilinear sampling of egui's font atlas. The scene is a 48 px top
+bar, a 64 px rail with six 48 px plates, a 24 px semibold heading, twelve 300x180 rounded
+cards with text and image rects, and a 300 px sidebar: 10,190 triangles in 17 primitives,
+on Xvfb at 1440x900.
+
+| Metric | Budget | Measured | Verdict |
+| --- | --- | --- | --- |
+| Idle RSS, 60 s after the first frame | <= 20 MB | **15.68 MB** | PASS, 4.32 MB margin |
+| Frame time p95 at 1440x900 | <= 16 ms | **9.61 ms** (mean 6.80, p50 6.60, max 14.11) | PASS, 6.39 ms margin |
+| Idle CPU over the 60 s window | 0 | **0.000 %** | PASS |
+
+Scaling, medians of three 300-frame runs: 10,190 triangles -> 6.43 ms p95, 16,970 -> 8.93,
+23,666 -> 10.44. Fit: **3.56 ms fixed + 0.297 us per triangle**. Two caveats the run
+recorded: p95 varies between 6.4 and 9.6 ms run to run on this host, and the real window
+carries more than the spike (441 icon meshes, more text), so the shipping frame is expected
+to sit nearer the budget than this. The gate is met; the margin is not yet proven for the
+whole window.

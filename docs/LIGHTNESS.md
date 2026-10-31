@@ -353,3 +353,18 @@ a cold run beside a compiler, and it is the number to trust.
 **A note on how this was measured, because it went wrong first:** the release build was started and
 then `~/.cargo/registry/src` was deleted in the same minute, which killed the build with
 `No such file or directory`. Freeing disk and building are sequential steps, not parallel ones.
+
+## Re-measured 2026-10-31 (Linux, Xvfb 1440x900, release build in the lab container)
+
+| Budget | Target | Measured | Verdict |
+| --- | --- | --- | --- |
+| Release exe | no larger than the iced baseline, 28,648,960 B | **14,185,424 B** (14.2 MB, 50.5 % of it) | PASS |
+| Idle RAM | 120 MB resident, five minutes after the window is up | **110.2 MB** (112,828 kB at 60 s) | PASS, 9.8 MB margin |
+| Startup | 400 ms from process start to a window that is up | **70 ms** (poll to the first X window) | PASS |
+| Scrolling | 20 ms p95 of frame intervals during a scroll | **14.87 ms p95** (mean 12.61, max 17.44) | PASS |
+| Idle CPU | 0 ms over the idle window | **0 ticks over 60 s** | PASS |
+
+The scrolling figure is `SIFT_FRAME_LOG` while twenty wheel-down and twenty wheel-up
+clicks were sent: 30-frame windows, so a sample rather than a profile. Startup is a poll to
+window appearance and RAM is `/proc/<pid>/status`, so both are lower bounds on a busier
+machine.
