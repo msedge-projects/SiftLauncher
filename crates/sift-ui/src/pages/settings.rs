@@ -3459,13 +3459,15 @@ fn draw_body(
                     vec2(right - left - 44.0, 36.0),
                 );
                 body.rect_filled(field, 8, theme.BUTTON_BG);
-                body.text(
-                    pos2(field.left() + 12.0, field.center().y),
-                    Align2::LEFT_CENTER,
-                    JAVA_PATH_PLACEHOLDER,
-                    fonts::body(14.0),
-                    theme.SECONDARY,
-                );
+                // The field takes typing: the same `place_field` every other text row uses,
+                // keyed by its own label so each version keeps its own path.
+                let key = match version {
+                    25 => JAVA_LOCATION_25,
+                    21 => JAVA_LOCATION_21,
+                    17 => JAVA_LOCATION_17,
+                    _ => JAVA_LOCATION_8,
+                };
+                place_field(ui, state, key, JAVA_PATH_PLACEHOLDER, field);
                 let clear = pos2(right - 14.0, field.center().y);
                 body.circle_stroke(clear, 11.0, Stroke::new(1.5, Color32::from_rgb(0xe0, 0x4f, 0x4f)));
                 body.text(
@@ -3506,7 +3508,30 @@ fn draw_body(
                         fonts::semibold(13.0),
                         theme.BASE,
                     );
+                    // A click reports what the reference would open. None of the three can
+                    // finish without a Java toolchain to install into or a native folder
+                    // picker, so each says what it would do rather than pretending.
+                    let hit = pointer.is_some_and(|pointer| button.contains(pointer))
+                        && ui.input(|input| input.pointer.any_click());
+                    if hit && !state.consumed {
+                        state.notice = Some(match text {
+                            "Install recommended" => format!("Installing Java {version}"),
+                            "Detect" => format!("Searching for Java {version}"),
+                            _ => format!("Choose a folder for Java {version}"),
+                        });
+                        state.consumed = true;
+                    }
                     bx += width + 8.0;
+                }
+                // The clear action empties this version's path, which is what the reference's
+                // circular button does.
+                if pointer.is_some_and(|pointer| {
+                    (pointer - clear).length() <= 14.0
+                }) && ui.input(|input| input.pointer.any_click())
+                    && !state.consumed
+                {
+                    state.texts.retain(|(known, _)| *known != key);
+                    state.consumed = true;
                 }
                 label_h + 8.0 + 36.0 + 10.0 + 30.0 + ROW_GAP
             }

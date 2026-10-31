@@ -1275,3 +1275,20 @@ clone; the wiring is the next slice, and it is three interactions wide.
 
 The button glyphs, their order and the red of the clear action all come from that one capture;
 none of them was in the tree before it.
+
+### The Java block's interactions: two wired, none yet proved (2026-10-31)
+
+The field now goes through `place_field` keyed by its own version label, the clear button removes
+that key from the state, and the three buttons post what they would open ("Installing Java 25",
+"Searching for Java 25", "Choose a folder for Java 25") because none can finish without a
+toolchain or a native folder picker.
+
+Then the app was driven with xdotool: click the field at (700,322), type `/opt/java25`, capture;
+click the clear button, capture. **All three captures show the placeholder.** The typing did not
+land, so the field is drawn but not focusing -- an egui `TextEdit` placed with `ui.put` at a rect
+the layout cursor never visits does not take focus on click in this shell.
+
+So: the wiring exists and compiles, the typing is unproven, and the likely fix is
+`ui.memory_mut(|m| m.request_focus(id))` on the click that lands in the field -- a three-line
+change and one capture to prove it. Recorded rather than claimed, because a draw-only field and a
+field that takes input look identical in a screenshot.
