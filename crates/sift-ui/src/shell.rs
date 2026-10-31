@@ -1593,19 +1593,22 @@ impl Shell {
                     };
                     let galley = ui.painter().layout_no_wrap(
                         label.clone(),
-                        crate::fonts::body(12.0),
+                        crate::fonts::body(16.0),
                         ink,
                     );
-                    let width = if item.is_some() { PAGER_CELL } else { galley.size().x + 4.0 };
-                    let cell = egui::Rect::from_min_size(
-                        egui::pos2(x - width, middle - 11.0),
-                        egui::vec2(width, 22.0),
+                    let width = if item.is_some() { PAGER_CELL } else { galley.size().x + 8.0 };
+                    // A 36x36 cell at radius 18 with a 16-point numeral: the reference's
+                    // current-page disc measures 924..959 by 182..217, and this used to be a
+                    // 22-tall plate with 12-point text.
+                    let cell = egui::Rect::from_center_size(
+                        egui::pos2(x - width / 2.0, middle),
+                        egui::vec2(width, PAGER_CELL),
                     );
                     if item == Some(u64::from(self.page) + 1) {
-                        ui.painter().rect_filled(cell, 6, self.theme.BUTTON_BG_SELECTED);
+                        ui.painter().rect_filled(cell, 18, self.theme.BUTTON_BG_SELECTED);
                     }
                     ui.painter().galley(
-                        egui::pos2(cell.center().x - galley.size().x / 2.0, middle - 7.0),
+                        egui::pos2(cell.center().x - galley.size().x / 2.0, middle - galley.size().y / 2.0),
                         galley,
                         ink,
                     );
@@ -2206,8 +2209,8 @@ fn pager_items(current: u32, pages: u64) -> Vec<Option<u64>> {
 }
 
 /// A page number's cell in the strip, and how much room each candidate needs.
-const PAGER_CELL: f32 = 20.0;
-const PAGER_WIDTH: f32 = PAGER_CELL + 2.0;
+const PAGER_CELL: f32 = 36.0; // 36x36 cells at radius 18, per the capture
+const PAGER_WIDTH: f32 = PAGER_CELL;
 
 /// The room the stats keep at the right of a card's tag row: three stats and their glyphs.
 const TAG_ROW_RESERVE: f32 = 260.0;

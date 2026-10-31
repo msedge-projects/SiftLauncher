@@ -2685,9 +2685,13 @@ fn draw_rail(
     // The rows stop above the footer's band: the rail's own scroller ends there, so a row
     // that ran past it would be drawn over the version line. The footer keeps the rail's
     // full width.
+    // The reference's rows stop at y 694 in a pane that ends at 783 -- 89 above the floor,
+    // with no ink between 667 and 732 -- and its footer's two lines sit at 740..768. The
+    // rows' clip is that measured line, not the footer's top edge: the gap belongs to the
+    // scroller's own tail.
     let scrollable = Rect::from_min_max(
         rail.min,
-        pos2(rail.right(), rail.bottom() - RAIL_FOOTER),
+        pos2(rail.right(), rail.bottom() - RAIL_FOOTER - 40.0),
     );
     let clipped = painter.with_clip_rect(scrollable);
 
