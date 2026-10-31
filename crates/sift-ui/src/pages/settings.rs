@@ -511,12 +511,11 @@ pub enum Tab {
 
 impl Tab {
     /// The rail's order, which is the order `index.vue:88-205` declares.
-    pub const ALL: [Tab; 14] = [
+    pub const ALL: [Tab; 13] = [
         Tab::Appearance,
         Tab::Features,
         Tab::Behavior,
         Tab::Language,
-        Tab::FeatureFlags,
         Tab::Profile,
         Tab::Social,
         Tab::Privacy,
@@ -529,6 +528,12 @@ impl Tab {
     ];
 
     /// The tab's label: the catalogue's own string for the key named in the constant.
+    /// Whether this tab is marked `Beta` in the reference's rail. Language is the only one
+    /// (`TabbedModal.vue` renders the pill from the tab's own metadata).
+    pub fn is_beta(self) -> bool {
+        matches!(self, Tab::Language)
+    }
+
     pub fn label(&self) -> &'static str {
         match self {
             // `app.settings.tabs.appearance` / `app.settings.tabs.features` / ...
@@ -952,6 +957,10 @@ const RAIL_WIDTH: f32 = 250.0;
 const RAIL_PADDING: f32 = 16.0;
 
 /// The gap between rail children: `gap-1` on the scroll column (`TabbedModal.vue:173`).
+/// The rail's footer block: two 20-point lines, so 40. The capture puts the product line at
+/// the rail's bottom edge less its padding, with the platform line under it.
+const RAIL_FOOTER: f32 = 48.0;
+
 const RAIL_ROW_GAP: f32 = 4.0;
 
 /// A rail row's height: `py-2.5` (10 above and below) around a `leading-5` label
@@ -2673,7 +2682,14 @@ fn draw_rail(
     scroll: f32,
 ) {
     let rail = rail_rect(dialog);
-    let clipped = painter.with_clip_rect(rail);
+    // The rows stop above the footer's band: the rail's own scroller ends there, so a row
+    // that ran past it would be drawn over the version line. The footer keeps the rail's
+    // full width.
+    let scrollable = Rect::from_min_max(
+        rail.min,
+        pos2(rail.right(), rail.bottom() - RAIL_FOOTER),
+    );
+    let clipped = painter.with_clip_rect(scrollable);
 
     // The rail's `border-r` (`TabbedModal.vue:152`).
     clipped.vline(
@@ -2684,10 +2700,13 @@ fn draw_rail(
 
     for entry in rail_rows(dialog, scroll) {
         if let Some(heading) = entry.heading {
+            // `uppercase text-xs font-semibold tracking-wide` in the reference: the capture's
+            // group labels are DISPLAY / ACCOUNT / INSTANCE DEFAULTS / SYSTEM in 12-point
+            // upper case, so the label is upper-cased here rather than printed in title case.
             clipped.text(
                 pos2(heading.left(), heading.top()),
                 Align2::LEFT_TOP,
-                entry.tab.category(),
+                entry.tab.category().to_uppercase(),
                 fonts::semibold(CATEGORY_TEXT_SIZE),
                 theme.SECONDARY,
             );
@@ -2715,15 +2734,59 @@ fn draw_rail(
             Rect::from_center_size(icon_centre, Vec2::splat(RAIL_ICON)),
             ink,
         );
-        clipped.text(
-            pos2(
-                entry.row.left() + RAIL_ROW_PADDING + RAIL_ICON + RAIL_ICON_GAP,
-                entry.row.center().y,
-            ),
-            Align2::LEFT_CENTER,
-            entry.tab.label(),
+        let label = clipped.layout_no_wrap(
+            entry.tab.label().to_owned(),
             fonts::semibold(RAIL_TEXT_SIZE),
             ink,
+        );
+        let label_at = pos2(
+            entry.row.left() + RAIL_ROW_PADDING + RAIL_ICON + RAIL_ICON_GAP,
+            entry.row.center().y - label.size().y / 2.0,
+        );
+        clipped.galley(label_at, label.clone(), ink);
+        if entry.tab.is_beta() {
+            // `rounded-md bg-brand-highlight px-1.5 text-xs font-semibold text-brand`.
+            let pill = Rect::from_min_size(
+                pos2(
+                    label_at.x + label.size().x + 8.0,
+                    entry.row.center().y - 10.0,
+                ),
+                egui::vec2(42.0, 20.0),
+            );
+            clipped.rect_filled(pill, 6, theme.BUTTON_BG_SELECTED);
+            clipped.text(
+                pill.center(),
+                Align2::CENTER_CENTER,
+                "Beta",
+                fonts::semibold(12.0),
+                theme.BUTTON_TEXT_SELECTED,
+            );
+        }
+    }
+
+    // The rail's footer, above its own bottom padding: the product, its version and the
+    // platform, in the reference's two-line stack (`TabbedModal.vue`'s sidebar footer).
+    {
+        let footer = Rect::from_min_max(
+            pos2(rail.left() + RAIL_PADDING, rail.bottom() - RAIL_FOOTER),
+            pos2(rail.right() - RAIL_PADDING, rail.bottom() - RAIL_PADDING),
+        );
+        // The footer is outside the rows' clip, so it needs the rail's own.
+        let foot = painter.with_clip_rect(rail);
+        let name = format!("Sift Launcher {}", env!("CARGO_PKG_VERSION"));
+        foot.text(
+            pos2(footer.left(), footer.top()),
+            Align2::LEFT_TOP,
+            name,
+            fonts::body(14.0),
+            theme.SECONDARY,
+        );
+        foot.text(
+            pos2(footer.left(), footer.top() + 20.0),
+            Align2::LEFT_TOP,
+            "Linux",
+            fonts::body(12.0),
+            theme.SECONDARY,
         );
     }
 }
@@ -4225,11 +4288,13 @@ mod tests {
         assert!(switch_knob(1.0, track).right() <= track.right() - SWITCH_INSET + 0.001);
     }
 
-    /// Every tab has its own non-empty label, and there are exactly 14 of them: the source's
-    /// list, in its order, with no two rows reading the same.
+    /// Every tab has its own non-empty label, and there are exactly 13 of them: the source's
+    /// list, in its order, with no two rows reading the same. Thirteen because the
+    /// reference's Feature flags tab is a developer-mode row and the capture's rail does not
+    /// carry it, which is why the older count of fourteen was wrong.
     #[test]
     fn every_tab_has_its_own_label() {
-        assert_eq!(TAB_COUNT, 14);
+        assert_eq!(TAB_COUNT, 13);
         assert_eq!(Tab::default(), Tab::Appearance);
 
         let mut seen: [&'static str; TAB_COUNT] = [""; TAB_COUNT];
@@ -4264,7 +4329,6 @@ mod tests {
             (Tab::Features, "Features", "app.settings.tabs.features"),
             (Tab::Behavior, "Behavior", "app.settings.tabs.behavior"),
             (Tab::Language, "Language", "app.settings.tabs.language"),
-            (Tab::FeatureFlags, "Feature flags", "settings.feature-flags.title"),
             (Tab::Profile, "Profile", "settings.profile.navigation-title"),
             (Tab::Social, "Social", "settings.social.title"),
             (Tab::Privacy, "Privacy", "app.settings.tabs.privacy"),
@@ -4303,7 +4367,6 @@ mod tests {
             (Tab::Features, 13),
             (Tab::Behavior, 14),
             (Tab::Language, 4),
-            (Tab::FeatureFlags, 11),
             (Tab::Profile, 5),
             (Tab::Social, 4),
             (Tab::Privacy, 4),

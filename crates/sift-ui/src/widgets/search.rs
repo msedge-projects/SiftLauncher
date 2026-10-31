@@ -178,7 +178,15 @@ impl Search {
 
         // The plate. One fill at every state, on purpose: the reference gives this control
         // no hover or focus wash. What tells a reader where the keyboard is, is the caret.
-        painter.rect_filled(rect, crate::theme::Theme::radii()[1], theme.RAISED_BG);
+        // `--surface-4` inside a one-pixel `--surface-5` ring at radius 14: the capture's
+        // field is #34363c with a #42444a edge, not the raised plate this used to be.
+        painter.rect_filled(rect, 14, theme.SURFACE_4);
+        painter.rect_stroke(
+            rect,
+            14,
+            Stroke::new(1.0, theme.SURFACE_5),
+            egui::StrokeKind::Inside,
+        );
 
         // The magnifier, where the painted placeholder used to draw its ring: a 12-point
         // glyph centred 18 points in from the plate's left edge.

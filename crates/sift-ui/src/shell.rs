@@ -1263,11 +1263,26 @@ impl Shell {
 
     /// The tabs, the search row and the scrolling list. Returns whether a glide is running.
     fn content_column(&mut self, ui: &mut Ui) -> bool {
+        // The page column, not the surface: the reference's Discover content starts at
+        // x 88, y 72 -- the surface's edge plus its own p-6 -- and is 1028 wide, which the
+        // capture measures as 88..1115 with the scrollbar overlaying the padding. Drawing at
+        // the surface's edge put every control 24 points left of the reference and gave the
+        // strip 622 points where it has 636.
         let content = Rect::from_min_size(
-            egui::pos2(g::CONTENT_LEFT, g::TITLE_BAR),
-            egui::vec2(g::PANEL_LEFT - g::CONTENT_LEFT - 16.0, g::WINDOW.1 - g::TITLE_BAR),
+            egui::pos2(g::TEXT_LEFT, g::TITLE_BAR + g::CONTENT_INSET),
+            egui::vec2(
+                g::PANEL_LEFT - g::CONTENT_INSET - g::TEXT_LEFT,
+                g::WINDOW.1 - g::TITLE_BAR - 2.0 * g::CONTENT_INSET,
+            ),
         );
-        ui.painter().rect_filled(content, 0, self.theme.BG);
+        ui.painter().rect_filled(
+            Rect::from_min_max(
+                egui::pos2(g::CONTENT_LEFT, g::TITLE_BAR),
+                egui::pos2(g::PANEL_LEFT, g::WINDOW.1),
+            ),
+            0,
+            self.theme.BG,
+        );
 
         let painter = ui.painter();
         // The tab strip, measured on the running client (`.scratch/cap/ref-discover.png`):
@@ -1295,7 +1310,7 @@ impl Shell {
             strip_width += galley.size().x + 32.0 + 4.0;
         }
         let strip = Rect::from_min_size(
-            egui::pos2(content.left(), 72.0),
+            egui::pos2(content.left(), content.top()),
             egui::vec2(strip_width - 4.0, 46.0),
         );
         painter.rect_filled(strip, 23, self.theme.RAISED_BG);
@@ -1377,11 +1392,11 @@ impl Shell {
         // `--surface-4` inside a one-pixel `--surface-5` ring. The sort and view selects and
         // the pager sit on the *next* row, at y 182 and 36 tall.
         let field = Rect::from_min_size(
-            egui::pos2(content.left(), 126.0),
+            egui::pos2(content.left(), content.top() + 54.0),
             egui::vec2(content.width(), 48.0),
         );
         let row = Rect::from_min_size(
-            egui::pos2(content.left(), 182.0),
+            egui::pos2(content.left(), content.top() + 110.0),
             egui::vec2(content.width(), 36.0),
         );
         // The field is a widget with state now: focus, a caret that blinks and a clear button.
@@ -2002,9 +2017,11 @@ fn card(
     // 11-point line on the tag row, which is where the tags belong and the stats do not.
     let mut counts_right = rect.right() - 16.0;
     let counts_y = rect.top() + 62.0;
+    // Drawn right to left, so the followers are laid down first and the downloads end up to
+    // their left -- which is the order the reference reads: "19.66M  heart 5,028".
     for (glyph, value) in [
-        (Glyph::Download, result.downloads.as_str()),
         (Glyph::Heart, result.followers.as_str()),
+        (Glyph::Download, result.downloads.as_str()),
     ] {
         if value.is_empty() {
             continue;
@@ -2219,7 +2236,10 @@ fn category_glyph(category: &str) -> Glyph {
 /// Each `id` is read off that same CDN path, which is the only place the sample list carries
 /// one: the six are real projects, so their Install buttons install the real packs rather
 /// than a button that fails on an id nobody published.
-fn sample_results() -> Vec<Card> {
+/// Six cards the **tests** use as fixtures. Nothing draws this: an earlier build fell back to
+/// it when a search returned nothing, which made an empty page look populated. It is named for
+/// what it is so that a future call site cannot mistake it for data.
+fn fixture_cards() -> Vec<Card> {
     fn tags(pairs: &[(&str, Glyph)]) -> Vec<(String, Glyph)> {
         pairs.iter().map(|(label, glyph)| ((*label).to_owned(), *glyph)).collect()
     }
@@ -2380,7 +2400,7 @@ mod tests {
     /// empty and must keep the reference's order.
     #[test]
     fn the_sample_list_carries_the_reference_six() {
-        let sample = sample_results();
+        let sample = fixture_cards();
         assert_eq!(sample.len(), 6);
         assert_eq!(sample[0].title, "Fabulously Optimized");
         assert_eq!(sample[5].title, "All the Mods 10");
@@ -2390,7 +2410,7 @@ mod tests {
     /// install asks the API for it, so an empty one would be a button that could only fail.
     #[test]
     fn every_sample_card_names_its_project() {
-        for card in sample_results() {
+        for card in fixture_cards() {
             assert!(!card.id.is_empty(), "{} carries no project id", card.title);
         }
     }
