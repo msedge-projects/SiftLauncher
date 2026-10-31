@@ -1557,3 +1557,23 @@ and the `ui.interact` hypothesis dies with it.
 
 The tree is green and the two failed attempts are recorded rather than hidden, because the next
 person will otherwise try the same wrapper and hit the same wall.
+
+### The panel wrap compiles and changes nothing (2026-10-31)
+
+eframe 0.36's `App::ui` hands the app a bare `Ui` and its own documentation says to wrap it in a
+`CentralPanel` "to remedy this". In this version `CentralPanel::show` takes a **`&mut Ui`**, not a
+context -- which is exactly what the two earlier attempts got wrong, and why they failed with a
+mutability error rather than a borrow error.
+
+The wrap is in the tree now and it compiles and paints identically. **It does not fix the click**:
+two clicks on the compass leave the breadcrumb reading "Home".
+
+So the panel was not the cause either, and the remaining suspect is the shell's own hit-testing:
+the shell draws its own title bar and offsets everything below it, and if the rectangles it feeds
+`ui.interact` are in a space offset by that title bar, every click lands forty-eight points from
+where the reader aimed -- which is indistinguishable from "clicks do nothing" at the coarse
+granularity of a rail button.
+
+**The next probe prints, for the compass button only**: `response.rect` and the pointer position,
+on any frame where the pointer is inside the window. Two rectangles and a point, and the offset
+either shows itself or rules itself out.

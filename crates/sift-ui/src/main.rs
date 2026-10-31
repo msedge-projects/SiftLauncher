@@ -80,9 +80,20 @@ struct App {
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
-        self.log.begin();
-        let animating = self.shell.ui(ui);
-        self.log.end();
+        // eframe 0.36 hands the app a bare `Ui` and its own docs say to wrap it in a panel
+        // "to remedy this" -- and `CentralPanel::show` in this version takes a `&mut Ui`, not
+        // a context, which is what two earlier attempts got wrong. A bare Ui paints correctly
+        // and registers no interactive widgets: every `ui.interact` in the shell was a no-op,
+        // which is why clicks changed nothing while the events arrived.
+        let App { shell, log } = self;
+        log.begin();
+        let mut animating = false;
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE)
+            .show(ui, |ui| {
+                animating = shell.ui(ui);
+            });
+        log.end();
         // Only while something is in flight. An idle window draws nothing at all, which is
         // both the budget in docs/LIGHTNESS.md and the reason a fan does not spin.
         if animating {
