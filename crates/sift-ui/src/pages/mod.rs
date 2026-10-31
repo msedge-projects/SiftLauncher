@@ -60,17 +60,23 @@ impl Page {
         }
     }
 
-    /// The page's rect, from the shell's measured columns.
+    /// The page's rect: the text column, not the surface it sits on.
+    ///
+    /// The reference's `.app-contents` is one rounded surface from x 64 to the window's
+    /// right edge, split into a viewport and a 300 px sidebar; the page inside the viewport
+    /// carries its own `px-6` (24 px). So the rect a page draws into starts at
+    /// `CONTENT_LEFT + CONTENT_INSET` = 88, which is where the capture puts the first
+    /// character of every heading, and stops 24 px before the sidebar.
     pub fn rect(self) -> Rect {
         use crate::geometry;
         Rect::from_min_size(
             eframe::egui::pos2(
-                geometry::CONTENT_LEFT,
+                geometry::TEXT_LEFT,
                 // The breadcrumb lives on the title bar; every page starts below it.
                 geometry::TITLE_BAR,
             ),
             eframe::egui::vec2(
-                geometry::PANEL_LEFT - geometry::CONTENT_LEFT - 16.0,
+                geometry::PANEL_LEFT - geometry::CONTENT_INSET - geometry::TEXT_LEFT,
                 geometry::WINDOW.1 - geometry::TITLE_BAR,
             ),
         )

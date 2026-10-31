@@ -2335,7 +2335,7 @@ mod tests {
             "604 + 24 + 316 + 24 + 105"
         );
 
-        // The shell's content column (`geometry.rs`): 900 - 40 window, less the page's own
+        // The shell's content column (`geometry.rs`): 900 - 48 window, less the page's own
         // insets, heading, toolbar and its gaps.
         let column = crate::geometry::WINDOW.1
             - crate::geometry::TITLE_BAR
@@ -2343,7 +2343,7 @@ mod tests {
             - HEADING_LINE
             - 2.0 * HEADING_GAP
             - CONTROL_HEIGHT;
-        assert_eq!(column, 712.0, "the list's own viewport at 1440x900");
+        assert_eq!(column, 704.0, "the list's own viewport at 1440x900");
         assert!(
             content_height(&sections, false) > column,
             "the sample list is taller than its viewport, so the page scrolls"

@@ -20,3 +20,7 @@ __pycache__/
 
 # Parity captures: produced by tools/parity/*, compared and then discarded.
 out/
+
+# The egui workspace's own build output. The root `/target` above only covers the
+# root workspace; `crates/sift-ui` has its own, and one capture run leaves 800 MB of it.
+/crates/sift-ui/target/

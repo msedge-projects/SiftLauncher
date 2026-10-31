@@ -344,16 +344,17 @@ pub fn draw(
 ) -> Option<Step> {
     let painter = ui.painter();
 
-    // The panel's own ground, then its one-pixel left rule.
-    //
-    // The rule is stroked half a pixel in from the edge rather than on it: a stroke is
-    // centred on its coordinate, so `left + 0.5` is what puts the line's whole width
-    // inside the panel instead of half of it hanging over the seam to the content column.
-    painter.rect_filled(rect, 0, theme.BG);
-    painter.vline(
-        rect.left() + 0.5,
-        rect.y_range(),
-        Stroke::new(RULE, theme.DIVIDER),
+    // The sidebar is the surface's right column, not a panel bolted onto it: the
+    // reference's `.app-sidebar` paints `--brand-gradient-bg` --
+    // `linear-gradient(0deg, rgba(14,35,19,0.2) 0%, rgba(55,137,73,0.1) 100%)` -- straight
+    // over the surface, with no rule between the two. Laying those stops over `--color-bg`
+    // gives #192320 under the title bar and #141a1a at the floor; the capture measures
+    // #171f1e halfway down, which is where the interpolation lands.
+    crate::shell::vertical_gradient(
+        painter,
+        rect,
+        crate::shell::tint(theme.BG, (55, 137, 73), 0.10),
+        crate::shell::tint(theme.BG, (14, 35, 19), 0.20),
     );
 
     // The copy is laid out before the plan, because the card's rows start where the copy
@@ -967,7 +968,7 @@ mod tests {
         let panel = panel_rect();
         let column = column(panel);
         assert_eq!(column.width(), g::PANEL - 2.0 * PAD, "24 points of padding a side");
-        assert_eq!(column.width(), 292.0);
+        assert_eq!(column.width(), 252.0);
         assert_eq!(column.left() - panel.left(), PAD);
         assert_eq!(column.right(), panel.right() - PAD);
         for top in step_tops() {

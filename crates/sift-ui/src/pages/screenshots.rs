@@ -1617,11 +1617,13 @@ mod tests {
     /// The shell's content column at a 1440 window, the same identity `library.rs` pins:
     /// `PANEL_LEFT - CONTENT_LEFT - 16`.
     fn page_width_at(window_width: f32) -> f32 {
+        // The surface's left edge to the sidebar's left edge, less the page's own px-6 on
+        // both sides. There is no further gutter: the sidebar is the surface's right
+        // column, not a panel with a gap in front of it.
         window_width
             - crate::geometry::RAIL
             - crate::geometry::PANEL
-            - crate::geometry::CONTENT_INSET
-            - 16.0
+            - 2.0 * crate::geometry::CONTENT_INSET
     }
 
     /// **Ordering.** The groups run newest month first whatever order they arrive in, which is
@@ -1894,15 +1896,15 @@ mod tests {
     #[test]
     fn the_grid_tiles_the_list_at_1440() {
         let page = page_width_at(crate::geometry::WINDOW.0);
-        assert_eq!(page, 996.0, "the shell's content column at 1440");
+        assert_eq!(page, 1028.0, "the shell's content column at 1440");
         let list = page - 2.0 * PAGE_PADDING;
 
         let grid = grid_layout(list, crate::geometry::WINDOW.0);
         assert_eq!(grid.columns, 2, "1440 is below the 1536 four-column breakpoint");
-        assert!((grid.card_width - 468.0).abs() < 0.001, "(948 - 12) / 2");
+        assert!((grid.card_width - 484.0).abs() < 0.001, "(980 - 12) / 2");
         assert!(
-            (grid.card_height - 263.25).abs() < 0.001,
-            "468 * 9 / 16"
+            (grid.card_height - 272.25).abs() < 0.001,
+            "484 * 9 / 16"
         );
 
         let used = (grid.columns as f32) * grid.card_width
@@ -1921,7 +1923,7 @@ mod tests {
         let list = page - 2.0 * PAGE_PADDING;
         let grid = grid_layout(list, WIDE_BREAKPOINT);
         assert_eq!(grid.columns, WIDE_COLUMNS);
-        assert!((grid.card_width - 228.0).abs() < 0.001, "(948 - 36) / 4");
+        assert!((grid.card_width - 236.0).abs() < 0.001, "(980 - 36) / 4");
         let used = (grid.columns as f32) * grid.card_width
             + (grid.columns as f32 - 1.0) * GRID_GAP;
         assert!((used - list).abs() < 0.001, "{used} vs {list}");
@@ -1941,16 +1943,16 @@ mod tests {
 
     /// The block height is the source's sum (`index.vue:544-554`): header, 10, grid, 12 — and
     /// the grid is `rows * card + (rows - 1) * gap`. Five shots over two columns is three
-    /// rows: 3 * 263.25 + 2 * 12 = 813.75, and the block is 875.75.
+    /// rows: 3 * 272.25 + 2 * 12 = 840.75, and the block is 902.75.
     #[test]
     fn a_group_is_as_tall_as_its_rows_plus_its_furniture() {
         let page = page_width_at(crate::geometry::WINDOW.0);
         let grid = grid_layout(page - 2.0 * PAGE_PADDING, crate::geometry::WINDOW.0);
         let height = group_height(grid.columns, grid.card_height, 5);
-        assert!((height - 875.75).abs() < 0.001, "40 + 10 + 813.75 + 12");
+        assert!((height - 902.75).abs() < 0.001, "40 + 10 + 840.75 + 12");
 
         let one_row = group_height(grid.columns, grid.card_height, 2);
-        assert!((one_row - 325.25).abs() < 0.001, "40 + 10 + 263.25 + 12");
+        assert!((one_row - 334.25).abs() < 0.001, "40 + 10 + 272.25 + 12");
 
         // An empty group is the grid's 45-point minimum, not a zero-height grid.
         let empty = group_height(grid.columns, grid.card_height, 0);

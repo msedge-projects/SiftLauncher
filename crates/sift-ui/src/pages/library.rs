@@ -900,27 +900,30 @@ mod tests {
     /// (`pages/mod.rs:39-49`: `PANEL_LEFT - CONTENT_LEFT - 16`). At 960 the same furniture
     /// is assumed, so the column is 960 - 64 - 340 - 24 - 16.
     fn page_width_at(window_width: f32) -> f32 {
+        // The surface's left edge to the sidebar's left edge, less the page's own px-6 on
+        // both sides. There is no further gutter: the sidebar is the surface's right
+        // column, not a panel with a gap in front of it.
         window_width
             - crate::geometry::RAIL
             - crate::geometry::PANEL
-            - crate::geometry::CONTENT_INSET
-            - 16.0
+            - 2.0 * crate::geometry::CONTENT_INSET
     }
 
     /// At 1440 the source's `windowWidth < 1280` test is false, so `minWidth` is 10rem =
-    /// 160, not 8rem. `floor((948 + 12) / (160 + 12)) = 5`, and the four gaps and the two
-    /// 24-point insets leave exactly the page's 996 points.
+    /// 160, not 8rem. The page is 1028 wide (1440 - 64 rail - 300 sidebar - 2 * 24 px-6),
+    /// so the grid is 980 and `floor((980 + 12) / (160 + 12)) = 5` columns of 186.4, which
+    /// with the four gaps is the grid exactly.
     #[test]
     fn the_grid_tiles_the_page_at_1440() {
         let page = page_width_at(crate::geometry::WINDOW.0);
-        assert_eq!(page, 996.0, "the shell's content column at 1440");
+        assert_eq!(page, 1028.0, "the shell's content column at 1440");
         assert_eq!(min_card_width(crate::geometry::WINDOW.0), 160.0);
 
         let grid = grid_layout(page, crate::geometry::WINDOW.0);
-        assert_eq!(grid.columns, 5, "floor((948 + 12) / (160 + 12))");
+        assert_eq!(grid.columns, 5, "floor((980 + 12) / (160 + 12))");
         assert!(
-            (grid.card_width - 180.0).abs() < 0.001,
-            "948 / 5 with four 12-point gaps"
+            (grid.card_width - 186.4).abs() < 0.001,
+            "(980 - 4 * 12) / 5"
         );
 
         let used = 2.0 * PAGE_PADDING
@@ -934,22 +937,22 @@ mod tests {
             (grid.card_height - card_height(grid.card_width)).abs() < 0.001,
             "the height comes from the same width the row is laid out with"
         );
-        assert_eq!(grid.card_height, 252.0, "180 + 54 + 18");
+        assert_eq!(grid.card_height, 258.4, "186.4 + 54 + 18");
     }
 
-    /// At 960 the ternary takes the other branch: `minWidth` is 8rem = 128, so
-    /// `floor((468 + 12) / (128 + 12)) = 3` and the cards are 148 wide. The identity still
-    /// closes exactly, which is the point of computing the columns rather than rounding a
-    /// guessed count.
+    /// At 960 the ternary takes the other branch: `minWidth` is 8rem = 128. The page is
+    /// 548 wide, so the grid is 500 and `floor((500 + 12) / (128 + 12)) = 3` columns of
+    /// 158.67. The identity still closes exactly, which is the point of computing the
+    /// columns rather than rounding a guessed count.
     #[test]
     fn the_grid_tiles_the_page_at_960() {
         let page = page_width_at(960.0);
-        assert_eq!(page, 516.0, "the same shell furniture at 960");
+        assert_eq!(page, 548.0, "the same shell furniture at 960");
         assert_eq!(min_card_width(960.0), 128.0);
 
         let grid = grid_layout(page, 960.0);
-        assert_eq!(grid.columns, 3, "floor((468 + 12) / (128 + 12))");
-        assert!((grid.card_width - 148.0).abs() < 0.001);
+        assert_eq!(grid.columns, 3, "floor((500 + 12) / (128 + 12))");
+        assert!((grid.card_width - 158.666_664).abs() < 0.01);
 
         let used = 2.0 * PAGE_PADDING
             + grid.columns as f32 * grid.card_width
@@ -958,7 +961,7 @@ mod tests {
             (used - page).abs() < 0.001,
             "padding + columns * card + gaps must be the page width: {used} vs {page}"
         );
-        assert_eq!(grid.card_height, 220.0, "148 + 54 + 18");
+        assert!((grid.card_height - 230.666_664).abs() < 0.01, "158.67 + 54 + 18");
     }
 
     /// The count never drops below one even for a page narrower than a card, and it is a

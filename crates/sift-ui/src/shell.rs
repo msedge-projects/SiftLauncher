@@ -213,6 +213,36 @@ impl Default for Shell {
     }
 }
 
+/// One colour laid over another at \`alpha\`, the way a CSS \`rgba()\` background does over
+/// the element behind it.
+pub fn tint(base: Color32, over: (u8, u8, u8), alpha: f32) -> Color32 {
+    let mix = |b: u8, o: u8| -> u8 {
+        (b as f32 * (1.0 - alpha) + o as f32 * alpha).round().clamp(0.0, 255.0) as u8
+    };
+    Color32::from_rgb(
+        mix(base.r(), over.0),
+        mix(base.g(), over.1),
+        mix(base.b(), over.2),
+    )
+}
+
+/// A vertical two-stop gradient, which is what \`linear-gradient(0deg, a 0%, b 100%)\` is.
+///
+/// egui has no gradient primitive, so this is a quad whose two top vertices carry one
+/// colour and two bottom vertices the other: one draw call, and the interpolation is the
+/// GPU's own, which is the same arithmetic a browser does.
+pub fn vertical_gradient(painter: &egui::Painter, rect: Rect, top: Color32, bottom: Color32) {
+    let mut mesh = egui::Mesh::default();
+    let base = mesh.vertices.len() as u32;
+    mesh.colored_vertex(rect.left_top(), top);
+    mesh.colored_vertex(rect.right_top(), top);
+    mesh.colored_vertex(rect.left_bottom(), bottom);
+    mesh.colored_vertex(rect.right_bottom(), bottom);
+    mesh.add_triangle(base, base + 1, base + 2);
+    mesh.add_triangle(base + 1, base + 2, base + 3);
+    painter.add(egui::Shape::mesh(mesh));
+}
+
 impl Shell {
     /// Draw one frame. Returns whether anything is still animating, which the caller uses
     /// to decide whether to ask for another frame.
@@ -263,6 +293,8 @@ impl Shell {
         ui.painter().rect_filled(window, 0, self.theme.BG);
 
         self.title_bar(ui);
+        // The surface under every page, before the chrome that borders it.
+        self.content_surface(ui);
         let mut rail_animating = false;
         rail_animating |= self.rail_column(ui);
         rail_animating |= self.right_panel(ui);
@@ -396,6 +428,10 @@ impl Shell {
             ui.ctx().request_repaint();
         }
 
+        // The surface's shadow last of the page layer: it is an overlay in the reference
+        // too, so the page underneath cannot paint over it.
+        self.content_shadow(ui);
+
         // The reference labels the destination under the pointer with a small pill beside it.
         // Here rather than with the rail for the toast's own reason: the rail is painted before
         // the content column, so a tooltip drawn there is covered by the page.
@@ -405,14 +441,14 @@ impl Shell {
                 .iter()
                 .position(|candidate| *candidate == destination)
                 .unwrap_or(0) as f32;
-            let y = g::TITLE_BAR + g::RAIL_FIRST + index * g::RAIL_PITCH;
+            let y = g::TITLE_BAR + g::RAIL_FIRST + index * g::RAIL_PITCH + g::RAIL_BUTTON / 2.0;
             let label = painter.layout_no_wrap(
                 destination.short().to_owned(),
                 crate::fonts::body(12.0),
                 self.theme.ACCENT_CONTRAST,
             );
             let pill = egui::Rect::from_min_size(
-                egui::pos2(g::RAIL + 6.0, y - label.size().y / 2.0 - 5.0),
+                egui::pos2(g::RAIL_PAD + g::RAIL_BUTTON + 6.0, y - label.size().y / 2.0 - 5.0),
                 egui::vec2(label.size().x + 16.0, label.size().y + 10.0),
             );
             painter.rect_filled(pill, 6, self.theme.CONTRAST);
@@ -458,110 +494,218 @@ impl Shell {
             || self.account.busy()
     }
 
-    /// The top bar: the mark and the page's name at the left, window controls at the right.
+    /// The one surface every page sits on.
+    ///
+    /// \`.app-contents\` in the reference is a single element: \`--color-bg\`,
+    /// \`border-top-left-radius: var(--radius-xl)\` (1.25rem = 20 px), stretching from the
+    /// rail to the window's right edge and from the title bar to the floor, with
+    /// \`box-shadow: inset 1px 1px 15px #0003, inset 1px 1px 1px #ffffff3b\` along its top and
+    /// left edges. It is the seam against the chrome -- there is no rule under the title bar
+    /// and none beside the rail -- so a launcher that draws those rules instead gets a
+    /// visibly different frame around every page.
+    ///
+    /// Only the top-left corner is rounded: the other three meet the window's edges.
+    fn content_surface(&self, ui: &mut Ui) {
+        let surface = Rect::from_min_max(
+            egui::pos2(g::CONTENT_LEFT, g::TITLE_BAR),
+            egui::pos2(g::WINDOW.0, g::WINDOW.1),
+        );
+        let painter = ui.painter();
+        painter.rect_filled(surface, 0, self.theme.BG);
+
+        // Cut the corner: fill the square back in with the chrome's own colour, then put
+        // the surface's colour back as a disc inscribed in it.
+        let r = g::RADIUS_XL;
+        let corner = Rect::from_min_size(surface.min, Vec2::splat(r));
+        painter.rect_filled(corner, 0, self.theme.RAISED_BG);
+        painter.circle_filled(corner.center(), r, self.theme.BG);
+
+    }
+
+    /// The surface's inset shadow, painted **after** the page.
+    ///
+    /// The reference draws it as `.app-contents:before`, a fixed overlay at `z-index: 1`:
+    /// above the viewport's content, below the modals. Painting it with the surface instead
+    /// would let the first page that fills its own rect with `--color-bg` erase it, which is
+    /// exactly what the Home page does.
+    fn content_shadow(&self, ui: &mut Ui) {
+        let surface = Rect::from_min_max(
+            egui::pos2(g::CONTENT_LEFT, g::TITLE_BAR),
+            egui::pos2(g::WINDOW.0, g::WINDOW.1),
+        );
+        let painter = ui.painter();
+        let r = g::RADIUS_XL;
+        // 15 px of #0003 under a 1 px #ffffff3b highlight. Drawn as bands of falling alpha
+        // because egui has no inner-shadow primitive; 15 bands on two edges is cheaper than
+        // a per-pixel pass and indistinguishable at these alphas.
+        for i in 0..15 {
+            let t = i as f32 / 15.0;
+            let alpha = (1.0 - t) * (1.0 - t) * 51.0;
+            let colour = Color32::from_rgba_unmultiplied(0, 0, 0, alpha as u8);
+            let inset = i as f32;
+            painter.hline(
+                (surface.left() + r)..=surface.right(),
+                surface.top() + inset + 0.5,
+                Stroke::new(1.0, colour),
+            );
+            painter.vline(
+                surface.left() + inset + 0.5,
+                (surface.top() + r)..=surface.bottom(),
+                Stroke::new(1.0, colour),
+            );
+        }
+        let highlight = Color32::from_rgba_unmultiplied(255, 255, 255, 59);
+        painter.hline(
+            (surface.left() + r)..=surface.right(),
+            surface.top() + 0.5,
+            Stroke::new(1.0, highlight),
+        );
+        painter.vline(
+            surface.left() + 0.5,
+            (surface.top() + r)..=surface.bottom(),
+            Stroke::new(1.0, highlight),
+        );
+    }
+
+    /// The top bar, at the reference's own 3rem.
+    ///
+    /// Measured on the running client at 1440x900 (\`.scratch/cap/ref-home.png\`): the strip
+    /// is 48 px of \`--color-raised-bg\` with **no rule under it** -- the seam is the content
+    /// surface's rounded top-left corner, not a border. The wordmark sits at x 12..162,
+    /// y 10..37; back and forward are 28 px outlined squares at x 176 and 212; the route's
+    /// icon starts at 262 and its name at 283; the status line ends at 1278, six pixels
+    /// before the window controls, which are 48 + 48 + 60 wide.
     fn title_bar(&mut self, ui: &mut Ui) {
         let bar = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(g::WINDOW.0, g::TITLE_BAR));
         let painter = ui.painter();
         painter.rect_filled(bar, 0, self.theme.RAISED_BG);
-        // The rule under the bar is the reference's `--color-divider`, one pixel.
-        painter.hline(
-            bar.x_range(),
-            bar.bottom() - 0.5,
-            Stroke::new(1.0, self.theme.DIVIDER),
-        );
 
-        // The mark and the product name, at the reference's own inset.
-        let mark = Rect::from_min_size(egui::pos2(10.0, 10.0), Vec2::splat(20.0));
-        // The reference's mark is its brand logo, which the icon set does not carry: it is
-        // `logo512.png`, through the texture `brand::install` uploads at startup. The accent
-        // plate is the fallback for a frame with no texture -- a headless run, or a failed
-        // decode -- so the bar keeps its anchor instead of losing its left end.
+        // The mark and the product name. The reference draws its wordmark as an SVG
+        // \`h-7\` tall; this launcher has no wordmark asset, so the name is set in the
+        // semibold face at the same height rather than stretched from the mark.
+        let mark = Rect::from_min_size(
+            egui::pos2(12.0, (g::TITLE_BAR - 28.0) / 2.0),
+            Vec2::splat(28.0),
+        );
         if !crate::brand::paint_mark(painter, ui.ctx(), mark) {
-            painter.rect_filled(mark, 5, self.theme.ACCENT_CONTRAST);
+            painter.rect_filled(mark, 7, self.theme.BRAND);
         }
         painter.text(
             egui::pos2(mark.right() + 8.0, bar.center().y),
             Align2::LEFT_CENTER,
             "Sift Launcher",
-            crate::fonts::semibold(14.0),
+            crate::fonts::semibold(16.0),
             self.theme.CONTRAST,
         );
 
-        // The breadcrumb row, on the same line as the brand: back and forward in their
-        // circles, the route's badge, then the page's name. Measured from the reference at
-        // 2x (`top.jpg`): the arrows' circles start at 167, the badge at 240, the title 265.
+        // Back and forward: \`IconButton type="outlined"\` with \`!h-7 !w-7 !border\`, which is
+        // a 28 px square with a one-pixel \`--surface-4\` border and a 16 px glyph. Both are
+        // disabled on a page with no history, and the reference dims the glyph to 20%.
         for (index, glyph) in [Glyph::ChevronLeft, Glyph::ChevronRight]
             .into_iter()
             .enumerate()
         {
-            let centre = egui::pos2(
-                g::BREADCRUMB_ARROWS + index as f32 * 34.0,
-                bar.center().y,
+            let button = Rect::from_min_size(
+                egui::pos2(
+                    g::BREADCRUMB_ARROWS + index as f32 * (g::ARROW_BUTTON + g::ARROW_GAP),
+                    (g::TITLE_BAR - g::ARROW_BUTTON) / 2.0,
+                ),
+                Vec2::splat(g::ARROW_BUTTON),
             );
-            let circle = Rect::from_center_size(centre, Vec2::splat(24.0));
-            painter.circle_stroke(circle.center(), 12.0, Stroke::new(1.0, self.theme.DIVIDER));
-            icons::draw(painter, glyph, Rect::from_center_size(centre, Vec2::splat(13.0)), self.theme.SECONDARY);
+            painter.rect_stroke(
+                button,
+                8,
+                Stroke::new(1.0, self.theme.BUTTON_BG),
+                egui::StrokeKind::Inside,
+            );
+            let ink = self.theme.SECONDARY.gamma_multiply(0.2);
+            icons::draw(
+                painter,
+                glyph,
+                Rect::from_center_size(button.center(), Vec2::splat(16.0)),
+                ink,
+            );
         }
-        let badge = egui::pos2(g::BREADCRUMB_BADGE, bar.center().y);
-        painter.circle_stroke(badge, 10.0, Stroke::new(1.0, self.theme.SECONDARY));
-        icons::draw(
-            painter,
-            self.rail.glyph(),
-            Rect::from_center_size(badge, Vec2::splat(12.0)),
-            self.theme.SECONDARY,
+
+        // The route: the page's own glyph, then its name on the same baseline.
+        let badge = Rect::from_min_size(
+            egui::pos2(g::BREADCRUMB_BADGE, (g::TITLE_BAR - 16.0) / 2.0),
+            Vec2::splat(16.0),
         );
-        // A project page's breadcrumb is `rail ▸ project`, which is why the name comes from
-        // the open project when there is one.
+        icons::draw(painter, self.rail.glyph(), badge, self.theme.SECONDARY);
+        // A project page's breadcrumb is \`rail > project\`, which is why the name comes
+        // from the open project when there is one.
         let crumb = match &self.open_project {
             Some(project) => format!("{}  >  {}", self.rail.title(), project.title),
             None => self.rail.title().to_owned(),
         };
         painter.text(
-            egui::pos2(badge.x + 18.0, bar.center().y),
+            egui::pos2(badge.right() + 5.0, bar.center().y),
             Align2::LEFT_CENTER,
             crumb,
-            crate::fonts::label(15.0),
+            crate::fonts::body(14.0),
             self.theme.CONTRAST,
         );
 
-        // The running-instance chip, right-aligned before the window controls: the
-        // reference prints `No instances running` in secondary text with a small dot.
-        let controls_left = bar.right() - 3.0 * 44.0;
-        let chip = egui::pos2(controls_left - 16.0, bar.center().y);
-        painter.circle_filled(egui::pos2(chip.x - 8.0, chip.y), 3.0, self.theme.DIVIDER);
+        // The running-instance line, right-aligned into the six pixels before the controls:
+        // \`app.action-bar.no-instances-running.message\`, 14 px, secondary.
         painter.text(
-            chip,
+            egui::pos2(g::CONTROLS_LEFT - 6.0, bar.center().y),
             Align2::RIGHT_CENTER,
             self.game.status().to_string(),
-            crate::fonts::body(12.0),
+            crate::fonts::body(14.0),
             self.theme.SECONDARY,
         );
 
-        // The three window controls, in the reference's order and pitch.
+        // The window controls. Two 48 px buttons and a 60 px close button fill the bar's
+        // height; the reference's hover is a circle the size of the button, and the close
+        // button's hover turns it red (\`.titlebar-button.close.hover:before\`).
+        let widths = [48.0, 48.0, g::CLOSE_BUTTON];
+        let mut x = g::CONTROLS_LEFT;
         for (index, glyph) in [Glyph::Minus, Glyph::Square, Glyph::X]
             .into_iter()
             .enumerate()
         {
-            let centre = egui::pos2(
-                controls_left + 22.0 + index as f32 * 44.0,
-                bar.center().y,
-            );
-            let target = Rect::from_center_size(centre, Vec2::splat(28.0));
+            let width = widths[index];
+            let button = Rect::from_min_size(egui::pos2(x, 0.0), egui::vec2(width, g::TITLE_BAR));
+            x += width;
             let response = ui.interact(
-                target,
+                button,
                 egui::Id::new(("window-control", index)),
                 Sense::click(),
             );
+            let closing = index == 2;
+            if response.hovered() {
+                let plate = if closing { self.theme.RED } else { self.theme.BUTTON_BG };
+                painter.rect_filled(button, 0, plate);
+            }
             let ink = if response.hovered() {
-                self.theme.CONTRAST
+                self.theme.ACCENT_CONTRAST
             } else {
                 self.theme.SECONDARY
             };
-            icons::draw(painter, glyph, Rect::from_center_size(centre, Vec2::splat(14.0)), ink);
+            icons::draw(
+                painter,
+                glyph,
+                Rect::from_center_size(button.center(), Vec2::splat(20.0)),
+                ink,
+            );
         }
     }
 
-    /// The five destinations and the utility group, at the measured pitch.
+    /// The rail's buttons, at the reference's own pitch.
+    ///
+    /// The rail is one flex column, not two groups: \`App.vue\` stacks Home, Discover, Skins,
+    /// Screenshots, Hosting, the create button, Settings and the account button with
+    /// \`gap-[0.25rem]\` inside \`p-[0.5rem] pt-0\`. The account button is pinned to the
+    /// bottom (\`mt-auto\` in the reference's markup), which the capture agrees with: icon
+    /// centres land at 71, 123, 175, 227, 279, 331 from the top, and the last two at 815
+    /// and 867 -- nine pixels above the window's bottom edge for a 48 px button and 8 px
+    /// of padding.
+    ///
+    /// The active plate is \`--color-button-bg-selected\`, which in dark mode is
+    /// \`rgba(27, 217, 106, 0.25)\`; over \`--color-raised-bg\` that resolves to #24553d,
+    /// which is the colour the capture measures behind the first icon.
     ///
     /// Returns whether a hover is still moving, so the caller can keep the frame loop
     /// alive only while something is in flight.
@@ -572,27 +716,18 @@ impl Shell {
         );
         let painter = ui.painter();
         painter.rect_filled(rail, 0, self.theme.RAISED_BG);
-        painter.vline(
-            rail.right() - 0.5,
-            rail.y_range(),
-            Stroke::new(1.0, self.theme.DIVIDER),
-        );
 
         let mut animating = false;
         let mut hovered = None;
         for (index, destination) in Rail::ALL.into_iter().enumerate() {
-            let centre = egui::pos2(
-                g::RAIL / 2.0,
-                g::TITLE_BAR + g::RAIL_FIRST + index as f32 * g::RAIL_PITCH,
+            let button = Rect::from_min_size(
+                egui::pos2(
+                    g::RAIL_PAD,
+                    g::TITLE_BAR + g::RAIL_FIRST + index as f32 * g::RAIL_PITCH,
+                ),
+                Vec2::splat(g::RAIL_BUTTON),
             );
-            // A 40 px target around a 20 px glyph: the reference's plate is larger than
-            // the icon so the pointer can rest on it.
-            let target = Rect::from_center_size(centre, Vec2::splat(40.0));
-            let response = ui.interact(
-                target,
-                egui::Id::new(("rail", index)),
-                Sense::click(),
-            );
+            let response = ui.interact(button, egui::Id::new(("rail", index)), Sense::click());
             if response.hovered() {
                 hovered = Some(destination);
             }
@@ -610,15 +745,11 @@ impl Shell {
             }
 
             let selected = destination == self.rail;
-            let plate = if selected {
-                self.theme.BUTTON_BG_SELECTED
+            // \`rounded-full\` on a 48 px button is a 24 px radius: a circle, not a plate.
+            if selected {
+                painter.circle_filled(button.center(), g::RAIL_BUTTON / 2.0, self.theme.BUTTON_BG_SELECTED);
             } else if response.hovered() {
-                self.theme.BUTTON_BG
-            } else {
-                Color32::TRANSPARENT
-            };
-            if plate != Color32::TRANSPARENT {
-                painter.rect_filled(target, 12, plate);
+                painter.circle_filled(button.center(), g::RAIL_BUTTON / 2.0, self.theme.BUTTON_BG);
             }
             let ink = if selected {
                 self.theme.BUTTON_TEXT_SELECTED
@@ -630,30 +761,37 @@ impl Shell {
             icons::draw(
                 painter,
                 destination.glyph(),
-                Rect::from_center_size(centre, Vec2::splat(20.0)),
+                Rect::from_center_size(button.center(), Vec2::splat(24.0)),
                 ink,
             );
         }
-        // The reference's `+` sits under a hairline, past the last destination: it is not a
-        // page, it makes one. It goes through `act` so it is the same verb as Home's button.
-        let after = g::TITLE_BAR + g::RAIL_FIRST + Rail::ALL.len() as f32 * g::RAIL_PITCH;
-        painter.hline(
-            (rail.left() + 16.0)..=(rail.right() - 16.0),
-            after - g::RAIL_PITCH / 2.0,
-            Stroke::new(1.0, self.theme.DIVIDER),
-        );
-        let create = egui::Rect::from_center_size(
-            egui::pos2(g::RAIL / 2.0, after + 6.0),
-            Vec2::splat(40.0),
+
+        // The create button continues the same column: it is not a page, it makes one, and
+        // in the reference it is a NavButton with a \`+\` after Hosting.
+        // The create button is not the next slot in the column: it lives inside the
+        // reference's `QuickInstanceSwitcher`, under a 32 px divider row
+        // (`h-px w-8` inside `gap-1` and `py-2`), which the capture puts at y 348. Its
+        // icon centre measures 356, so the button starts 25 px below the last destination's
+        // slot -- `RAIL_CREATE_DROP` is that distance and nothing else.
+        const RAIL_CREATE_DROP: f32 = 25.0;
+        let create = Rect::from_min_size(
+            egui::pos2(
+                g::RAIL_PAD,
+                g::TITLE_BAR
+                    + g::RAIL_FIRST
+                    + Rail::ALL.len() as f32 * g::RAIL_PITCH
+                    + RAIL_CREATE_DROP,
+            ),
+            Vec2::splat(g::RAIL_BUTTON),
         );
         let create_response = ui.interact(create, egui::Id::new("rail-create"), Sense::click());
         if create_response.hovered() {
-            painter.rect_filled(create, 12, self.theme.BUTTON_BG);
+            painter.circle_filled(create.center(), g::RAIL_BUTTON / 2.0, self.theme.BUTTON_BG);
         }
         icons::draw(
             painter,
             Glyph::Plus,
-            egui::Rect::from_center_size(create.center(), Vec2::splat(20.0)),
+            Rect::from_center_size(create.center(), Vec2::splat(24.0)),
             if create_response.hovered() {
                 self.theme.CONTRAST
             } else {
@@ -664,35 +802,32 @@ impl Shell {
             self.act(crate::pages::home::Action::Create);
         }
 
-        // The utility group below a separator: settings, reload, account. The reference
-        // pins them to the bottom of the rail, which is why they are positioned from the
-        // rail's own bottom edge rather than continuing the pitch.
-        painter.hline(
-            (rail.left() + 16.0)..=(rail.right() - 16.0),
-            rail.bottom() - 3.0 * g::RAIL_PITCH - 24.0,
-            Stroke::new(1.0, self.theme.DIVIDER),
-        );
-        // The reference's three: settings, reload, account. Only the account row does
-        // something yet -- it opens About. The other two are honest about it below: a press
-        // that silently does nothing reads as a broken button, so they answer with a toast
-        // naming what is missing.
-        for (index, glyph) in [Glyph::Settings, Glyph::RefreshCw, Glyph::CircleUser]
-            .into_iter()
-            .enumerate()
-        {
-            let centre = egui::pos2(
-                g::RAIL / 2.0,
-                rail.bottom() - 24.0 - (2 - index) as f32 * g::RAIL_PITCH,
+        // The bottom pair: Settings and the account, \`mt-auto\`, eight pixels off the floor.
+        for (index, glyph) in [Glyph::Settings, Glyph::CircleUser].into_iter().enumerate() {
+            let button = Rect::from_min_size(
+                egui::pos2(
+                    g::RAIL_PAD,
+                    rail.bottom() - g::RAIL_PAD - g::RAIL_BUTTON - (1 - index) as f32 * g::RAIL_PITCH,
+                ),
+                Vec2::splat(g::RAIL_BUTTON),
             );
-            let target = Rect::from_center_size(centre, Vec2::splat(32.0));
-            icons::draw(painter, glyph, target, self.theme.SECONDARY);
-            if ui
-                .interact(target, egui::Id::new(("utility", index)), Sense::click())
-                .clicked()
-            {
+            let response = ui.interact(button, egui::Id::new(("utility", index)), Sense::click());
+            if response.hovered() {
+                painter.circle_filled(button.center(), g::RAIL_BUTTON / 2.0, self.theme.BUTTON_BG);
+            }
+            icons::draw(
+                painter,
+                glyph,
+                Rect::from_center_size(button.center(), Vec2::splat(24.0)),
+                if response.hovered() {
+                    self.theme.CONTRAST
+                } else {
+                    self.theme.SECONDARY
+                },
+            );
+            if response.clicked() {
                 match index {
                     0 => self.settings.open = true,
-                    1 => self.toast = Some("Reload is not wired yet.".to_owned()),
                     _ => self.about_open = true,
                 }
             }

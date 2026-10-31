@@ -1769,11 +1769,13 @@ mod tests {
     /// The shell's content column at a window width: the rail, the panel and the 24-point
     /// inset, with the last 16 points the shell keeps for itself (`pages/mod.rs:39-58`).
     fn page_width_at(window_width: f32) -> f32 {
+        // The surface's left edge to the sidebar's left edge, less the page's own px-6 on
+        // both sides. There is no further gutter: the sidebar is the surface's right
+        // column, not a panel with a gap in front of it.
         window_width
             - crate::geometry::RAIL
             - crate::geometry::PANEL
-            - crate::geometry::CONTENT_INSET
-            - 16.0
+            - 2.0 * crate::geometry::CONTENT_INSET
     }
 
     /// At 1440 the source's `windowWidth < 1280` test is false, so `minWidth` is 10rem =
@@ -1810,14 +1812,14 @@ mod tests {
     #[test]
     fn the_grid_tiles_the_page_at_1440() {
         let page = page_width_at(crate::geometry::WINDOW.0);
-        assert_eq!(page, 996.0, "the shell's content column at 1440");
+        assert_eq!(page, 1028.0, "the shell's content column at 1440");
         assert_eq!(min_card_width(crate::geometry::WINDOW.0), 160.0);
 
         let grid = grid_layout(page, crate::geometry::WINDOW.0);
-        assert_eq!(grid.columns, 5, "floor((948 + 12) / (160 + 12))");
+        assert_eq!(grid.columns, 5, "floor((980 + 12) / (160 + 12))");
         assert!(
-            (grid.card_width - 180.0).abs() < 0.001,
-            "948 / 5 with four 12-point gaps"
+            (grid.card_width - 186.4).abs() < 0.001,
+            "(980 - 4 * 12) / 5"
         );
 
         let used = 2.0 * PAGE_PADDING
@@ -1828,11 +1830,11 @@ mod tests {
             "padding + columns * card + gaps must be the page width: {used} vs {page}"
         );
 
-        // 180 * 40 / 31: the skin tile's own aspect decides the height, not the instance
+        // 186.4 * 40 / 31: the skin tile's own aspect decides the height, not the instance
         // card's `+ 3.375rem`.
         assert!(
-            (grid.card_height - 232.258).abs() < 0.01,
-            "180 * 40 / 31, got {}",
+            (grid.card_height - 240.516).abs() < 0.01,
+            "186.4 * 40 / 31, got {}",
             grid.card_height
         );
         assert_eq!(grid.card_height, card_height(grid.card_width));
@@ -1844,12 +1846,12 @@ mod tests {
     #[test]
     fn the_grid_tiles_the_page_at_960() {
         let page = page_width_at(960.0);
-        assert_eq!(page, 516.0, "the same shell furniture at 960");
+        assert_eq!(page, 548.0, "the same shell furniture at 960");
         assert_eq!(min_card_width(960.0), 128.0);
 
         let grid = grid_layout(page, 960.0);
-        assert_eq!(grid.columns, 3, "floor((468 + 12) / (128 + 12))");
-        assert!((grid.card_width - 148.0).abs() < 0.001);
+        assert_eq!(grid.columns, 3, "floor((500 + 12) / (128 + 12))");
+        assert!((grid.card_width - 158.666_664).abs() < 0.01);
 
         let used = 2.0 * PAGE_PADDING
             + grid.columns as f32 * grid.card_width
@@ -1859,8 +1861,8 @@ mod tests {
             "padding + columns * card + gaps must be the page width: {used} vs {page}"
         );
         assert!(
-            (grid.card_height - 190.968).abs() < 0.01,
-            "148 * 40 / 31, got {}",
+            (grid.card_height - 204.731).abs() < 0.01,
+            "158.67 * 40 / 31, got {}",
             grid.card_height
         );
     }

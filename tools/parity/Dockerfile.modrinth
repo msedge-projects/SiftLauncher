@@ -1,0 +1,28 @@
+# The reference client's runtime, built rather than assumed.
+#
+# Modrinth App 0.22.0 ships as an AppImage whose bundled webkit2gtk asks for
+# GLIBC_2.43; Ubuntu 24.04 (glibc 2.39) cannot load it, which is why this image
+# exists at all. Arch's glibc is new enough and its package set has the GTK/X11
+# stack the AppImage expects to find already present.
+#
+# It is also the launcher's runtime for captures: SiftUi is built here so both
+# windows are drawn by the same X server, with the same fontconfig, on the same
+# screen. A capture can then hold both programs in one image.
+FROM archlinux:latest
+
+RUN pacman -Syu --noconfirm --needed \
+      base-devel gtk3 libsoup3 webkit2gtk-4.1 mesa libglvnd at-spi2-core \
+      libayatana-appindicator librsvg libnotify nss ttf-liberation noto-fonts \
+      noto-fonts-emoji xdotool imagemagick xorg-server-xvfb xorg-xauth \
+      xorg-xrandr xorg-xdpyinfo xcb-util-renderutil libxss gst-plugins-base \
+      gst-plugins-good rust cargo pkg-config libx11 libxcursor libxrandr libxi \
+      libxkbcommon wayland freetype2 fontconfig alsa-lib procps-ng python \
+      && pacman -Scc --noconfirm
+
+ENV DISPLAY=:99 \
+    WEBKIT_DISABLE_COMPOSITING_MODE=1 \
+    WEBKIT_DISABLE_DMABUF_RENDERER=1 \
+    LIBGL_ALWAYS_SOFTWARE=1
+
+WORKDIR /scratch
+CMD ["sleep", "infinity"]
