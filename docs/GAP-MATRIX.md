@@ -1388,3 +1388,22 @@ apparently does not. Two candidate responses, and the first is one command:
 
 **Do not close this row before running 1.** It is one container command and it decides whether
 ten rounds of "the field does not take typing" were measuring the product or the lab.
+
+### The focus experiment had an aim error of its own (2026-10-31)
+
+Chasing the keyboard, the last experiment clicked (32,120) intending Discover and landed on
+**Home** -- the whole-frame capture shows the welcome page, not the search field. So that run
+proves nothing about typing: there was nothing on screen to type into.
+
+The facts that do stand, from runs that were aimed correctly: the Java 25 field reports
+`hovered=true clicked=true` and takes no characters; the Discover search field, in the run whose
+capture shows the Discover page, was still empty after typing; and Escape did not close the
+Settings modal opened from the gear at (32,815).
+
+The focus machinery itself works: `XGetInputFocus` initially returns root (no window manager),
+and `xdotool windowfocus` does set it to this window -- 2097156 -- and `getwindowfocus` confirms.
+
+**So the next run must be aimed like this**: launch, click the compass at **(32,202)** for
+Discover, confirm the capture shows the search field, then `windowfocus` the window, then type,
+then capture the **whole frame** and crop only after seeing it. Three of this session's wrong
+conclusions came from a crop taken before the frame was checked; the fourth came from this one.
