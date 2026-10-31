@@ -839,3 +839,25 @@ had moved to x 88 and the capture showed it still at x 64 — the strip was 622 
 reference is 636 and the search field 1059 where it is 1028. Both are now on
 `TEXT_LEFT`/`CONTENT_INSET` and measure 1028. **A commit message is not evidence; only the
 next capture is**, and this document now says so twice.
+
+### Wave 6 — the theme cards, drawn from the capture
+
+The four theme cards were 96x64 with a 26-point footer and two flat bars where the reference has
+198x158 with a 42-point footer and a mock window. Measured from `ref-settings2.png`: cards at
+x 531..729, 746..944, 961..1159 -- 198 wide with 17 between them, which is 628 and exactly the
+pane's usable width after `px-6` -- a 114-point preview, the theme's own page colour inside a
+one-pixel ring, a 122x64 mock window with a 20-point titlebar and two text bars, and a footer
+carrying a 16-point radio and a 16-point label. Dark and Light print a moon and a sun after
+their labels; the other two print nothing.
+
+Two things this taught that the code now says:
+
+* `gamma_multiply` lowers alpha; it cannot lighten. A mock window drawn with it is invisible on
+  a dark theme and a white rectangle on a light one, because a light plate needs to step *down*
+  toward black rather than up toward white.
+* The selected card's ring is the brand *wash*, not the brand itself: the capture's selected
+  card is outlined, not drawn on.
+
+Still open in this block, and measured: our cards start at y 284 against the reference's 291,
+which moves every row under them, and the row titles below are 14 points where the source's are
+16 to 18.

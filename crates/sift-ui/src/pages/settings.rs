@@ -646,17 +646,19 @@ const THEME_OLED_LABEL: &str = "OLED";
 
 /// A theme card's size: `appearance-settings-theme-selector.vue` draws each preview at
 /// `h-16 w-24` (96x64) with `gap-3` between them, and the label under it.
-const THEME_CARD_WIDTH: f32 = 96.0;
-const THEME_CARD_HEIGHT: f32 = 64.0;
-const THEME_CARD_GAP: f32 = 12.0;
+// The capture: cards 531..729, 746..944 and 961..1159 -- 198 wide with 17 between them, so
+// three and their gaps fill the pane's 628 usable points exactly. Preview 114 tall, footer 42.
+const THEME_CARD_WIDTH: f32 = 198.0;
+const THEME_CARD_HEIGHT: f32 = 116.0;
+const THEME_CARD_GAP: f32 = 17.0;
 /// The footer strip inside a card: the radio and the label.
-const THEME_FOOTER: f32 = 26.0;
+const THEME_FOOTER: f32 = 42.0;
 #[allow(dead_code)]
 const THEME_CARD_LABEL_HEIGHT: f32 = 20.0;
 /// `rounded-xl` on the preview card.
 const THEME_CARD_RADIUS: u8 = 12;
 /// The label under a card is `text-sm`.
-const THEME_CARD_LABEL_SIZE: f32 = 12.0;
+const THEME_CARD_LABEL_SIZE: f32 = 16.0;
 
 const THEME_SYSTEM_LABEL: &str = "Sync with system";
 
@@ -3617,55 +3619,110 @@ fn draw_body(
                     );
                     height = height.max(card.bottom() - y);
                     let chosen = choice == state.theme;
-                    body.rect_filled(card, THEME_CARD_RADIUS, theme.RAISED_BG);
+                    body.rect_filled(card, THEME_CARD_RADIUS, theme.SURFACE_4);
+                    body.rect_stroke(
+                        card,
+                        THEME_CARD_RADIUS,
+                        Stroke::new(
+                            // A washed brand ring, not the solid brand: the capture's selected
+                            // card is outlined in the highlight rather than drawn on.
+                            1.0,
+                            if chosen { theme.BUTTON_BG_SELECTED } else { theme.RAISED_BG },
+                        ),
+                        egui::StrokeKind::Inside,
+                    );
+                    // The preview is the theme's own page colour with a mock window inside it:
+                    // a rounded plate, a 20-point titlebar and two text bars, which is what the
+                    // reference draws rather than the two flat bars this had.
+                    let preview = Rect::from_min_max(
+                        card.min + egui::vec2(1.0, 1.0),
+                        pos2(card.right() - 1.0, card.bottom() - THEME_FOOTER),
+                    );
+                    body.rect_filled(preview, THEME_CARD_RADIUS - 1, choice.plate(theme));
+                    // `gamma_multiply` lowers alpha; it cannot lighten. The mock window is a
+                    // lighter step of the theme's own ground, so it is mixed toward white --
+                    // which is what makes a titlebar visible on a dark theme at all.
+                    let plate = choice.plate(theme);
+                    // A light theme steps *down* toward black rather than up toward white: the
+                    // reference's Light card is a white page with a grey window, and lightening
+                    // a white plate leaves the mock window invisible.
+                    let luma = (0.2126 * plate.r() as f32 + 0.7152 * plate.g() as f32
+                        + 0.0722 * plate.b() as f32)
+                        / 255.0;
+                    let target = if luma > 0.5 { 0.0_f32 } else { 255.0_f32 };
+                    let lighten = |amount: f32| -> egui::Color32 {
+                        egui::Color32::from_rgb(
+                            (plate.r() as f32 + (target - plate.r() as f32) * amount) as u8,
+                            (plate.g() as f32 + (target - plate.g() as f32) * amount) as u8,
+                            (plate.b() as f32 + (target - plate.b() as f32) * amount) as u8,
+                        )
+                    };
+                    let window = Rect::from_center_size(
+                        preview.center(),
+                        vec2(122.0, 64.0),
+                    );
+                    body.rect_filled(window, 8, lighten(0.08));
+                    body.rect_filled(
+                        Rect::from_min_size(window.min, vec2(window.width(), 20.0)),
+                        8,
+                        lighten(0.16),
+                    );
+                    let bar_ink = lighten(0.30);
+                    body.rect_filled(
+                        Rect::from_min_size(
+                            pos2(window.left() + 12.0, window.top() + 30.0),
+                            vec2(window.width() - 24.0, 8.0),
+                        ),
+                        4,
+                        bar_ink,
+                    );
+                    body.rect_filled(
+                        Rect::from_min_size(
+                            pos2(window.left() + 12.0, window.top() + 44.0),
+                            vec2((window.width() - 24.0) * 0.55, 8.0),
+                        ),
+                        4,
+                        bar_ink,
+                    );
+                    let footer = Rect::from_min_max(
+                        pos2(card.left() + 1.0, card.bottom() - THEME_FOOTER),
+                        pos2(card.right() - 1.0, card.bottom() - 1.0),
+                    );
+                    body.rect_filled(footer, THEME_CARD_RADIUS - 1, theme.SURFACE_4);
+                    let radio = pos2(footer.left() + 17.0, footer.center().y);
+                    body.circle_stroke(radio, 7.0, Stroke::new(1.0, theme.SECONDARY));
                     if chosen {
-                        body.rect_stroke(
-                            card,
-                            THEME_CARD_RADIUS,
-                            Stroke::new(2.0, theme.BRAND),
-                            egui::StrokeKind::Inside,
+                        body.circle_filled(radio, 7.0, theme.BRAND);
+                    }
+                    let label = body.layout_no_wrap(
+                        choice.label().to_owned(),
+                        fonts::body(THEME_CARD_LABEL_SIZE),
+                        if chosen { theme.CONTRAST } else { theme.BASE },
+                    );
+                    let label_w = label.size().x;
+                    body.galley(
+                        pos2(footer.left() + 32.0, footer.center().y - label.size().y / 2.0),
+                        label,
+                        if chosen { theme.CONTRAST } else { theme.BASE },
+                    );
+                    // `Dark` carries a moon and `Light` a sun in the reference's footer; the
+                    // other two carry nothing.
+                    let badge = match choice {
+                        ThemeChoice::Dark => Some(crate::icons::Glyph::Moon),
+                        ThemeChoice::Light => Some(crate::icons::Glyph::Sun),
+                        _ => None,
+                    };
+                    if let Some(glyph) = badge {
+                        crate::icons::draw(
+                            &body,
+                            glyph,
+                            Rect::from_min_size(
+                                pos2(footer.left() + 32.0 + label_w + 6.0, footer.center().y - 7.0),
+                                Vec2::splat(14.0),
+                            ),
+                            theme.SECONDARY,
                         );
                     }
-                    // The preview: a plate of the theme's own ground with two bars standing in
-                    // for a title and a line, inset above the footer.
-                    let preview = Rect::from_min_size(
-                        card.min + egui::vec2(1.0, 1.0),
-                        vec2(card.width() - 2.0, THEME_CARD_HEIGHT - 1.0),
-                    );
-                    body.rect_filled(preview, THEME_CARD_RADIUS, choice.plate(theme));
-                    let bar = choice.plate(theme).gamma_multiply(0.35);
-                    body.rect_filled(
-                        Rect::from_min_size(
-                            pos2(preview.left() + 12.0, preview.top() + 16.0),
-                            vec2(preview.width() - 24.0, 6.0),
-                        ),
-                        3,
-                        bar,
-                    );
-                    body.rect_filled(
-                        Rect::from_min_size(
-                            pos2(preview.left() + 12.0, preview.top() + 30.0),
-                            vec2((preview.width() - 24.0) * 0.6, 6.0),
-                        ),
-                        3,
-                        bar,
-                    );
-                    // The footer: a radio dot and the label, inside the card.
-                    let radio = Rect::from_center_size(
-                        pos2(card.left() + 14.0, card.bottom() - THEME_FOOTER / 2.0),
-                        vec2(10.0, 10.0),
-                    );
-                    body.circle_stroke(radio.center(), 5.0, Stroke::new(1.0, theme.DIVIDER));
-                    if chosen {
-                        body.circle_filled(radio.center(), 5.0, theme.BRAND);
-                    }
-                    body.text(
-                        pos2(card.left() + 26.0, card.bottom() - THEME_FOOTER / 2.0),
-                        Align2::LEFT_CENTER,
-                        choice.label(),
-                        fonts::body(THEME_CARD_LABEL_SIZE),
-                        if chosen { theme.CONTRAST } else { theme.SECONDARY },
-                    );
                     if !state.consumed
                         && ui.input(|input| input.pointer.any_click())
                         && pointer.is_some_and(|pointer| card.contains(pointer))
