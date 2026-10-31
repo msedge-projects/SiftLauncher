@@ -928,3 +928,19 @@ Note for whoever reads the tile RMS: lightening the scrim to the measured value 
 whole-modal RMS from 24.2 to 27.4, because a sharp backdrop differs from a blurred one wherever
 the content has detail. The mean per channel fell (9.2/14.1/13.3 -> 8.3/10.6/9.4), which is the
 honest signal; the RMS is dominated by the sidebar tiles the blur would have softened.
+
+### The Features tab, captured on both sides (2026-10-31)
+
+A second tab captured against the reference, because every settings tab shares the layout code
+the rule-gap fix touched. It holds: an 18-point title, a 16-point description on two lines, and
+the section rules land where the reference's do.
+
+One visual difference and one data difference came out of it.
+
+The **engaged switch knob** was white because an earlier brief asked for white; the reference's
+is `bg-black/90` (`Toggle.vue:24`) and the capture reads #03150a. It is now the accent-contrast
+black, and every switch in the modal follows.
+
+The **default states** differ: the reference ships "Show Screenshots tab in instances" off and
+"Show Worlds/Files" on, where this launcher has all three on. That is a settings-default mismatch
+rather than a drawing one -- open, and recorded here so it is not mistaken for a rendering bug.

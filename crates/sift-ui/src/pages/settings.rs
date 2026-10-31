@@ -4102,10 +4102,11 @@ fn switch(painter: &egui::Painter, track: Rect, theme: &theme::Theme, on: bool) 
     painter.rect_filled(track, SWITCH_RADIUS, fill);
 
     let knob = switch_knob(if on { 1.0 } else { 0.0 }, track);
-    // The source's knob is `bg-black/90` when on and `bg-secondary` when off
-    // (`Toggle.vue:24-25`); the brief asks for white on the brand track, which is what is
-    // drawn, and the off knob keeps the source's secondary.
-    let knob_fill = if on { Color32::WHITE } else { theme.SECONDARY };
+    // `bg-black/90` on the brand track and `bg-secondary` off it (`Toggle.vue:24-25`). This
+    // drew a white knob because an earlier brief asked for one; the capture settles it -- the
+    // reference's engaged knob is near-black on the green, and every switch in the modal
+    // matched the brief instead of the reference until now.
+    let knob_fill = if on { theme.ACCENT_CONTRAST } else { theme.SECONDARY };
     painter.circle_filled(knob.center(), SWITCH_KNOB / 2.0, knob_fill);
 }
 
