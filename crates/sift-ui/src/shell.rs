@@ -1425,7 +1425,10 @@ impl Shell {
         // A facet without a query is a question too -- it is what a category press asks -- so this
         // is not nested inside the field's `Option`.
         let asked_query = self.search.query().map(str::to_owned).unwrap_or_default();
-        if !asked_query.is_empty() || self.facet.is_some() {
+        // The empty box is the reference's default feed -- `Browse.vue:1201` requests it when
+        // the page mounts -- so asking is not gated on text. A bare block rather than a
+        // condition, because "always" is what this is.
+        {
             let query = asked_query;
             // A different question starts at the first page: the offset is part of the request
             // now, so paging and then typing would ask for page three of a search with one page.
@@ -1693,11 +1696,36 @@ impl Shell {
                         .collect(),
                     _ => Vec::new(),
                 };
-                let sample = sample_results();
-                let results: &[Card] = if live.is_empty() { &sample } else { &live };
+                let results: &[Card] = &live;
+                // No results is a state, not a reason to invent six: the reference draws a
+                // centred line while the feed is out and "No results found for your query!"
+                // when it comes back empty. The fabricated cards that used to stand here were
+                // the single most misleading thing in this page.
+                if results.is_empty() {
+                    let message = match self.results.state() {
+                        crate::search::State::Loading => "Loading…",
+                        crate::search::State::Failed { .. } => {
+                            "The search could not be reached. Check the connection."
+                        }
+                        _ => "No results found for your query!",
+                    };
+                    let centre = egui::pos2(
+                        ui.max_rect().center().x,
+                        ui.max_rect().top() + 120.0,
+                    );
+                    ui.painter().text(
+                        centre,
+                        Align2::CENTER_CENTER,
+                        message,
+                        crate::fonts::body(16.0),
+                        self.theme.SECONDARY,
+                    );
+                }
                 let mut opened = false;
-                for index in 0..results.len().max(1) {
-                    let result = &results[index % results.len()];
+                // No modulo: an empty list is a state drawn above, not a list to repeat, and
+                // `index % 0` is a panic rather than a card.
+                for index in 0..results.len() {
+                    let result = &results[index];
                     // The button's word comes from the install, not from the card: a card
                     // cannot know whether its own project is the one being installed.
                     let label = self.install.label(&result.id);
@@ -1855,17 +1883,18 @@ fn card(
     // The summary's measure is the reference's, not the space the button leaves: at 2.2x
     // its first card breaks after "in a", which is a ~440-point line, so the second line
     // exists for the same reason it does there.
-    let summary_width = (rect.width() - 96.0 - 150.0).min(440.0);
-    // Two lines, ellipsised, the way the reference cuts a long description: a card that grew
-    // with its summary would break the list's rhythm and the grid's arithmetic.
+    // The summary starts on the title's own left edge (129 in from the card) and runs to the
+    // stats column, in 16-point text: it used to start 96 in, which put its first line under
+    // the 100-point icon, and be set at 13, which made it smaller than the author line.
+    let summary_width = (rect.width() - 129.0 - 260.0).max(120.0);
     let summary_text = ellipsise(&result.summary, 150);
     let summary = painter.layout(
         summary_text,
-        crate::fonts::body(13.0),
+        crate::fonts::body(16.0),
         theme.SECONDARY,
         summary_width,
     );
-    painter.galley(egui::pos2(rect.left() + 96.0, rect.top() + 44.0), summary, theme.SECONDARY);
+    painter.galley(egui::pos2(rect.left() + 129.0, rect.top() + 48.0), summary, theme.SECONDARY);
 
     // The tag pills, each with its own glyph, then the stats on the same row. The row stops
     // where the stats begin and reports what it could not show as a `+N` chip, which is what the
@@ -1931,52 +1960,97 @@ fn card(
     }
 
     // The stats and the install button, right-aligned: downloads, followers, updated.
+    // The reference's Install is an **outlined** brand button -- 94x36, radius 12, a
+    // one-pixel `--color-brand` ring, brand lettering, no fill -- with a plus glyph before
+    // the word. A filled plate with dark text reads as the pressed state of something else.
     let install = Rect::from_min_size(
-        egui::pos2(rect.right() - 16.0 - 96.0, rect.top() + 16.0),
-        egui::vec2(96.0, 36.0),
+        egui::pos2(rect.right() - 16.0 - 94.0, rect.top() + 16.0),
+        egui::vec2(94.0, 36.0),
     );
-    painter.rect_filled(install, 8, theme.BUTTON_BG_SELECTED);
-    painter.text(
-        install.center(),
-        Align2::CENTER_CENTER,
-        install_label,
-        crate::fonts::semibold(13.0),
-        theme.BUTTON_TEXT_SELECTED,
+    painter.rect_stroke(
+        install,
+        12,
+        Stroke::new(1.0, theme.BRAND),
+        egui::StrokeKind::Inside,
     );
-    // The three stats, right-aligned on the tag row in the reference's order.
-    let mut right = rect.right() - 16.0;
+    let install_text = painter.layout_no_wrap(
+        install_label.to_owned(),
+        crate::fonts::semibold(14.0),
+        theme.BRAND,
+    );
+    let glyph_w = 16.0;
+    let gap = 6.0;
+    let content_w = glyph_w + gap + install_text.size().x;
+    let start_x = install.center().x - content_w / 2.0;
+    icons::draw(
+        painter,
+        Glyph::Plus,
+        Rect::from_center_size(
+            egui::pos2(start_x + glyph_w / 2.0, install.center().y),
+            Vec2::splat(glyph_w),
+        ),
+        theme.BRAND,
+    );
+    painter.galley(
+        egui::pos2(start_x + glyph_w + gap, install.center().y - install_text.size().y / 2.0),
+        install_text,
+        theme.BRAND,
+    );
+    // The stats are two right-aligned lines beside the summary: downloads then followers on
+    // the first, the update clock on the second. The capture puts the pair at y 306..321 and
+    // the clock at 336..353, both ending at x 1098, in 14-point text -- they used to be one
+    // 11-point line on the tag row, which is where the tags belong and the stats do not.
+    let mut counts_right = rect.right() - 16.0;
+    let counts_y = rect.top() + 62.0;
     for (glyph, value) in [
         (Glyph::Download, result.downloads.as_str()),
         (Glyph::Heart, result.followers.as_str()),
-        (Glyph::Calendar, result.updated.as_str()),
     ] {
         if value.is_empty() {
-            // A stat the API does not have is a glyph with nothing after it; the reference
-            // simply omits the row.
             continue;
         }
         let label = painter.layout_no_wrap(
             value.to_owned(),
-            crate::fonts::body(11.0),
+            crate::fonts::body(14.0),
             theme.SECONDARY,
         );
-        painter.text(
-            egui::pos2(right, rect.top() + 116.0),
-            Align2::RIGHT_CENTER,
-            value,
-            crate::fonts::body(11.0),
+        painter.galley(
+            egui::pos2(counts_right - label.size().x, counts_y - label.size().y / 2.0),
+            label.clone(),
             theme.SECONDARY,
         );
         icons::draw(
             painter,
             glyph,
-            Rect::from_min_size(
-                egui::pos2(right - label.size().x - 16.0, rect.top() + 116.0 - 6.0),
-                Vec2::splat(12.0),
+            Rect::from_center_size(
+                egui::pos2(counts_right - label.size().x - 12.0, counts_y),
+                Vec2::splat(14.0),
             ),
             theme.SECONDARY,
         );
-        right -= label.size().x + 28.0;
+        counts_right -= label.size().x + 12.0 + 14.0 + 16.0;
+    }
+    if !result.updated.is_empty() {
+        let label = painter.layout_no_wrap(
+            result.updated.clone(),
+            crate::fonts::body(14.0),
+            theme.SECONDARY,
+        );
+        let y = rect.top() + 92.0;
+        painter.galley(
+            egui::pos2(rect.right() - 16.0 - label.size().x, y - label.size().y / 2.0),
+            label.clone(),
+            theme.SECONDARY,
+        );
+        icons::draw(
+            painter,
+            Glyph::Calendar,
+            Rect::from_center_size(
+                egui::pos2(rect.right() - 16.0 - label.size().x - 12.0, y),
+                Vec2::splat(14.0),
+            ),
+            theme.SECONDARY,
+        );
     }
 
     ui.add_space(g::CARD_GAP);

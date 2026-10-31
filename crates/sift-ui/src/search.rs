@@ -115,11 +115,11 @@ impl Search {
             "{project_type}|{index}|{limit}|{offset}|{}|{query}",
             facets.join(",")
         );
-        // An empty box is the reference's default feed and is not asked -- unless a facet is
-        // chosen, which is a question of its own and the one a category press asks.
-        if (query.is_empty() && facets.is_empty())
-            || self.current.as_deref() == Some(asked.as_str())
-        {
+        // The empty box is a question too: `Browse.vue:1201` requests the default feed when
+        // the page mounts, which is why the reference shows twenty results, a real total and a
+        // pager before anyone types. This used to refuse to ask without text and then draw
+        // six invented cards in its place.
+        if self.current.as_deref() == Some(asked.as_str()) {
             return;
         }
         self.current = Some(asked);
@@ -315,19 +315,22 @@ fn hash(query: &str) -> u64 {
 mod tests {
     use super::*;
 
-    /// A facet is part of the question: the same query with a filter is a different request, and
-    /// an empty box with a filter is still a request.
+    /// A facet is part of the question: the same query with a filter is a different request,
+    /// and an empty box is a request in its own right -- the reference's default feed, which
+    /// `Browse.vue:1201` asks for when the page mounts.
     #[test]
     fn a_facet_is_part_of_the_question() {
         let mut search = Search::default();
         search.request("", "modpack", "relevance", 20, 0, &[]);
         assert!(
-            matches!(search.state(), State::Idle),
-            "an empty box with no filter is the default feed, not a request"
+            matches!(search.state(), State::Loading),
+            "an empty box is the default feed, and it is asked"
         );
+        let feed = search.current.clone();
 
         let facet = vec!["categories:adventure".to_owned()];
         search.request("", "modpack", "relevance", 20, 0, &facet);
+        assert_ne!(search.current, feed, "the facet is part of the question");
         assert!(
             matches!(search.state(), State::Loading),
             "an empty box with a filter is a question"
@@ -369,11 +372,15 @@ mod tests {
     fn the_same_query_is_not_asked_twice() {
         let mut search = Search::default();
         search.request("   ", "modpack", "relevance", 20, 0, &[]);
-        assert!(matches!(search.state(), State::Idle), "whitespace is not a query");
+        assert!(
+            matches!(search.state(), State::Loading),
+            "whitespace trims to the empty box, which is the default feed"
+        );
         search.request("sodium", "modpack", "relevance", 20, 0, &[]);
         assert!(matches!(search.state(), State::Loading));
+        let asked = search.current.clone();
         search.request("sodium", "modpack", "relevance", 20, 0, &[]);
-        assert!(matches!(search.state(), State::Loading), "still the first request");
+        assert_eq!(search.current, asked, "the same question is not asked twice");
     }
 
     /// A search starts idle and owes no frame: nothing is out until something asks.
