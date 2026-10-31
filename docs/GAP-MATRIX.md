@@ -1174,3 +1174,23 @@ character art -- a renderer-risk row, not a layout one.
 
 The captures are `ref-settings-window.png`/`ours-settings-window.png` and
 `ref-settings-profile.png`/`ours-settings-profile.png`.
+
+### The window defaults: two attempts, neither on the path that draws them (2026-10-31)
+
+Seeding the field with 854 and 480 in `place_field` did nothing, twice. The second attempt was
+worth making -- the state stores every field as an empty string, so "nothing typed" arrives as
+`Some("")` and a plain `unwrap_or_else` never fires -- but the capture still showed the
+placeholders after it.
+
+The reason is that the Window tab's two fields do not go through `place_field` at all: they are
+`Block::Row`s with a `Control::Text`, which draws itself in `Control::draw` (the arm that fills
+`theme.BUTTON_BG` and prints the placeholder). The seeding code is correct and inert for this
+tab, and the row that needs the default is one layer further out.
+
+**Next step, precisely**: give `Control::Text` a `value: Option<&'static str>` and have its draw
+arm print that instead of the hint when the state holds nothing; then delete the `fallback` in
+`place_field` if nothing else needed it.
+
+The lesson is the same one this session keeps paying for: two fixes were aimed at a function that
+looks like the right one instead of the one the capture's element is drawn by, and the render was
+the only thing that could tell them apart.
