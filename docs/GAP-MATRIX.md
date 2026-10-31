@@ -1013,3 +1013,21 @@ because the two apps' mocks differ internally by a few points.
 **The lesson for the next pass**: a 149x66 mock with four internal elements cannot be checked by
 sampling three coordinates. Crop the card, compare the crop, and count pixels per colour band --
 which is what wave six did to produce the numbers in the first place.
+
+### The mock crop comparison the last round owed (2026-10-31)
+
+Done as the note asked: both card rows cropped at 2x and stacked. The finding is that the tones
+are now right and the geometry is a few points out.
+
+Right: the light card is a white mock on a near-white preview with near-black bars; the dark card
+is #27292e on #16181c with #b0bac5-and-dimmer bars; the OLED card's window is a barely-lighter
+black. The relationship the previous commit set out to fix -- plate a step toward white on every
+theme, bars for contrast -- is what the crop shows on both sides.
+
+Out, and visible only at 2x: the bars sit two to four points lower and end shorter than the
+reference's; the avatar's corner radius is 6 against the reference's 4; and the footer's label
+baseline is about two points high.
+
+None of those three is worth a commit on its own, and all three are recorded here so the next
+pass does not re-derive them. The mock row is now as close as a drawn imitation of a product's
+own artwork is going to get without the artwork.
