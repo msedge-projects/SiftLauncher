@@ -1026,11 +1026,11 @@ const SECTION_HEADING_SIZE: f32 = 18.0;
 // at 18/16 the second line of "Sync theme across devices" was drawn under "Advanced
 // rendering"'s title. Raised only after that measurement is fixed; docs/GAP-MATRIX.md row
 // carries it as open with this cause.
-const ROW_LABEL_SIZE: f32 = 14.0;
+const ROW_LABEL_SIZE: f32 = 18.0;
 
 /// A row's description size: `text-secondary` with no size class of its own
 /// (`AppearanceSettingRow.vue:29`), drawn at the brief's 12 here.
-const ROW_DESCRIPTION_SIZE: f32 = 12.0;
+const ROW_DESCRIPTION_SIZE: f32 = 16.0;
 
 /// The gap between a row's label and its description: `mt-1` (`AppearanceSettingRow.vue:29`).
 const ROW_DESCRIPTION_GAP: f32 = 4.0;
@@ -3132,6 +3132,13 @@ fn draw_body(
     let mut gap = 0.0;
     for block in blocks {
         if let Block::Rule = block {
+            // The gap the block above owes is settled **before** the rule adds its own
+            // margins. This branch used to jump straight to `CONTENT_SECTION_GAP` and drop
+            // the pending gap on the floor, which threw away the row's measured height and
+            // replaced it with 56 points of rule margin -- the bug three probes chased, and
+            // the reason a row's text could overlap the next one at 18 over 16.
+            y += gap;
+            gap = 0.0;
             y += CONTENT_SECTION_GAP;
             body.hline(
                 left..=right,

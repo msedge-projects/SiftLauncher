@@ -890,36 +890,23 @@ fault is in the ThemeCards arm's returned height or the loop's gap bookkeeping a
 the type sizes. Raising the type is therefore still blocked on that, and the sizes stay at
 14 over 12 until it is fixed -- with the number that proves where the bug is.
 
-#### The advance is not the arm's return (2026-10-31, second probe)
 
-Capturing the row's own height in a local before the control match and returning that -- the
-obvious suspect -- changed nothing: the first row after the theme cards still advances 56
-points against a measured height of 64, while the row after it advances 88. So the loop is not
-using the arm's value for that transition at all, and the two numbers worth chasing next are
-`ROW_HIT_BAND` (46) and the gap bookkeeping in the block loop: 56 is a hair above the hit band,
-and the hit band is the one constant in this file that is a row's height without being its
-height.
+### Solved: the advance bug was the rule branch (2026-10-31)
 
-Recording it this way because the alternative -- raising the type and shipping the overlap --
-is how a "font problem" gets invented.
+Three probes and a wrong hypothesis to find a one-line bug. The block loop settles each block's
+owed gap at the top of the *next* iteration (`y += gap`), but `Block::Rule` has its own early
+branch that jumped straight to `y += CONTENT_SECTION_GAP` and never applied the pending gap. So
+a row followed by a rule had its measured height thrown away and replaced by the rule's own
+margins -- 24 + 32 = 56 points, which is exactly the number the loop probe printed while
+reporting `gap=0.0` for the next block.
 
-#### The loop probe: the row arm advances y itself and reports zero (2026-10-31)
+The fix is two lines in that branch: settle the gap, then add the rule's margins. With it, the
+settings row type moves to the source's own 18 over 16 on all thirteen tabs, and the captured
+row rhythm matches: title, two-line description, then the rule.
 
-A probe in the block loop -- before `y += gap`, printing y, gap and the block -- gives the whole
-mechanism:
-
-    loop y=223.5 gap=0.0   block=Color theme
-    loop y=223.5 gap=59.0  block=themecards
-    loop y=282.5 gap=357.0 block=Sync theme across devices
-    loop y=695.5 gap=0.0   block=Advanced rendering
-    loop y=695.5 gap=75.0  block=System window frame
-
-"Sync theme across devices" is drawn at 282.5 + 357 = 639.5, which is right. The next block is
-drawn at 695.5, and its printed gap is **0.0** -- so the 56 points between them were not added by
-the loop at all. The row arm moves `y` itself and returns zero, and its step is the *control's*
-height plus the gap (a 32-point switch plus 24), not the row's measured text height (64).
-
-That is the bug, exactly: a row advances by whichever of its control and its text is shorter,
-because the arm does the advance internally with the control's height and tells the loop it owes
-nothing. The fix is to delete the arm's own step and return `row_height + ROW_GAP` like every
-other block, which is why the type sizes stay where they are until it lands.
+What made this expensive is worth keeping. The first probe looked at the row arm and showed a
+correct measured height, so the arm was blamed. The second probe captured that height in a local
+and returned it, which was right and changed nothing. The third probe looked at the loop and
+showed the gap being dropped, but the print sat *before* `y += gap`, so the number it showed
+belonged to the previous block and the arm was blamed again. The bug was visible in the source
+all along: an early `continue` that skipped the line every other block goes through.
