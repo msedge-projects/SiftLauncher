@@ -840,14 +840,9 @@ impl Shell {
                                     self.press_install(&card);
                                 }
                             }
-                            crate::pages::project::Press::More => {
-                                // The kebab's first action is the one that needs no network and can be
-                                // checked from outside the app: the project's id, on the clipboard.
-                                if let Some(card) = self.open_card.clone() {
-                                    ui.ctx().copy_text(card.id.clone());
-                                    self.toast = Some(format!("Copied {}", card.id));
-                                }
-                            }
+                            // The page owns its own kebab menu now (Open in Modrinth, Copy link), so
+                            // the shell has nothing left to do for it.
+                            crate::pages::project::Press::More => {}
                         }
                     }
                     let _ = project;
@@ -2367,8 +2362,11 @@ impl Shell {
                     // Any card opens the sample project for now; the real one carries the
                     // project's own slug once search is wired. The card is kept either way, because
                     // it is what the page's Install press needs.
+                    self.open_project = Some(match opened_card.as_ref() {
+                        Some(card) => crate::pages::project::from_card(card),
+                        None => crate::pages::project::sample(),
+                    });
                     self.open_card = opened_card.take();
-                    self.open_project = Some(crate::pages::project::sample());
                 }
             });
         // The open popover, last, so it covers the list rather than the other way round. Its
