@@ -2878,3 +2878,20 @@ So the brief's file-management clause needs a Files view built on the real folde
 **Also worth changing in how this is measured**: three rounds of this doorway have produced three
 different causes, and every one of them was read from a capture rather than from the source. The
 source answered in one grep what three captures could not.
+
+### Correction two: the Files tab is implemented and lists the wrong folder (2026-11-01)
+
+`files_tab` (`pages/instance.rs:469`) is **not** a stub. It calls `folder_entries(&instance.path)` and
+draws one row per entry with a folder or file glyph and a size, up to twenty-four rows; the "folder is
+empty" text appears only when the listing is empty.
+
+The parity bug is in the path it lists: **`instance.path` is the instance root** -- `instance.cfg`,
+`mmc-pack.json`, `minecraft/` -- where the reference's Files tab shows the **game directory**, the
+folder that contains `mods/`, `config/`, `saves/` and `logs/`. So a reader opening Files here sees the
+launcher's bookkeeping beside the game's, and the mod this session installed is one level down inside
+`minecraft/` rather than in the list.
+
+**The fix is one path**, and it needs a decision with it: whether `mods/` lives at
+`{instance}/mods` (where the installer writes it today) or `{instance}/minecraft/mods` (where the game
+reads it). That question is older than this page -- the install proof wrote to `{instance}/mods` and
+nothing has yet launched a game to see whether that is the right place.
