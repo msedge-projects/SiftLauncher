@@ -1688,7 +1688,6 @@ mod tests {
     /// is what lets a route add one without breaking this reader -- but the keys
     /// the entry types do declare are required, so a document missing one is a
     /// parse error rather than an empty field.
-
     fn tags() -> Tags {
         serde_json::from_str(
             r#"{
