@@ -3315,3 +3315,23 @@ state behind them plus the facet string.
 
 **Next**: a checked set on the panel's state, a press per row, and the facet appended where
 `search_url_parts_with_facets` already takes a list -- named at `sift-net/src/modrinth.rs:46`.
+
+### Correction: the category facets exist (2026-11-01)
+
+Reading `panel.rs` overturns the last note's central claim:
+
+    panel.rs:584   CATEGORY_ROWS.min(categories.len())
+    panel.rs:599   let chosen = facet.is_some_and(|chosen| chosen == format!("categories:{name}"));
+    panel.rs:602   pressed = Some(Step::Category(format!("categories:{name}")));
+
+So the panel **takes the categories from the API**, **knows which facet is chosen**, **emits a Step when
+one is pressed**, and has a `See more` that reveals the rest. That is not "labels where the reference has
+filters" -- it is the whole mechanism, with the press missing its target or the Step not being applied by
+the caller.
+
+**This is the fourth time in this project that a capture said "unbuilt" and the source said "unwired",**
+and the pattern is now worth stating as a rule rather than a lesson: *a press that does nothing is
+evidence about the press, not about the feature.*
+
+**Next**: read the caller's handling of `Step::Category` -- if it appends the facet to the request, then
+the only defect is the row's hit rect, and the probe is one print of it.
