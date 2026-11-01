@@ -3490,3 +3490,21 @@ at all (no `About.vue`, no `app.about.*` keys), MOTD has no reference element, a
 or About capture exists in `.scratch/cap/`** beyond `ref-home.png`, so every pixel-only question is
 flagged UNKNOWN with the exact capture that would settle it. That is the behaviour this document has been
 asking for since its fourth retraction.
+
+### Checked the servers search against the source: the audit is right (2026-11-01)
+
+`search_plate` is a **pure painter**:
+
+    fn search_plate(painter: &egui::Painter, rect: Rect, theme: &Theme, count: usize)
+
+No `interact`, no state, no event loop -- it draws a rounded plate, a glyph and a placeholder. So the
+audit's first P0 holds: **the servers search field cannot take text**, and unlike the category filter and
+the card menu there is nothing to uncover here. It is genuinely unbuilt.
+
+That makes it the **first audit claim checked and confirmed**, after two that were corrected (the skins
+toolbar, which is a documented deviation). Both outcomes were useful, and the difference between them was
+one read of the source.
+
+**The fix is now well-known**, because Discover's field already has it: a `focused` flag on the servers
+state, an `interact` with `Sense::click_and_drag`, an event loop writing the literal, and the filter
+applied where the list is built.
