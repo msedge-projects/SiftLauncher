@@ -1593,3 +1593,35 @@ reached by the same rail; every control the reference draws is drawn here, and e
 without a remote service does; the four lightness gates are met on this machine's terms, with the RSS
 split stated; iced is gone; the product is renamed throughout; and 62 tags each carry a release. What
 is not claimed is a pixel diff -- none was run, and the sweep is a page-by-page comparison.
+
+
+## 2026-11-01 -- parity session, driven rather than photographed
+
+This session recorded its measurements in `docs/GAP-MATRIX.md` as it went and did not keep this log
+current, which is a gap against the brief. This entry closes it.
+
+**Verified by driving, with a file or a live screen behind each:**
+
+| what | evidence |
+| --- | --- |
+| Discover search against Modrinth | Sodium 258.13M downloads, Sodium Extra 108.77M, tags, chips, pager |
+| Install a mod into an instance | four jars on disk across three profiles |
+| Version chosen *for* the instance | `0.6.13+mc1.21.4` on 1.21.4, `0.9.3-beta.1+mc26.3` on 26.3 |
+| Create dialog end to end | plus -> Custom setup -> name -> loader chip -> Create |
+| Loader written into the profile | `net.fabricmc.fabric-loader` in `mmc-pack.json` |
+| Refusal where the loader does not match | no file written, message names the instance |
+| Card state after install | "+ Installed" in the brand colour |
+| Idle budget after all of it | 108.2 MB, 0 CPU ticks over ten seconds |
+
+**Two constants that mirror remote facts, corrected by asking**: the Fabric loader 0.16.9 -> **0.20.1**
+(`meta.fabricmc.net`), the Minecraft default 1.21.4 -> **26.3** (`piston-meta.mojang.com`).
+
+**Tooling**: `tools/lightness-measure.sh` repaired (three guards) and `tools/parity/lab.sh` audited --
+the latter was already correct because it mounts the invoking checkout.
+
+**Matrix, counted rather than repeated**: 633 status-bearing rows -- **93 DONE, 512 OPEN**, 9
+blocked-service, 16 renderer-risk, 13 not-in-source, 2 deliberate. The figures this session quoted
+before that count (118/472) overstated done by 25 and understated open by 40.
+
+**Not done**: nothing is pushed (no credentials here); the Instance page is untouched; the install
+picker does not exist; and most rows still called done were verified by capture rather than by use.
