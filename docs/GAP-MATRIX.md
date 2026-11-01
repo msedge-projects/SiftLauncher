@@ -2302,3 +2302,21 @@ loader picker, the project search, the .mrpack chooser, the Prism import -- is s
 The first sampling of this capture read the wrong column (`x 434`, two points left of the row's
 own edge at 448) and reported "both edges the raised background", which would have been a false
 negative. Looking at the crop settled it; the pixel probe, aimed properly, is what should have.
+
+### Custom setup is a step you can walk to (2026-11-01)
+
+Choosing the first row now moves the dialog to a second step, captured at
+`.scratch/cap/r75-a.png`: the same plate and title, then **Name** `Name your instance`,
+**Loader** `Fabric` and **Game version** `1.21.4`, each a label over a field.
+
+So the flow navigates: plus opens the dialog, a row moves it on. What the step is not yet is
+*editable* -- the three fields are painted, not placed, so nothing can be typed into them, and
+there is no Create button to finish with.
+
+That is deliberately the smaller half. The fields want `place_field` (which this launcher already
+has, and which took twelve rounds to prove), the loader wants a select, the version wants a list
+filtered by the loader, and Create wants the instance-writing path that already exists in
+`data`. Each is a known quantity; none of them is guessed at.
+
+**The next slice is those three fields taking input**, because a picker whose fields cannot be
+typed into is the exact half-truth this session spent rounds proving was not true of this codebase.

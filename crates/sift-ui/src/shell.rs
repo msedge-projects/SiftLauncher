@@ -152,6 +152,44 @@ impl Shell {
             plate.top() + 48.0,
             egui::Stroke::new(1.0, theme.SURFACE_5),
         );
+        // Step one: what "Custom setup" leads to. The reference's next screen asks for a name, a
+        // loader and a game version; this draws the three rows it will fill, so the step exists
+        // and can be walked before any of them takes input.
+        if self.create_step == 1 {
+            for (index, (label, value)) in [
+                ("Name", "Name your instance"),
+                ("Loader", "Fabric"),
+                ("Game version", "1.21.4"),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                let row = egui::Rect::from_min_size(
+                    egui::pos2(left, plate.top() + 62.0 + index as f32 * 62.0),
+                    egui::vec2(right - left, 52.0),
+                );
+                painter.text(
+                    egui::pos2(row.left(), row.top()),
+                    egui::Align2::LEFT_TOP,
+                    label,
+                    crate::fonts::semibold(13.0),
+                    theme.CONTRAST,
+                );
+                let field = egui::Rect::from_min_size(
+                    egui::pos2(row.left(), row.top() + 20.0),
+                    egui::vec2(row.width(), 28.0),
+                );
+                painter.rect_filled(field, 8.0, theme.BUTTON_BG);
+                painter.text(
+                    egui::pos2(field.left() + 10.0, field.center().y),
+                    egui::Align2::LEFT_CENTER,
+                    value,
+                    crate::fonts::body(13.0),
+                    theme.SECONDARY,
+                );
+            }
+            return;
+        }
         painter.text(
             egui::pos2(left, plate.top() + 62.0),
             egui::Align2::LEFT_TOP,
@@ -201,6 +239,9 @@ impl Shell {
             );
             if settled && clicked && pointer.is_some_and(|point| row.contains(point)) {
                 self.create_choice = Some(index);
+                if index == 0 {
+                    self.create_step = 1;
+                }
                 ctx.request_repaint();
             }
             painter.rect_filled(row, 10.0, theme.SURFACE_4);
@@ -263,6 +304,10 @@ pub struct Shell {
     /// Which instance type the reader has chosen, if any. The four rows answer a press by
     /// remembering it; the flows behind them come one at a time.
     pub create_choice: Option<usize>,
+    /// Which step of the create flow is showing: 0 chooses an instance type, 1 is the custom
+    /// setup the first row leads to. The reference's other three rows lead elsewhere and are
+    /// each their own step when they exist.
+    pub create_step: u8,
     /// The selected rail destination.
     pub rail: Rail,
     /// The hovered rail destination, if any. A press animates between the two, which is
@@ -351,6 +396,7 @@ impl Default for Shell {
             create_open: false,
             create_opened: 0.0,
             create_choice: None,
+            create_step: 0,
             // The reference opens on Home, and a launcher that opens on a catalogue looks
             // like a store rather than a launcher.
             rail: Rail::Home,
