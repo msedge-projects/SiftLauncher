@@ -589,3 +589,28 @@ egui::pos2(rect.right() - PAGE_PADDING - width, row_top),
 
 That is the return the third edit needs: add the plate's rect to the tuple here, then bind and use it at
 `servers.rs:1195`. **There is nothing else left to discover about this change.**
+
+
+---
+
+## The recipe that finally worked, generalised (round 159)
+
+The servers search took four rounds. The successful shape was this, and it applies to every control on a
+page whose widgets are **painted** rather than placed:
+
+1. **the geometry is usually already computed** -- `heading_and_toolbar` built the search rect and threw it
+   away. The work was asking the function to **return** it, not to compute it again.
+2. **the press belongs where the `Ui` is**, not where the painter is. That is one frame up, in the function
+   that owns `ui`.
+3. **order the interaction before any other press handling in the same frame**, because this file's own
+   comment warns that a later full-column interaction steals the press.
+4. **input state lives on the page's `State`** (`search_focused`, `search`), not in egui's memory -- the
+   hand-drawn widgets do not read what `interact` grants.
+5. **draw the literal when there is one**, or the field looks inert while it works.
+
+**The same recipe applies, in order of value, to**: `draw_card` (server cards are not targets at all),
+the project header, and the skins grid's tiles.
+
+**Measured state at this point**: 175 commits, tree clean, 176 tests, idle 105.3 MB with zero idle ticks,
+one verified audit row closed (the servers search), 101 audit rows still open across five pages, nothing
+pushed and no CI.
