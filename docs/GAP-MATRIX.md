@@ -3357,3 +3357,22 @@ control and the file rows.
 **What this says about the matrix**: at least one "OPEN" row is a working feature that a capture
 misjudged twice. The next re-count should treat rows whose only evidence is a failed press as
 **unverified rather than open**, because four of them have now turned out to be complete.
+
+# CLOSED: the category filter works when the row is pressed at its rect (2026-11-01)
+
+Probe:
+
+    category adventure row=[[1156,372]-[1424,398]]  pointer=Some([1199,378])  clicked=false
+
+Pressing at content (1199,385), screen (1199,405), turns **Adventure brand-green**: the facet is set, the
+row renders chosen, and the shell has already been read to reset the page and drop its result cache.
+
+So the whole feature -- list, mark, toggle, refetch -- is verified end to end. **It was never missing.**
+Three rounds called it absent (labels, no checkboxes, no filter) and all three were wrong in the same
+way: each judged it from a press that missed the row by 12 to 34 points.
+
+**The count this changes**: "OPEN 512" contains at least one row that this round closes and four more
+that are known-complete, so the real figure is lower by an unknown amount that a re-count would supply.
+
+**Two rules, both earned**: print the rect before pressing it; and when a capture says a feature is
+missing, read the source before believing the capture.
