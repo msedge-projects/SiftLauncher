@@ -103,6 +103,112 @@ impl Shell {
     ///
     /// Drawn on a foreground layer so it sits over every page, which is where a modal belongs
     /// and is why this is a method taking the context rather than part of `ui`.
+
+    /// The install picker: where a mod should go, or the pack path that needs no answer.
+    ///
+    /// Painted on `ui.painter()` with the rows placed by `ui.interact` on the same layer, which is
+    /// the arrangement that works -- a plate on a foreground layer covers the widgets behind it, and
+    /// the create dialog spent ten rounds learning that.
+    pub fn draw_picker(&mut self, ctx: &egui::Context, screen: egui::Rect, ui: &mut egui::Ui) {
+        let Some((project, title)) = self.picker.clone() else {
+            return;
+        };
+        if self.picker_opened <= 0.0 {
+            self.picker_opened = ctx.input(|input| input.time);
+        }
+        let now = ctx.input(|input| input.time);
+        let settled = now > self.picker_opened + 0.15;
+        let pointer = ctx.pointer_interact_pos();
+        let clicked = ctx.input(|input| input.pointer.any_click());
+
+        let painter = ui.painter().clone();
+        let theme = self.theme.clone();
+        painter.rect_filled(screen, 0.0, egui::Color32::from_black_alpha(160));
+
+        let entries = crate::data::load().0;
+        let rows = entries.len() + 1;
+        let height = 96.0 + rows as f32 * 52.0;
+        let plate = egui::Rect::from_center_size(
+            screen.center(),
+            egui::vec2(520.0, height),
+        );
+        painter.rect_filled(plate, 12, theme.SURFACE_4);
+        painter.text(
+            egui::pos2(plate.left() + 24.0, plate.top() + 22.0),
+            egui::Align2::LEFT_TOP,
+            format!("Install {title}"),
+            crate::fonts::heading(18.0),
+            theme.CONTRAST,
+        );
+        painter.text(
+            egui::pos2(plate.left() + 24.0, plate.top() + 48.0),
+            egui::Align2::LEFT_TOP,
+            "Choose the instance a mod should go into, or let a pack bring its own.",
+            crate::fonts::body(12.0),
+            theme.SECONDARY,
+        );
+
+        let mut y = plate.top() + 78.0;
+        for entry in &entries {
+            let row = egui::Rect::from_min_size(
+                egui::pos2(plate.left() + 16.0, y),
+                egui::vec2(plate.width() - 32.0, 44.0),
+            );
+            if pointer.is_some_and(|point| row.contains(point)) {
+                painter.rect_filled(row, 8, theme.SURFACE_5);
+            }
+            painter.text(
+                egui::pos2(row.left() + 12.0, row.top() + 8.0),
+                egui::Align2::LEFT_TOP,
+                &entry.name,
+                crate::fonts::semibold(13.0),
+                theme.BASE,
+            );
+            painter.text(
+                egui::pos2(row.left() + 12.0, row.top() + 26.0),
+                egui::Align2::LEFT_TOP,
+                format!("{} {}", entry.loader, entry.version),
+                crate::fonts::body(11.0),
+                theme.SECONDARY,
+            );
+            if settled && clicked && pointer.is_some_and(|point| row.contains(point)) {
+                self.install.start_in(&project, &title, Some(entry.id.clone()));
+                self.picker = None;
+                return;
+            }
+            y += 52.0;
+        }
+
+        // The pack path: no instance named, because a pack creates the one it needs.
+        let row = egui::Rect::from_min_size(
+            egui::pos2(plate.left() + 16.0, y),
+            egui::vec2(plate.width() - 32.0, 44.0),
+        );
+        if pointer.is_some_and(|point| row.contains(point)) {
+            painter.rect_filled(row, 8, theme.SURFACE_5);
+        }
+        painter.text(
+            egui::pos2(row.left() + 12.0, row.top() + 14.0),
+            egui::Align2::LEFT_TOP,
+            "Cancel",
+            crate::fonts::semibold(13.0),
+            theme.BRAND,
+        );
+        if settled && clicked && pointer.is_some_and(|point| row.contains(point)) {
+            let _ = (&project, &title);
+            self.picker = None;
+            return;
+        }
+
+        if settled
+            && (ctx.input(|input| input.key_pressed(egui::Key::Escape))
+                || (clicked && !pointer.is_some_and(|point| plate.contains(point))))
+        {
+            self.picker = None;
+        }
+        ctx.request_repaint();
+    }
+
     pub fn draw_create(&mut self, ctx: &egui::Context, screen: egui::Rect, ui: &mut egui::Ui) {
         let theme = &self.theme;
         // The panel's own painter, not a foreground layer. The plate drawn on a foreground
@@ -395,6 +501,11 @@ pub struct Shell {
     /// Whether the reference's create dialog is open. The rail's plus sets it, as the
     /// reference's does, where this launcher used to create a Vanilla instance on the press.
     pub create_open: bool,
+    /// The install picker: the project a press asked to install, while the reader chooses where.
+    /// `(project id, title)`. The reference asks this before it writes anything.
+    pub picker: Option<(String, String)>,
+    /// When the picker opened, so a press that opened it cannot also dismiss it.
+    picker_opened: f64,
     /// When it opened, on the frame clock. The press that opens the dialog is also a click
     /// outside its plate, so the dismissal has to know it is not the same press.
     pub create_opened: f64,
@@ -498,6 +609,8 @@ impl Default for Shell {
         Shell {
             // The create dialog starts closed: the reference opens on Home with nothing over it.
             create_open: false,
+            picker: None,
+            picker_opened: 0.0,
             create_opened: 0.0,
             create_choice: None,
             create_step: 0,
@@ -1356,7 +1469,15 @@ impl Shell {
         } else {
             // The title is the instance's name: `install_pack_archive`'s own rule is that a
             // reader wants the project's name rather than the archive's file stem.
-            self.install.start(&card.id, &card.title);
+            // Two or more instances means the reader has to say where a mod goes. A pack needs no
+            // such answer -- it brings its own instance -- so the picker's last row is that path.
+            let is_mod = self.project_type == "mod";
+            if is_mod && crate::data::load().0.len() >= 2 {
+                self.picker = Some((card.id.clone(), card.title.clone()));
+                self.picker_opened = 0.0;
+            } else {
+                self.install.start(&card.id, &card.title);
+            }
         }
     }
 

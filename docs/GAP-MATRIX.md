@@ -4063,3 +4063,30 @@ which is a second, independent confirmation of the install machinery beyond the 
 
 **Still unseen**: the mod refusal itself, because reaching it needs the **Mods** tab, whose pill press has now
 missed twice at (209,154).
+
+# BUILT AND VERIFIED: the install picker (2016-11-01, round 201)
+
+The gap the product itself named -- "choosing one needs a picker that is not built yet" -- is now built and driven
+end to end:
+
+    picker:   Install Sodium / Choose the instance a mod should go into
+              Instance 2 (Fabric 26.3) | Instance 3 (Vanilla 26.3) | Sodium Plus (Fabric 26.3) | Cancel
+    choice:   Instance 2
+    toast:    Installed Sodium 0.9.3-beta.1 for Fabric 26.3 into Instance 2.
+    disk:     Instance 2/minecraft/mods/sodium-fabric-0.9.3-beta.1+mc26.3.jar
+    control:  Instance 3/minecraft/mods/ is empty
+
+**The choice is honoured**: the jar landed in the instance that was pressed and not in the other one, which is the
+only thing that makes a picker a picker rather than a dialog.
+
+**How it is built**: `Job::instance` carries the choice into the worker (`install.rs`), `Install::start_in` takes it,
+and `install_mod` trusts it only while that instance is still in the library -- a stale choice refuses with the
+instance named instead of installing somewhere unexpected. `start()` keeps its old signature and delegates with
+`None`, so every existing caller is unchanged.
+
+**The picker appears only for mods** (`self.project_type == "mod"`), because a pack brings its own instance and
+asking would be a question with no effect. That distinction was found by getting it wrong first: the picker opened
+on the Modpacks tab and offered a where-to-put-it choice for something that creates its own home.
+
+**And the pill coordinate is settled at (227,117)** -- three earlier attempts pressed (209,154), thirty-seven
+points low, which is why the Mods tab kept "not switching" while the code was correct all along.

@@ -97,8 +97,14 @@ impl eframe::App for App {
                 // modal's fields use and the only one in this codebase proven to paint a
                 // widget. Placed after the panel returned, the dialog's field received input
                 // and drew nothing -- egui culled it against a clip the panel had already set.
-                if shell.create_open {
+                if shell.picker.is_some() {
+            ctx.request_repaint();
+        }
+        if shell.create_open {
                     shell.draw_create(&ctx, screen, ui);
+                }
+                if shell.picker.is_some() {
+                    shell.draw_picker(&ctx, screen, ui);
                 }
             });
         log.end();
