@@ -3335,3 +3335,25 @@ evidence about the press, not about the feature.*
 
 **Next**: read the caller's handling of `Step::Category` -- if it appends the facet to the request, then
 the only defect is the row's hit rect, and the probe is one print of it.
+
+### The category filter is complete end to end; only my aim was wrong (2026-11-01)
+
+The caller:
+
+    shell.rs:1592  Step::Category(facet) => {
+                       self.facet = if self.facet == Some(facet) { None } else { Some(facet) };
+                       self.page = 0;
+                       self.results.forget();
+                   }
+
+So a press toggles the facet off and on, resets to page one and drops the cached results -- the exact
+behaviour the reference has. **The whole chain exists**: the panel lists categories from the API, marks
+the chosen one, emits the Step; the shell toggles, resets and refetches; the request already takes facets.
+
+**There is no feature to build.** There is one press to aim, and the probe is one print of the category
+row's rect -- the same three lines that settled the rail, the name field, the card, the tabs, the sort
+control and the file rows.
+
+**What this says about the matrix**: at least one "OPEN" row is a working feature that a capture
+misjudged twice. The next re-count should treat rows whose only evidence is a failed press as
+**unverified rather than open**, because four of them have now turned out to be complete.
