@@ -1652,3 +1652,35 @@ where this session found it, across every feature added since.
 **What is genuinely not built**: the install picker modal, context menus beyond the instance card's
 modelled items, drag and drop anywhere, the Instance page's Content/Worlds/Logs tabs, and the reference's
 Files columns and row actions.
+
+
+## Round 200 — the end of this budget (2026-11-01)
+
+**Goal `goal-3a6cab2c-45c5-4c34-aa65-62cc3f071543`, revision 2, left ACTIVE. The objective is not met.**
+
+Measured at close: **209 commits** on local `master`, **tree clean**, **test result: ok. 176 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s**,
+release build green, **nothing pushed** and **no CI** — the two clauses this environment cannot satisfy.
+
+### What is delivered
+
+Create-an-instance with its loader component; install-into-instance with the version chosen for it; the Files
+panel's five behaviours and its delete-reinstall round trip; Discover's search, tabs, pager, both selects, category
+filter and Ctrl+F; the servers page's search, targets, selection, live panel and a clipboard verified by reading the
+selection back; four pages with working text input; a project page owning its column at the reference's 96/24/16
+header scale without invented actions; and a modpack install writing 72 files.
+
+### What is not
+
+A server join path, drag and drop, context menus beyond the instance card, an install picker (narrower than assumed:
+packs bring their own instance), a skin renderer, the sidebar promo's placement, 101 audit rows, 23 UNKNOWNs, and a
+push.
+
+### What this budget actually taught, in the form the next reader can use
+
+1. **A press that does nothing is evidence about the press, not about the feature.** Five features recorded as
+   unbuilt were complete; every one was judged from a click that missed.
+2. **Every constant has neighbours.** Three font sizes looked independent and were welded to a tab offset; changing
+   them broke a page that a two-round read then fixed in one pass.
+3. **When a capture and the source disagree, the source wins; when a tool and the world disagree, print a number.**
+   The clipboard, the loader version and the Minecraft default were all settled this way, and none of them could
+   have been settled by looking.
