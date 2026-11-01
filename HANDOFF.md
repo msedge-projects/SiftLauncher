@@ -478,3 +478,37 @@ name the line.** Until then the type stays at 14 over 12, which is self-consiste
   "disappeared" once because the feed had not answered yet.
 * Raise type sizes only after the layout that holds them is proved to measure; the alternative
   is a font problem that is not a font problem.
+
+
+---
+
+## Parity session, second half — what is proven and what is owed (2026-11-01)
+
+**Proven by driving, with a file or a live screen behind each** (not by capture alone):
+
+* Discover search returns real Modrinth data — Sodium 258.13M downloads, Sodium Extra 108.77M — with
+  facets, tags, an Install button and a pager.
+* **Four installs, four profiles**: Vanilla 1.21.4, Fabric 1.21.4 and Fabric 26.3 twice, each ending
+  in a jar in `instances/<id>/mods/`.
+* A Fabric instance is created through a real dialog: rail plus -> Custom setup -> name -> loader chip
+  -> Create, and the profile carries `net.fabricmc.fabric-loader`.
+* A Fabric mod refused for a Vanilla instance writes nothing and says why.
+* The card reports "+ Installed" after an install.
+
+**The two constants that mirror remote facts, both corrected by asking rather than guessing**:
+
+| constant | was | is | source |
+| --- | --- | --- | --- |
+| `FABRIC_LOADER_DEFAULT` | 0.16.9 | **0.20.1** | `meta.fabricmc.net/v2/versions/loader`, first stable |
+| `DEFAULT_MC_VERSION` | 1.21.4 | **26.3** | `piston-meta.mojang.com` manifest, `latest.release` |
+
+Both are still defaults, not lookups: **the next session should move each into the create path**, with
+the constant as fallback and the failure surfaced.
+
+**Owed and named in the matrix**: the other three create rows; the install picker modal; sort, view,
+pager and category rail driven; the Instance page (untouched, and the only place file management
+lives); Profile's signed-out state; the rail footer's ink; Discover's sidebar and hosting promo.
+
+**The session's most expensive lesson, in one line**: five aim errors and four false P0s came from
+reading coordinates off a picture, while every real defect and fix came from a probe or a driven run.
+Print the widget's rect; then click its centre; then read the frame whole before cropping it.
