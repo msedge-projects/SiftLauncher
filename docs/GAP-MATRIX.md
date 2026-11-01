@@ -3875,3 +3875,22 @@ one package and one command -- which is the honest measure of how much the previ
 is in the committed Dockerfile, so a fresh container needs both before input or clipboard checks will work:
 
     pacman -S --noconfirm xclip openbox
+
+### Decision: the skins toolbar is DELIBERATE, on a condition (2026-11-01)
+
+The audit called it an invented toolbar and the source calls it a chosen divergence. **Both are right about
+the facts and the difference is intent**, so it is decided here rather than left as both:
+
+**Status: DELIBERATE.** The toolbar stands as the launcher's own upload affordance *because the reference's
+real one -- the grid's first tile -- is not built yet*. A page with no way to add a skin would be worse than
+a page with one in the wrong place.
+
+**The condition that ends it**: when the grid's first tile uploads a skin, the toolbar goes. That is written as
+the criterion rather than as a wish, so the row cannot quietly become permanent:
+
+| element | status | evidence |
+| --- | --- | --- |
+| Skins toolbar (search, Wide/Slim, Add skin) | DELIBERATE until the grid's first tile uploads | `Skins.vue:1104-1106` has no toolbar; `VirtualSkinSectionList.vue:426-443` is the real upload tile; `skins.rs:41-47` records the choice |
+
+**What this does not excuse**: the search field inside that toolbar still does nothing, and a control that
+does nothing is not covered by "deliberate". The toolbar may stay; its inert field may not.
