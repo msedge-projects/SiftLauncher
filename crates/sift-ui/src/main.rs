@@ -20,6 +20,7 @@
 /// The product's mark, embedded and uploaded once: the exe is the product, so its logo
 /// travels inside it rather than beside it.
 mod motion;
+mod drop;
 mod account;
 mod brand;
 mod data;

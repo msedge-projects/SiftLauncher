@@ -485,6 +485,22 @@ fn files_tab(
     pending: &mut Option<String>,
 ) -> Option<std::path::PathBuf> {
     let mut descend: Option<std::path::PathBuf> = None;
+    // A drop on the panel copies the files here. The copy itself is `drop::copy_into`, which is tested;
+    // this only decides *where*, and only while the pointer is over the panel.
+    let dropped: Vec<std::path::PathBuf> = ui
+        .ctx()
+        .input(|input| input.raw.dropped_files.iter().map(|file| file.path().to_path_buf()).collect());
+    if !dropped.is_empty()
+        && ui
+            .ctx()
+            .pointer_interact_pos()
+            .is_some_and(|pointer| card.contains(pointer))
+    {
+        let target = instance.path.join("minecraft").join(dir);
+        if crate::drop::copy_into(&target, &dropped).is_ok() {
+            ui.ctx().request_repaint();
+        }
+    }
     // The game directory, which is what the reference's Files tab shows: the folder holding
     // `mods/`, `config/`, `saves/` and `logs/`, not the instance's own bookkeeping beside it.
     let entries = folder_entries(&instance.path.join("minecraft").join(dir));

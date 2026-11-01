@@ -4100,3 +4100,16 @@ for a two-level tree and would need the reference's fuller path bar once nesting
 **The first attempt labelled the root "mods"**, giving "mods / mods /" on screen; the label belongs to the
 directory the listing starts at, which is `minecraft`. Caught by looking at the capture rather than by reasoning
 about the vector -- a small reminder that the picture still settles what the code cannot.
+
+# Drag and drop into Files, with the copy proven by tests (2026-11-01)
+
+`drop.rs` holds `copy_into(dir, paths)`: it creates the directory, copies each file under its own name, refuses a
+folder with a reason instead of walking it, and returns what landed. **Three tests**: an empty drop does nothing, a
+file lands under its own name, a folder is refused and named. 179 tests, all green.
+
+The Files panel calls it when `raw.dropped_files` is non-empty **and the pointer is over the panel**, into the
+directory the panel is showing -- so a drop into `minecraft/mods` puts a jar where the game reads it.
+
+**What is proven and what is not, stated plainly**: the copy is proven by unit tests; the *drag* is not, because
+Xvfb has no file manager to drag from and no GTK DnD source. This is the first behaviour in the project verified by
+test rather than by driving, and it is recorded as such rather than presented as driven.
