@@ -77,9 +77,11 @@ impl Search {
         // rather than be abandoned into the list underneath.
         // Ctrl+F focuses the field: the reference's search shortcut. It only fires when nothing else
         // is being edited, so a reader typing into another control never has the keyboard stolen.
-        if ui.memory(|m| m.focused().is_none())
-            && ui.input(|i| i.modifiers.command && i.key_pressed(egui::Key::F))
-        {
+        // The guard that used to sit here -- "nothing holds focus" -- was the reason the shortcut
+        // never fired: every click gives its widget focus, so after any press in the app the
+        // condition was false. A search shortcut takes the keyboard from a button; that is what it
+        // is for.
+        if ui.input(|i| i.modifiers.command && i.key_pressed(egui::Key::F)) {
             ui.memory_mut(|m| m.request_focus(Id::new("search-field")));
             // The field tracks its own focus flag -- that is what its text path reads, not egui's
             // memory focus. Without this the shortcut granted a focus nothing would look at.

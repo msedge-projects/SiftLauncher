@@ -3201,3 +3201,17 @@ attempt should print rather than reason.
 
 **Recorded as owed**: Ctrl+F does not work, the code that tries to make it work is in the tree, and it is
 marked here rather than described as finished.
+
+### Ctrl+F: three fixes, three negative drives -- stop guessing (2026-11-01)
+
+The guard was removed (it was a plausible blocker: every click gives its widget focus, so "nothing is
+focused" was false after any press), and the drive is **still negative**. The tab is also still
+**Modpacks**, though the run presses the Mods pill -- which means the pill press is *also* not landing.
+
+Two failures in one run, and the second one explains why the first is unreadable: **the drive is not
+established, so the result cannot be attributed to the shortcut at all.**
+
+So the next session should treat Ctrl+F as **unimplemented and undiagnosed**, and start with the thing
+this document has said eleven times: **probe the pill's rect and the field's rect, press their centres,
+and only then judge the shortcut.** Three speculative edits have gone into this widget; none has been
+tested against a drive that was known to be working, which is the mistake, not the edits.
