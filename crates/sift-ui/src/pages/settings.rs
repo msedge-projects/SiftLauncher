@@ -317,6 +317,22 @@ fn plain(text: &str) -> String {
     out
 }
 
+/// The line a sync switch shows while nobody is signed in, if this is one of them.
+///
+/// The three are `disabled` and drawn dimmed when `auth.user` is null (`layout.vue:60-75`,
+/// `features-settings.vue:252-278`, `behavior-settings.vue:247-273`) and their tooltip says
+/// why. This build has no Modrinth account, so that is always the state here -- and the switch
+/// used to be drawn lit, flip on a press and then do nothing, which is an inert control in the
+/// shape this page was driven to find three of.
+fn sync_switch_tooltip(label: &str) -> Option<&'static str> {
+    match label {
+        THEME_SYNC_LABEL => Some(SYNC_THEME_TOOLTIP),
+        FEATURES_SYNC_LABEL => Some(SYNC_FEATURES_TOOLTIP),
+        BEHAVIOR_SYNC_LABEL => Some(SYNC_BEHAVIOR_TOOLTIP),
+        _ => None,
+    }
+}
+
 /// The tooltip a button carries, if the reference gives it one.
 fn button_tooltip(label: &str) -> Option<&'static str> {
     (label == STORE_CLEAR_LABEL).then_some(STORE_CLEAR_TOOLTIP)
@@ -808,6 +824,11 @@ impl Tab {
 const DIALOG_TITLE: &str = "Settings";
 /// `app.settings.developer-mode-enabled` (`index.vue:74-77`).
 const DEVELOPER_MODE_LINE: &str = "Developer mode enabled.";
+/// What a disabled sync switch says on hover (`messages.ts:21-24`, `features-settings.vue:52-54`,
+/// `behavior-settings.vue:43-45`).
+const SYNC_THEME_TOOLTIP: &str = "Sign into Modrinth to sync theme";
+const SYNC_FEATURES_TOOLTIP: &str = "Sign into a Modrinth account to sync settings.";
+const SYNC_BEHAVIOR_TOOLTIP: &str = "Sign into a Modrinth account to sync settings.";
 /// The signed-out state's own words (`AccountProfileSettings.vue:343-350` and the button).
 const PROFILE_SIGN_IN_TITLE: &str = "Modrinth account required";
 const PROFILE_SIGN_IN_BUTTON: &str = "Sign in";
@@ -2051,40 +2072,45 @@ const JAVA_AND_MEMORY_BLOCKS: &[Block] = &[
     Block::JavaLocation {
         version: 8,
     },
+    // `index.vue:76-106`: `border-t border-surface-5 pt-6`, then three sections of heading,
+    // control and the line that explains it. The tab-level Detect and Browse buttons this used
+    // to draw are not in the source at all -- each version carries its own three
+    // (`JavaSelector.vue:63-87`) -- so they were invented controls, and they are gone.
     Block::Rule,
-    Block::Standalone(Control::Button {
-        label: JAVA_DETECT_LABEL,
-        glyph: Some(Glyph::Search),
-    }),
-    Block::Standalone(Control::Button {
-        label: JAVA_BROWSE_LABEL,
-        glyph: Some(Glyph::FolderSearch),
-    }),
     Block::Heading {
         text: MEMORY_TITLE,
-        description: Some(MEMORY_DESCRIPTION),
+        description: None,
         big: false,
         control: None,
     },
     Block::Standalone(Control::Slider {
         value: 0.0, low: 512, high: 32768, unit: " MB",
     }),
+    Block::Note {
+        text: MEMORY_DESCRIPTION,
+    },
     Block::Heading {
         text: JAVA_ARGS_TITLE,
-        description: Some(JAVA_ARGS_DESCRIPTION),
+        description: None,
         big: false,
         control: None,
     },
     Block::Standalone(Control::Text {
         placeholder: JAVA_ARGS_PLACEHOLDER,
     }),
+    Block::Note {
+        text: JAVA_ARGS_DESCRIPTION,
+    },
     Block::Heading {
         text: ENV_VARS_TITLE,
-        description: Some(ENV_VARS_DESCRIPTION),
+        description: None,
         big: false,
         control: None,
     },
     Block::Standalone(Control::Text { placeholder: ENV_VARS_PLACEHOLDER }),
+    Block::Note {
+        text: ENV_VARS_DESCRIPTION,
+    },
 ];
 
 /// The Window tab (`window-settings.vue:60-125`): fullscreen (`:63-77`), then the width
@@ -3692,6 +3718,21 @@ fn draw_body(
                         &body, ui, state, text, control, right, y, pointer,
                     ))
                 });
+                // A heading can carry the sync switch, and that one is disabled too: it draws
+                // off, says why on hover, and cannot be flipped.
+                let control = match (control, sync_switch_tooltip(text)) {
+                    (Some(Control::Switch { .. }), Some(tip)) => {
+                        let rect = Rect::from_min_size(
+                            egui::pos2(right - SWITCH_WIDTH, y - 2.0),
+                            egui::vec2(SWITCH_WIDTH, ROW_HIT_BAND),
+                        );
+                        if pointer.is_some_and(|pointer| rect.contains(pointer)) {
+                            state.hover_tip = Some((rect, tip));
+                        }
+                        Some(Control::Switch { on: false })
+                    }
+                    (control, _) => control,
+                };
                 // What follows a heading decides how far it leaves: `mt-4` (16) above a group
                 // of rows, but a section that stacks a heading, a button or a field and a
                 // paragraph uses `gap-2.5` (10). The capture measures both: "Instances" to its
@@ -3767,30 +3808,47 @@ fn draw_body(
                         }
                     }
                     Control::Switch { on } => {
-                        let mut lit = state
-                            .switches
-                            .iter()
-                            .find(|(key, _)| *key == label)
-                            .map(|(_, on)| *on)
-                            .unwrap_or(on);
-                        // A click anywhere on the row flips it: the track is 40 points wide and
-                        // the row is the target, which is what the reference's hit area is.
-                        if ui.input(|input| input.pointer.any_click()) {
-                            if let Some(pointer) = pointer {
-                                if pointer.y >= y - 2.0
-                                    && pointer.y <= y + ROW_HIT_BAND
-                                    && pointer.x >= right - SWITCH_WIDTH
-                                {
-                                    lit = !lit;
-                                    match state.switches.iter_mut().find(|(key, _)| *key == label) {
-                                        Some((_, on)) => *on = lit,
-                                        None => state.switches.push((label, lit)),
+                        // A sync switch is disabled while signed out: it keeps the value its row
+                        // declares, refuses the press, and says why on hover (`layout.vue:60-75`).
+                        if let Some(tip) = sync_switch_tooltip(label) {
+                            let rect = Rect::from_min_size(
+                                egui::pos2(right - SWITCH_WIDTH, y - 2.0),
+                                egui::vec2(SWITCH_WIDTH, ROW_HIT_BAND),
+                            );
+                            if pointer.is_some_and(|pointer| rect.contains(pointer)) {
+                                state.hover_tip = Some((rect, tip));
+                            }
+                            Control::Switch { on }
+                        } else {
+                            let mut lit = state
+                                .switches
+                                .iter()
+                                .find(|(key, _)| *key == label)
+                                .map(|(_, on)| *on)
+                                .unwrap_or(on);
+                            // A click anywhere on the row flips it: the track is 48 points wide and
+                            // the row is the target, which is what the reference's hit area is.
+                            if ui.input(|input| input.pointer.any_click()) {
+                                if let Some(pointer) = pointer {
+                                    if pointer.y >= y - 2.0
+                                        && pointer.y <= y + ROW_HIT_BAND
+                                        && pointer.x >= right - SWITCH_WIDTH
+                                    {
+                                        lit = !lit;
+                                        match state
+                                            .switches
+                                            .iter_mut()
+                                            .find(|(key, _)| *key == label)
+                                        {
+                                            Some((_, on)) => *on = lit,
+                                            None => state.switches.push((label, lit)),
+                                        }
+                                        state.dirty = true;
                                     }
-                                    state.dirty = true;
                                 }
                             }
+                            Control::Switch { on: lit }
                         }
-                        Control::Switch { on: lit }
                     }
                     Control::Chips { options, selected } => {
                         let mut chosen = state
@@ -5512,7 +5570,7 @@ mod tests {
             (Tab::Profile, 1),
             (Tab::Social, 1),
             (Tab::Privacy, 5),
-            (Tab::JavaAndMemory, 14),
+            (Tab::JavaAndMemory, 15),
             (Tab::Window, 3),
             (Tab::LaunchHooks, 11),
             (Tab::Syncing, 6),
