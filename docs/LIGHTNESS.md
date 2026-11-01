@@ -411,3 +411,15 @@ dialog, the install path and both corrected defaults cost nothing at idle.
 **The lesson is the same one the rest of the session kept paying for**: a tool that answers confidently
 about something it could not see is indistinguishable from a passing test, and the fix is always the
 same shape -- check the precondition, then report.
+
+## Third measurement, 2026-11-01, after the Files panel and the search shortcut
+
+    startup_ms=49   idle_rss_mb=105.3   idle_cpu_ticks_over_10s=0   binary_bytes=14219488
+
+**105.3 MB**, against 108.2 MB two rounds of feature work earlier and 110.2 MB before this session's
+changes began. The binary grew by 6.7 KB across the Files panel, the two-step delete, the search shortcut
+and the sort menu; the idle footprint did not grow at all -- it fell, which is noise between runs rather
+than a saving, and the honest reading is **flat within a megabyte**.
+
+Startup is 49 ms in a warm container, and the window drew nothing while idle for ten seconds: the
+`animating` discipline still holds after every element added since.
