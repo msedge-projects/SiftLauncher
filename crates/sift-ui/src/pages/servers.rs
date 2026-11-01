@@ -1428,6 +1428,19 @@ pub fn draw(
                     egui::vec2(84.0, 30.0),
                 );
                 let copied = state.copied.as_deref() == Some(server.address.as_str());
+                // The reference joins from its own panel; this launcher's join lives on the instance page,
+                // where the presses work, so the panel says where instead of offering a dead button.
+                let hint = Rect::from_min_size(
+                    egui::pos2(panel.left() + 12.0, panel.top() + 68.0),
+                    egui::vec2(panel.width() - 220.0, 16.0),
+                );
+                painter.text(
+                    hint.left_top(),
+                    Align2::LEFT_TOP,
+                    "Join from an instance: open it, then use the field on Content.",
+                    fonts::body(11.0),
+                    theme.SECONDARY,
+                );
                 painter.rect_filled(join, 6.0, theme.BUTTON_BG_SELECTED);
                 painter.text(
                     join.center(),
