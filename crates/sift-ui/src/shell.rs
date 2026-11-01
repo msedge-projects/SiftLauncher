@@ -840,7 +840,14 @@ impl Shell {
                                     self.press_install(&card);
                                 }
                             }
-                            crate::pages::project::Press::More => {}
+                            crate::pages::project::Press::More => {
+                                // The kebab's first action is the one that needs no network and can be
+                                // checked from outside the app: the project's id, on the clipboard.
+                                if let Some(card) = self.open_card.clone() {
+                                    ui.ctx().copy_text(card.id.clone());
+                                    self.toast = Some(format!("Copied {}", card.id));
+                                }
+                            }
                         }
                     }
                     let _ = project;
