@@ -233,6 +233,8 @@ pub struct State {
     /// filters by it and counts the placeholder with it, the way `searchInput` does
     /// (`index.vue:105-115`).
     pub search: String,
+    /// Whether the field is taking the keyboard.
+    pub search_focused: bool,
     /// The order the rows are drawn in.
     pub sort: Sort,
     /// The rows: the samples, or whatever the reader has added.
@@ -258,6 +260,7 @@ impl Default for State {
     fn default() -> State {
         State {
             search: String::new(),
+            search_focused: false,
             sort: Sort::default(),
             servers: samples(),
             live: Vec::new(),
@@ -1190,10 +1193,38 @@ pub fn draw(
     let shown = sections[0].cards.len() + sections[1].cards.len();
     let show_no_match = shown == 0;
 
-    let (list_top, new_server) = {
+    let (list_top, new_server, search_field) = {
         let painter = ui.painter();
         heading_and_toolbar(painter, rect, theme, state.servers.len(), shown)
     };
+
+    // The search field takes the keyboard, registered before the plate so it cannot be stolen by a
+    // later full-column interaction -- the ordering this file warns about in the block below.
+    if ui
+        .interact(search_field, egui::Id::new("servers-search"), Sense::click())
+        .clicked()
+    {
+        state.search_focused = true;
+        ui.ctx().request_repaint();
+    }
+    if state.search_focused {
+        for event in ui.input(|i| i.events.clone()) {
+            match event {
+                egui::Event::Text(text) => {
+                    state.search.push_str(&text);
+                    ui.ctx().request_repaint();
+                }
+                egui::Event::Key { key: egui::Key::Backspace, pressed: true, .. } => {
+                    state.search.pop();
+                    ui.ctx().request_repaint();
+                }
+                egui::Event::Key { key: egui::Key::Escape, pressed: true, .. } => {
+                    state.search_focused = false;
+                }
+                _ => {}
+            }
+        }
+    }
 
     // A press on the brand plate opens the dialog. Read from the pointer rather than registered
     // with egui, for the reason the panel's rows are: a full-column interaction registered later
@@ -1458,7 +1489,7 @@ fn heading_and_toolbar(
     theme: &Theme,
     count: usize,
     shown: usize,
-) -> (f32, Rect) {
+) -> (f32, Rect, Rect) {
     let heading_at = egui::pos2(rect.left() + PAGE_PADDING, rect.top() + PAGE_PADDING);
     // `h1.w-full.text-2xl.font-extrabold.text-contrast` (`index.vue:101`).
     let heading = painter.text(
@@ -1494,7 +1525,7 @@ fn heading_and_toolbar(
     search_plate(painter, search, theme, shown);
     primary_button(painter, button, theme, NEW_SERVER, Glyph::Plus);
 
-    (row_top + CONTROL_HEIGHT + HEADING_GAP, button)
+    (row_top + CONTROL_HEIGHT + HEADING_GAP, button, search)
 }
 
 /// A brand button's width: `px-2.5 gap-1.5` around a 20-point glyph and its label

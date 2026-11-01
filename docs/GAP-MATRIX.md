@@ -3560,3 +3560,22 @@ is exactly what the plate's own function lacks.
 the pointer rather than registering them with egui, "because a full-column interaction registered later in
 the frame would take the press away". **Whatever wires this field has to respect that ordering**, or it will
 break the New-server press it sits beside.
+
+# CLOSED: the servers search takes text and filters (2026-11-01)
+
+Pressed the plate, typed `hyp`, and the page answered:
+
+    Search 0 servers...      (was: Search 6 servers...)
+    No servers you own match your search.
+
+So the field accepts input, `State::search` is written, and the filter that already existed now runs. The
+audit's first P0 is closed.
+
+**How it was done**: `heading_and_toolbar` now also returns the plate's rect (`-> (f32, Rect, Rect)`), the
+caller binds it, and the press plus the event loop sit **before** the New-server plate's press -- the
+ordering this file warns about, honoured rather than rediscovered.
+
+**What is still wrong, and it is visible in the same frame**: the field paints its **placeholder** where
+typed text should be. The literal goes into the filter but never onto the screen, so a reader sees
+"Search 0 servers..." and no query. That is the next cosmetic row, and it is one line in `search_plate`:
+draw the text instead of the placeholder when it is non-empty.
