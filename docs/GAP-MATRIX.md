@@ -4113,3 +4113,17 @@ directory the panel is showing -- so a drop into `minecraft/mods` puts a jar whe
 **What is proven and what is not, stated plainly**: the copy is proven by unit tests; the *drag* is not, because
 Xvfb has no file manager to drag from and no GTK DnD source. This is the first behaviour in the project verified by
 test rather than by driving, and it is recorded as such rather than presented as driven.
+
+# The Content tab lists installed mods and can disable one (2026-11-01)
+
+`Content` was the Description panel under another name; it now lists what the instance carries:
+
+    sodium-fabric-0.9.3-beta.1+mc26.3.jar          1867 KB
+
+A press **renames the file to `.jar.disabled`** and the row dims, keeps its name without the suffix, and its glyph
+fades -- the file-system half confirmed by `ls`, the interface half by the frame. Pressed again it comes back, and the
+lab was left with the mod enabled.
+
+**Why a rename and not a state flag**: the game reads `mods/*.jar`, so the switch has to be in the file name for the
+game to honour it. That is what every launcher in this family does, and it means the toggle is verifiable twice over
+-- in the panel and in the directory.

@@ -314,7 +314,7 @@ pub fn draw(
     );
     painter.rect_filled(card, RADIUS_MD, theme.RAISED_BG);
     match state.tab {
-        Tab::Content => overview(ui, card, theme, instance),
+        Tab::Content => content_tab(ui, card, theme, instance),
         Tab::Files => {
             if let Some(next) = files_tab(ui, card, theme, instance, &state.files_dir, &mut state.pending_delete) {
                 state.files_dir = next;
@@ -429,6 +429,83 @@ fn screenshots_tab(
 }
 
 /// The Worlds tab: one row per save, the world's own name with its folder dim on the right.
+/// The Content tab: the mods this instance carries, each with the toggle that enables it.
+///
+/// The reference's Content tab lists installed projects with an enable switch; the file form of that
+/// switch is the `.disabled` suffix, which is what every launcher in this family writes and what the
+/// game ignores.
+fn content_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
+    let dir = instance.path.join("minecraft").join("mods");
+    let mut mods: Vec<(String, u64, bool)> = std::fs::read_dir(&dir)
+        .map(|read| {
+            read.flatten()
+                .filter_map(|entry| {
+                    let name = entry.file_name().to_string_lossy().into_owned();
+                    let enabled = name.ends_with(".jar");
+                    if !enabled && !name.ends_with(".jar.disabled") {
+                        return None;
+                    }
+                    let size = entry.metadata().map(|meta| meta.len()).unwrap_or(0);
+                    Some((name, size, enabled))
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    mods.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+    if mods.is_empty() {
+        stub(ui, card, theme, Tab::Content, "No mods in this instance yet. Install one from Discover.");
+        return;
+    }
+    let painter = ui.painter();
+    let inner = card.shrink(PAD);
+    let mut y = inner.top();
+    for (name, size, enabled) in mods {
+        if y + ROW_H > inner.bottom() {
+            break;
+        }
+        icons::draw(
+            painter,
+            if enabled { Glyph::File } else { Glyph::File },
+            Rect::from_center_size(egui::pos2(inner.left() + 8.0, y + ROW_H / 2.0), egui::vec2(14.0, 14.0)),
+            if enabled { theme.SECONDARY } else { theme.SURFACE_5 },
+        );
+        painter.text(
+            egui::pos2(inner.left() + 26.0, y + ROW_H / 2.0),
+            Align2::LEFT_CENTER,
+            name.trim_end_matches(".disabled"),
+            fonts::body(12.0),
+            if enabled { theme.BASE } else { theme.SECONDARY },
+        );
+        painter.text(
+            egui::pos2(inner.right() - 12.0, y + ROW_H / 2.0),
+            Align2::RIGHT_CENTER,
+            format!("{} KB", (size / 1024).max(1)),
+            fonts::body(11.0),
+            theme.SECONDARY,
+        );
+        // The switch: a press renames the file, which is what the game reads.
+        let toggle = Rect::from_min_size(
+            egui::pos2(inner.left(), y),
+            egui::vec2(inner.width() - 90.0, ROW_H),
+        );
+        if ui
+            .interact(toggle, egui::Id::new(("content-toggle", name.as_str())), Sense::click())
+            .clicked()
+        {
+            let from = dir.join(&name);
+            let to = if enabled {
+                dir.join(format!("{name}.disabled"))
+            } else {
+                dir.join(name.trim_end_matches(".disabled"))
+            };
+            if std::fs::rename(&from, &to).is_ok() {
+                ui.ctx().request_repaint();
+            }
+        }
+        y += ROW_H;
+    }
+}
+
 fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
     let worlds = saves(&instance.path);
     if worlds.is_empty() {
