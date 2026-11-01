@@ -3298,3 +3298,20 @@ exactly where filtering lives.
 **Named next**: a control per category (the reference's checkbox), a selected set on the page state, and
 the category facets added to the request the way the search text already is. The facet machinery exists
 -- the mod card's tag chips come from the same vocabulary -- so this is a UI gap rather than a data one.
+
+### The sidebar lives in panel.rs, and it models the categories (2026-11-01)
+
+One grep for the label found the file this document had been calling "the sidebar":
+
+    crates/sift-ui/src/panel.rs:66   const SEE_MORE: &str = "See more";
+    crates/sift-ui/src/panel.rs:68   const HIDE_INSTALLED: &str = "Hide already installed";
+    crates/sift-ui/src/panel.rs:71   One category row's height ...
+    crates/sift-ui/src/panel.rs:259  The list's See more / See less.
+
+So the panel **models** the category list and its expand/collapse; what it does not model is a *selection*
+-- no checked set, no facet in the request. That is a smaller gap than the last note implied: the rows,
+their heights, the see-more boundary and the installed switch all exist, and the missing piece is the
+state behind them plus the facet string.
+
+**Next**: a checked set on the panel's state, a press per row, and the facet appended where
+`search_url_parts_with_facets` already takes a list -- named at `sift-net/src/modrinth.rs:46`.
