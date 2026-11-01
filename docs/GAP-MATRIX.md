@@ -2657,3 +2657,16 @@ that nothing asked Fabric, and a reader of this document can see the row.
 
 **Open row**: fetch the loader version from that endpoint at creation, and fall back to the default
 only when the fetch fails -- with the failure surfaced, not swallowed.
+
+### The pinned loader was stale, and asking proved it (2026-11-01)
+
+`curl https://meta.fabricmc.net/v2/versions/loader` from the lab answers, first entry:
+
+    {"separator":".","build":1,"maven":"net.fabricmc:fabric-loader:0.20.1","version":"0.20.1","stable":true}
+
+So the current stable Fabric loader is **0.20.1**, and the default this session has been writing into
+every instance profile was **0.16.9** -- several releases stale, guessed rather than asked.
+
+The constant is now 0.20.1 with the measured response in its comment, and the lookup is still the
+open row: a default that happens to be current today is not the same thing as asking. What changed is
+that the number is now a measurement with a date on it, which is the most this round's budget allows.

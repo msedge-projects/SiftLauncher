@@ -360,7 +360,10 @@ impl Shell {
 /// `https://meta.fabricmc.net/v2/versions/loader`, whose first entry is the current stable loader;
 /// wiring it is a network call in the create path and is recorded as open in
 /// `docs/GAP-MATRIX.md` rather than implied by a bare number here.
-pub const FABRIC_LOADER_DEFAULT: &str = "0.16.9";
+/// Measured 2026-11-01: the endpoint answers `"version": "0.20.1", "stable": true` as its first
+/// entry, so that is the default. It was 0.16.9 by guess before this was asked -- several releases
+/// stale, which is exactly why the pin is a default and the lookup is an open row.
+pub const FABRIC_LOADER_DEFAULT: &str = "0.20.1";
 
 pub const INSTANCE_TYPES: [(&str, &str, bool); 4] = [
     (
