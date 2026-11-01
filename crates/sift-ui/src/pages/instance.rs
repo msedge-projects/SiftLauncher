@@ -332,7 +332,7 @@ pub fn draw(
     );
     painter.rect_filled(card, RADIUS_MD, theme.RAISED_BG);
     match state.tab {
-        Tab::Content => content_tab(ui, card, theme, instance),
+        Tab::Content => content_tab(ui, card, theme, instance, state),
         Tab::Files => {
             if let Some(next) = files_tab(ui, card, theme, instance, &state.files_dir, &mut state.pending_delete) {
                 state.files_dir = next;
@@ -341,6 +341,11 @@ pub fn draw(
         Tab::Screenshots => screenshots_tab(ui, card, theme, images, instance, &mut state.pending_delete),
         Tab::Worlds => return worlds_tab(ui, card, theme, instance).map(InstanceAction::LaunchWorld),
         Tab::Logs => logs_tab(ui, card, theme, instance),
+    }
+    // A Join press raises an action the shell turns into `--quickPlayMultiplayer`. Taken rather than
+    // read, so one press is one launch.
+    if let Some(address) = state.join_request.take() {
+        return Some(InstanceAction::JoinServer(address));
     }
     None
 }
@@ -453,7 +458,7 @@ fn screenshots_tab(
 /// The reference's Content tab lists installed projects with an enable switch; the file form of that
 /// switch is the `.disabled` suffix, which is what every launcher in this family writes and what the
 /// game ignores.
-fn content_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
+fn content_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance, state: &mut State) {
     let dir = instance.path.join("minecraft").join("mods");
     let mut mods: Vec<(String, u64, bool)> = std::fs::read_dir(&dir)
         .map(|read| {
@@ -477,7 +482,64 @@ fn content_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
     }
     let painter = ui.painter();
     let inner = card.shrink(PAD);
-    let mut y = inner.top();
+
+    // Join a server from this instance: the field and its button, above the mods. This page's presses
+    // work, which is why the control lives here rather than on the Servers page.
+    let field = Rect::from_min_size(inner.min, egui::vec2(240.0, 32.0));
+    painter.rect_filled(field, 6.0, theme.RAISED_BG);
+    painter.rect_stroke(field, 6.0, egui::Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
+    painter.text(
+        egui::pos2(field.left() + 10.0, field.center().y),
+        Align2::LEFT_CENTER,
+        if state.join_input.is_empty() { "Server address" } else { state.join_input.as_str() },
+        fonts::body(12.0),
+        if state.join_input.is_empty() { theme.SECONDARY } else { theme.BASE },
+    );
+    if ui
+        .interact(field, egui::Id::new("join-field"), Sense::click())
+        .clicked()
+    {
+        state.join_focused = true;
+    }
+    if state.join_focused {
+        for event in ui.input(|input| input.events.clone()) {
+            match event {
+                egui::Event::Text(text) => {
+                    state.join_input.push_str(&text);
+                    ui.ctx().request_repaint();
+                }
+                egui::Event::Key { key: egui::Key::Backspace, pressed: true, .. } => {
+                    state.join_input.pop();
+                    ui.ctx().request_repaint();
+                }
+                egui::Event::Key { key: egui::Key::Escape, pressed: true, .. } => {
+                    state.join_focused = false;
+                }
+                _ => {}
+            }
+        }
+    }
+    let join = Rect::from_min_size(
+        egui::pos2(field.right() + 8.0, field.top()),
+        egui::vec2(72.0, 32.0),
+    );
+    painter.rect_filled(join, 6.0, theme.BUTTON_BG_SELECTED);
+    painter.text(
+        join.center(),
+        Align2::CENTER_CENTER,
+        "Join",
+        fonts::semibold(12.0),
+        theme.BUTTON_TEXT_SELECTED,
+    );
+    if ui.interact(join, egui::Id::new("join-go"), Sense::click()).clicked() {
+        let address = state.join_input.trim().to_owned();
+        if !address.is_empty() {
+            state.join_request = Some(address);
+            ui.ctx().request_repaint();
+        }
+    }
+
+    let mut y = field.bottom() + 12.0;
     for (name, size, enabled) in mods {
         if y + ROW_H > inner.bottom() {
             break;
