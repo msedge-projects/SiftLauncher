@@ -4020,3 +4020,17 @@ and the compatibility column where the shared sidebar used to be.
 
 **Worth running after any change to `shell.rs`**, because the sidebar is drawn there for every page and one
 project-page change was made in it.
+
+### The picker's refusal now names the instances (2026-11-01)
+
+`choose_instance` says *"there are N instances (Instance 2, Instance 9); choosing one needs a picker that is not
+built yet."* -- named rather than merely counted, so a reader can act on it without being told only a number.
+**Unit tests pass** (`choose_instance` has two of them).
+
+**Not driven**: the run that would have shown the toast did not complete -- no toast appeared in the frame -- so
+the message is verified by its tests and not by a capture. The fabricated second instance used to try it
+(`Instance 9`) has been removed; the lab holds one instance again.
+
+**The picker itself is still the gap**, and it is now fully located: `install_mod` calls `choose_instance(&ids)` at
+`install.rs:250`, and a picker means passing the chosen id in instead of deriving it -- one signature change plus a
+modal in the shell.

@@ -378,8 +378,11 @@ fn choose_instance(ids: &[String]) -> Result<String, String> {
         [] => Err("there is no instance to install into. Create one first.".to_owned()),
         [only] => Ok(only.clone()),
         many => Err(format!(
-            "there are {} instances and choosing one needs a picker that is not built yet.",
-            many.len()
+            // Naming them makes the refusal actionable: a reader can create a second instance, or remove
+            // one, without being told only how many there are.
+            "there are {} instances ({}); choosing one needs a picker that is not built yet.",
+            many.len(),
+            many.iter().take(3).cloned().collect::<Vec<_>>().join(", ")
         )),
     }
 }
