@@ -4143,3 +4143,16 @@ to it and watching the screen not move.**
 **That is the same lesson as the presses, applied to code**: a change that has no effect is evidence about the
 change's *target*, not about the change. The next reader should treat `library.rs` as either a page to wire up or a
 file to delete -- it is currently neither.
+
+# The Screenshots tab renders real files (2026-11-01)
+
+Three PNGs written into `Instance 2/minecraft/screenshots/` appear as a three-column grid of thumbnails, newest
+first. **The tab was never a stub** -- the earlier "Screenshots taken in this instance will appear here" was correct
+for an empty folder, and the first attempt to prove otherwise failed because the file it wrote never landed (a
+quoting bug in the shell heredoc, then a missing PIL in the lab).
+
+**Lab note**: the container has no PIL; PNGs for fixtures must be written with `zlib` + `struct` directly, or with
+`convert` from ImageMagick, which is installed.
+
+**What is still thin**: the tiles are drawn but not interactive -- no hover caption, no selection, no context menu,
+which is exactly what the Skins/Screenshots audit called out as P0 5.
