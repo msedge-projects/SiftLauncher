@@ -1637,3 +1637,32 @@ window manager shifts that space, and a widget's rect is in *content* space. The
 aim is a rect printed by the widget itself. Every successful diagnosis this session -- the window
 defaults, the section gap, the footer baseline -- used a printed number; every failed one used a
 coordinate estimated from an image.
+
+## P0 found by driving: every search returns "No results" (2026-11-01)
+
+The first interaction this session has actually *performed* rather than photographed, and it
+finds a real bug in one step:
+
+1. Discover → click the search field at its own rect (content y 126..174) and type `sodium`.
+2. The field shows `sodium`, the caret blinks, the clear button appears.
+3. Three seconds later the pane reads **"No results found for your query!"** with the pager gone.
+
+The same page, with no query, had paginated **956 pages** of results a minute earlier, so the
+network, the feed and the card grid all work. Only the query path fails.
+
+Cleared so far: `sift-net`'s `search_url_parts_with_facets` builds
+`{base}/search?query=…&limit=…&facets=[["project_type:mod"]]&index=…` correctly, percent-encoding
+the query and the facet groups. So the URL is right, and the failure is either in what the shell
+passes down (an empty or stale query, a facet that excludes everything) or in how the answer is
+read back.
+
+**The next step is one probe in the search request path**: print the final URL and the parsed
+result count. That distinguishes "the wrong query is sent" from "the right query is sent and the
+answer is dropped", and it is the same shape of probe that has closed every other question this
+session.
+
+### What this costs the record
+
+Twelve rounds went into an input bug that did not exist. This round took **one** interaction to
+find a real one. The lesson is not subtle: the brief asks for behaviour verified by driving, and
+every round spent photographing produced either a correct pixel count or a false alarm.
