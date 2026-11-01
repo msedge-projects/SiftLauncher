@@ -3235,3 +3235,17 @@ after any press). Either alone would have failed.
 
 **The lesson, for the third time in this project and the first time about a click**: the shortcut was
 never certainly broken; the pointer was.
+
+### The pager works, and the arrow is at x 1011 (2026-11-01)
+
+Pressed the next-page arrow: **page 2 becomes the brand-filled pill**, where page 1 was. So Discover's
+pager is real, wired, and moves the listing -- a row that had been "drawn" in this document since the
+first page sweep and had never been driven.
+
+The first press missed: aimed at (923,205) from a 0.655-scaled crop, while the arrow sits at
+(1011,240). **The twelfth aim error, and the same arithmetic as the eleventh** -- a coordinate read from
+a resized image, off by the scale factor.
+
+**Where this leaves the Discover page**: search (typed, results, facets), tabs (Mods pressed and
+effective), the pager (page advance), and the Ctrl+F shortcut. Four behaviours, each verified by driving.
+Not yet: sort dropdown, view-count dropdown, category checkboxes, the install picker modal.
