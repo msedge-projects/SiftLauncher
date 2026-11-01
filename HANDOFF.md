@@ -32,3 +32,11 @@ d39f207 Take a dropped PNG as a new skin, so the tile's promise is true
 - Files rename: tested core (`rename_entry`, four tests) with no control; the row control is parked.
 - Skins: no 3D model, no per-card Edit/Delete, Apply/Reset need the service.
 - 466 OPEN rows in `docs/GAP-MATRIX.md`; see its "How to read this file".
+
+6. **A window manager changes everything.** On :96/:98 with openbox started *before* the app, keys reach it and a
+   1,22 frame offset applies to every aim. On :99 with no WM, clicks work and keys do not -- which is why typing
+   appeared to work in one field and not another.
+7. **Never `git add -A` in this tree.** It has swept three agents' work into unrelated commits; use explicit paths
+   and commit within the minute.
+8. **`cargo test --release --no-run` before claiming a build.** A refactor that moved data from borrowed to owned left
+   nine call sites broken in the test target only, and the binary kept building.
