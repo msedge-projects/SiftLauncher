@@ -3928,3 +3928,21 @@ placeholder.
 **Four pages now have working text input** -- Discover, the instance Files panel, Servers and Skins -- and each
 was built from the same recipe rather than from scratch. That is the compounding the last twenty rounds were
 for.
+
+### Skins is not misdrawn -- it has no renderer at all (2026-11-01)
+
+Went to make the cards targets and found the page's own header saying what the audit's P0 2 implies:
+
+    skins.rs:89  **No renderer, so no preview column and no skin faces.**
+
+So the "no rotatable 3D preview" finding is **downstream of a missing renderer**, and the coloured blocks in the
+grid are placeholders for faces that are never drawn. **Card targets would be polish on a page that has not
+started**, which is the wrong order.
+
+**What that changes**: skins is a *feature to build* -- a skin-texture renderer, a preview column, faces in the
+grid -- not a row to correct. The audit's five P0s for it should be read as one item, not five, and the estimate
+for it should be pages of work rather than rounds.
+
+**And it is the same correction this document keeps making in the other direction**: the ledger said "invented
+toolbar, wrong card text, no preview" -- three small rows -- where the source says the page has no renderer.
+**Read the source before estimating, not just before believing.**
