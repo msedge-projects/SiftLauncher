@@ -1625,3 +1625,30 @@ before that count (118/472) overstated done by 25 and understated open by 40.
 
 **Not done**: nothing is pushed (no credentials here); the Instance page is untouched; the install
 picker does not exist; and most rows still called done were verified by capture rather than by use.
+
+
+## Closing entry, this stretch (2026-11-01, round 149)
+
+**State at the end**: 162 commits on local `master`, tree clean, `test result: ok. 176 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s`, nothing pushed (no
+credentials in this environment), no CI, no tag.
+
+**Verified by driving since the last parity-log entry**: Discover's search (typed), tabs, pager, sort menu
+and sort selection, the view-count dropdown, the **category filter** (facet set, row marked chosen, page
+reset), the **Ctrl+F shortcut**, the **instance page** itself, its **Files panel** (list, descend, return,
+arm, remove), the **two-step delete**, and the **install round trip** that follows a delete.
+
+**Two remote facts corrected by asking**: Fabric loader 0.16.9 -> 0.20.1; Minecraft default 1.21.4 -> 26.3.
+
+**Idle budget**: 105.3 MB, 0 CPU ticks over ten seconds, 49 ms warm startup -- flat within a megabyte of
+where this session found it, across every feature added since.
+
+**The two rules this stretch earned**, both written into the matrix because both cost real rounds:
+
+1. **print the widget's rect before pressing it** -- fifteen presses failed on aim alone, and not one of
+   them was a product defect;
+2. **when a capture says a feature is missing, read the source before believing it** -- four features were
+   called unbuilt and every one turned out to be complete and unreached.
+
+**What is genuinely not built**: the install picker modal, context menus beyond the instance card's
+modelled items, drag and drop anywhere, the Instance page's Content/Worlds/Logs tabs, and the reference's
+Files columns and row actions.
