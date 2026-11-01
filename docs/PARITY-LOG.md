@@ -1684,3 +1684,21 @@ push.
 3. **When a capture and the source disagree, the source wins; when a tool and the world disagree, print a number.**
    The clipboard, the loader version and the Minecraft default were all settled this way, and none of them could
    have been settled by looking.
+
+## 2026-11-02 — six features driven and proved from outside the app
+
+| feature | proof |
+|---|---|
+| Server join | the java command line carried `--quickPlayMultiplayer mc.hypixel.net:25565`; the status pill went from "No instances running" to "Running" |
+| Project page Install | a new instance "Fabulously Optimized" with 51 files; toast "Installed Fabulously Optimized as Fabulously Optimized, 51 files" |
+| Project kebab | `xclip -selection clipboard -o` printed `1KVo5zza` |
+| Create instance | instance "Parity Test" appeared on disk and in the Library |
+| Skin faces | two 64x64 PNGs in `skins/` rendered on cards and in the 200pt preview |
+| Screenshot viewer | pressing a shot opened the modal with caption "2026-11-01_10.00.00.png · 1 of 5" and prev/next |
+
+**Aim failures this session: five, all mine.** The pattern that fixes them: print the widget's rect from the page
+itself (every page now has a probe) instead of reading it off a capture — the project page's own probe showed the
+Install button at content y 72..120 while my reading of the capture said 129.
+
+**One more input thief**: a Minecraft window showing "No supported graphics backend was found" sat over the app and
+ate six presses before it was noticed. `pkill -f java` before every drive.
