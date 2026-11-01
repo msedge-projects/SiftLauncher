@@ -2036,3 +2036,24 @@ a finding in its own right and a parity gap.
 
 Recorded instead of guessed at, because the last two rounds both lost their run to an assumption
 about which page and which button were on screen.
+
+### The rail map, corrected by a tooltip (2026-11-01)
+
+Clicking (32,262) opened **Screenshots** -- the tooltip in the capture says so. The earlier map in
+this document put Screenshots at 182, which was wrong, so the rail's pitch is not the 50 I assumed
+for the lower icons.
+
+What the frame shows, in screen coordinates (add 20 for the window manager's title bar):
+
+| y | icon |
+| --- | --- |
+| 92 | Play |
+| 142 | Discover |
+| 192 | Skins |
+| 262 | **Screenshots** (tooltip confirmed) |
+| 316 | Servers |
+| 394 | **+** (the create affordance) |
+
+**Lesson**: a tooltip is a free label. Hovering before clicking costs one second and would have
+saved three rounds of wrong rail coordinates -- and unlike a screenshot estimate it is the
+application telling you what the control is.
