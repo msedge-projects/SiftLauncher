@@ -2633,3 +2633,12 @@ and the run ignored it.
 State of the lab after this round: one instance (`Instance 5`, Fabric 1.21.4) holding one mod. The
 five earlier instances were removed to give `choose_instance` a single answer -- lab data, created
 by this session, not the reader's.
+
+### The card knows what is installed (2026-11-01)
+
+After the install, the Sodium card's button reads **"+ Installed"** in the brand colour where it read
+"Install" before. The loop closes in the interface as well as on disk: instance created, project
+found, version chosen, file written, and the card reporting it.
+
+That is the fourth thing this session has verified by driving rather than by looking -- after the
+search results, the refusal for a Vanilla instance, and the jar landing in `mods/`.
