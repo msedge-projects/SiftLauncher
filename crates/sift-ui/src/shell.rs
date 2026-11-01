@@ -93,6 +93,106 @@ impl Rail {
 /// The loader and game version live one level deeper, behind `Custom setup` -- that is the row
 /// this launcher's single-press Vanilla instance replaced, and it is why a Fabric instance cannot
 /// exist yet.
+impl Shell {
+    /// The reference's create dialog (`.scratch/cap/ref-create4.png`): a 576x350 plate with a
+    /// title and a close button, a project search under "Already know what you want to play?",
+    /// an "or", and the four instance types.
+    ///
+    /// Drawn on a foreground layer so it sits over every page, which is where a modal belongs
+    /// and is why this is a method taking the context rather than part of `ui`.
+    pub fn draw_create(&self, ctx: &egui::Context, screen: egui::Rect) {
+        let theme = &self.theme;
+        let painter = ctx.layer_painter(egui::LayerId::new(
+            egui::Order::Foreground,
+            egui::Id::new("create-dialog"),
+        ));
+        painter.rect_filled(screen, 0.0, egui::Color32::from_black_alpha(120));
+        let plate = egui::Rect::from_center_size(screen.center(), egui::vec2(576.0, 350.0));
+        painter.rect_filled(plate, 12.0, theme.RAISED_BG);
+        painter.rect_stroke(
+            plate,
+            12.0,
+            egui::Stroke::new(1.0, theme.SURFACE_5),
+            egui::StrokeKind::Inside,
+        );
+        let left = plate.left() + 16.0;
+        let right = plate.right() - 16.0;
+        painter.text(
+            egui::pos2(left, plate.top() + 18.0),
+            egui::Align2::LEFT_TOP,
+            "Create instance",
+            crate::fonts::semibold(18.0),
+            theme.CONTRAST,
+        );
+        painter.text(
+            egui::pos2(right, plate.top() + 18.0),
+            egui::Align2::RIGHT_TOP,
+            "✕",
+            crate::fonts::body(16.0),
+            theme.SECONDARY,
+        );
+        painter.hline(
+            left..=right,
+            plate.top() + 48.0,
+            egui::Stroke::new(1.0, theme.SURFACE_5),
+        );
+        painter.text(
+            egui::pos2(left, plate.top() + 62.0),
+            egui::Align2::LEFT_TOP,
+            "Already know what you want to play?",
+            crate::fonts::semibold(14.0),
+            theme.CONTRAST,
+        );
+        let search = egui::Rect::from_min_size(
+            egui::pos2(left, plate.top() + 84.0),
+            egui::vec2(right - left, 28.0),
+        );
+        painter.rect_filled(search, 8.0, theme.BUTTON_BG);
+        painter.text(
+            egui::pos2(search.left() + 10.0, search.center().y),
+            egui::Align2::LEFT_CENTER,
+            "Search mods, modpacks, and more...",
+            crate::fonts::body(13.0),
+            theme.SECONDARY,
+        );
+        painter.text(
+            egui::pos2(plate.center().x, plate.top() + 120.0),
+            egui::Align2::CENTER_TOP,
+            "or",
+            crate::fonts::body(12.0),
+            theme.SECONDARY,
+        );
+        painter.text(
+            egui::pos2(left, plate.top() + 142.0),
+            egui::Align2::LEFT_TOP,
+            "Choose instance type",
+            crate::fonts::semibold(14.0),
+            theme.CONTRAST,
+        );
+        for (index, (title, description, _)) in INSTANCE_TYPES.iter().enumerate() {
+            let row = egui::Rect::from_min_size(
+                egui::pos2(left, plate.top() + 166.0 + index as f32 * 42.0),
+                egui::vec2(right - left, 38.0),
+            );
+            painter.rect_filled(row, 10.0, theme.SURFACE_4);
+            painter.text(
+                egui::pos2(row.left() + 14.0, row.top() + 7.0),
+                egui::Align2::LEFT_TOP,
+                *title,
+                crate::fonts::semibold(13.0),
+                theme.CONTRAST,
+            );
+            painter.text(
+                egui::pos2(row.left() + 14.0, row.top() + 22.0),
+                egui::Align2::LEFT_TOP,
+                *description,
+                crate::fonts::body(11.0),
+                theme.SECONDARY,
+            );
+        }
+    }
+}
+
 pub const INSTANCE_TYPES: [(&str, &str, bool); 4] = [
     (
         "Custom setup",
@@ -903,7 +1003,13 @@ impl Shell {
             },
         );
         if create_response.clicked() {
-            self.act(crate::pages::home::Action::Create);
+            // The reference opens its create dialog here rather than making an instance on the
+            // press; the four instance types are the dialog's, and the quick-create default it
+            // replaced was the only path this launcher had.
+            self.create_open = true;
+            // The window only redraws while something is in flight, so the frame that opens
+            // the dialog has to ask for the one that draws it.
+            ui.ctx().request_repaint();
         }
 
         // The bottom pair: Settings and the account, \`mt-auto\`, eight pixels off the floor.

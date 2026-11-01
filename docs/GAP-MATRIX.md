@@ -2208,3 +2208,23 @@ probe afterwards instead of before.
 
 **Next round draws the dialog** -- 576x350 plate, title and ✕, the search field, "or", and the four
 rows already transcribed in `INSTANCE_TYPES` -- and flips this flag instead of creating.
+
+### The create dialog is drawn in code; the capture has not caught it yet (2026-11-01)
+
+`Shell::draw_create(ctx, screen)` paints the reference's dialog: a scrim, a 576x350 plate with a
+one-pixel `--surface-5` edge, "Create instance" and a close mark, the rule under them, "Already
+know what you want to play?" with its search plate and placeholder, an "or", "Choose instance
+type", and the four rows from `INSTANCE_TYPES` at a 42-point pitch. It is called from the frame
+after `shell.ui`, and the rail's plus now sets `create_open` where it used to create an instance
+-- with `request_repaint()`, because this window only redraws while something is in flight.
+
+**Two captures came back byte-identical to the page beneath**, so the dialog has not been seen on
+screen yet. The code compiles, the tests pass, and the open path is one line; what is unproven is
+which of the two ends is failing -- the click landing on the plus, or the foreground layer drawing.
+
+The probe that settles it is the one this session keeps returning to: print `create_open` and the
+plate's rect from inside `draw_create` on any frame, then click. Two numbers.
+
+Four API guesses went into this round before the answer was to pass the screen rect in from the
+frame (`ui.max_rect()`): this egui version keeps no `screen_rect` on the context, on the input, or
+on `RawInput`. Reading the caller's own rect was the obvious move and the last one tried.
