@@ -2020,3 +2020,19 @@ What the next run needs, in order:
 Until then the install milestone stands as: **negative case proven** (refusal, no file), **positive
 case proven once** (a 1.9 MB jar, before the loader rule existed), and the combination -- a jar
 chosen *for* an instance and written -- still to be shown in one run.
+
+### Home changes shape once an instance exists (2026-11-01)
+
+Relaunched (the lesson from the last round) and the app opened correctly on Home -- but Home is
+now the **Library**: a list with "Instance 1, Vanilla 1.21.4" and its play button, with no large
+"Create an instance" call to action anywhere. The (596,590) coordinate that worked when the library
+was empty is empty space now.
+
+So the create affordance in this state is the **rail's "+"**, the fifth icon, at about
+**(32,262)** -- the same button the reference puts under its four destination icons. That is the
+next click to make, and the capture after it either shows a modal with a loader choice (the thing
+the positive install proof needs) or shows that this launcher has no loader choice at all, which is
+a finding in its own right and a parity gap.
+
+Recorded instead of guessed at, because the last two rounds both lost their run to an assumption
+about which page and which button were on screen.
