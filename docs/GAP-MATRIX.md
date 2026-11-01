@@ -4047,3 +4047,19 @@ Install, or read the log rather than the frame.
 
 **Lab state**: two instances now -- `Instance 2` (Fabric 26.3, with `mods/`) and `Instance 3` (fresh Vanilla). That
 is the state a picker needs, so it is left in place for the next round rather than tidied away.
+
+### A modpack install needs no picker -- it creates the instance (2026-11-01)
+
+The install press with two instances produced: **"Installed Sodium Plus as Sodium Plus_2, 72 files"**. That is the
+*pack* path, not the mod path: the page was on Modpacks, so Install extracted a whole pack into a new instance --
+and **it never asked which instance, because it does not need one**.
+
+**So the picker refusal is narrower than this document has been treating it**: it applies to *mods*, which must
+land in an existing instance, and not to packs, which bring their own. That distinction belongs in the matrix
+before anyone builds a picker that packs do not use.
+
+**Verified by this frame**: the pack install path works end to end with two instances present -- 72 files written --
+which is a second, independent confirmation of the install machinery beyond the single-mod proofs.
+
+**Still unseen**: the mod refusal itself, because reaching it needs the **Mods** tab, whose pill press has now
+missed twice at (209,154).
