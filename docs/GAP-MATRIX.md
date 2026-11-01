@@ -3455,3 +3455,38 @@ a documented decision at the same time**, which is what the last two entries mad
 **And the method lesson repeats, one layer up**: the source corrected the capture last round; this round
 the source's *comments* corrected an audit. Neither a picture nor a report is evidence about intent --
 only the code and its notes are.
+
+## Servers, Project and About audited against source (2026-11-01)
+
+Full report: `.scratch/reports/page-servers-project-about.md` -- 57 rows (16 P0 / 21 P1 / 20 P2) across
+Servers (25), Project (23) and About (9).
+
+**Five P0s:**
+
+1. **The servers search field is inert.** `servers.rs:1514-1555` paints the plate and `State::search` is
+   never written (`:235`, `:260`); the reference filters name, loader and version as you type.
+   *This is the same defect as the one this session fixed on Discover* -- a field that takes no text --
+   and the fix is the same shape: give the field its own focus flag and write the literal.
+2. **Server cards are not targets.** No click, no keyboard, no hover or active state
+   (`servers.rs:1595-1654`), where the reference's `ServerListing.vue` is a link with both.
+3. **The servers page is inset twice** -- heading at x=112 where it should be 88, `PAGE_PADDING` applied to
+   an already-inset rect -- and its controls sit on a second row where the reference puts them beside the
+   `h1`.
+4. **Project header scale is wrong**: 64/20/13 pt against the reference's 96 pt avatar, `text-2xl`
+   semibold title and 16 pt summary at `max-w-[44rem]`.
+5. **Project install button and kebab are the wrong shape and size** (112x40 r8 against `h-12
+   rounded-2xl` and a `w-12` menu), **and the Description carries an invented "How to install / Discord /
+   Rate" row** (`project.rs:335-368`) that the reference does not have.
+
+**Two structural findings, both bigger than any row:**
+
+* on a project page the reference **hides the default sidebar**; we append the shared stack, so the panel
+  is drawn where the reference draws nothing;
+* `ServersPromo` is unused, and the sidebar promo is a **300x250 image** where our panel paints a 136 pt
+  card **on every page**.
+
+**And the discipline worth copying**: the report marks UNKNOWN where it must -- About has no reference page
+at all (no `About.vue`, no `app.about.*` keys), MOTD has no reference element, and **no Servers, project
+or About capture exists in `.scratch/cap/`** beyond `ref-home.png`, so every pixel-only question is
+flagged UNKNOWN with the exact capture that would settle it. That is the behaviour this document has been
+asking for since its fourth retraction.
