@@ -2698,3 +2698,20 @@ them, and the jar that lands matches.
 That makes four installs this session has proven with a file, on four different profiles -- Vanilla
 1.21.4, Fabric 1.21.4, and now Fabric 26.3 twice -- and it closes the one debt the last round opened
 by changing a default the earlier proof had used.
+
+### The parity tooling passes the audit the lightness harness failed (2026-11-01)
+
+After repairing `tools/lightness-measure.sh`, the same question put to the tools this document
+depends on: do they measure what they claim?
+
+`tools/parity/lab.sh` is clean, and one line is why: it starts the container with
+`docker run … -v "$ROOT":/scratch`, so every path inside is the checkout that invoked it. There is no
+absolute path from another machine anywhere in the file, and the reference is launched from a path
+under `.scratch/` that the same script creates.
+
+So the tooling situation is now: one harness repaired (with two precondition guards), one lab script
+audited and clean, and one `probe.py` whose only external dependency is a capture file it is handed.
+
+**What remains untrustworthy is not the tools but the coordinates fed to them** -- five aim errors and
+four false P0s this session, every one from reading a position off a picture. The tools have always
+been able to answer; they were being aimed by eye.
