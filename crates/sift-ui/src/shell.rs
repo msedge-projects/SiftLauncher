@@ -102,10 +102,11 @@ impl Shell {
     /// and is why this is a method taking the context rather than part of `ui`.
     pub fn draw_create(&mut self, ctx: &egui::Context, screen: egui::Rect, ui: &mut egui::Ui) {
         let theme = &self.theme;
-        let painter = ctx.layer_painter(egui::LayerId::new(
-            egui::Order::Foreground,
-            egui::Id::new("create-dialog"),
-        ));
+        // The panel's own painter, not a foreground layer. The plate drawn on a foreground
+        // layer covered the field, which is placed on the panel's ui: same widget, same rect,
+        // invisible -- and a diagnostic placed outside the plate painted perfectly, which is
+        // what located it. Plate and field must share a layer, and the field must come second.
+        let painter = ui.painter().clone();
         painter.rect_filled(screen, 0.0, egui::Color32::from_black_alpha(120));
         let plate = egui::Rect::from_center_size(screen.center(), egui::vec2(576.0, 350.0));
         // A modal has to be dismissable: the reference closes on Escape and on a click outside
@@ -208,22 +209,17 @@ impl Shell {
             // Its own area, so the field is drawn on a layer that is not the panel's clip: on
             // the frame's ui after the panel returned, egui culled the glyphs while still
             // delivering input -- the state held "abc" and the plate looked empty.
-            egui::Area::new(egui::Id::new("create-name-area"))
-                .order(egui::Order::Foreground)
-                .fixed_pos(name_field.min)
-                .show(ctx, |ui| {
-                    ui.put(
-                        egui::Rect::from_min_size(egui::Pos2::ZERO, name_field.size()),
-                        egui::TextEdit::singleline(&mut name)
+            // Directly on the panel's ui. The diagnostic proved this exact widget paints when
+            // put here; every empty plate came from the Area mount that wrapped it.
+            ui.put(
+                name_field,
+                egui::TextEdit::singleline(&mut name)
                     .id(egui::Id::new("create-name-field"))
                     .hint_text("Name your instance")
-                    // The default visuals paint this field's text in a colour close enough to
-                    // the plate to be invisible -- the probe showed the state holding "abc"
-                    // while the plate looked empty. The theme's own ink fixes it.
                     .text_color(theme.CONTRAST)
-                            .desired_width(name_field.width()),
-                    );
-                });
+                    .desired_width(name_field.width()),
+            );
+
             self.create_name = name;
             return;
         }

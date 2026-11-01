@@ -2471,3 +2471,27 @@ printed two lines earlier.
 The diagnostic is reverted and the tree is green. The three facts about the field stand unchanged,
 and the next attempt should read the field's own rect before cropping -- or better, capture the
 whole frame and look at it, which has never once failed to answer the question being asked.
+
+# SOLVED after ten rounds: the plate was drawn over the field (2026-11-01)
+
+The Name field types. `.scratch/cap/r84-c.png` shows **"Fabric Test"** in the field with its focus
+ring, inside the create dialog.
+
+**The cause was layer order.** The dialog's plate was painted with
+`ctx.layer_painter(LayerId::new(Order::Foreground, …))` while the field was placed with
+`ui.put` on the panel's `ui` -- the middle layer. The plate therefore drew *on top of* the widget:
+input reached it, it had the right rect, it held focus, and it was painted underneath an opaque
+rectangle. Every symptom this session chased follows from that one line.
+
+**What found it, after nine rounds of not finding it**, was the diagnostic that put the *same
+widget* at a rect **outside** the plate: it painted perfectly. Same widget, same ui, same call --
+only the position differed, and the only thing special about the position was whether the plate
+covered it.
+
+The fix is to draw the plate with `ui.painter()` so plate and field share the panel's layer, with
+the field put second.
+
+**The lesson, and it is the session's most expensive one**: nine rounds reasoned about *how* the
+widget was mounted -- panel, area, foreground, repaint budget, clip rects -- and none of them
+considered *what was painted over it*. A control that does not appear is as likely to be covered as
+misplaced, and the test for that is one widget at a coordinate nothing else occupies.
