@@ -661,9 +661,6 @@ pub struct State {
     /// Presses on the footer's mark since the last toggle. The reference toggles when the
     /// counter passes five -- the sixth press (`index.vue:355-361`).
     pub dev_clicks: u32,
-    /// The tab that was selected when developer mode was last turned on, so turning it off can
-    /// fall back the way `onSuccess` does (`index.vue:329-340`).
-    pub dev_return: Option<Tab>,
 }
 
 /// One row of the source's rail, in the source's order (`index.vue:88-205`).
@@ -973,6 +970,11 @@ const FLAG_I18N_DEBUG: &str = "I18n Debug"; // `i18n_debug`, use-app-settings.ts
 const FLAG_LOCALHOST_SIGN_IN: &str = "Localhost Sign In"; // `localhost_sign_in`, use-app-settings.ts:13, off
 
 // --- Profile (packages/ui/src/layouts/wrapped/settings/AccountProfileSettings.vue) ---
+//
+// The signed-out empty state is what this build draws (the tab needs a Modrinth account), so
+// these are the catalogue's words for the form behind it, kept beside the citation that will be
+// needed when the account service arrives.
+#[allow(dead_code)]
 const PROFILE_PICTURE_LABEL: &str = "Profile picture"; // settings.profile.profile-picture.title (ui :6380)
 const PROFILE_DESCRIPTION: &str = "Your profile information is publicly <profile-link>viewable on Sift</profile-link> and through the <docs-link>Modrinth API</docs-link>."; // settings.profile.public-information.description (ui :6383); both spans are links (AccountProfileSettings.vue:27-40)
 const PROFILE_UPLOAD_LABEL: &str = "Upload image"; // button.upload-image (ui :338), the avatar `FileButton`'s prompt (AccountProfileSettings.vue:59)
@@ -3245,6 +3247,12 @@ fn draw_rail(
     }
 }
 
+/// How tall a standalone slider's press band is: the control's own height plus the gap under
+/// it, so the whole line is a target rather than its 20-point middle.
+fn control_height_band() -> f32 {
+    SLIDER_HEIGHT + 12.0
+}
+
 /// The number a slider's fraction means, rounded to its nearest whole.
 fn slider_value(fraction: f32, low: u32, high: u32) -> u32 {
     let span = high.saturating_sub(low) as f32;
@@ -3593,6 +3601,10 @@ fn draw_body(
 
     // The gap owed by the block above; a rule brings its own margins.
     let mut gap = 0.0;
+    // The heading a block sits under. A `Standalone(Control::Slider)` has no label of its own --
+    // its row is the section heading above it (`Memory`, `Maximum concurrent downloads`) -- and
+    // the store keys every value by a label, so this is what its value is stored under.
+    let mut section: &'static str = "";
     for (index, block) in blocks.iter().enumerate() {
         if let Block::Rule = block {
             // The gap the block above owes is settled **before** the rule adds its own
@@ -3685,6 +3697,7 @@ fn draw_body(
                 // paragraph uses `gap-2.5` (10). The capture measures both: "Instances" to its
                 // first row at 348 to 392, and "App privacy" to its Manage preferences button at
                 // 231 to 272.
+                section = text;
                 let trailing = match blocks.get(index + 1) {
                     Some(Block::Standalone(_)) | Some(Block::Buttons(_)) => STANDALONE_GAP,
                     _ => HEADING_TO_ROWS,
@@ -4042,6 +4055,58 @@ fn draw_body(
                         Control::Button {
                             label: REPORT_AD_COPIED_LABEL,
                             glyph: Some(Glyph::Check),
+                        }
+                    }
+                    other => other,
+                };
+                // A slider on a line of its own is dragged the same way a row's is: the store
+                // holds the fraction under the section heading, and a press anywhere on the
+                // track sets it. Without this the memory slider and the two download sliders
+                // drew a knob that could not be moved -- the control was on screen and inert.
+                let control = match control {
+                    Control::Slider {
+                        value,
+                        low,
+                        high,
+                        unit,
+                    } => {
+                        let width = Control::Slider {
+                            value,
+                            low,
+                            high,
+                            unit,
+                        }
+                        .width(&body);
+                        let track_left = left + width - SLIDER_WIDTH;
+                        let mut fraction = state
+                            .sliders
+                            .iter()
+                            .find(|(key, _)| *key == section)
+                            .map(|(_, stored)| *stored)
+                            .unwrap_or(value);
+                        if held {
+                            if let Some(pointer) = pointer {
+                                let in_band = pointer.y >= y - 4.0
+                                    && pointer.y <= y + control_height_band();
+                                if in_band && pointer.x >= track_left && pointer.x <= left + width {
+                                    fraction = fraction_at(pointer.x, track_left, SLIDER_WIDTH);
+                                    match state
+                                        .sliders
+                                        .iter_mut()
+                                        .find(|(key, _)| *key == section)
+                                    {
+                                        Some((_, stored)) => *stored = fraction,
+                                        None => state.sliders.push((section, fraction)),
+                                    }
+                                    state.dirty = true;
+                                }
+                            }
+                        }
+                        Control::Slider {
+                            value: fraction,
+                            low,
+                            high,
+                            unit,
                         }
                     }
                     other => other,
