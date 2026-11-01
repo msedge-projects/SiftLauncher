@@ -202,6 +202,8 @@ pub struct State {
     /// The file a first press has armed for removal. The second press on the same row removes it:
     /// one press is too cheap for a destructive action, and the reference asks before deleting.
     pub pending_delete: Option<String>,
+    /// The file being renamed: (its current name, the text in the field).
+    pub renaming: Option<(String, String)>,
     /// The address typed into the Overview's join field.
     pub join_input: String,
     /// Whether that field is taking the keyboard.
@@ -334,7 +336,15 @@ pub fn draw(
     match state.tab {
         Tab::Content => content_tab(ui, card, theme, instance, state),
         Tab::Files => {
-            if let Some(next) = files_tab(ui, card, theme, instance, &state.files_dir, &mut state.pending_delete) {
+            if let Some(next) = files_tab(
+                ui,
+                card,
+                theme,
+                instance,
+                &state.files_dir,
+                &mut state.pending_delete,
+                &mut state.renaming,
+            ) {
                 state.files_dir = next;
             }
         }
@@ -453,6 +463,25 @@ fn screenshots_tab(
 }
 
 /// The Worlds tab: one row per save, the world's own name with its folder dim on the right.
+/// Rename one entry inside `dir`.
+///
+/// The rules the file system will not enforce for us: a name has to be a bare file name -- no separators,
+/// no `..`, nothing empty -- or a rename becomes a move into somewhere the reader cannot see.
+fn rename_entry(dir: &std::path::Path, from: &str, to: &str) -> Result<(), String> {
+    let to = to.trim();
+    if to.is_empty() {
+        return Err("a file needs a name".to_owned());
+    }
+    if to.contains('/') || to.contains('\\') || to == ".." || to == "." {
+        return Err(format!("\"{to}\" is not a file name"));
+    }
+    let target = dir.join(to);
+    if target.exists() {
+        return Err(format!("\"{to}\" is already here"));
+    }
+    std::fs::rename(dir.join(from), &target).map_err(|error| error.to_string())
+}
+
 /// The Content tab: the mods this instance carries, each with the toggle that enables it.
 ///
 /// The reference's Content tab lists installed projects with an enable switch; the file form of that
@@ -652,6 +681,7 @@ fn files_tab(
     instance: &Instance,
     dir: &std::path::Path,
     pending: &mut Option<String>,
+    renaming: &mut Option<(String, String)>,
 ) -> Option<std::path::PathBuf> {
     let mut descend: Option<std::path::PathBuf> = None;
     // A drop on the panel copies the files here. The copy itself is `drop::copy_into`, which is tested;
@@ -733,6 +763,69 @@ fn files_tab(
         y += ROW_H;
     }
     for (name, is_dir, size) in entries.iter().take(24) {
+        // A pencil beside each file: press it to type a new name, Enter to commit, Escape to give up.
+        // The reference has this behind its context menu; a visible control is easier to find and just
+        // as verifiable.
+        if !*is_dir {
+            let pencil = Rect::from_center_size(
+                egui::pos2(inner.right() - 12.0, y + ROW_H / 2.0),
+                egui::vec2(18.0, 18.0),
+            );
+            painter.text(
+                pencil.center(),
+                Align2::CENTER_CENTER,
+                "…",
+                fonts::body(12.0),
+                theme.SECONDARY,
+            );
+            if ui
+                .interact(pencil, egui::Id::new(("file-rename", name.as_str())), Sense::click())
+                .clicked()
+            {
+                *renaming = Some((name.clone(), name.clone()));
+                ui.ctx().request_repaint();
+            }
+            if let Some((target, text)) = renaming.as_mut() {
+                if target == name {
+                    let field = Rect::from_min_size(
+                        egui::pos2(inner.left() + 24.0, y + 2.0),
+                        egui::vec2(inner.width() - 60.0, ROW_H - 4.0),
+                    );
+                    ui.painter().rect_filled(field, 4.0, theme.RAISED_BG);
+                    ui.painter().text(
+                        egui::pos2(field.left() + 6.0, field.center().y),
+                        Align2::LEFT_CENTER,
+                        text.as_str(),
+                        fonts::body(12.0),
+                        theme.BASE,
+                    );
+                    if let Some(pressed) = ui.input(|input| {
+                        input.events.iter().find_map(|event| match event {
+                            egui::Event::Key { key: egui::Key::Enter, pressed: true, .. } => Some(true),
+                            egui::Event::Key { key: egui::Key::Escape, pressed: true, .. } => Some(false),
+                            _ => None,
+                        })
+                    }) {
+                        if pressed && !text.trim().is_empty() && text != name {
+                            let folder = instance.path.join("minecraft").join(dir);
+                            let _ = rename_entry(&folder, name.as_str(), text.as_str());
+                        }
+                        *renaming = None;
+                        ui.ctx().request_repaint();
+                    } else {
+                        for event in ui.input(|input| input.events.clone()) {
+                            match event {
+                                egui::Event::Text(typed) => text.push_str(&typed),
+                                egui::Event::Key { key: egui::Key::Backspace, pressed: true, .. } => {
+                                    text.pop();
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if y + ROW_H > inner.bottom() {
             break;
         }
@@ -1075,5 +1168,53 @@ mod tests {
         let rows = info_rows(&instance());
         assert_eq!(rows[2].1, "\u{2014}");
         assert_eq!(rows[3].1, instance().path.display().to_string());
+    }
+}
+
+#[cfg(test)]
+mod rename_tests {
+    use super::rename_entry;
+
+    fn scratch(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("sift-rename-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("scratch");
+        dir
+    }
+
+    #[test]
+    fn a_plain_rename_moves_the_file() {
+        let dir = scratch("plain");
+        std::fs::write(dir.join("a.txt"), b"x").expect("write");
+        rename_entry(&dir, "a.txt", "b.txt").expect("ok");
+        assert!(dir.join("b.txt").is_file());
+        assert!(!dir.join("a.txt").exists());
+    }
+
+    #[test]
+    fn an_empty_name_is_refused() {
+        let dir = scratch("empty-name");
+        std::fs::write(dir.join("a.txt"), b"x").expect("write");
+        assert!(rename_entry(&dir, "a.txt", "   ").is_err());
+        assert!(dir.join("a.txt").exists());
+    }
+
+    #[test]
+    fn a_path_is_not_a_name() {
+        let dir = scratch("path");
+        std::fs::write(dir.join("a.txt"), b"x").expect("write");
+        for bad in ["../escape.txt", "sub/a.txt", "..", "."] {
+            assert!(rename_entry(&dir, "a.txt", bad).is_err(), "{bad} was accepted");
+        }
+        assert!(dir.join("a.txt").exists());
+    }
+
+    #[test]
+    fn an_existing_name_is_refused_rather_than_overwritten() {
+        let dir = scratch("clash");
+        std::fs::write(dir.join("a.txt"), b"a").expect("write");
+        std::fs::write(dir.join("b.txt"), b"b").expect("write");
+        assert!(rename_entry(&dir, "a.txt", "b.txt").is_err());
+        assert_eq!(std::fs::read(dir.join("b.txt")).expect("read"), b"b");
     }
 }
