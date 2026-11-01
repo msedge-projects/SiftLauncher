@@ -2105,3 +2105,24 @@ The order that avoids another round of guessing:
 
 Recorded rather than started, because starting a modal from memory is how the last twenty rounds
 of pixel work went.
+
+### The reference did not answer two clicks either (2026-11-01)
+
+Launched the reference, clicked its rail's plus at (32,394), then its "Create an instance" at
+(596,590). Both captures are byte-identical to the page before the click -- the same hash -- so
+neither press registered.
+
+The reference is a different toolkit and the same rule applies to it that took twelve rounds to
+learn about ours: **the first click on an unfocused window only focuses it**, and the app's own
+window manager here is the one added this session. Two presses at the same point, or one
+`xdotool windowfocus` first, is the shape of the retry.
+
+So the create modal's capture is still owed, and the method is now written down rather than
+implied:
+
+    lab.sh ref
+    xdotool windowfocus $(xdotool search --name "modrinth" | head -1)
+    xdotool mousemove 596 590; click 1        # Create an instance on the empty Home
+    shoot ref-create
+
+That run is the next round's first act, and everything else about the modal waits on it.
