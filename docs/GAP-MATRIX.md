@@ -2510,3 +2510,22 @@ That is the next slice and it is small: pass `create_name` and the chosen loader
 instance-writing path in `data`, and the three rows stop being painted constants. Until then the
 dialog is honest about what it does (it creates an instance) and silent about what it ignores (the
 fields), which is the better of the two failure modes but still a gap worth naming.
+
+### The dialog's name is used, and the loader now lies (2026-11-01)
+
+Typed "Fabric Test", pressed Create, and the Library's first row reads **Fabric Test / Vanilla
+1.21.4**. The field means something.
+
+The second half of that row is the problem: the dialog's Loader row says **Fabric**, and the instance
+it produced is **Vanilla**. `Instance::create` takes a name and a Minecraft version, not a loader, so
+the loader was never wired -- and until it is, the dialog makes a claim it does not keep.
+
+Two honest options, and the smaller one is next:
+
+1. **stop the Loader row claiming a value** until it is wired -- paint the reference's own default
+   without a value, so nothing is asserted that is not true; or
+2. wire it: `Instance::create` grows a loader, which is a change to `sift-core` and to the instance
+   profile it writes.
+
+Option 1 costs a line and removes a false statement from the product; option 2 is the feature. Both
+are better than the current state, which looks finished and is not.

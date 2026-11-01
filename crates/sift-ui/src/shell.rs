@@ -1419,9 +1419,16 @@ impl Shell {
     /// is a real one in the real folder.
     fn create_instance(&mut self) {
         let root = crate::data::instances_dir();
+        // The name the dialog collected, when there is one. The reference asks for it and uses
+        // it; a create flow that ignores its own field is a button wearing a dialog.
+        let preferred = self.create_name.trim().to_owned();
         let mut index = self.instances.len() + 1;
         while index < 64 {
-            let name = format!("Instance {index}");
+            let name = if !preferred.is_empty() {
+                preferred.clone()
+            } else {
+                format!("Instance {index}")
+            };
             match sift_core::instance::Instance::create(&root, &name, DEFAULT_MC_VERSION) {
                 Ok(instance) => {
                     let made = instance
@@ -1430,6 +1437,7 @@ impl Shell {
                         .map(|name| name.to_string_lossy().into_owned())
                         .unwrap_or(name);
                     self.toast = Some(format!("Created {made}."));
+                    self.create_name.clear();
                     self.instances = crate::data::load().0;
                     return;
                 }
