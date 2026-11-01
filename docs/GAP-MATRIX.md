@@ -2320,3 +2320,21 @@ filtered by the loader, and Create wants the instance-writing path that already 
 
 **The next slice is those three fields taking input**, because a picker whose fields cannot be
 typed into is the exact half-truth this session spent rounds proving was not true of this codebase.
+
+### The name row has a real field; its typing is unproven (2026-11-01)
+
+`create_name: String` is on the shell, and the name row now hosts an `egui::TextEdit` placed
+through a foreground `Area` over the painted plate rather than a painted placeholder.
+
+Driven once: open, choose Custom setup, click the field, type "Fabric Test". **The capture still
+shows the placeholder**, so the field is not taking input -- and this round has no budget left to
+find out why.
+
+The next probe is the one that has settled every other question of this shape: print the Area's
+rect, `response.hovered()` and `response.clicked()` from inside the `ui.put`, then click. Three
+values, one build. Two candidates, both seen before in this session: an Area whose rect does not
+line up with the painted plate (so the click lands beside the widget), or a widget that never
+takes focus because nothing requests it.
+
+Recorded as unproven rather than claimed, because a field that draws and a field that types are
+the same picture -- the distinction that cost this session twelve rounds and its two retractions.

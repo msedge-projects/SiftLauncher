@@ -188,6 +188,30 @@ impl Shell {
                     theme.SECONDARY,
                 );
             }
+            // The name takes typing: a real `TextEdit` over the painted plate, in an area on
+            // the same foreground layer. A painted field that cannot be typed into is the exact
+            // half-truth this codebase spent twelve rounds proving was not true of it.
+            let name_field = egui::Rect::from_min_size(
+                egui::pos2(left, plate.top() + 82.0),
+                egui::vec2(right - left, 28.0),
+            );
+            let mut name = self.create_name.clone();
+            egui::Area::new(egui::Id::new("create-name"))
+                .order(egui::Order::Foreground)
+                .fixed_pos(name_field.min)
+                .show(ctx, |ui| {
+                    ui.put(
+                        egui::Rect::from_min_size(
+                            egui::Pos2::ZERO,
+                            name_field.size(),
+                        ),
+                        egui::TextEdit::singleline(&mut name)
+                            .id(egui::Id::new("create-name-field"))
+                            .hint_text("Name your instance")
+                            .desired_width(name_field.width()),
+                    );
+                });
+            self.create_name = name;
             return;
         }
         painter.text(
@@ -308,6 +332,9 @@ pub struct Shell {
     /// setup the first row leads to. The reference's other three rows lead elsewhere and are
     /// each their own step when they exist.
     pub create_step: u8,
+    /// The name typed into the custom setup. Empty means the reference's placeholder shows and
+    /// Create would use the default name.
+    pub create_name: String,
     /// The selected rail destination.
     pub rail: Rail,
     /// The hovered rail destination, if any. A press animates between the two, which is
@@ -397,6 +424,7 @@ impl Default for Shell {
             create_opened: 0.0,
             create_choice: None,
             create_step: 0,
+            create_name: String::new(),
             // The reference opens on Home, and a launcher that opens on a catalogue looks
             // like a store rather than a launcher.
             rail: Rail::Home,
