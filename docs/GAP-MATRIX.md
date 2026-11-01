@@ -2728,3 +2728,26 @@ That is the session's own lesson turned on its ledger: **a number that is repeat
 that is measured.** Until someone counts the status column properly, the totals in the round reports
 should be read as approximate, and the rows themselves -- each with its own evidence -- are the
 authoritative record.
+
+### The totals, counted at last -- and the session overstated its own progress (2026-11-01)
+
+Counting every table row that carries a status token:
+
+| status | rows |
+| --- | --- |
+| DONE | **93** |
+| OPEN | **512** |
+| BLOCKED-SERVICE | 9 |
+| RENDERER-RISK | 16 |
+| NOT-IN-SOURCE | 13 |
+| DELIBERATE | 2 |
+
+**633 status-bearing rows** (the per-status counts sum higher because some rows carry two, such as
+OPEN and RENDERER-RISK together).
+
+So the figure this session repeated -- "118 DONE / 472 OPEN" -- **overstated completions by 25 rows and
+understated the open work by 40**. The true ratio at this point is **93 done against 512 open**: for
+every element verified, five and a half remain.
+
+That is the session's most useful number, and it is the one it had been getting wrong in its own
+favour while telling the reader it was measuring.
