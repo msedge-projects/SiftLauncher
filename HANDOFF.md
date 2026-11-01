@@ -659,3 +659,25 @@ pushed and no CI.
 Grep this document for the *symptom* before theorising. The servers panel took six rounds because a plate
 painted on a lower layer is covered by later paint -- **a fact already written here**, from the create
 dialog, two hundred rounds earlier.
+
+
+---
+
+## Two estimates corrected, for whoever plans the rest (2026-11-01, round 187)
+
+**Skins is greenfield, not a correction.** `skins.rs:89` says in as many words: *no renderer, so no preview
+column and no skin faces.* Four of the five skins P0s in the audit are consequences of that one absence. Plan it
+as a feature -- texture renderer, preview column, faces -- not as five rows.
+
+**The text-field recipe compounds.** Discover (10 rounds), the instance Files panel, Servers (3), Skins (2). The
+cost fell by two thirds each time once the shape was known: *the geometry is usually computed already; the press
+belongs where the `Ui` is; input state lives on the page's `State`; and the field must draw its literal or it
+looks inert while it works.*
+
+**What is left is mostly structural, not cosmetic**: a server join path, drag and drop, context menus beyond the
+instance card, an install picker, a skin renderer, and the sidebar promo appearing where the reference hides it.
+Those are builds, not pixels, and they should be estimated in pages rather than rounds.
+
+**The ledger is now trustworthy in the direction that matters**: it names its own UNKNOWNs (23), it marks
+deliberate deviations with a condition for removal (1), and it records six retractions of its own claims. **Read
+it before planning; read the source before believing either.**
