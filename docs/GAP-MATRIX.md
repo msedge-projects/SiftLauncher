@@ -3261,3 +3261,16 @@ shown is that choosing an item changes the ordering** -- the menu opened, nothin
 
 That distinction is the same one the matrix keeps drawing: *opens* is one row, *acts* is another, and
 this round verified the first.
+
+### Choosing from the sort menu changes the value (2026-11-01)
+
+The press was aimed at **Downloads** and landed on **Follows** -- one row lower, the thirteenth aim error
+-- but the result is unambiguous: the control now reads **"Sort by: Follows"** where it read
+"Relevance", and the listing redrew with page 1 of 956 again.
+
+So the sort dropdown is **open-and-select**, not open-only: state changes, the request is re-issued, the
+pager resets. Whether the *ordering* differs between Relevance and Follows for this query is a separate
+question the frame cannot answer, because both put Fabulously Optimized first.
+
+**Rows verified this stretch, all by driving**: search, tabs, pager, Ctrl+F, sort menu, sort selection.
+Six behaviours on one page, where the matrix had one row.
