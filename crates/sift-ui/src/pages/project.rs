@@ -179,8 +179,31 @@ const SLIDER_SECONDS: f64 = 0.08;
 /// A card's padding: `padding: 1rem` (`classes.scss:499-508`).
 const CARD_PAD: f32 = 16.0;
 
-/// A card's corner: `--radius-lg` (`classes.scss:502`).
+/// The top padding, which the sheet sets differently: pt-3.
+const CARD_PAD_TOP: f32 = 12.0;
+
+/// mb-4 under every card but the last.
+const CARD_GAP: f32 = 16.0;
+
+/// rounded-2xl on a card.
 const CARD_RADIUS: u8 = 16;
+
+/// A card's heading: text-lg font-semibold = 18 points, on a 28-point line.
+const SIDEBAR_HEADING: f32 = 18.0;
+const CARD_HEADING_LINE: f32 = 28.0;
+
+/// gap-3 between a card's heading and its content.
+const CARD_CONTENT_GAP: f32 = 12.0;
+
+/// A line of the sidebar's body text: 16 points on a 24-point line.
+const SIDEBAR_BODY: f32 = 16.0;
+const SIDEBAR_LINE: f32 = 24.0;
+
+/// A chip's height in the sidebar, and the gap beside it.
+const SIDEBAR_CHIP_HEIGHT: f32 = 26.0;
+const SIDEBAR_CHIP_GAP: f32 = 4.0;
+
+/// A card's corner: `--radius-lg` (`classes.scss:502`).
 
 /// A table header cell's height: `h-12` (`base/Table.vue:24-36`).
 const TABLE_HEADER: f32 = 48.0;
@@ -1831,137 +1854,251 @@ fn empty_tab(ui: &mut Ui, inner: Rect, theme: &Theme, message: &str) {
 pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
     let painter = ui.painter();
     let mut y = rect.top();
-    if project.versions.is_empty() {
-        return 0.0;
-    }
-    painter.text(
-        egui::pos2(rect.left(), y),
-        Align2::LEFT_TOP,
-        "Compatibility",
-        fonts::semibold(18.0),
-        theme.CONTRAST,
-    );
-    y += 30.0;
-    painter.text(
-        egui::pos2(rect.left(), y),
-        Align2::LEFT_TOP,
-        "Minecraft: Java Edition",
-        fonts::body(16.0),
-        theme.TEXT_PRIMARY,
-    );
-    y += 24.0;
+    let inner_width = rect.width() - 2.0 * CARD_PAD;
 
-    // Version chips, wrapping at the panel's width, at `gap-1` (4) between them.
-    let mut x = rect.left();
-    for version in &project.game_versions {
-        let label = painter.layout_no_wrap(version.clone(), fonts::body(16.0), theme.BASE);
-        let chip = chip_at(painter, egui::pos2(x, y), theme, &label, 16.0, None);
-        if chip.right() > rect.right() {
-            x = rect.left();
-            y += 26.0;
-            let _ = chip_at(painter, egui::pos2(x, y), theme, &label, 16.0, None);
+    // Each section is a SidebarCard: flex flex-col gap-3 p-4 pt-3, card-shadow mb-4 rounded-2xl
+    // bg-surface-3 border border-surface-4, h2 at text-lg font-semibold (SidebarCard.vue:11-18).
+    let cards = [
+        ("Compatibility", compatibility_rows(project)),
+        ("Links", links_rows(project)),
+        ("Creators", creator_rows(project)),
+        ("Details", detail_rows(project)),
+    ];
+    for (title, rows) in cards {
+        if rows.is_empty() {
+            continue;
         }
-        x += chip.width() + PANEL_CHIP_GAP;
-    }
-    y += 34.0;
-
-    for (heading, values) in [
-        (
-            "Platforms",
-            project
-                .tags
-                .iter()
-                .filter(|(tag, _)| matches!(tag.as_str(), "Fabric" | "Forge" | "NeoForge" | "Quilt"))
-                .map(|(tag, glyph)| (tag.clone(), *glyph))
-                .collect::<Vec<_>>(),
-        ),
-        (
-            "Supported environments",
-            project
-                .tags
-                .iter()
-                .filter(|(tag, _)| tag == "Client-side" || tag == "Server-side")
-                .map(|(tag, glyph)| (tag.clone(), *glyph))
-                .collect::<Vec<_>>(),
-        ),
-    ] {
-        painter.text(
+        // The rows are placed before the card is drawn, because the card's height is what the
+        // placement adds up to -- the same two passes flex-wrap needs.
+        let placed = place_rows(painter, &rows, inner_width);
+        let height = CARD_PAD_TOP + CARD_HEADING_LINE + CARD_CONTENT_GAP + placed.height + CARD_PAD;
+        let card = Rect::from_min_size(
             egui::pos2(rect.left(), y),
-            Align2::LEFT_TOP,
-            heading,
-            fonts::body(16.0),
-            theme.TEXT_PRIMARY,
+            egui::vec2(rect.width(), height),
         );
-        y += 24.0;
-        let mut chip_x = rect.left();
-        for (tag, glyph) in values {
-            let label = painter.layout_no_wrap(tag.to_owned(), fonts::body(16.0), theme.BASE);
-            let chip = chip_at(
+        painter.rect_filled(card, CARD_RADIUS, theme.SURFACE_3);
+        painter.rect_stroke(
+            card,
+            CARD_RADIUS,
+            Stroke::new(STROKE_WIDTH, theme.SURFACE_4),
+            egui::StrokeKind::Inside,
+        );
+        let inner_left = card.left() + CARD_PAD;
+        painter.text(
+            egui::pos2(inner_left, card.top() + CARD_PAD_TOP),
+            Align2::LEFT_TOP,
+            title,
+            fonts::semibold(SIDEBAR_HEADING),
+            theme.CONTRAST,
+        );
+        let content_top = card.top() + CARD_PAD_TOP + CARD_HEADING_LINE + CARD_CONTENT_GAP;
+        for (row, x, row_y) in &placed.rows {
+            let _ = rows[*row].draw(
                 painter,
-                egui::pos2(chip_x, y),
                 theme,
-                &label,
-                TAG_GLYPH,
-                Some(glyph),
+                inner_left + *x,
+                content_top + *row_y,
+                inner_width,
             );
-            chip_x = chip.right() + PANEL_CHIP_GAP;
         }
-        y += 32.0;
+        y = card.bottom() + CARD_GAP;
     }
-
-    // Links are labels with no value yet, and drawn by hand rather than through `section` so
-    // the labels are not paired with empty strings.
-    painter.text(
-        egui::pos2(rect.left(), y),
-        Align2::LEFT_TOP,
-        "Links", // project.about.links.title
-        fonts::semibold(18.0),
-        theme.CONTRAST,
-    );
-    y += 24.0;
-    for link in &project.links {
-        painter.text(
-            egui::pos2(rect.left(), y),
-            Align2::LEFT_TOP,
-            link.as_str(),
-            fonts::body(16.0),
-            theme.LINK,
-        );
-        y += 24.0;
-    }
-    y += 8.0;
-    let creators: Vec<(&str, &str)> = project
-        .creators
-        .iter()
-        .map(|(name, role)| (name.as_str(), role.as_str()))
-        .collect();
-    y += section(
-        painter,
-        rect,
-        y,
-        theme,
-        "Creators", // project.about.creators.title
-        &creators,
-    );
-    let published = project.published.map(Date::long).unwrap_or_default();
-    let updated = project.updated.map(Date::long).unwrap_or_default();
-    y += section(
-        painter,
-        rect,
-        y,
-        theme,
-        "Details", // label.details
-        &[
-            // project.about.details.published
-            ("Published", published.as_str()),
-            // project.about.details.updated
-            ("Updated", updated.as_str()),
-            // project.license.title
-            ("License", project.license.as_str()),
-        ],
-    );
 
     y - rect.top()
+}
+
+/// Where each row goes, and how tall the run is: the result of wrapping the chips at the card's
+/// width, which is what flex-wrap does in the sheet.
+struct Placed {
+    /// The rows, as (index into the source, x offset from the card's content edge, y).
+    rows: Vec<(usize, f32, f32)>,
+    /// The height the run used.
+    height: f32,
+}
+
+/// Place a card's rows at the width it will be drawn in.
+fn place_rows(painter: &egui::Painter, rows: &[Row], width: f32) -> Placed {
+    let mut placed = Vec::new();
+    let mut y = 0.0;
+    let mut x = 0.0;
+    let mut line_height = 0.0_f32;
+    for (index, row) in rows.iter().enumerate() {
+        match row {
+            Row::Break => {
+                y += line_height.max(SIDEBAR_CHIP_HEIGHT + SIDEBAR_CHIP_GAP);
+                line_height = 0.0;
+                x = 0.0;
+            }
+            Row::Chip(_, _) => {
+                let chip_width = row.width(painter);
+                if x > 0.0 && x + chip_width > width {
+                    y += line_height.max(SIDEBAR_CHIP_HEIGHT + SIDEBAR_CHIP_GAP);
+                    line_height = 0.0;
+                    x = 0.0;
+                }
+                placed.push((index, x, y));
+                x += chip_width + SIDEBAR_CHIP_GAP;
+                line_height = line_height.max(SIDEBAR_CHIP_HEIGHT + SIDEBAR_CHIP_GAP);
+            }
+            Row::Line(_, _) => {
+                if line_height > 0.0 {
+                    y += line_height;
+                    line_height = 0.0;
+                    x = 0.0;
+                }
+                placed.push((index, 0.0, y));
+                y += SIDEBAR_LINE;
+            }
+        }
+    }
+    y += line_height;
+    Placed { rows: placed, height: y }
+}
+
+/// One row inside a sidebar card: a line of label and value, or one chip.
+enum Row {
+    /// A label and its value, the value after the label.
+    Line(String, String),
+    /// A chip, drawn at the sheet's chip geometry.
+    Chip(String, Option<Glyph>),
+    /// A wrap: the rows after this start a new line.
+    Break,
+}
+
+impl Row {
+    /// The chip's width at the sidebar's body size.
+    fn width(&self, painter: &egui::Painter) -> f32 {
+        match self {
+            Row::Chip(label, glyph) => {
+                let text =
+                    painter.layout_no_wrap(label.clone(), fonts::body(SIDEBAR_BODY), Color32::WHITE);
+                text.size().x
+                    + if glyph.is_some() {
+                        TAG_GLYPH + TAG_GAP
+                    } else {
+                        0.0
+                    }
+                    + 2.0 * TAG_PAD_X
+            }
+            _ => 0.0,
+        }
+    }
+
+    /// Draw it at a point the layout chose, answering the height it used.
+    fn draw(&self, painter: &egui::Painter, theme: &Theme, left: f32, top: f32, width: f32) -> f32 {
+        match self {
+            Row::Line(label, value) => {
+                painter.text(
+                    egui::pos2(left, top),
+                    Align2::LEFT_TOP,
+                    label.as_str(),
+                    fonts::body(SIDEBAR_BODY),
+                    theme.BASE,
+                );
+                if !value.is_empty() {
+                    painter.text(
+                        egui::pos2(left + width_of(painter, label) + 8.0, top),
+                        Align2::LEFT_TOP,
+                        value.as_str(),
+                        fonts::body(SIDEBAR_BODY),
+                        theme.SECONDARY,
+                    );
+                }
+                SIDEBAR_LINE
+            }
+            Row::Chip(label, glyph) => {
+                let text =
+                    painter.layout_no_wrap(label.clone(), fonts::body(SIDEBAR_BODY), theme.BASE);
+                let chip = chip_at(
+                    painter,
+                    egui::pos2(left, top),
+                    theme,
+                    &text,
+                    SIDEBAR_BODY,
+                    *glyph,
+                );
+                chip.height() + SIDEBAR_CHIP_GAP
+            }
+            Row::Break => 0.0,
+        }
+    }
+}
+
+/// The width of a label in the sidebar's body size.
+fn width_of(painter: &egui::Painter, label: &str) -> f32 {
+    painter
+        .layout_no_wrap(label.to_owned(), fonts::body(SIDEBAR_BODY), Color32::WHITE)
+        .size()
+        .x
+}
+
+/// The compatibility card's rows: the game, the versions as chips, then the platforms and the
+/// environments (ProjectSidebarCompatibility.vue:2-8).
+fn compatibility_rows(project: &Project) -> Vec<Row> {
+    if project.versions.is_empty() && project.game_versions.is_empty() {
+        return Vec::new();
+    }
+    let mut rows = vec![Row::Line("Minecraft: Java Edition".to_owned(), String::new())];
+    for version in &project.game_versions {
+        rows.push(Row::Chip(version.clone(), None));
+    }
+    for (heading, wanted) in [
+        ("Platforms", ["fabric", "forge", "neoforge", "quilt"].as_slice()),
+        (
+            "Supported environments",
+            ["client", "server"].as_slice(),
+        ),
+    ] {
+        let chips: Vec<Row> = project
+            .tags
+            .iter()
+            .filter(|(tag, _)| {
+                let tag = tag.to_lowercase();
+                wanted.iter().any(|name| tag.contains(name))
+            })
+            .map(|(tag, glyph)| Row::Chip(tag.clone(), Some(*glyph)))
+            .collect();
+        if chips.is_empty() {
+            continue;
+        }
+        rows.push(Row::Line(heading.to_owned(), String::new()));
+        rows.extend(chips);
+    }
+    rows
+}
+
+/// The links card: the catalogue's own labels (ProjectSidebarLinks.vue).
+fn links_rows(project: &Project) -> Vec<Row> {
+    project
+        .links
+        .iter()
+        .map(|link| Row::Chip(link.clone(), None))
+        .collect()
+}
+
+/// The creators card: a name per row, with its role.
+fn creator_rows(project: &Project) -> Vec<Row> {
+    project
+        .creators
+        .iter()
+        .map(|(name, role)| Row::Line(name.clone(), role.clone()))
+        .collect()
+}
+
+/// The details card: the two dates and the licence, each only when the API gave it
+/// (ProjectSidebarDetails.vue).
+fn detail_rows(project: &Project) -> Vec<Row> {
+    let mut rows = Vec::new();
+    if let Some(published) = project.published {
+        rows.push(Row::Line("Published".to_owned(), published.long()));
+    }
+    if let Some(updated) = project.updated {
+        rows.push(Row::Line("Updated".to_owned(), updated.long()));
+    }
+    if !project.license.is_empty() {
+        rows.push(Row::Line("License".to_owned(), project.license.clone()));
+    }
+    rows
 }
 
 /// The gap between two chips in the sidebar: `gap-1`.
@@ -2392,6 +2529,56 @@ mod tests {
         assert_eq!(
             Date { year: 2026, month: 10, day: 20 }.long(),
             "October 20, 2026"
+        );
+    }
+
+    /// The sidebar is four cards, and the height it claims is the cards' own: a project with the
+    /// whole endpoint behind it draws more than the 400 points the shell gives the block, and a
+    /// card-only project draws nothing rather than four empty frames.
+    #[test]
+    fn the_sidebar_is_four_cards_and_claims_their_height() {
+        let ctx = egui::Context::default();
+        crate::fonts::install(&ctx);
+        let theme = crate::theme::dark();
+        let full = sample();
+        let mut drawn = 0.0;
+        ctx.run_ui(egui::RawInput::default(), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                drawn = panel(
+                    ui,
+                    Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(252.0, 400.0)),
+                    &theme,
+                    &full,
+                );
+            });
+        });
+        assert!(
+            drawn > 400.0,
+            "four cards is more than the shell's 400-point block: {drawn}"
+        );
+
+        let mut bare = sample();
+        bare.versions = Vec::new();
+        bare.game_versions = Vec::new();
+        bare.links = Vec::new();
+        bare.creators = Vec::new();
+        bare.published = None;
+        bare.updated = None;
+        bare.license = String::new();
+        let mut bare_height = 1.0;
+        ctx.run_ui(egui::RawInput::default(), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                bare_height = panel(
+                    ui,
+                    Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(252.0, 400.0)),
+                    &theme,
+                    &bare,
+                );
+            });
+        });
+        assert_eq!(
+            bare_height, 0.0,
+            "a card-only project has nothing the sidebar can fill"
         );
     }
 }
