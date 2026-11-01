@@ -420,6 +420,10 @@ pub struct State {
     slider: Option<(f32, f32, f64)>,
     /// The gallery image being looked at, by its index in the grid.
     pub viewer: Option<usize>,
+    /// The channel chips the reader has toggled on (Release/Beta/Alpha).
+    pub channels: Vec<Channel>,
+    /// The loader chips the reader has toggled on.
+    pub loaders: Vec<&'static str>,
 }
 
 impl Default for State {
@@ -428,6 +432,8 @@ impl Default for State {
             tab: None,
             slider: None,
             viewer: None,
+            channels: Vec::new(),
+            loaders: Vec::new(),
         }
     }
 }
@@ -499,6 +505,31 @@ fn gallery_grid(inner_width: f32) -> (usize, f32) {
     let width = (inner_width - GALLERY_GAP * (columns.saturating_sub(1)) as f32) / columns as f32;
     (columns, width)
 }
+
+/// The versions a set of chips leaves: a version passes when it matches **every dimension that
+/// has a chip on** and, inside one dimension, any of its values — the source's
+/// `hasAnySelected(version.game_versions, selected)` per dimension, AND-ed across them
+/// (`ProjectPageVersions.vue:700-712`).
+///
+/// A dimension with no chip toggled is not a filter, which is what makes an untouched filter row
+/// show the whole table.
+fn filtered_versions<'a>(
+    versions: &'a [Version],
+    channels: &[Channel],
+    loaders: &[&'static str],
+) -> Vec<&'a Version> {
+    versions
+        .iter()
+        .filter(|version| {
+            (channels.is_empty() || channels.contains(&version.channel))
+                && (loaders.is_empty()
+                    || version.loaders.iter().any(|loader| loaders.contains(loader)))
+        })
+        .collect()
+}
+
+/// `mb-3` under the filter row (`ProjectPageVersions.vue:2`).
+const VERSION_FILTER_GAP: f32 = 12.0;
 
 /// The versions table's column widths, in the order the cells are drawn: channel, version, game
 /// versions, platforms, published, downloads, actions.
@@ -630,7 +661,7 @@ pub fn draw(
     let inner = card.shrink(CARD_PAD);
     match state.current(project) {
         Tab::Description => description(ui, inner, theme, project),
-        Tab::Versions => versions(ui, inner, theme, project),
+        Tab::Versions => versions(ui, inner, theme, project, state),
         Tab::Gallery => gallery(ui, inner, theme, project, images, state, &mut probe_rows),
     }
 
@@ -1075,15 +1106,103 @@ const PARAGRAPH_GAP: f32 = 12.0;
 // ---------------------------------------------------------------------------
 
 /// The versions tab: the reference's `Table` (`ProjectPageVersions.vue:560-615`).
-fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project) {
+fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &mut State) {
     if project.versions.is_empty() {
         empty_tab(ui, inner, theme, "No versions yet.");
         return;
     }
     let now = today();
-    let table_height = TABLE_HEADER + project.versions.len() as f32 * TABLE_ROW;
+
+    // The filter row: one chip per channel and per loader the project actually has, toggled on
+    // and off (`ProjectPageVersions.vue:2-28`, the `VersionFilterControl` above the table).
+    let mut filter_row = Rect::from_min_size(inner.min, egui::vec2(inner.width(), TAG_HEIGHT));
+    {
+        let painter = ui.painter();
+        let mut x = filter_row.left();
+        let mut chips: Vec<(String, bool)> = Vec::new();
+        for channel in [Channel::Release, Channel::Beta, Channel::Alpha] {
+            if !project.versions.iter().any(|version| version.channel == channel) {
+                continue;
+            }
+            chips.push((channel.label().to_owned(), state.channels.contains(&channel)));
+        }
+        for loader in ["fabric", "forge", "neoforge", "quilt"] {
+            if !project
+                .versions
+                .iter()
+                .any(|version| version.loaders.contains(&loader))
+            {
+                continue;
+            }
+            chips.push((loader.to_owned(), state.loaders.contains(&loader)));
+        }
+        for (label, on) in &chips {
+            let chip = tag_rect(painter, egui::pos2(x, filter_row.top()), theme, label, None);
+            if *on {
+                painter.rect_filled(chip, (TAG_HEIGHT / 2.0) as u8, theme.BUTTON_BG_SELECTED);
+                painter.text(
+                    chip.center(),
+                    Align2::CENTER_CENTER,
+                    label,
+                    fonts::label(TAG_TEXT),
+                    theme.BUTTON_TEXT_SELECTED,
+                );
+            }
+            let pressed = ui
+                .interact(
+                    chip,
+                    egui::Id::new(("version-filter", label.as_str())),
+                    Sense::click(),
+                )
+                .clicked();
+            if pressed {
+                if let Some(channel) = [Channel::Release, Channel::Beta, Channel::Alpha]
+                    .into_iter()
+                    .find(|channel| channel.label() == label)
+                {
+                    if let Some(at) = state.channels.iter().position(|open| *open == channel) {
+                        state.channels.remove(at);
+                    } else {
+                        state.channels.push(channel);
+                    }
+                } else if let Some(at) = state.loaders.iter().position(|open| *open == label.as_str())
+                {
+                    state.loaders.remove(at);
+                } else {
+                    state.loaders.push(match label.as_str() {
+                        "forge" => "forge",
+                        "neoforge" => "neoforge",
+                        "quilt" => "quilt",
+                        _ => "fabric",
+                    });
+                }
+                ui.ctx().request_repaint();
+            }
+            x = chip.right() + TAG_GAP;
+        }
+        filter_row = Rect::from_min_size(
+            egui::pos2(inner.left(), inner.top()),
+            egui::vec2(inner.width(), TAG_HEIGHT),
+        );
+    }
+
+    let shown = filtered_versions(project.versions, &state.channels, &state.loaders);
+    let table_top = filter_row.bottom() + VERSION_FILTER_GAP;
+    if shown.is_empty() {
+        empty_tab(
+            ui,
+            Rect::from_min_max(
+                egui::pos2(inner.left(), table_top),
+                egui::pos2(inner.right(), inner.bottom()),
+            ),
+            theme,
+            "No versions match these filters.",
+        );
+        return;
+    }
+    let table_height = TABLE_HEADER + shown.len() as f32 * TABLE_ROW;
     let table = Rect::from_min_size(
-        inner.min,
+        egui::pos2(inner.left(), table_top),
         egui::vec2(inner.width(), table_height),
     );
 
@@ -1143,7 +1262,7 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project) {
                 theme.SURFACE_4,
             );
 
-            for (row, version) in project.versions.iter().enumerate() {
+            for (row, version) in shown.iter().enumerate() {
                 let top = header.bottom() + row as f32 * TABLE_ROW;
                 let band = Rect::from_min_size(
                     egui::pos2(table.left(), top),
@@ -1982,6 +2101,38 @@ mod tests {
         ] {
             assert_eq!(civil_from_days(date.day_number()), date);
         }
+    }
+
+    /// The filter row: a dimension with no chip on is not a filter, a chip keeps only its own
+    /// values, and two dimensions are AND-ed.
+    #[test]
+    fn the_version_chips_filter_one_dimension_at_a_time() {
+        let project = sample();
+        let all = filtered_versions(project.versions, &[], &[]);
+        assert_eq!(all.len(), project.versions.len(), "no chip is the whole table");
+
+        let betas = filtered_versions(project.versions, &[Channel::Beta], &[]);
+        assert_eq!(betas.len(), 2, "the sample has two betas");
+        assert!(betas.iter().all(|version| version.channel == Channel::Beta));
+
+        let releases = filtered_versions(project.versions, &[Channel::Release], &[]);
+        assert_eq!(releases.len(), 2);
+
+        let none = filtered_versions(project.versions, &[Channel::Alpha], &[]);
+        assert!(none.is_empty(), "a channel with no versions leaves an empty table");
+
+        let fabric = filtered_versions(project.versions, &[], &["fabric"]);
+        assert_eq!(fabric.len(), project.versions.len(), "every sample version is Fabric");
+
+        let forge = filtered_versions(project.versions, &[], &["forge"]);
+        assert!(forge.is_empty(), "a loader the project does not ship leaves nothing");
+
+        let beta_and_fabric = filtered_versions(project.versions, &[Channel::Beta], &["fabric"]);
+        assert_eq!(
+            beta_and_fabric.len(),
+            2,
+            "two dimensions are AND-ed, so both must match"
+        );
     }
 
     /// A date prints the way `useFormatDateTime({ year, month: 'long', day })` prints it.
