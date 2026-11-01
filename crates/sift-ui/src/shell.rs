@@ -86,6 +86,36 @@ impl Rail {
 }
 
 /// What the shell is showing, and what is moving.
+/// The four ways the reference's create dialog offers to make an instance
+/// (`CreateInstanceModal.vue`, captured at `.scratch/cap/ref-create4.png`): the title, the line
+/// under it, and whether the row opens a further step rather than finishing here.
+///
+/// The loader and game version live one level deeper, behind `Custom setup` -- that is the row
+/// this launcher's single-press Vanilla instance replaced, and it is why a Fabric instance cannot
+/// exist yet.
+pub const INSTANCE_TYPES: [(&str, &str, bool); 4] = [
+    (
+        "Custom setup",
+        "Start from scratch by picking a loader and game version",
+        true,
+    ),
+    (
+        "Start from a mod or modpack",
+        "Choose a project and we'll use its latest version",
+        true,
+    ),
+    (
+        "Upload a modpack",
+        "Install a modpack from an .mrpack file on your device",
+        false,
+    ),
+    (
+        "Import instance",
+        "Import an instance from Prism, CurseForge, or similar.",
+        false,
+    ),
+];
+
 pub struct Shell {
     /// The selected rail destination.
     pub rail: Rail,
@@ -2415,6 +2445,35 @@ mod tests {
     fn every_sample_card_names_its_project() {
         for card in fixture_cards() {
             assert!(!card.id.is_empty(), "{} carries no project id", card.title);
+        }
+    }
+}
+
+#[cfg(test)]
+mod instance_type_tests {
+    use super::INSTANCE_TYPES;
+
+    /// All four rows of the capture are here, in its order, and only the first two open a
+    /// further step -- the chevron is in the reference on rows one and two.
+    #[test]
+    fn the_four_types_are_the_captures_four() {
+        let titles: Vec<&str> = INSTANCE_TYPES.iter().map(|row| row.0).collect();
+        assert_eq!(
+            titles,
+            [
+                "Custom setup",
+                "Start from a mod or modpack",
+                "Upload a modpack",
+                "Import instance"
+            ]
+        );
+        assert!(INSTANCE_TYPES[0].2 && INSTANCE_TYPES[1].2);
+        assert!(!INSTANCE_TYPES[2].2 && !INSTANCE_TYPES[3].2);
+        // The capture's descriptions are not uniformly punctuated -- the last one ends a
+        // sentence and the three above it do not -- so only their presence is asserted, which is
+        // what a transcription can honestly claim.
+        for (title, description, _) in INSTANCE_TYPES {
+            assert!(!description.is_empty(), "{title} has no description");
         }
     }
 }

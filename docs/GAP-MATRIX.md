@@ -2176,3 +2176,20 @@ That is the whole create flow's shape: **the loader and game version live one le
 **Next round builds this modal to this capture** -- the four rows, the search field, the title's ✕ --
 and then "Custom setup" is what has to exist for a Fabric instance, which is what the install proof
 has been waiting on since round 59.
+
+### The create dialog's four rows are in the code, transcribed and tested (2026-11-01)
+
+`shell::INSTANCE_TYPES` holds the capture's four rows -- title, description, and whether the row
+opens a further step -- with a test asserting all four, their order, and that only the first two
+carry a chevron.
+
+Two things the transcription taught, both now in comments:
+
+* the reference's descriptions are **not uniformly punctuated** -- "Import instance" ends a
+  sentence and the three above it do not -- so the test asserts presence, not full stops. My first
+  attempt asserted every line ended with one and the test failed, correctly;
+* the third row says **`.mrpack`**, and the first transcription typed `.mrpak`. A test cannot
+  catch that; only a second read of the capture can, and did.
+
+What is still missing is the drawing: the modal, its search field, its "or", and the state that
+opens it instead of creating an instance on the press.
