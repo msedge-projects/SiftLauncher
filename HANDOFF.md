@@ -512,3 +512,35 @@ lives); Profile's signed-out state; the rail footer's ink; Discover's sidebar an
 **The session's most expensive lesson, in one line**: five aim errors and four false P0s came from
 reading coordinates off a picture, while every real defect and fix came from a probe or a driven run.
 Print the widget's rect; then click its centre; then read the frame whole before cropping it.
+
+
+---
+
+## Where the work stands, written for whoever picks this up (2026-11-01, round 146)
+
+**Two things are proven by files on disk and should not be re-proven**:
+
+1. A mod installs from Discover into a Fabric instance, chosen for that instance's version and loader —
+   five jars across three profiles, most recently `minecraft/mods/sodium-fabric-0.9.3-beta.1+mc26.3.jar`.
+2. The instance page exists and its Files panel **lists, descends, returns, arms and removes**, verified
+   by driving each step.
+
+**Two remote facts were corrected by asking rather than guessing**: the Fabric loader (0.16.9 -> 0.20.1,
+from meta.fabricmc.net) and the Minecraft default (1.21.4 -> 26.3, from Mojang's manifest). Both are
+still defaults in code; moving them into the create path is the first open job.
+
+**The rule this session paid the most to learn, in one line**: *a press that does nothing is evidence
+about the press, not about the feature.* Eight presses failed on aim alone, and four features called
+unbuilt turned out to be complete -- the category filter among them, which toggles a facet, resets the
+page and refetches, end to end, in code that has never been reached by a correct press.
+
+**So the next session's first hour should be**: print a widget's rect, press its centre, and record what
+changed -- page by page, starting with Discover's category rows. The matrix's "OPEN" is not to be trusted
+as a measure of missing code; several rows are missing only a click.
+
+**What is genuinely missing**: the install picker modal, context menus anywhere outside the instance
+card's modelled items, drag and drop of any kind, the Instance page's Content/Worlds/Logs tabs, and the
+reference's Files columns. Nothing is pushed, and there is no CI.
+
+**Lab state**: one instance (Fabric 26.3), its mods folder empty after the delete tests. `lab.sh` mounts
+the invoking checkout at `/scratch`, so it is safe to run from any clone.
