@@ -2413,3 +2413,24 @@ was known to be wrong.
 
 The distinction this round earned: **input works, painting is culled.** Those are separate faults
 and the session has been treating them as one.
+
+### The field is in its own area and still paints nothing (2026-11-01)
+
+Moved into a foreground `Area` at the field's own minimum, with the widget put at the origin of its
+space. The capture hashes identically to the previous three: no glyphs, and this run's typing did
+not register either.
+
+So both mount points fail to paint, and one of them is known to receive input. What the settings
+modal does differently is not the placement -- it is that `place_field` is called from inside a
+**panel's `show` block**, on the `ui` that panel builds, with the modal's own painter drawing the
+plate beneath. This dialog paints through a raw `layer_painter` and then places widgets outside any
+panel.
+
+**The one comparison that has not been made, and the honest next step**: give the dialog a real
+`Area` that contains the whole modal -- plate, text, fields -- so the fields share the area's ui and
+layer instead of being bolted onto a painter's output. That is how the settings modal is built, and
+it is the only known-working shape in this codebase.
+
+**Recorded as the session's open sore**: eight rounds have now touched this field, and every one
+ended by naming a different suspect. The facts that are solid are two -- input reaches the widget
+and is stored; no mount has produced a glyph -- and both are in this document with their probes.

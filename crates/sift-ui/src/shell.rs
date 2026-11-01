@@ -205,17 +205,25 @@ impl Shell {
             // (0,0) with nothing under the click -- because `ui.put`'s rect is read inside the
             // area, not on the screen.
             let mut name = self.create_name.clone();
-            ui.put(
-                name_field,
-                egui::TextEdit::singleline(&mut name)
+            // Its own area, so the field is drawn on a layer that is not the panel's clip: on
+            // the frame's ui after the panel returned, egui culled the glyphs while still
+            // delivering input -- the state held "abc" and the plate looked empty.
+            egui::Area::new(egui::Id::new("create-name-area"))
+                .order(egui::Order::Foreground)
+                .fixed_pos(name_field.min)
+                .show(ctx, |ui| {
+                    ui.put(
+                        egui::Rect::from_min_size(egui::Pos2::ZERO, name_field.size()),
+                        egui::TextEdit::singleline(&mut name)
                     .id(egui::Id::new("create-name-field"))
                     .hint_text("Name your instance")
                     // The default visuals paint this field's text in a colour close enough to
                     // the plate to be invisible -- the probe showed the state holding "abc"
                     // while the plate looked empty. The theme's own ink fixes it.
                     .text_color(theme.CONTRAST)
-                    .desired_width(name_field.width()),
-            );
+                            .desired_width(name_field.width()),
+                    );
+                });
             self.create_name = name;
             return;
         }
