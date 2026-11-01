@@ -3215,3 +3215,23 @@ So the next session should treat Ctrl+F as **unimplemented and undiagnosed**, an
 this document has said eleven times: **probe the pill's rect and the field's rect, press their centres,
 and only then judge the shortcut.** Three speculative edits have gone into this widget; none has been
 tested against a drive that was known to be working, which is the mistake, not the edits.
+
+# CLOSED: Ctrl+F focuses search, typed without touching the field (2026-11-01)
+
+    Discover -> Mods (pill at screen y 154, not 120) -> ctrl+f -> "sodium" typed -> results
+
+The field holds **sodium** and the listing answers with Sodium Plus and the rest, and **the pointer never
+entered the field**. So the shortcut works end to end.
+
+It needed both edits and a correct drive, and the drive was the part that had been wrong for three
+rounds: **the Mods pill sits at screen y 154**, and every attempt had pressed 120 -- thirty-four points
+above it, into the tab row's empty margin. With the page still on Modpacks, the search field was the
+*modpack* field, and a query of "sodium" would have produced nothing to look at even when the focus
+worked.
+
+Both edits stay: setting the widget's own `focused` flag (it does not read egui's memory focus) and
+removing the "nothing is focused" guard (every click gives its widget focus, so that condition was false
+after any press). Either alone would have failed.
+
+**The lesson, for the third time in this project and the first time about a click**: the shortcut was
+never certainly broken; the pointer was.
