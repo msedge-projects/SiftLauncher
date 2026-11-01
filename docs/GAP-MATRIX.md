@@ -3538,3 +3538,25 @@ the `let (...) = heading_and_toolbar(...)` binding -- and after that the change 
 **This is the whole recipe, written out so it does not have to be rediscovered**: read the binding, add
 `state.search_focused`, interact on the returned rect, loop over `Event::Text`/`Backspace`/`Escape` into
 `state.search`, and the filter already runs.
+
+### Correction: the returned rect is the New-server button, not the search field (2026-11-01)
+
+The call site, read verbatim:
+
+    let (list_top, new_server) = {
+        let painter = ui.painter();
+        heading_and_toolbar(painter, rect, theme, state.servers.len(), shown)
+    };
+
+So the tuple's `Rect` is **`new_server`** -- the button the next lines press -- and **the search plate's rect is
+computed inside and never returned**. Last round's note said the opposite, and it was wrong: I read the
+signature and assumed which `Rect` it carried.
+
+**The change is therefore three edits, not four lines**: have `heading_and_toolbar` return the search rect
+alongside the others, bind it at this call site, and register the press there -- the caller has `ui`, which
+is exactly what the plate's own function lacks.
+
+**And one detail from the same lines that matters more than the geometry**: this page reads presses from
+the pointer rather than registering them with egui, "because a full-column interaction registered later in
+the frame would take the press away". **Whatever wires this field has to respect that ordering**, or it will
+break the New-server press it sits beside.
