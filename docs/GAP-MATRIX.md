@@ -1854,3 +1854,21 @@ passes through whole -- because the engine's words are the only ones that say wh
 wrong when something *is* broken.
 
 The behaviour is still pack-only. What changed is that the launcher now says so.
+
+### The version picker's first piece, tested (2026-11-01)
+
+`pick_version(versions, game_version, loader)` is in `sift-ui/src/install.rs` with three tests:
+
+* the newest version that fits the instance wins -- `1.20.4`/fabric takes 3.0, not the newest 4.0;
+* nothing compatible still gets the newest build with a file, and the caller says which it took;
+* a version with no downloadable file is skipped however well it fits.
+
+The two signatures it sits between are already in the tree and were read rather than guessed:
+`sift_net::modrinth::version_url(project)` at `modrinth.rs:250` and
+`install_file(wire, target_dir, &version)` at `sift-game/src/install.rs:1164`, which takes a
+`ModrinthProjectVersion` and drops its primary file into a directory.
+
+What remains for the feature is the two ends: fetch the version list (the same download-and-parse
+shape `search.rs` already uses), choose the instance (one -> it; none or several -> say which is
+needed), and call `install_file` into `{instance}/mods/`. The middle -- which version -- is done
+and tested.

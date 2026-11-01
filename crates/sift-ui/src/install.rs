@@ -285,6 +285,28 @@ fn record_project(paths: &SiftPaths, instance: &str, project: &str) {
     let _ = std::fs::write(&cfg, text);
 }
 
+/// The version a mod install should take.
+///
+/// Modrinth returns versions newest first, so the first one that targets the instance's game
+/// version and loader is the newest compatible build. When nothing matches, the newest version
+/// with a downloadable file wins: an install that may need the instance's loader changed is
+/// still more useful than a refusal, and the caller says which version it took.
+fn pick_version<'a>(
+    versions: &'a [sift_net::modrinth::ModrinthProjectVersion],
+    game_version: &str,
+    loader: &str,
+) -> Option<&'a sift_net::modrinth::ModrinthProjectVersion> {
+    let compatible = |version: &&sift_net::modrinth::ModrinthProjectVersion| {
+        (game_version.is_empty() || version.game_versions.iter().any(|v| v == game_version))
+            && (loader.is_empty() || version.loaders.iter().any(|l| l.eq_ignore_ascii_case(loader)))
+            && version.primary_file().is_some()
+    };
+    versions
+        .iter()
+        .find(compatible)
+        .or_else(|| versions.iter().find(|v| v.primary_file().is_some()))
+}
+
 /// Send one word to the frame, ignoring a window that has gone.
 fn report(sender: &Sender<Reply>, generation: u64, status: Status) {
     let _ = sender.send(Reply { generation, status });
@@ -500,5 +522,52 @@ mod tests {
             failure_line("Cobblemon", "connection reset"),
             "Could not install Cobblemon: connection reset"
         );
+    }
+}
+
+#[cfg(test)]
+mod pick_tests {
+    use super::pick_version;
+
+    fn versions() -> Vec<sift_net::modrinth::ModrinthProjectVersion> {
+        serde_json::from_str(
+            r#"[
+              {"name":"4.0","game_versions":["1.21"],"loaders":["fabric"],
+               "files":[{"url":"https://example/4.jar","filename":"sodium-4.jar","primary":true}]},
+              {"name":"3.0","game_versions":["1.20.4"],"loaders":["fabric"],
+               "files":[{"url":"https://example/3.jar","filename":"sodium-3.jar","primary":true}]},
+              {"name":"2.0","game_versions":["1.20.4"],"loaders":["forge"],
+               "files":[{"url":"https://example/2.jar","filename":"sodium-2.jar","primary":true}]}
+            ]"#,
+        )
+        .expect("the fixture parses")
+    }
+
+    /// The newest version that fits the instance wins, not simply the newest.
+    #[test]
+    fn the_newest_compatible_version_wins() {
+        let all = versions();
+        assert_eq!(pick_version(&all, "1.20.4", "fabric").map(|v| v.name.as_str()), Some("3.0"));
+        assert_eq!(pick_version(&all, "1.21", "fabric").map(|v| v.name.as_str()), Some("4.0"));
+    }
+
+    /// Nothing compatible is not nothing at all: the newest build is offered, and the caller
+    /// says which it took rather than refusing outright.
+    #[test]
+    fn an_incompatible_instance_still_gets_the_newest_build() {
+        let all = versions();
+        assert_eq!(pick_version(&all, "1.19", "quilt").map(|v| v.name.as_str()), Some("4.0"));
+    }
+
+    /// A version with no file cannot be installed, however well it fits.
+    #[test]
+    fn a_version_with_no_file_is_skipped() {
+        let all: Vec<sift_net::modrinth::ModrinthProjectVersion> = serde_json::from_str(
+            r#"[{"name":"empty","game_versions":["1.20.4"],"loaders":["fabric"],"files":[]},
+                {"name":"real","game_versions":["1.20.4"],"loaders":["fabric"],
+                 "files":[{"url":"https://example/r.jar","filename":"r.jar","primary":true}]}]"#,
+        )
+        .expect("the fixture parses");
+        assert_eq!(pick_version(&all, "1.20.4", "fabric").map(|v| v.name.as_str()), Some("real"));
     }
 }
