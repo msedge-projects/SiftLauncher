@@ -3508,3 +3508,15 @@ one read of the source.
 **The fix is now well-known**, because Discover's field already has it: a `focused` flag on the servers
 state, an `interact` with `Sense::click_and_drag`, an event loop writing the literal, and the filter
 applied where the list is built.
+
+### The servers search: one location, and it is the wrong one for input (2026-11-01)
+
+`State::search` **already exists** and the page **already filters by it** ("this page filters by it and
+counts the placeholder with it"). What is missing is only a widget that *writes* it.
+
+Tried to wire that at `servers.rs:1494` (`search_plate(painter, search, theme, shown)`) and the compiler
+refused: **that function has a painter, not a `Ui` and not the state.** So the plate is drawn from inside a
+painting pass, and the press has to be registered wherever the page *does* have a `Ui` -- one frame up.
+
+Reverted, tree green. **The next attempt starts one function higher**, and the work is then the same
+four lines used on Discover: interact, focus flag, event loop, and the filter that already exists.
