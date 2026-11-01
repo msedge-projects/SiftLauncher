@@ -3274,3 +3274,13 @@ question the frame cannot answer, because both put Fabulously Optimized first.
 
 **Rows verified this stretch, all by driving**: search, tabs, pager, Ctrl+F, sort menu, sort selection.
 Six behaviours on one page, where the matrix had one row.
+
+### The view-count dropdown opens too (2026-11-01)
+
+First press at (545,240) missed -- the control ends near x 495, so that was past its right edge, the
+fourteenth aim error. Pressed at (455,240) and a **dropdown opens** with its current value brand-filled
+among four items.
+
+So both selects on Discover's toolbar are real: **sort** (opens and selects) and **view count** (opens).
+Choosing a count is the next row, and the routine is the one that has just worked twice: press the
+control at a computed centre, then press an item at a computed centre.
