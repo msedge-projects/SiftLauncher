@@ -3706,3 +3706,21 @@ own kind of lie. A toggle is not the reference's behaviour -- the reference open
 
 **Recorded as the honest gap**: pressing a card in the reference goes somewhere; here it selects. The row
 stays open on that basis rather than being closed on a bar.
+
+### The detail view: scoped to the smallest thing that is not a placeholder (2026-11-01)
+
+The reference opens `/servers/:id` on a card press; this launcher has no such page, and the selection bar is
+the honest stand-in. Before building a page, note what already exists to fill one:
+
+* `State::live` holds **a live status per server** -- player count and max, already fetched and already
+  printed on the cards ("441/5000");
+* `State::selected` names the server;
+* every `Server` carries address, name, loader, version and MOTD, all already rendered on the card.
+
+**So a detail view is a second rendering of data that is on screen already.** The smallest honest version is
+a panel that replaces the sidebar promo while a server is selected, showing the name, the loader and version,
+the MOTD, the live count, and one action ("Join"). It needs no new fetching and no new state beyond what
+`selected` holds.
+
+**What it is not**: a route. The reference's is a page with its own URL and its own loading state; a panel is
+a smaller thing and should be recorded as such rather than as parity.
