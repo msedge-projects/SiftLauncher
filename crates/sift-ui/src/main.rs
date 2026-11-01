@@ -93,15 +93,24 @@ impl eframe::App for App {
             .frame(egui::Frame::NONE)
             .show(ui, |ui| {
                 animating = shell.ui(ui);
+                // Inside the panel, on the panel's own ui: that is the shape the settings
+                // modal's fields use and the only one in this codebase proven to paint a
+                // widget. Placed after the panel returned, the dialog's field received input
+                // and drew nothing -- egui culled it against a clip the panel had already set.
+                if shell.create_open {
+                    shell.draw_create(&ctx, screen, ui);
+                }
             });
-        // The create dialog sits over every page, on a foreground layer, which is why it is
-        // drawn after the panel rather than inside it.
-        if shell.create_open {
-            shell.draw_create(&ctx, screen, ui);
-        }
         log.end();
         // Only while something is in flight. An idle window draws nothing at all, which is
         // both the budget in docs/LIGHTNESS.md and the reason a fan does not spin.
+        // A window that only redraws while something is in flight never shows a keystroke in
+        // an open dialog: the modal holds no animation, so the frame that received the typing
+        // is the last one drawn until something else happens. While the dialog is up, keep the
+        // frames coming.
+        if shell.create_open {
+            ctx.request_repaint();
+        }
         if animating {
             ctx.request_repaint();
         }

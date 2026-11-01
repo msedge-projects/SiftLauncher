@@ -2434,3 +2434,25 @@ it is the only known-working shape in this codebase.
 **Recorded as the session's open sore**: eight rounds have now touched this field, and every one
 ended by naming a different suspect. The facts that are solid are two -- input reaches the widget
 and is stored; no mount has produced a glyph -- and both are in this document with their probes.
+
+### Two more mount points, the same empty plate (2026-11-01)
+
+The dialog is now called **inside the panel's `show` block**, on the panel's own `ui` -- the shape
+the settings modal's working fields use -- and the app **forces a repaint every frame while it is
+open**, so a keystroke cannot be lost to the redraw budget. Neither changed one pixel: the capture
+hashes identically to the previous three.
+
+That eliminates the two remaining explanations this session had for the empty field: it is not
+outside the panel's clip, and it is not a stale frame. Input reaches the widget (proven: the state
+held "abc"), the widget is in the right place (proven: rect 448,357-992,385), and it never paints.
+
+**Hand this thread to a fresh session with these three facts and nothing else**, because eight
+rounds of suspects from this one have each been disproved by the next:
+
+1. input reaches the `TextEdit` and is stored (probe: `name local="abc" stored="abc"`);
+2. its rect is exactly the painted field's (probe: rect equals wanted);
+3. it paints nothing, from three different mount points, with an explicit ink colour.
+
+The most likely remaining cause is something this session has not looked at: the `Frame`/`Area`
+visuals the field inherits, or the font atlas not being installed on that layer. A fresh pair of
+eyes with those three facts will be faster than a ninth variation.
