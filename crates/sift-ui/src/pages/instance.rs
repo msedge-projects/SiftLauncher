@@ -193,10 +193,12 @@ impl Tab {
 }
 
 /// The page's own state: which tab is showing.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct State {
     /// The selected tab.
     pub tab: Tab,
+    /// Where the Files tab is looking, relative to the game directory.
+    pub files_dir: std::path::PathBuf,
 }
 
 /// Draw the page's content column.
@@ -310,7 +312,11 @@ pub fn draw(
     painter.rect_filled(card, RADIUS_MD, theme.RAISED_BG);
     match state.tab {
         Tab::Content => overview(ui, card, theme, instance),
-        Tab::Files => files_tab(ui, card, theme, instance),
+        Tab::Files => {
+            if let Some(next) = files_tab(ui, card, theme, instance, &state.files_dir) {
+                state.files_dir = next;
+            }
+        }
         Tab::Screenshots => screenshots_tab(ui, card, theme, images, instance),
         Tab::Worlds => worlds_tab(ui, card, theme, instance),
         Tab::Logs => logs_tab(ui, card, theme, instance),
@@ -467,13 +473,20 @@ fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
 }
 
 /// The Files tab: the instance's folder, one row per entry.
-fn files_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
+fn files_tab(
+    ui: &mut Ui,
+    card: Rect,
+    theme: &Theme,
+    instance: &Instance,
+    dir: &std::path::Path,
+) -> Option<std::path::PathBuf> {
+    let mut descend: Option<std::path::PathBuf> = None;
     // The game directory, which is what the reference's Files tab shows: the folder holding
     // `mods/`, `config/`, `saves/` and `logs/`, not the instance's own bookkeeping beside it.
-    let entries = folder_entries(&instance.path.join("minecraft"));
+    let entries = folder_entries(&instance.path.join("minecraft").join(dir));
     if entries.is_empty() {
-        stub(ui, card, theme, Tab::Files, "This instance's folder is empty.");
-        return;
+        stub(ui, card, theme, Tab::Files, "This folder is empty.");
+        return None;
     }
     let painter = ui.painter();
     let inner = card.shrink(PAD);
@@ -498,6 +511,17 @@ fn files_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
             fonts::body(12.0),
             theme.BASE,
         );
+        if *is_dir
+            && ui
+                .interact(
+                    Rect::from_min_size(egui::pos2(inner.left(), y), egui::vec2(inner.width(), ROW_H)),
+                    egui::Id::new(("file-row", name.as_str())),
+                    Sense::click(),
+                )
+                .clicked()
+        {
+            descend = Some(dir.join(name.as_str()));
+        }
         if !*is_dir {
             painter.text(
                 egui::pos2(inner.right(), y + ROW_H / 2.0),
@@ -509,6 +533,7 @@ fn files_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
         }
         y += ROW_H;
     }
+    descend
 }
 
 /// The Logs tab: the last screenful of the game's own log, newest at the bottom.

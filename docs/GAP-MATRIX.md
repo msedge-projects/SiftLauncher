@@ -3040,3 +3040,20 @@ needs the function's *actual* last two lines, which no attempt has yet printed.
 
 **The single thing the next session should do first**: print `files_tab`'s final five lines, and the
 anchor problem disappears.
+
+# Files navigates, and the installed jar is reachable through the product (2026-11-01)
+
+Instance -> Files -> press `mods` -> the panel lists **`sodium-fabric-0.9.3-beta.1+mc26.3.jar`**.
+
+That is the brief's file-management chain working end to end: the mod was installed from Discover into
+a Fabric instance, written to `minecraft/mods`, and is now **visible and reachable inside the app** --
+the thing that was "on disk and invisible from the product" two rounds ago.
+
+The five edits, all known verbatim before the build:
+`files_dir` on the page state; `Copy` off its derive; the call site capturing the descent; the
+`files_tab` signature taking and returning a path; and the row press inside `files_tab`'s own loop,
+found this time by locating the function's closing brace structurally rather than by guessing its text.
+
+**What the view still is not**: it lists names with a glyph, has no breadcrumb, cannot go back up, and
+has no per-row actions. The reference has all four. Those are the next rows, and they are now the only
+things between this panel and the brief's file-manager description.
