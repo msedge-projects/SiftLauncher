@@ -4011,3 +4011,12 @@ cost a build, a revert and a round.
 
 **The row is closed on a capture**, not on a diff: the header's proportions now match the source's 96/24/16 with the
 tab strip in the column beneath it (`ProjectPageHeader.vue:13`, `page-header/index.vue:13,20-22`).
+
+### Second smoke test, after the project page's three changes (2026-11-01)
+
+Every rail page, the About dialog, then Discover and a project: **alive, zero panics in the log**, and the project
+page renders as the last round left it -- 96 pt avatar, 24 pt title, tabs beneath the text, no invented action row,
+and the compatibility column where the shared sidebar used to be.
+
+**Worth running after any change to `shell.rs`**, because the sidebar is drawn there for every page and one
+project-page change was made in it.
