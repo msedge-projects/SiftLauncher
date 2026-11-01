@@ -2540,3 +2540,25 @@ That is the last false statement the dialog was making, and it cost one line. Th
 is still owed: `Instance::create` takes a name and a Minecraft version, not a loader, so a Fabric
 instance cannot be created until that signature grows. Until then the row names the truth rather
 than a wish.
+
+### The loader, scoped to the exact contract (2026-11-01)
+
+Reading both ends settles what "wire the loader" means, and it is smaller than it looked:
+
+* **writer**: `Instance::create` (sift-core/src/instance/mod.rs:104) writes
+  `PackProfile::vanilla(mc_version)` to `mmc-pack.json`.
+* **reader**: `data::loader_and_version` (sift-ui/src/data.rs:98) walks `profile.components()` and
+  maps uids to names -- `net.fabricmc.fabric-loader` -> Fabric, `net.neoforged` -> NeoForge,
+  `net.minecraftforge` -> Forge, `org.quiltmc.quilt-loader` -> Quilt, everything else Vanilla.
+
+So a Fabric instance is a profile with one extra component: uid `net.fabricmc.fabric-loader` and a
+loader version. Nothing else in the product needs to know.
+
+**The change, in three steps**: give `PackProfile` a way to add a component (its `components()`
+exists, so a `components_mut()` or a `with_component` constructor is the shape); add
+`Instance::create_with_loader(dir, name, mc_version, uid, loader_version)` that calls it; and have
+`create_instance` pass the dialog's loader. A test asserts the written `mmc-pack.json` carries the
+uid, which is the only thing the reader looks for.
+
+The loader *version* is the one fact still missing -- it has to come from a Fabric meta endpoint or a
+pinned default -- and that is a decision, not a discovery.
