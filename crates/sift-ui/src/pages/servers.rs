@@ -1250,8 +1250,8 @@ pub fn draw(
     }
 
     let view = Rect::from_min_max(
-        egui::pos2(rect.left() + PAGE_PADDING, list_top),
-        egui::pos2(rect.right() - PAGE_PADDING, rect.bottom() - PAGE_PADDING),
+        egui::pos2(rect.left(), list_top),
+        egui::pos2(rect.right(), rect.bottom() - PAGE_PADDING),
     );
     if view.width() < 1.0 || view.height() < 1.0 {
         return None;
@@ -1387,8 +1387,8 @@ pub fn draw(
                 .and_then(|address| state.servers.iter().find(|s| &s.address == address))
             {
                 let panel = Rect::from_min_size(
-                    egui::pos2(rect.left() + PAGE_PADDING, rect.bottom() - DETAIL_HEIGHT - 8.0),
-                    egui::vec2(rect.width() - 2.0 * PAGE_PADDING, DETAIL_HEIGHT),
+                    egui::pos2(rect.left(), rect.bottom() - DETAIL_HEIGHT - 8.0),
+                    egui::vec2(rect.width(), DETAIL_HEIGHT),
                 );
                 let painter = ui.ctx().layer_painter(egui::LayerId::new(
                     egui::Order::Foreground,
@@ -1642,7 +1642,7 @@ fn heading_and_toolbar(
     shown: usize,
     text: &str,
 ) -> (f32, Rect, Rect) {
-    let heading_at = egui::pos2(rect.left() + PAGE_PADDING, rect.top() + PAGE_PADDING);
+    let heading_at = egui::pos2(rect.left(), rect.top());
     // `h1.w-full.text-2xl.font-extrabold.text-contrast` (`index.vue:101`).
     let heading = painter.text(
         heading_at,
@@ -1664,7 +1664,8 @@ fn heading_and_toolbar(
         theme.SECONDARY,
     );
 
-    let row_top = heading_at.y + HEADING_LINE + HEADING_GAP;
+    // Same line as the heading, vertically centred against it.
+    let row_top = heading_at.y + (HEADING_LINE - CONTROL_HEIGHT) / 2.0;
     let width = button_width(painter, theme, NEW_SERVER);
     let button = Rect::from_min_size(
         egui::pos2(rect.right() - PAGE_PADDING - width, row_top),
@@ -1677,7 +1678,7 @@ fn heading_and_toolbar(
     search_plate(painter, search, theme, shown, text);
     primary_button(painter, button, theme, NEW_SERVER, Glyph::Plus);
 
-    (row_top + CONTROL_HEIGHT + HEADING_GAP, button, search)
+    (heading_at.y + HEADING_LINE + HEADING_GAP, button, search)
 }
 
 /// A brand button's width: `px-2.5 gap-1.5` around a 20-point glyph and its label
