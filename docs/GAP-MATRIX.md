@@ -3847,3 +3847,16 @@ records it as an argument.
 **Why copy rather than join**: the reference's panel has a Join that launches the game; this launcher has no
 server-join path at all, and **a button that launched nothing would be a button that lies**. Copying is the
 one action the page can honestly offer, and it is genuinely useful to a reader pasting an address.
+
+### Smoke test after the day's changes: every rail page, no panic (2026-11-01)
+
+Clicked through the whole rail -- Home, Discover, Skins, Screenshots, Servers, plus, Settings, About -- after
+every change made today, and:
+
+* the process was **alive** at the end;
+* the log contains **zero** occurrences of "panic" or "panicked";
+* the frame shows the **About dialog** open with `Sift Launcher 0.1.62`, the copyright line and the
+  third-party notices table (Sift Launcher, `itar`, Lucide Icons, egui `eframe`).
+
+That is the cheapest regression check this project has, and it is worth running after any multi-file day: one
+launch, one click per page, one `grep -c panic`, one frame.
