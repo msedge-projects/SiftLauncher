@@ -1666,3 +1666,24 @@ session.
 Twelve rounds went into an input bug that did not exist. This round took **one** interaction to
 find a real one. The lesson is not subtle: the brief asks for behaviour verified by driving, and
 every round spent photographing produced either a correct pixel count or a false alarm.
+
+### Driving further: the clear button is inert, and the query test is still owed (2026-11-01)
+
+Three interactions run against the live app, each aimed from a rect rather than a screenshot:
+
+* **Clicking a pill switches tabs** -- "Mods" went from grey to brand-filled and the feed refetched.
+* **Typing appends to the field** -- and `Ctrl+A` does **not** select, because the custom field
+  implements no select-all; the query grew to `sodiumsodiumsodium` across two attempts.
+* **The field's own clear button does nothing.** Clicked at its drawn position (screen 1090,170,
+  which is the ✕ inside the field's right edge), the text stayed.
+
+So the clear button is a real defect, distinct from the retracted input findings, and it is the
+first one found by using the interface rather than photographing it.
+
+**Consequence for the search bug**: it is *not yet* confirmed. Every run so far typed into a field
+that already held text, so the API was asked for `sodiumsodiumsodium` and answered honestly with
+nothing. A clean query needs the field emptied, and the field cannot be emptied by its button --
+so the next run clears it with backspaces, which the widget does implement.
+
+That ordering matters for the record: the "No results" sighting stays open *until a clean query
+returns*, and the clear button becomes its own row with a reproduction.
