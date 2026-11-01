@@ -1604,3 +1604,36 @@ it was going to condemn are untouched by it.
 
 The lesson is not "aim better". It is that a coordinate taken from a screenshot is a hypothesis,
 and this session treated it as a fact eleven times.
+
+# RETRACTION TWO, 2026-10-31: the keyboard works too
+
+    search rect=[[88,126]-[1116,174]]   pointer=[599,198]   clicked=false
+
+The Discover search field sits at content y **126..174**. Every click of mine aimed at the field
+went to y 198 or lower -- twenty-four points below it, and twenty below the window origin besides.
+Clicked at its measured centre and typed `sodium`:
+
+**the field shows `sodium`, with a caret and its clear button.**
+
+So there is no input bug in this launcher. Not clicks, not keys, not focus, not the panel, not
+`ui.interact`. Every one of those eleven rounds of hypotheses was a coordinate read off a
+screenshot and treated as a fact:
+
+| round | claim | what was actually wrong |
+| --- | --- | --- |
+| 29-31 | the Java field takes no typing | click aimed 24 points low |
+| 32-34 | no text field in the app takes typing | same |
+| 35-37 | the interface ignores input events | same |
+| 38-39 | `ui.interact` on a bare Ui registers nothing | same |
+| 40 | the panel wrap did not fix it | same |
+
+What is left of that thread is nothing at all, and the P0 rows it created are withdrawn.
+
+**The panel wrap stays** -- eframe's own docs ask for it -- but it fixed nothing, and this commit
+says so rather than letting it look like the cure.
+
+The real lesson, after eleven rounds: a screenshot gives you a coordinate in *screen* space, a
+window manager shifts that space, and a widget's rect is in *content* space. The only reliable
+aim is a rect printed by the widget itself. Every successful diagnosis this session -- the window
+defaults, the section gap, the footer baseline -- used a printed number; every failed one used a
+coordinate estimated from an image.
