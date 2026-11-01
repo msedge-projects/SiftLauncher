@@ -2934,3 +2934,19 @@ That is the exact state this session's rules forbid shipping as "done", so it is
 its next step named: run the same sequence one step at a time, confirming the page from the frame before
 each press, because the last five aim errors were all of that shape and the lab is now empty of
 instances -- a fresh create is the first thing to check.
+
+# The path fix is verified: the jar lands in the game directory (2026-11-01)
+
+    instances/Instance 2/minecraft/mods/sodium-fabric-0.9.3-beta.1+mc26.3.jar
+
+That is the corrected location, and it is the fifth install this session has proven with a file -- and
+the first one in the folder the game actually reads.
+
+Two failed attempts preceded it, and both failed for the same reason worth recording: **the create
+sequence fired more than once**, leaving three instances, and `choose_instance` correctly refused with
+"there are N instances and choosing one needs a picker that is not built yet". Trimming to one and
+re-running the install alone produced the jar first time.
+
+So the decision the last two rounds were circling is settled by the codebase's own layout, and the
+multi-instance refusal -- which has existed since the picker work and had never been exercised in the
+product -- is now **also verified**, if only as a refusal.
