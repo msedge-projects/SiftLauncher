@@ -3621,3 +3621,27 @@ the same read-then-press sequence that found those five.
 
 **So the matrix's headline is unreliable in both directions and should never be quoted alone again**: it
 overstates progress where rows were closed on a capture, and understates it wherever a press missed.
+
+
+### Server cards: the plan, and the anchor that failed (2026-11-01)
+
+`draw_section` (`servers.rs:1627`) already computes every card's rect:
+
+```rust
+let card = Rect::from_min_size(
+    egui::pos2(left, list_top + index as f32 * (card_height() + LIST_GAP)),
+    egui::vec2(width, card_height()),
+);
+```
+
+and then discards it into `draw_card`. **The change is to return those rects** -- `-> Vec<Rect>`, pushed in
+the loop, `return cards` in the empty branch -- so the caller, which owns the `Ui`, can make them targets.
+**A returned `Vec` that is ignored compiles cleanly**, so the signature change can land on its own before
+the caller uses it: two commits, neither of which can break the other.
+
+The edit was attempted and **stopped at the third anchor** -- the exact whitespace around
+`draw_card(painter, card, theme, server, &shown, icon);` and the closing brace differs from what `awk`
+printed with its leading offset. Nothing was written; the tree stayed clean.
+
+**Next attempt**: read `servers.rs:1665-1672` with `sed -n` (no offset), edit those five lines by hand, and
+the rest follows the search-field recipe exactly.
