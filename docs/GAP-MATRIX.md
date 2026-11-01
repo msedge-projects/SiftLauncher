@@ -3579,3 +3579,17 @@ ordering this file warns about, honoured rather than rediscovered.
 typed text should be. The literal goes into the filter but never onto the screen, so a reader sees
 "Search 0 servers..." and no query. That is the next cosmetic row, and it is one line in `search_plate`:
 draw the text instead of the placeholder when it is non-empty.
+
+### The field shows what was typed (2026-11-01)
+
+Typed `hyp` and the plate now reads **"hyp"** where it read "Search 0 servers...". Five edits, all
+mechanical: the text reaches `search_plate` through `heading_and_toolbar`, and the plate draws it in place
+of the placeholder when it is non-empty.
+
+**So the servers search is complete in the three parts that matter**: it takes the keyboard, it shows the
+query, and it filters the list -- each verified by driving in the last two rounds.
+
+**What it still is not**: a text field with a caret, a clear button, or a cursor; the reference's Input has
+all three. The plate draws the literal at the placeholder's position, which is honest but not identical --
+and the difference is now visible side by side rather than invisible, which is the right order to fix
+things in.

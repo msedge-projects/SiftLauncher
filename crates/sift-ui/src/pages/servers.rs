@@ -1195,7 +1195,7 @@ pub fn draw(
 
     let (list_top, new_server, search_field) = {
         let painter = ui.painter();
-        heading_and_toolbar(painter, rect, theme, state.servers.len(), shown)
+        heading_and_toolbar(painter, rect, theme, state.servers.len(), shown, &state.search)
     };
 
     // The search field takes the keyboard, registered before the plate so it cannot be stolen by a
@@ -1489,6 +1489,7 @@ fn heading_and_toolbar(
     theme: &Theme,
     count: usize,
     shown: usize,
+    text: &str,
 ) -> (f32, Rect, Rect) {
     let heading_at = egui::pos2(rect.left() + PAGE_PADDING, rect.top() + PAGE_PADDING);
     // `h1.w-full.text-2xl.font-extrabold.text-contrast` (`index.vue:101`).
@@ -1522,7 +1523,7 @@ fn heading_and_toolbar(
         egui::pos2(button.left() - CONTROL_GAP - SEARCH_WIDTH, row_top),
         egui::vec2(SEARCH_WIDTH, CONTROL_HEIGHT),
     );
-    search_plate(painter, search, theme, shown);
+    search_plate(painter, search, theme, shown, text);
     primary_button(painter, button, theme, NEW_SERVER, Glyph::Plus);
 
     (row_top + CONTROL_HEIGHT + HEADING_GAP, button, search)
@@ -1542,7 +1543,7 @@ fn button_width(painter: &egui::Painter, theme: &Theme, label: &str) -> f32 {
 /// The search field's plate: `bg-surface-4` inside `border-surface-5` at `rounded-xl`
 /// (`InputFrame.vue:47-57`), a 20-point magnifier in `text-secondary` (`Input.vue:12-16`) and
 /// the source's placeholder in the same muted ink (`Input.vue:51`).
-fn search_plate(painter: &egui::Painter, rect: Rect, theme: &Theme, count: usize) {
+fn search_plate(painter: &egui::Painter, rect: Rect, theme: &Theme, count: usize, text: &str) {
     // `--surface-4` is the value `--color-button-bg` resolves to in both schemes, which is why
     // the crate's `BUTTON_BG` is the input's fill (`theme.rs`'s `colors()` says the same for
     // egui's own `extreme_bg_color`).
@@ -1574,7 +1575,7 @@ fn search_plate(painter: &egui::Painter, rect: Rect, theme: &Theme, count: usize
         egui::pos2(text_right, rect.bottom()),
     ));
     let galley = text_painter.layout_no_wrap(
-        search_placeholder(count),
+        if text.is_empty() { search_placeholder(count) } else { text.to_owned() },
         fonts::label(SEARCH_TEXT),
         theme.SECONDARY,
     );
