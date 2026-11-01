@@ -91,6 +91,15 @@ fn select_options(label: &str) -> &'static [&'static str] {
             if let Some(Control::Select { options, .. }) = control {
                 return options;
             }
+            // A radio list holds the same kind of choice, keyed by its own category heading
+            // (`Block::RadioList`). Without this the language tab's choice was stored and then
+            // dropped on the next start: the loader validated it against a select this tab no
+            // longer has, and the ring came back on English with nothing said.
+            if let Block::RadioList { key, options, .. } = block {
+                if *key == label {
+                    return *options;
+                }
+            }
         }
     }
     &[]
@@ -110,6 +119,10 @@ fn known_labels() -> Vec<&'static str> {
                 // A standalone field has no label: `place_field` keys it by its placeholder, so
                 // the placeholder is what a stored value arrives under.
                 Block::Standalone(Control::Text { placeholder }) => labels.push(*placeholder),
+                // A radio list is keyed by its category heading, which is also a heading block,
+                // so this adds no new label -- it is here for the tabs whose list has no heading
+                // above it.
+                Block::RadioList { key, .. } => labels.push(*key),
                 _ => {}
             }
         }
@@ -5174,6 +5187,25 @@ mod tests {
         load_at(&mut after, &path);
         assert_eq!(after.sliders, vec![(label, 0.25)]);
         assert_eq!(after.texts, vec![(label, "C:/java".to_owned())]);
+
+        // The language list is a radio list, not a select: its choice has to survive the same
+        // trip. It did not, once -- the choice was written and then dropped on load, because the
+        // loader only knew the options of a `Control::Select`.
+        let mut chosen = State::default();
+        chosen.selects.push((LANGUAGE_CATEGORY, "Deutsch"));
+        save_at(&chosen, &path);
+        let mut reloaded = State::default();
+        load_at(&mut reloaded, &path);
+        assert_eq!(
+            reloaded.selects,
+            vec![(LANGUAGE_CATEGORY, "Deutsch")],
+            "the language choice survives a restart"
+        );
+        assert_eq!(
+            select_options(LANGUAGE_CATEGORY),
+            LANGUAGE_NAMES,
+            "and the list it is validated against is the list the tab draws"
+        );
 
         // A file naming a row this build has renamed away is read as an empty setting, not as a
         // value attached to nothing.
