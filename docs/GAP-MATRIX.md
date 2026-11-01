@@ -3980,3 +3980,21 @@ its tabs is a defect a reader would hit, and the trade is not close.
 The audit's row stands, with the missing half now written down: the three sizes **and** the header height and
 tab offset have to move together -- `ProjectPageHeader.vue` stacks avatar, title, summary and tabs in one column
 and the constant is that column's height, not three font sizes in isolation.
+
+### The header's four coupled offsets, read so the next attempt is one pass (2026-11-01)
+
+`project.rs:115-142` lays the header out as fixed offsets from the tile's top edge:
+
+| element | today | reference | note |
+| --- | --- | --- | --- |
+| tile | 64 pt at `rect.min + (0, 8)` | **96** | `ProjectPageHeader.vue:13` |
+| title | `title(20)` at `tile.top()` | **24** | `text-2xl semibold` |
+| summary | `body(13)` at `tile.top() + 26` | **16** | `max-w-[44rem]` |
+| stats row | `tile.top() + 52` | follows the summary | |
+
+So four numbers move together -- tile, title, summary, stats offset -- **and a fifth follows them: whatever places
+the tab row beneath**, which is why changing three broke the page last round. The tab row's offset is the one
+value this note does not yet have, and it is the only thing left to read.
+
+**With that one number, the whole header is a single edit**: 96 / 24 / 16 / stats +72 / tabs +104, driven once and
+captured against the reference's proportions.
