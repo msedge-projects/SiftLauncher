@@ -2495,3 +2495,18 @@ the field put second.
 widget was mounted -- panel, area, foreground, repaint budget, clip rects -- and none of them
 considered *what was painted over it*. A control that does not appear is as likely to be covered as
 misplaced, and the test for that is one widget at a coordinate nothing else occupies.
+
+### The dialog submits: Create makes an instance (2026-11-01)
+
+Driven end to end: rail plus -> Custom setup -> **Create** -> the Library gains **Instance 3** and the
+toast reads "Created Instance 3."
+
+So the create flow is a flow: it opens, it offers a type, it takes a step, and it finishes. What it
+does **not** yet do is use what the step collected -- the instance is Vanilla 1.21.4 whatever the
+loader row says, and the typed name is ignored -- because Create calls the path the rail's plus used
+to run, which takes no arguments.
+
+That is the next slice and it is small: pass `create_name` and the chosen loader/version into the
+instance-writing path in `data`, and the three rows stop being painted constants. Until then the
+dialog is honest about what it does (it creates an instance) and silent about what it ignores (the
+fields), which is the better of the two failure modes but still a gap worth naming.

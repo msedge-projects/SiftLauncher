@@ -221,6 +221,27 @@ impl Shell {
             );
 
             self.create_name = name;
+            // The button that finishes the step. It uses the path the rail's plus used to run
+            // -- the one that creates an instance -- so the dialog can be walked end to end.
+            // What it does not yet do is read the typed name or the loader; that is the next
+            // slice, and this one is the difference between a form and a form that submits.
+            let button = egui::Rect::from_min_size(
+                egui::pos2(plate.right() - 16.0 - 120.0, plate.bottom() - 16.0 - 34.0),
+                egui::vec2(120.0, 34.0),
+            );
+            painter.rect_filled(button, 10.0, theme.BRAND);
+            painter.text(
+                button.center(),
+                egui::Align2::CENTER_CENTER,
+                "Create",
+                crate::fonts::semibold(14.0),
+                theme.ACCENT_CONTRAST,
+            );
+            if settled && clicked && pointer.is_some_and(|point| button.contains(point)) {
+                self.create_open = false;
+                self.act(crate::pages::home::Action::Create);
+                ctx.request_repaint();
+            }
             return;
         }
         painter.text(
