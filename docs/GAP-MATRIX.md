@@ -3860,3 +3860,18 @@ every change made today, and:
 
 That is the cheapest regression check this project has, and it is worth running after any multi-file day: one
 launch, one click per page, one `grep -c panic`, one frame.
+
+# The clipboard action is verified: the address is really on the clipboard (2026-11-01)
+
+Installed `xclip` in the lab (recorded as drift below), pressed **Copy IP**, then read the selection back:
+
+    $ DISPLAY=:99 xclip -selection clipboard -o
+    play.cubecraft.net
+
+So the button does what it says. **The last unverified claim in the servers page is now verified**, and it took
+one package and one command -- which is the honest measure of how much the previous round left hanging.
+
+**Lab drift, recorded**: `xclip` is installed in `sift-lab` by hand, exactly like openbox before it. Neither
+is in the committed Dockerfile, so a fresh container needs both before input or clipboard checks will work:
+
+    pacman -S --noconfirm xclip openbox
