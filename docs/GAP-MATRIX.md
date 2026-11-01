@@ -4213,3 +4213,18 @@ sixth invented control.
 clears them after), the engine's `--quickPlayMultiplayer` path, and the picker's `Join` kind. **The only missing piece
 is a press that reaches it**, and the next attempt should give the servers page a click handler that checks the pill
 first -- one `pressed_join` decision at the top of the page's pointer handling, not a nested check inside the card loop.
+
+### Join: five mechanisms, none fires; the plumbing is parked (2026-11-01)
+
+`ui.interact().clicked()` (the mechanism Copy IP uses, on the same panel, verified working by reading the
+clipboard), `pointer.primary_clicked`, `pointer.any_released` with `pointer_interact_pos`, the same with
+`pointer.latest_pos`, and a `request_repaint` after the press -- **all five leave the picker closed**, with the
+panel drawn both before and after the list, and the button drawn on the card as well as in the panel.
+
+**Copy IP works, from the same panel, with the same interact call.** That is the sharpest form of the finding: the
+difference is not the mechanism, the ordering or the pointer, it is something about *this* button -- and the next
+investigation should start by copying the Copy IP block verbatim and changing only its id and its action, rather
+than by reasoning about layering.
+
+**Parked, not shipped**: the button is out again, `Game::start_server` and the picker's `Join` kind stay (both
+compile, both are the hard half), and the row is open with five attempts recorded so nobody repeats them.
