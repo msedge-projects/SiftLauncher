@@ -1979,3 +1979,25 @@ fallback test describes.
 The attempt this round missed the second card's button (no toast, no second jar), so the claim
 rests on the tests and the code, not on a capture. That is written here rather than implied,
 because this session's whole history says an unverified claim becomes a false one.
+
+### A Fabric mod is refused for a Vanilla instance, proven both ways (2026-11-01)
+
+The owed verification, run with the jar deleted first so the outcome could not be the old file:
+
+* toast: **"Could not install Sodium: Sodium publishes no build for vanilla 1.21.4."**
+* `instances/Instance 1/mods/` -- **0 files**.
+
+So the instance-aware choice works in the negative direction, which is the direction that matters:
+before this round the same click wrote `sodium-fabric-0.9.3-beta.1+mc26.3.jar` into a Vanilla
+instance, where the game would have refused to start. Now it writes nothing and says why.
+
+The reason the positive case did not show a 1.21.4 jar is the same fact seen from the other side:
+a Vanilla instance has no Fabric build to match, so the honest outcome *is* the refusal. Proving
+the positive needs a Fabric instance -- create one, then the same click should produce a
+`+mc1.21.4` jar.
+
+One nit, recorded rather than fixed in the same breath: the sentence prints the loader
+lower-cased ("vanilla") because that is the form the API matching uses; the reference capitalises
+it.
+
+That closes the install milestone's third note, and with it all three.

@@ -264,6 +264,22 @@ fn install_mod(job: &Job) -> Result<String, String> {
         serde_json::from_str(&body).map_err(|error| format!("{url}: {error}"))?;
     let version = pick_version(&versions, &running.0, &running.1)
         .ok_or_else(|| format!("{} has no version with a file to download", job.title))?;
+    // The fallback inside `pick_version` hands back the newest build when nothing fits, which is
+    // right for a project that publishes no loader information and wrong for a mod that is simply
+    // not built for this instance: a Fabric jar in a Vanilla instance is a launch that dies at
+    // startup. The reference asks the loader question before it writes anything, so the refusal
+    // names the mismatch instead of installing a file the instance cannot load.
+    if !running.1.is_empty()
+        && !version
+            .loaders
+            .iter()
+            .any(|loader| loader.eq_ignore_ascii_case(&running.1))
+    {
+        return Err(format!(
+            "{} publishes no build for {} {}.",
+            job.title, running.1, running.0
+        ));
+    }
 
     let mods = paths.instances_dir().join(&instance).join("mods");
     install::install_file(&wire, &mods, version)?;
