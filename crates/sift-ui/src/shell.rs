@@ -353,6 +353,15 @@ impl Shell {
     }
 }
 
+/// The Fabric loader version a created instance is given until the launcher asks Fabric for the
+/// current one.
+///
+/// **This is a default, not a fact read from anywhere.** The endpoint that would supply it is
+/// `https://meta.fabricmc.net/v2/versions/loader`, whose first entry is the current stable loader;
+/// wiring it is a network call in the create path and is recorded as open in
+/// `docs/GAP-MATRIX.md` rather than implied by a bare number here.
+pub const FABRIC_LOADER_DEFAULT: &str = "0.16.9";
+
 pub const INSTANCE_TYPES: [(&str, &str, bool); 4] = [
     (
         "Custom setup",
@@ -1488,7 +1497,7 @@ impl Shell {
                                 {
                                     list.push(serde_json::json!({
                                         "uid": uid,
-                                        "version": "0.16.9",
+                                        "version": FABRIC_LOADER_DEFAULT,
                                     }));
                                     if let Ok(patched) = serde_json::to_string_pretty(&json) {
                                         let _ = std::fs::write(&path, patched);

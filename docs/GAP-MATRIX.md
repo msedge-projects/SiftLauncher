@@ -2642,3 +2642,18 @@ found, version chosen, file written, and the card reporting it.
 
 That is the fourth thing this session has verified by driving rather than by looking -- after the
 search results, the refusal for a Vanilla instance, and the jar landing in `mods/`.
+
+### The loader version is a named default, not a fact (2026-11-01)
+
+`FABRIC_LOADER_DEFAULT = "0.16.9"` now sits beside `INSTANCE_TYPES` with a doc comment that says
+three things plainly: it is **a default rather than a value read from anywhere**; the endpoint that
+would supply the real one is `https://meta.fabricmc.net/v2/versions/loader`, whose first entry is the
+current stable loader; and wiring it is a network call in the create path, recorded here rather than
+implied by a bare number in a JSON literal.
+
+That is the whole of the change, and it is deliberately small. The behaviour is unchanged -- a
+Fabric instance is still given 0.16.9 -- but the claim is now bounded: a reader of the code can see
+that nothing asked Fabric, and a reader of this document can see the row.
+
+**Open row**: fetch the loader version from that endpoint at creation, and fall back to the default
+only when the fetch fails -- with the failure surfaced, not swallowed.
