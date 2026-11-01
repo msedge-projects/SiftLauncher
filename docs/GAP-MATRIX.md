@@ -2715,3 +2715,16 @@ audited and clean, and one `probe.py` whose only external dependency is a captur
 **What remains untrustworthy is not the tools but the coordinates fed to them** -- five aim errors and
 four false P0s this session, every one from reading a position off a picture. The tools have always
 been able to answer; they were being aimed by eye.
+
+### The totals quoted in these reports are not re-derived (2026-11-01)
+
+Every round report this session has quoted the matrix as "118 DONE / 472 OPEN". Those figures came
+from a count taken early and were **never re-counted as rows were added, closed or retracted**. A
+first attempt to re-count them this round parsed the wrong column -- it grouped by element name
+("FILES 42", "SCREENSHOTS 40") instead of by status -- and rather than publish a second wrong number,
+the attempt is recorded here as unfinished.
+
+That is the session's own lesson turned on its ledger: **a number that is repeated is not a number
+that is measured.** Until someone counts the status column properly, the totals in the round reports
+should be read as approximate, and the rows themselves -- each with its own evidence -- are the
+authoritative record.
