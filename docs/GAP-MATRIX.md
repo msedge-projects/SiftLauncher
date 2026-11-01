@@ -2981,3 +2981,18 @@ tab lists that folder. Two of its three links were proved this round and the las
 **And the method recorded itself**: seven presses failed reading positions from captures; this one
 succeeded reading them from a printed rect, first try. The probe is three lines and the session has
 run it five times now, always successfully.
+
+### The Files view lists one level and cannot descend (2026-11-01)
+
+Pressed the `mods` row: nothing changes. The view is a **flat listing** -- rows drawn with a glyph, a
+name and a size, no navigation -- so the jar inside `mods/` can be reached on disk and not through the
+product.
+
+That is the honest state of the brief's file-management clause: **the folder is listed, the folder
+cannot be opened.** The reference's Files view descends into directories, shows a path, and offers
+per-row actions; ours stops at the first level.
+
+**The next feature, named rather than guessed**: a path state on the instance page
+(`FilesState { path, ... }`), a breadcrumb above the list, and a press on a directory row that replaces
+`path` with `path.join(name)`. The renderer already takes any directory -- `folder_entries` is generic
+-- so this is navigation, not a second renderer.
