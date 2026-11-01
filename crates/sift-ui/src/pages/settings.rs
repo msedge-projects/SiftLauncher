@@ -283,6 +283,27 @@ fn version_of(key: &'static str) -> Option<u32> {
     }
 }
 
+/// A catalogue string with the reference's inline-link markup taken out.
+///
+/// `app.settings.troubleshooting.report-ad.description` carries `<support>…</support>` and
+/// `settings.language.description` carries `<crowdin-link>…</crowdin-link>`: the tags are the
+/// reference's way of naming a span it replaces with an anchor, and drawing the raw string puts
+/// "<support>" on screen. The words are what a reader needs; the anchor is a link this build
+/// does not draw (recorded in the gap matrix).
+fn plain(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut depth = 0_usize;
+    for ch in text.chars() {
+        match ch {
+            '<' => depth += 1,
+            '>' => depth = depth.saturating_sub(1),
+            _ if depth == 0 => out.push(ch),
+            _ => {}
+        }
+    }
+    out
+}
+
 /// The tooltip a button carries, if the reference gives it one.
 fn button_tooltip(label: &str) -> Option<&'static str> {
     (label == STORE_CLEAR_LABEL).then_some(STORE_CLEAR_TOOLTIP)
@@ -1235,6 +1256,18 @@ const ROW_DESCRIPTION_GAP: f32 = 4.0;
 
 /// The gap between two rows: `gap-6` (`features-settings.vue:283`, `layout.vue:101`).
 const ROW_GAP: f32 = 24.0;
+/// `syncing-settings.vue:35` stacks its rows in `gap-4` where every other tab uses `gap-6`:
+/// the capture's pitch is 66 there against 74 on Behavior.
+const SYNC_ROW_GAP: f32 = 16.0;
+
+/// The gap under a row on this tab.
+fn row_gap(tab: Tab) -> f32 {
+    if tab == Tab::Syncing {
+        SYNC_ROW_GAP
+    } else {
+        ROW_GAP
+    }
+}
 
 /// The gap between a heading and the rows under it: `mt-4` (`features-settings.vue:283`).
 const HEADING_TO_ROWS: f32 = 16.0;
@@ -3836,7 +3869,7 @@ fn draw_body(
                         state.consumed = true;
                     }
                 }
-                row_height + ROW_GAP
+                row_height + row_gap(tab)
             }
             Block::JavaLocation { version } => {
                 // `java-installations.vue:31-46`: each version is a `flex flex-col gap-2.5` (10)
@@ -4175,17 +4208,18 @@ fn draw_body(
                     body.rect_filled(segment, STORAGE_BAR_RADIUS, tint);
                     x += width;
                 }
-                // The legend, under the bar: the total first, then each part.
-                body.text(
-                    egui::pos2(left, bar.bottom() + 10.0),
-                    Align2::LEFT_TOP,
-                    format!("{} in use", megabytes(total)),
-                    fonts::body(12.5),
-                    theme.CONTRAST,
-                );
-                let mut legend_x = left;
-                let legend_y = bar.bottom() + 30.0;
+                // The legend: `content-storage.vue:306-320` is a grid of columns, each with a
+                // size-3 dot, the label at 16 points and a semibold value. It used to be one
+                // run of 12-point text, so the four figures ran together and the bar above them
+                // had no key.
+                const LEGEND_COLUMNS: usize = 3;
+                let column_width = (right - left) / LEGEND_COLUMNS as f32;
+                let rows = parts.len().div_ceil(LEGEND_COLUMNS);
                 for (index, (label, bytes)) in parts.iter().enumerate() {
+                    let column = index % LEGEND_COLUMNS;
+                    let row = index / LEGEND_COLUMNS;
+                    let cell_x = left + column as f32 * column_width;
+                    let cell_y = bar.bottom() + 14.0 + row as f32 * 24.0;
                     let tint = match index {
                         0 => theme.BRAND,
                         1 => theme.BRAND.gamma_multiply(0.72),
@@ -4193,14 +4227,33 @@ fn draw_body(
                         3 => theme.BRAND.gamma_multiply(0.34),
                         _ => theme.SECONDARY,
                     };
-                    body.circle_filled(egui::pos2(legend_x + 4.0, legend_y + 6.0), 4.0, tint);
-                    let text = format!("{label} {}", megabytes(*bytes));
-                    let galley =
-                        body.layout_no_wrap(text, fonts::body(12.0), theme.SECONDARY);
-                    body.galley(egui::pos2(legend_x + 14.0, legend_y), galley.clone(), theme.SECONDARY);
-                    legend_x += galley.size().x + 32.0;
+                    body.circle_filled(egui::pos2(cell_x + 5.0, cell_y + 10.0), 6.0, tint);
+                    body.text(
+                        egui::pos2(cell_x + 18.0, cell_y),
+                        Align2::LEFT_TOP,
+                        *label,
+                        fonts::body(16.0),
+                        theme.BASE,
+                    );
+                    body.text(
+                        egui::pos2(cell_x + column_width - 16.0, cell_y),
+                        Align2::RIGHT_TOP,
+                        megabytes(*bytes),
+                        fonts::semibold(16.0),
+                        theme.CONTRAST,
+                    );
                 }
-                bar.height() + 44.0 + ROW_GAP
+                // The total, at the bar's own right end rather than as a line of its own: the
+                // reference has no total line, and the four parts are what the bar is a picture
+                // of.
+                body.text(
+                    egui::pos2(right, bar.top() - 20.0),
+                    Align2::RIGHT_TOP,
+                    format!("{} in use", megabytes(total)),
+                    fonts::body(12.0),
+                    theme.SECONDARY,
+                );
+                bar.height() + 14.0 + rows as f32 * 24.0 + ROW_GAP
             }
             Block::RadioList {
                 key,
@@ -4484,7 +4537,7 @@ fn draw_body(
                 let inner = right - left - 2.0 * ADMONITION_PAD - ADMONITION_ICON;
                 let height = body
                     .layout(
-                        words.to_owned(),
+                        plain(words),
                         fonts::body(16.0),
                         theme.CONTRAST,
                         inner,
@@ -4506,7 +4559,7 @@ fn draw_body(
                     &body,
                     box_.left() + ADMONITION_PAD + ADMONITION_ICON,
                     box_.top() + ADMONITION_PAD,
-                    words,
+                    &plain(words),
                     fonts::body(16.0),
                     theme.CONTRAST,
                     inner,
@@ -4521,7 +4574,7 @@ fn draw_body(
                     &body,
                     left,
                     y,
-                    words,
+                    &plain(words),
                     fonts::body(ROW_DESCRIPTION_SIZE),
                     theme.SECONDARY,
                     right - left,
