@@ -386,3 +386,28 @@ create dialog, the install path and the two corrected defaults have not moved th
 and reports `idle_rss_mb=0.0`, `window=none` and `startup_ms=7566` -- all artefacts of measuring a
 file that is not there. Repairing it (or deleting it in favour of the two commands above) is an open
 row, because a measurement tool that silently reports zeroes is worse than no tool.
+
+### The harness is repaired and now reports real numbers (2026-11-01)
+
+Three fixes to `tools/lightness-measure.sh`, each aimed at the class of failure it had:
+
+1. **the default binary path** is this checkout's own build rather than
+   `/data/workspace/PalantirMC/...`;
+2. **a missing binary exits 2** with "build it first" instead of measuring nothing;
+3. **a window that never appears exits 2** with a hint about `DISPLAY` instead of printing
+   `idle_rss_mb=0.0` and a startup time it could not have observed.
+
+Run inside the lab, where the display exists:
+
+    binary=SiftUi
+    startup_ms=84   window=10485764
+    idle_rss_mb=108.2
+    idle_cpu_ticks_over_10s=0
+    binary_bytes=14212656
+
+108.2 MB against the 110.2 MB recorded before this session's work, and 0 idle ticks -- so the create
+dialog, the install path and both corrected defaults cost nothing at idle.
+
+**The lesson is the same one the rest of the session kept paying for**: a tool that answers confidently
+about something it could not see is indistinguishable from a passing test, and the fix is always the
+same shape -- check the precondition, then report.

@@ -7,7 +7,15 @@
 # how a budget appears to pass while the shipped artifact was never checked.
 set -u
 export DISPLAY=:99
-binary="${1:-/data/workspace/PalantirMC/crates/sift-ui/target/release/SiftUi}"
+# The binary defaults to this checkout's own build, not a path from another machine. The
+# previous default pointed at a checkout that no longer exists, and the script answered
+# idle_rss_mb=0.0 for a file that was not there -- a measurement tool that reports zeroes is
+# worse than no tool.
+binary="${1:-$(cd "$(dirname "$0")/.." && pwd)/crates/sift-ui/target/release/SiftUi}"
+if [ ! -x "$binary" ]; then
+    echo "lightness-measure: no executable at $binary -- build it first (cargo build --release)" >&2
+    exit 2
+fi
 name=$(basename "$binary")
 
 pkill -x SiftUi 2>/dev/null
@@ -26,6 +34,12 @@ for _ in $(seq 1 300); do
 done
 mapped=$(date +%s%N)
 echo "binary=$name"
+# A window that never appeared measures nothing: the previous version printed idle_rss_mb=0.0 and
+# a startup time for a process it could not see, which reads as a pass. Refuse instead.
+if [ "${window:-none}" = "none" ]; then
+    echo "lightness-measure: no window appeared -- is DISPLAY set (the lab uses :99 inside the container)?" >&2
+    exit 2
+fi
 echo "startup_ms=$(( (mapped - start) / 1000000 )) window=${window:-none}"
 
 # Idle: five seconds to settle, then RSS and a CPU delta over ten seconds.
