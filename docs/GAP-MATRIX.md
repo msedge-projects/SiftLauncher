@@ -4034,3 +4034,16 @@ the message is verified by its tests and not by a capture. The fabricated second
 **The picker itself is still the gap**, and it is now fully located: `install_mod` calls `choose_instance(&ids)` at
 `install.rs:250`, and a picker means passing the chosen id in instead of deriving it -- one signature change plus a
 modal in the shell.
+
+### Two instances, and the refusal still unseen (2026-11-01)
+
+Created a second instance **through the dialog** -- which worked and toasts "Created Instance 3." -- then ran the
+install. **The frame shows the create toast, not the refusal**, so the named message is still verified only by its
+unit tests.
+
+**The likeliest cause, and it is a known one**: the create toast is still on screen, so an install toast either
+never fired or fired and was replaced. The next attempt should wait for the toast to clear before pressing
+Install, or read the log rather than the frame.
+
+**Lab state**: two instances now -- `Instance 2` (Fabric 26.3, with `mods/`) and `Instance 3` (fresh Vanilla). That
+is the state a picker needs, so it is left in place for the next round rather than tidied away.
