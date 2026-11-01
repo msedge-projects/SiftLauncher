@@ -2338,3 +2338,22 @@ takes focus because nothing requests it.
 
 Recorded as unproven rather than claimed, because a field that draws and a field that types are
 the same picture -- the distinction that cost this session twelve rounds and its two retractions.
+
+### The name field is drawn at (0,0), off its plate (2026-11-01)
+
+The three-value probe, first try:
+
+    name rect=[[0,0]-[544,28]]  hovered=false  clicked=false  focus=false
+
+So the `TextEdit` exists and sits at the **screen's top-left corner**, not on the plate at
+y 357: the `Area`'s `fixed_pos` positions the area, but `ui.put`'s rect is interpreted inside it,
+and the response's rect comes back in the area's own space. Nothing was ever under the click.
+
+The fix is not another `Area` argument. The frame already has a `Ui` at real coordinates; the
+dialog should take `&mut Ui` and place its fields with `ui.put(absolute_rect, …)` the way
+`place_field` does in the settings modal -- the path this launcher has already proved works, and
+the one that took twelve rounds to find so that this round would not have to.
+
+`draw_create(ctx, screen)` becomes `draw_create(ctx, screen, ui)`, called before the panel
+closure takes `ui` by `&mut`, and the field placed on it directly. One signature, one call site,
+one field.
