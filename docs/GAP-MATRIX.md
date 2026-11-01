@@ -1958,3 +1958,24 @@ which is what the reference does, and what two tests now hold (one for each case
 That closes the second of the three honest notes from the install milestone. The third -- that
 `pick_version` was given an empty game version and loader -- still stands, and it needs the
 picker rather than a sentence.
+
+### The version is chosen for the instance now, and its proof is one jar name away (2026-11-01)
+
+`install_mod` reads the chosen instance's own `version` and `loader` (`data::Entry`, fields in
+`sift-ui/src/data.rs`) and hands them to `pick_version` instead of empty strings. The loader goes
+in lower case because the API spells it "fabric"; "Vanilla" matches nothing and falls back to the
+newest build, which `pick_version` documents and tests.
+
+**The driven confirmation is still owed**, and the shape of it is unambiguous: the jar already in
+the instance is
+
+    sodium-fabric-0.9.3-beta.1+mc26.3.jar
+
+which was chosen when the picker had nothing to go on. With the instance on Vanilla 1.21.4 the
+same click must produce a **1.21.4** build instead -- a different filename in the same folder --
+or, if Sodium publishes nothing for 1.21.4, the newest build again with the same warning the
+fallback test describes.
+
+The attempt this round missed the second card's button (no toast, no second jar), so the claim
+rests on the tests and the code, not on a capture. That is written here rather than implied,
+because this session's whole history says an unverified claim becomes a false one.

@@ -245,18 +245,24 @@ fn install_mod(job: &Job) -> Result<String, String> {
     let paths = SiftPaths::at(platform_data_root(System::current()));
     let wire = Wire::new(paths.meta_dir());
 
-    let ids: Vec<String> = crate::data::load()
-        .0
-        .into_iter()
-        .map(|instance| instance.id)
-        .collect();
+    let entries = crate::data::load().0;
+    let ids: Vec<String> = entries.iter().map(|entry| entry.id.clone()).collect();
     let instance = choose_instance(&ids)?;
+    // What the instance runs, so the version is chosen for it rather than being the newest
+    // release on the project. The loader goes in lower case because the API spells it that way
+    // ("fabric"), and "Vanilla" matches nothing, which falls back to the newest build as
+    // `pick_version` documents.
+    let running = entries
+        .iter()
+        .find(|entry| entry.id == instance)
+        .map(|entry| (entry.version.clone(), entry.loader.to_ascii_lowercase()))
+        .unwrap_or_default();
 
     let url = sift_net::modrinth::version_url(&job.project);
     let body = wire.document(&url)?;
     let versions: Vec<sift_net::modrinth::ModrinthProjectVersion> =
         serde_json::from_str(&body).map_err(|error| format!("{url}: {error}"))?;
-    let version = pick_version(&versions, "", "")
+    let version = pick_version(&versions, &running.0, &running.1)
         .ok_or_else(|| format!("{} has no version with a file to download", job.title))?;
 
     let mods = paths.instances_dir().join(&instance).join("mods");
