@@ -1702,3 +1702,19 @@ Install button at content y 72..120 while my reading of the capture said 129.
 
 **One more input thief**: a Minecraft window showing "No supported graphics backend was found" sat over the app and
 ate six presses before it was noticed. `pkill -f java` before every drive.
+
+### Correction: what the server join proves (2026-11-02)
+
+The Logs tab now shows Instance 2's real `latest.log`, and it is worth reading before repeating the join claim:
+the game started with `--quickPlayMultiplayer mc.hypixel.net:25565` (the command line proves the argument) and then
+died at authentication --
+
+```
+[11:44:42] [Download-2/ERROR]: Failed to fetch user properties
+com.mojang.authlib.exceptions.InvalidCredentialsException: Status: 401
+```
+
+That is the launcher launching without a signed-in account, not a join bug. **So the claim is precise**: the join
+path assembles and passes the argument; a real session needs a Microsoft account, which this lab has not signed in.
+The earlier "status pill went from No instances running to Running" is a launch, not a connection, and the parity log
+above says so now.
