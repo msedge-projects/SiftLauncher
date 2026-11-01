@@ -2145,3 +2145,34 @@ The correct targets, converted once and written down:
 Every capture this session has been read through a preview that is not 1:1, and only some of my
 coordinates were converted. That is the same class of error as the title-bar offset and the edge
 clicked instead of the centre: **a number taken from a resized image is not a coordinate.**
+
+# The reference's create modal, captured at last (2026-11-01)
+
+`.scratch/cap/ref-create4.png` -- the gating capture owed since round 63, taken with the
+converted coordinate (565,540) after a `windowfocus`.
+
+It is a centred modal, 576x350 in screen points, titled **"Create instance"** with a close ✕ at its
+top right, and it asks one question three ways:
+
+**"Already know what you want to play?"** -- a search field, "Search mods, modpacks, and more…",
+which is a project search that skips the rest of the dialog.
+
+then "**or**", centred, and
+
+**"Choose instance type"** -- four rows, each with an icon, a title and one line of description:
+
+| row | title | description |
+| --- | --- | --- |
+| 1 | **Custom setup** | Start from scratch by picking a loader and game version |
+| 2 | **Start from a mod or modpack** | Choose a project and we'll use its latest version |
+| 3 | **Upload a modpack** | Install a modpack from an .mrpack file on your device |
+| 4 | **Import instance** | Import an instance from Prism, CurseForge, or similar. |
+
+Row 2 carries a chevron, because it opens a further step.
+
+That is the whole create flow's shape: **the loader and game version live one level deeper**, behind
+"Custom setup". This launcher's one-press Vanilla instance replaced all of it.
+
+**Next round builds this modal to this capture** -- the four rows, the search field, the title's ✕ --
+and then "Custom setup" is what has to exist for a Fabric instance, which is what the install proof
+has been waiting on since round 59.
