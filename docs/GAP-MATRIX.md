@@ -2375,3 +2375,21 @@ sites is the thing to compare, and that comparison is cheaper than any further g
 
 Recorded plainly: two rounds on this field, both ending without typing. The one thing that has
 worked every time is the probe; the thing that has failed every time is changing the code first.
+
+### Three of the four conditions hold: right rect, hovered, focused (2026-11-01)
+
+    name rect=[[448,357]-[992,385]]  wanted=[[448,357]-[992,385]]
+         hovered=true  clicked=false  focus=true
+
+So on the frame's ui the widget sits exactly where it is drawn, the pointer hovers it, and **it holds
+the keyboard focus**. Only `clicked` reads false, and that is expected: the probe prints every
+frame and the click landed on an earlier one.
+
+What is left, then, is the shortest link in the chain: the characters arriving while focused are not
+reaching the painted text. The next probe is two values rather than three -- print `name` right
+after the `ui.put` and `self.create_name` at the top of `draw_create` -- which says whether the
+keystroke is applied to the local string and lost on the way back to the shell, or never applied at
+all.
+
+That comparison is the last cheap step before the field works, and the code around it is now
+correct by measurement rather than by hope: rect, hover and focus are all confirmed on screen.
