@@ -3137,3 +3137,19 @@ a modpack. The second is a reminder that even a shortcut test has to establish t
 **A shortcut is not hard here** -- egui delivers `ctrl+f` as a key press, and the search field already
 has focus logic; what it lacks is someone asking `wants_keyboard_input` before focusing it. That is the
 next edit, and unlike drag and drop it can be **driven and verified** in this lab.
+
+### Ctrl+F is wired and the drive shows nothing -- and the drive itself is suspect (2026-11-01)
+
+The shortcut is in the widget: when nothing holds focus and `ctrl+f` is pressed, the search field
+requests it. Driven with the pointer parked away from the field and `sodium` typed afterwards, the field
+**still shows its placeholder** and the listing is unchanged.
+
+But two other things in the same frame point at the driver rather than the code: the page is still on
+**Modpacks**, though the run pressed the Mods pill, and the earlier run in this same shape *did* switch
+tabs. So the clicks after the first one may not have been landing either -- which would mean the window
+had lost input focus, and `xdotool key` went to whatever did have it.
+
+**The check that settles it costs one command**: `xdotool getactivewindow` before the keystroke, and
+`windowfocus` when it is not the app. This session has met that exact failure before -- a click on an
+unfocused window only focuses it -- and the note is here so the next attempt does not read a driver
+problem as a code problem, or the reverse.

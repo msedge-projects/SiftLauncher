@@ -75,6 +75,15 @@ impl Search {
         // `click_and_drag` rather than `click`: a field is a place to put a caret, and a
         // press that turns into a drag across the plate should still take the keyboard
         // rather than be abandoned into the list underneath.
+        // Ctrl+F focuses the field: the reference's search shortcut. It only fires when nothing else
+        // is being edited, so a reader typing into another control never has the keyboard stolen.
+        if ui.memory(|m| m.focused().is_none())
+            && ui.input(|i| i.modifiers.command && i.key_pressed(egui::Key::F))
+        {
+            ui.memory_mut(|m| m.request_focus(Id::new("search-field")));
+            ui.ctx().request_repaint();
+        }
+
         let response = ui.interact(rect, Id::new("search-field"), Sense::click_and_drag());
         if response.clicked() {
             self.focus();
