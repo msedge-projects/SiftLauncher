@@ -2456,3 +2456,18 @@ rounds of suspects from this one have each been disproved by the next:
 The most likely remaining cause is something this session has not looked at: the `Frame`/`Area`
 visuals the field inherits, or the font atlas not being installed on that layer. A fresh pair of
 eyes with those three facts will be faster than a ninth variation.
+
+### A diagnostic field, and a crop that missed it (2026-11-01)
+
+Placed the same `TextEdit` at a fixed rect near the panel's top-left, so that "does this widget
+paint at all" could be answered without any of the modal's geometry in the way. The capture was
+taken and then **cropped from the wrong region** -- (0,430) where the field was at (20,40 screen) --
+so the diagnostic answered nothing.
+
+That is the fourth aim error of the session and the second in two rounds, and it is worth naming
+plainly: the crop coordinates were guessed rather than derived from the rect that was already
+printed two lines earlier.
+
+The diagnostic is reverted and the tree is green. The three facts about the field stand unchanged,
+and the next attempt should read the field's own rect before cropping -- or better, capture the
+whole frame and look at it, which has never once failed to answer the question being asked.
