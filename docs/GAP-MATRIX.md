@@ -3249,3 +3249,15 @@ a resized image, off by the scale factor.
 **Where this leaves the Discover page**: search (typed, results, facets), tabs (Mods pressed and
 effective), the pager (page advance), and the Ctrl+F shortcut. Four behaviours, each verified by driving.
 Not yet: sort dropdown, view-count dropdown, category checkboxes, the install picker modal.
+
+### The sort menu opens, with the reference's five options (2026-11-01)
+
+Press at (220,240) -- the sort control's centre, computed with the crop's scale factor this time --
+opens a menu: **Relevance** (brand-filled, the current value), **Downloads**, **Follows**, **Newest**,
+**Updated**.
+
+So this is not a painted control: it is a real dropdown with a real selection state. **What is not yet
+shown is that choosing an item changes the ordering** -- the menu opened, nothing was pressed inside it.
+
+That distinction is the same one the matrix keeps drawing: *opens* is one row, *acts* is another, and
+this round verified the first.
