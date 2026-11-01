@@ -2001,3 +2001,22 @@ lower-cased ("vanilla") because that is the form the API matching uses; the refe
 it.
 
 That closes the install milestone's third note, and with it all three.
+
+### The positive install proof needs a Fabric instance, and the recipe to get one (2026-11-01)
+
+Attempted this round and did not reach it: the click meant for Home landed on a page already
+showing Discover, so no create flow opened.
+
+What the next run needs, in order:
+
+1. **Relaunch**, so the app opens on Home rather than wherever the last round left it -- every run
+   in this session that assumed a starting page has wasted a capture.
+2. Click **Create an instance** at (596,590). One press produced "Instance 1, Vanilla 1.21.4",
+   which is the quick-create default; a **loader choice** must exist somewhere in that flow, and
+   finding it is one capture of the modal rather than a guess.
+3. With a Fabric instance present, the same Discover -> Mods -> `sodium` -> Install click should
+   write a `+mc<version>` jar matching that instance, where the Vanilla case correctly refused.
+
+Until then the install milestone stands as: **negative case proven** (refusal, no file), **positive
+case proven once** (a 1.9 MB jar, before the loader rule existed), and the combination -- a jar
+chosen *for* an instance and written -- still to be shown in one run.
