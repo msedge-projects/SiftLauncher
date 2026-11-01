@@ -117,6 +117,9 @@ pub const INSTANCE_TYPES: [(&str, &str, bool); 4] = [
 ];
 
 pub struct Shell {
+    /// Whether the reference's create dialog is open. The rail's plus sets it, as the
+    /// reference's does, where this launcher used to create a Vanilla instance on the press.
+    pub create_open: bool,
     /// The selected rail destination.
     pub rail: Rail,
     /// The hovered rail destination, if any. A press animates between the two, which is
@@ -201,6 +204,8 @@ pub struct Shell {
 impl Default for Shell {
     fn default() -> Shell {
         Shell {
+            // The create dialog starts closed: the reference opens on Home with nothing over it.
+            create_open: false,
             // The reference opens on Home, and a launcher that opens on a catalogue looks
             // like a store rather than a launcher.
             rail: Rail::Home,

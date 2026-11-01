@@ -2193,3 +2193,18 @@ Two things the transcription taught, both now in comments:
 
 What is still missing is the drawing: the modal, its search field, its "or", and the state that
 opens it instead of creating an instance on the press.
+
+### The dialog's state exists; the drawing does not (2026-11-01)
+
+`Shell` now carries `create_open: bool`, defaulting to false, documented as the flag the rail's
+plus will set where it used to create a Vanilla instance on the press. Nothing reads it yet, and
+the plus still creates instantly.
+
+Three builds were spent on a misplaced brace: editing a struct's opening line with a string
+replace left a second `{` and the compiler reported "unclosed delimiter" at the end of the file
+rather than at the damage. The fix was a two-character edit, but the sequence is the session in
+miniature -- a change made by pattern rather than by reading the surrounding lines, diagnosed by
+probe afterwards instead of before.
+
+**Next round draws the dialog** -- 576x350 plate, title and ✕, the search field, "or", and the four
+rows already transcribed in `INSTANCE_TYPES` -- and flips this flag instead of creating.
