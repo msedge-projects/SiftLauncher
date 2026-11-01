@@ -2126,3 +2126,22 @@ implied:
     shoot ref-create
 
 That run is the next round's first act, and everything else about the modal waits on it.
+
+### The reference click missed by fifty pixels, and the arithmetic (2026-11-01)
+
+Third attempt at the create modal, still byte-identical. The cause is not the reference: the
+preview I have been reading is **760 pixels wide for a 1440-pixel capture**, so one preview pixel
+is 1.895 real ones, and the "Create an instance" button that sits at (298,285) in the preview is at
+**(565,540)** on screen -- not the (596,590) I clicked, which is fifty pixels below and right of it.
+
+The correct targets, converted once and written down:
+
+| control | preview | screen |
+| --- | --- | --- |
+| Create an instance | (298,285) | **(565,540)** |
+| rail plus | (16,187) | **(30,354)** |
+| rail Home | (16,31) | (30,59) |
+
+Every capture this session has been read through a preview that is not 1:1, and only some of my
+coordinates were converted. That is the same class of error as the title-bar offset and the edge
+clicked instead of the centre: **a number taken from a resized image is not a coordinate.**
