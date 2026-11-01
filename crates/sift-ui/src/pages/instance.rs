@@ -212,7 +212,9 @@ pub fn draw(
     images: &mut Images,
     state: &mut State,
     instance: &Instance,
-) -> bool {
+) -> Option<String> {
+    // The page's only outgoing action today is "launch into this world": a tab that wants it returns
+    // the folder and the shell calls `start_world`, which becomes `--quickPlaySingleplayer`.
     // shortcut: the header has no icon tile, because `Instance` carries no icon path; add one
     // when the shell's instance list has an icon for it to pass in.
     let _ = images;
@@ -321,11 +323,10 @@ pub fn draw(
             }
         }
         Tab::Screenshots => screenshots_tab(ui, card, theme, images, instance, &mut state.pending_delete),
-        Tab::Worlds => worlds_tab(ui, card, theme, instance),
+        Tab::Worlds => return worlds_tab(ui, card, theme, instance),
         Tab::Logs => logs_tab(ui, card, theme, instance),
     }
-    // Nothing on this page animates, so the shell has no frame to schedule.
-    false
+    None
 }
 
 /// The landing tab: the description and notes on the left, the information rows on the right.
@@ -556,7 +557,7 @@ fn content_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
     }
 }
 
-fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
+fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) -> Option<String> {
     let worlds = saves(&instance.path);
     if worlds.is_empty() {
         stub(
@@ -566,8 +567,9 @@ fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
             Tab::Worlds,
             "This instance has no worlds yet. Create one in the game and it appears here.",
         );
-        return;
+        return None;
     }
+    let mut launch: Option<String> = None;
     let painter = ui.painter();
     let inner = card.shrink(PAD);
     let mut y = inner.top();
@@ -591,6 +593,15 @@ fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
             fonts::body(12.0),
             theme.BASE,
         );
+        // A press launches into the world: the shell already has `start_world`, which becomes
+        // `--quickPlaySingleplayer`, so the page only has to say which one.
+        let row = Rect::from_min_size(egui::pos2(inner.left(), y), egui::vec2(inner.width(), ROW_H));
+        if ui
+            .interact(row, egui::Id::new(("world-row", folder.as_str())), Sense::click())
+            .clicked()
+        {
+            launch = Some(folder.clone());
+        }
         painter.text(
             egui::pos2(inner.right(), y + ROW_H / 2.0),
             Align2::RIGHT_CENTER,
@@ -600,6 +611,7 @@ fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
         );
         y += ROW_H;
     }
+    launch
 }
 
 /// The Files tab: the instance's folder, one row per entry.

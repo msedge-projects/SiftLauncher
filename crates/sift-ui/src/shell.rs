@@ -756,7 +756,10 @@ impl Shell {
                 &mut self.instance_state,
                 &instance,
             );
-            let _ = result;
+            if let Some(world) = result {
+                let id = instance.id.clone();
+                self.game.start_world(&id, &world);
+            }
             false
         } else if let Some(project) = &self.open_project {
             let rect = crate::pages::Page::Project.rect();

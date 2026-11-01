@@ -4171,3 +4171,15 @@ has both.
 bottom-right. Two presses missed by more than 70 points vertically, and the third landed only once the **20-point
 title-bar offset** was added -- the single oldest lesson in this project, relearned because I trusted a crop over the
 number.
+
+# Pressing a world launches into it (2026-11-01)
+
+The Worlds tab listed worlds and did nothing with them. A press now launches the instance with that world:
+the status pill went from **"No instances running"** to **"Downloading 1855/5147"**, i.e. the launch path started
+fetching what it needs. The page returns the world folder and the shell calls `start_world`, which the engine turns
+into `--quickPlaySingleplayer` -- the existing mechanism, reached for the first time from a click.
+
+**The aim, again**: the row's own rect is `[[112,206]-[1092,226]]`; two presses at (400,225) and (400,254) missed
+because the screen carries the window's 20-point title bar and my numbers did not. **The printed rect, plus the
+offset, landed first try.** Two lessons in this project are now so well evidenced that they should be assumed rather
+than rediscovered: print the rect, and add twenty.
