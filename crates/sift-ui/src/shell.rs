@@ -1268,7 +1268,30 @@ impl Shell {
     ///
     /// Returns whether a hover is still moving, so the caller can keep the frame loop
     /// alive only while something is in flight.
+    /// The keyboard's route to the rail: `Ctrl+1` through `Ctrl+5` select a page in the reference's
+    /// order. The navigation is the same one a press makes, so a shortcut cannot reach a page the
+    /// rail does not offer.
+    fn rail_shortcut(&mut self, ctx: &egui::Context) {
+        // consume_shortcut rather than key_pressed plus a modifier read: the probe showed the modifier
+        // cleared on the frame the digit arrives, so a hand-rolled check misses every press.
+        for (index, rail) in Rail::ALL.iter().enumerate() {
+            let key = match index {
+                0 => egui::Key::Num1,
+                1 => egui::Key::Num2,
+                2 => egui::Key::Num3,
+                3 => egui::Key::Num4,
+                _ => egui::Key::Num5,
+            };
+            let shortcut = egui::KeyboardShortcut::new(egui::Modifiers::COMMAND, key);
+            if ctx.input_mut(|input| input.consume_shortcut(&shortcut)) && self.rail != *rail {
+                self.rail = *rail;
+                ctx.request_repaint();
+            }
+        }
+    }
+
     fn rail_column(&mut self, ui: &mut Ui) -> bool {
+        self.rail_shortcut(ui.ctx());
         let rail = Rect::from_min_size(
             egui::pos2(0.0, g::TITLE_BAR),
             egui::vec2(g::RAIL, g::WINDOW.1 - g::TITLE_BAR),
