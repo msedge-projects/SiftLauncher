@@ -1687,3 +1687,27 @@ so the next run clears it with backspaces, which the widget does implement.
 
 That ordering matters for the record: the "No results" sighting stays open *until a clean query
 returns*, and the clear button becomes its own row with a reproduction.
+
+# RETRACTION THREE, 2026-11-01: search works, and here is the proof it was never broken
+
+Field emptied with backspaces (its own clear button being the one thing that does not work),
+`sodium` typed once, Mods tab:
+
+| result | author | downloads | hearts |
+| --- | --- | --- | --- |
+| Sodium | jellysquid3 | 258.13M | 42,362 |
+| Sodium Extra | FlashyReese | 108.77M | 13,832 |
+| Reese's Sodium Options | FlashyReese | 90.22M | 9,033 |
+
+with tags (Optimization, Fabric, NeoForge, Quilt), an Install button on each card, and a pager
+reading 1, 2, … 6.
+
+**That is the first end-to-end interaction this project has verified with real data**: a query
+typed into the field, sent to Modrinth, parsed, faceted by tab, rendered as cards. Every previous
+claim about the Discover page was a claim about its pixels.
+
+Withdrawn: "every search returns no results". It returned none because it was asked for
+`sodiumsodiumsodium`, which is honest of it.
+
+**What survives from this whole thread is one defect**: the search field's clear button does
+nothing when clicked. One real bug in thirteen rounds of looking, and it was found by typing.
