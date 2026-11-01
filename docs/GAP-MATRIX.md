@@ -2950,3 +2950,18 @@ re-running the install alone produced the jar first time.
 So the decision the last two rounds were circling is settled by the codebase's own layout, and the
 multi-instance refusal -- which has existed since the picker work and had never been exercised in the
 product -- is now **also verified**, if only as a refusal.
+
+### The Files press, aimed from the capture, still leaves Content selected (2026-11-01)
+
+Measured off the frame at 1.5x: the Files label spans source x 193..230, its centre y 171, so the
+press went to (211,191) on screen. **Content is still the brand-filled tab afterwards.**
+
+That is the seventh press this session that a capture said would land and did not, and the tab bar is
+wired in the source (`ui.interact` at `pages/instance.rs:294`). The conclusion is the one the whole
+session keeps arriving at from a different direction: **a position read from a picture is a hypothesis**
+-- print the tab's rect and press its centre, exactly as the rail and the name field were settled.
+
+**The probe, written out**: in `instance.rs`'s tab loop, print each tab's `rect`, `response.hovered()`
+and `response.clicked()` for one press. Three lines, three numbers, and the tab bar stops being a
+mystery. Until then the Files tab -- and with it the file-management row -- stays unverified, though its
+renderer now points at the right folder and the jar is on disk in the folder it lists.
