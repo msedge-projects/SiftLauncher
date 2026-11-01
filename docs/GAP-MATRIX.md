@@ -2596,3 +2596,20 @@ loader is.
 **Next run**: create a Fabric instance, then install Sodium into it and watch the jar land in
 `Instance N/mods/` -- the positive case that the Vanilla refusal has been standing in for since
 round 59.
+
+### The install proof: precondition met, run not landed (2026-11-01)
+
+The lab was trimmed to the one Fabric instance this session created -- `instances/` now holds
+`Instance 5` alone, so `choose_instance` has an unambiguous answer -- and the install was driven
+twice with longer waits. **No jar, no toast.** The sequence did not reach the button; nothing about
+the install path is contradicted, and nothing about it is confirmed either.
+
+The recipe that worked when this proof last succeeded (round 56, into a Vanilla instance) was:
+Discover at (32,102), the Mods pill at (215,120), the search field at (600,170), `sodium`, then
+Install on the first card at (1062,284). Today's runs used exactly that and produced nothing, so
+something earlier in the chain is now off -- most likely the page state after a fresh launch with a
+single instance, which shows the Library rather than the empty Home the earlier run started from.
+
+**Next run should confirm each step from the frame before taking the next**: launch, capture, check
+the page, then click. Two rounds have now been lost to assuming which page the app was on, and the
+matrix has said so twice.
