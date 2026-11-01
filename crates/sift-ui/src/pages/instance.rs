@@ -202,9 +202,25 @@ pub struct State {
     /// The file a first press has armed for removal. The second press on the same row removes it:
     /// one press is too cheap for a destructive action, and the reference asks before deleting.
     pub pending_delete: Option<String>,
+    /// The address typed into the Overview's join field.
+    pub join_input: String,
+    /// Whether that field is taking the keyboard.
+    pub join_focused: bool,
+    /// Set by the Join press and taken by `draw`, which returns it as an action.
+    pub join_request: Option<String>,
 }
 
 /// Draw the page's content column.
+/// What the page asks the shell to do. A page that can only launch a world has one variant; this
+/// one can also join a server, and an enum says so rather than overloading a string.
+#[derive(Debug, Clone)]
+pub enum InstanceAction {
+    /// Launch into this world folder.
+    LaunchWorld(String),
+    /// Launch and connect to this address.
+    JoinServer(String),
+}
+
 pub fn draw(
     ui: &mut Ui,
     rect: Rect,
@@ -212,7 +228,7 @@ pub fn draw(
     images: &mut Images,
     state: &mut State,
     instance: &Instance,
-) -> Option<String> {
+) -> Option<InstanceAction> {
     // The page's only outgoing action today is "launch into this world": a tab that wants it returns
     // the folder and the shell calls `start_world`, which becomes `--quickPlaySingleplayer`.
     // shortcut: the header has no icon tile, because `Instance` carries no icon path; add one
@@ -323,60 +339,12 @@ pub fn draw(
             }
         }
         Tab::Screenshots => screenshots_tab(ui, card, theme, images, instance, &mut state.pending_delete),
-        Tab::Worlds => return worlds_tab(ui, card, theme, instance),
+        Tab::Worlds => return worlds_tab(ui, card, theme, instance).map(InstanceAction::LaunchWorld),
         Tab::Logs => logs_tab(ui, card, theme, instance),
     }
     None
 }
 
-/// The landing tab: the description and notes on the left, the information rows on the right.
-fn overview(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
-    let painter = ui.painter();
-    let inner = card.shrink(PAD);
-    let left_width = ((inner.width() - COLUMN_GAP) * LEFT_SHARE).max(0.0);
-    let left = Rect::from_min_size(inner.min, egui::vec2(left_width, inner.height()));
-    let right = Rect::from_min_size(
-        egui::pos2(left.right() + COLUMN_GAP, inner.top()),
-        egui::vec2(
-            (inner.width() - left_width - COLUMN_GAP).max(0.0),
-            inner.height(),
-        ),
-    );
-
-    // The left column's heading is the catalogue's only "Description" string, the project
-    // page's tab label (`app.project.tab.description`, `index.json:1433-1435`).
-    painter.text(
-        left.min,
-        Align2::LEFT_TOP,
-        "Description",
-        fonts::semibold(SECTION_SIZE),
-        theme.CONTRAST,
-    );
-    // owed: the instance's description and notes. The reference has no field for either on this
-    // page -- its header carries the name, loader, playtime and last played, nothing else -- so
-    // the column is reserved until the shell can supply text, starting with a modpack
-    // instance's linked project description.
-
-    // The right column: each row is its label, then its value wrapped to the column.
-    let mut y = right.top();
-    for (label, value) in info_rows(instance) {
-        if y > right.bottom() {
-            break;
-        }
-        painter.text(
-            egui::pos2(right.left(), y),
-            Align2::LEFT_TOP,
-            label,
-            fonts::body(ROW_LABEL_SIZE),
-            theme.SECONDARY,
-        );
-        y += LABEL_ADVANCE;
-        let value = painter.layout(value, fonts::label(BODY_SIZE), theme.BASE, right.width());
-        let height = value.size().y;
-        painter.galley(egui::pos2(right.left(), y), value, theme.BASE);
-        y += height + ROW_GAP;
-    }
-}
 
 /// A tab whose reference screen is not built yet: its own name as the heading, and one sentence
 /// naming what will be there.

@@ -797,9 +797,16 @@ impl Shell {
                 &mut self.instance_state,
                 &instance,
             );
-            if let Some(world) = result {
+            if let Some(action) = result {
                 let id = instance.id.clone();
-                self.game.start_world(&id, &world);
+                match action {
+                    crate::pages::instance::InstanceAction::LaunchWorld(world) => {
+                        self.game.start_world(&id, &world)
+                    }
+                    crate::pages::instance::InstanceAction::JoinServer(address) => {
+                        self.game.start_server(&id, &address)
+                    }
+                }
             }
             false
         } else if let Some(project) = &self.open_project {
