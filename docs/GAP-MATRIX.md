@@ -1744,3 +1744,26 @@ The fix is in the shell: either stop writing the query into the widget after the
 let the widget be the single owner and read `query()` back after `ui()` returns -- which the shell
 already does at line 1469 for the request, so the direction of truth needs deciding once rather
 than both being written.
+
+# RETRACTION FOUR, 2026-11-01: the clear button works
+
+    clear rect=[[1090,142]-[1106,158]]
+
+clicked at its centre (1098) and the field empties to its placeholder.
+
+The earlier attempts clicked **1090** -- the rectangle's own left edge -- and missed by a
+half-pixel of rounding. So the last confirmed defect in the interaction thread was an aim error
+too, and the count for that thread is now: **four retractions, no real defects**.
+
+What that thread did produce, and it stands: the ✕ was visible only while the pointer was over the
+field, where the reference shows it whenever there is text. That is a genuine fidelity fix, made
+because the run before it forced a look at the condition.
+
+The lesson, and it is the fourth form of the same one:
+
+* a coordinate from a screenshot is screen space, not content space (retractions 1 and 2);
+* a query typed into a field that already holds text is not a query (retraction 3);
+* **an edge is not a centre** (retraction 4).
+
+All four cost rounds. All four were avoidable with the probe that prints the widget's own rect --
+which is now the first thing to do rather than the last.
