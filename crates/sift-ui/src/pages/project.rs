@@ -631,7 +631,7 @@ pub fn draw(
     match state.current(project) {
         Tab::Description => description(ui, inner, theme, project),
         Tab::Versions => versions(ui, inner, theme, project),
-        Tab::Gallery => gallery(ui, inner, theme, project, images, state),
+        Tab::Gallery => gallery(ui, inner, theme, project, images, state, &mut probe_rows),
     }
 
     probe_rows.push(("card".to_owned(), card));
@@ -1275,6 +1275,7 @@ fn gallery(
     project: &Project,
     images: &mut Images,
     state: &mut State,
+    probe_rows: &mut Vec<(String, Rect)>,
 ) {
     if project.gallery.is_empty() {
         empty_tab(ui, inner, theme, "No images yet.");
@@ -1325,6 +1326,8 @@ fn gallery(
                     item.min,
                     egui::vec2(item.width(), image_height),
                 );
+                probe_rows.push((format!("gallery {index}"), item));
+                probe_rows.push((format!("gallery-picture {index}"), picture));
                 let clipped = painter.with_clip_rect(picture);
                 match images.get(ui.ctx(), image.url) {
                     Some(texture) => {
