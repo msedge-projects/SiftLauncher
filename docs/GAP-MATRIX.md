@@ -3010,3 +3010,17 @@ Reverted wholesale rather than half-fixed, because a tree that does not build is
 that is not started. **The scope is now exact**: one state field (and `Copy` off), one signature, one
 call site, two returns, one press inside `files_tab`'s own loop. Five places, all named by the compiler
 in a single build -- which is the cheapest possible way to learn them.
+
+### The five-edit attempt stopped at an anchor and wrote nothing (2026-11-01)
+
+The second attempt applied its first two edits in memory and then failed to find the third anchor --
+the `files_tab` body, whose text had already changed when the path moved to `minecraft` two rounds ago.
+
+Because the script writes once at the end, **the file is untouched**: `git status` shows it clean and the
+tests never stopped passing. That is the right failure mode, and it is worth recording as such -- earlier
+in this session the same situation produced a half-written file and three repair builds.
+
+**The remaining work is now three edits, not five**, because two of the five were the ones that landed in
+memory before the anchor failed and are written out verbatim in the attempt: the `files_dir` field and
+the call site that captures the descent. The next session needs the `files_tab` body as it actually is
+today -- re-read it rather than recalling it -- and then the row press.
