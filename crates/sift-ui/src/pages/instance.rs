@@ -467,6 +467,10 @@ fn screenshots_tab(
 ///
 /// The rules the file system will not enforce for us: a name has to be a bare file name -- no separators,
 /// no `..`, nothing empty -- or a rename becomes a move into somewhere the reader cannot see.
+/// **Wired to nothing yet.** The row control that would call this is parked (see docs/GAP-MATRIX.md):
+/// presses on a second control inside the Files row loop never arrived. The rules and their four tests
+/// are kept because they are the part that has to be right, and because a launcher that renames files
+/// without them can move a file somewhere the reader cannot see.
 fn rename_entry(dir: &std::path::Path, from: &str, to: &str) -> Result<(), String> {
     let to = to.trim();
     if to.is_empty() {

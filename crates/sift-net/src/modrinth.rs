@@ -1529,4 +1529,341 @@ mod tests {
         assert_eq!(f.sha512(), Some("AA"));
         assert_eq!(f.sha1(), Some("BB"));
     }
+
+    // ---- URL construction ------------------------------------------------
+
+    /// The part of a search URL that is the query's own encoding: everything
+    /// between the `query=` parameter and the page size, read off the URL the
+    /// builder makes rather than re-encoded by the test.
+    fn encoded_query(query: &str) -> String {
+        let url = search_url(query);
+        let start = "https://api.modrinth.com/v2/search?query=".len();
+        let end = url.find("&limit=").expect("the page size is on every search");
+        url[start..end].to_string()
+    }
+
+    /// RFC 3986's unreserved set is left alone and everything else becomes
+    /// `%XX` in upper case -- a space is `%20`, never `+`, because this is
+    /// a path-flavoured parameter and not a form body.
+    #[test]
+    fn a_query_keeps_the_unreserved_set_and_encodes_everything_else() {
+        assert_eq!(encoded_query("sodium"), "sodium");
+        assert_eq!(encoded_query("aZ09-._~"), "aZ09-._~");
+        for (input, expected) in [
+            (" ", "%20"),
+            ("+", "%2B"),
+            ("&", "%26"),
+            ("=", "%3D"),
+            ("#", "%23"),
+            ("%", "%25"),
+            ("/", "%2F"),
+            ("?", "%3F"),
+            (",", "%2C"),
+            ("[", "%5B"),
+            ("]", "%5D"),
+            ("\"", "%22"),
+            (":", "%3A"),
+            ("@", "%40"),
+            (";", "%3B"),
+        ] {
+            assert_eq!(encoded_query(input), expected, "encoding {input:?}");
+        }
+        // multi-byte characters are encoded one byte at a time
+        assert_eq!(encoded_query("sódium"), "s%C3%B3dium");
+        // and a space between two words is one %20 between them
+        assert_eq!(encoded_query("a b"), "a%20b");
+    }
+
+    /// A project id or slug is one path segment: a slash in it cannot turn into
+    /// a second segment, which is what keeps the project route pointing at a
+    /// project rather than at a route beside it.
+    #[test]
+    fn a_project_is_one_encoded_path_segment_of_its_route() {
+        assert_eq!(
+            project_url("sodium"),
+            "https://api.modrinth.com/v2/project/sodium"
+        );
+        assert_eq!(
+            project_members_url("sodium"),
+            "https://api.modrinth.com/v2/project/sodium/members"
+        );
+        assert_eq!(
+            project_url("a b"),
+            "https://api.modrinth.com/v2/project/a%20b"
+        );
+        assert_eq!(
+            version_url("a/b"),
+            "https://api.modrinth.com/v2/project/a%2Fb/version"
+        );
+        assert_eq!(
+            project_members_url("a?b"),
+            "https://api.modrinth.com/v2/project/a%3Fb/members"
+        );
+    }
+
+    /// The three lists a browse page's filters are built from are three routes,
+    /// not one document.
+    #[test]
+    fn the_three_tag_lists_are_three_routes() {
+        assert_eq!(
+            tag_categories_url(),
+            "https://api.modrinth.com/v2/tag/category"
+        );
+        assert_eq!(
+            tag_game_versions_url(),
+            "https://api.modrinth.com/v2/tag/game_version"
+        );
+        assert_eq!(tag_loaders_url(), "https://api.modrinth.com/v2/tag/loader");
+    }
+
+    /// A facet group is one JSON array, every group is its own array, and the
+    /// whole parameter is one percent-encoded string. The caller's group keeps
+    /// the quotes it brought, which is what makes the exclusion syntax work.
+    #[test]
+    fn a_facet_group_becomes_one_encoded_json_array() {
+        // one group of one, from the project type
+        assert_eq!(
+            search_url_parts("sodium", Some("mod"), None, 20, 0),
+            "https://api.modrinth.com/v2/search?query=sodium&limit=20\
+             &facets=%5B%5B%22project_type%3Amod%22%5D%5D"
+        );
+        // a caller's groups stand beside it, in the caller's order
+        let url = search_url_parts_with_facets(
+            "sodium",
+            Some("mod"),
+            None,
+            20,
+            0,
+            &[
+                "categories:fabric".to_string(),
+                "categories:forge".to_string(),
+            ],
+        );
+        assert_eq!(
+            url,
+            "https://api.modrinth.com/v2/search?query=sodium&limit=20\
+             &facets=%5B%5B%22project_type%3Amod%22%5D%2C%5B%22categories%3Afabric%22%5D%2C%5B%22categories%3Aforge%22%5D%5D"
+        );
+        // with no project type the caller's groups are the whole of the
+        // parameter, and an empty project type is no project type at all
+        let only = search_url_parts_with_facets(
+            "q",
+            Some(""),
+            None,
+            20,
+            0,
+            &[r#"categories = "fabric""#.to_string()],
+        );
+        assert_eq!(
+            only,
+            "https://api.modrinth.com/v2/search?query=q&limit=20\
+             &facets=%5B%5B%22categories%20%3D%20%22fabric%22%22%5D%5D"
+        );
+        // the facets come before the sort order, which is the order the API
+        // documents its parameters in
+        let ordered = search_url_parts_with_facets(
+            "q",
+            Some("mod"),
+            Some("downloads"),
+            20,
+            20,
+            &["categories:fabric".to_string()],
+        );
+        assert_eq!(
+            ordered,
+            "https://api.modrinth.com/v2/search?query=q&limit=20&offset=20\
+             &facets=%5B%5B%22project_type%3Amod%22%5D%2C%5B%22categories%3Afabric%22%5D%5D\
+             &index=downloads"
+        );
+    }
+
+    // ---- the tag lists ---------------------------------------------------
+
+    /// The three tag lists, in the shapes their routes serve them: a game
+    /// version is `{version, version_type, date, major}` (the v2 route's
+    /// `GameVersionQueryData`), a loader is `{icon, name,
+    /// supported_project_types, ...}` (`LoaderData`) and a category is
+    /// `{icon, name, project_type, header}` (`CategoryData`). The fields this
+    /// crate does not read are here on purpose: a new key must not cost the
+    /// document, which is what every field's default gives.
+
+    fn tags() -> Tags {
+        serde_json::from_str(
+            r#"{
+            "game_versions": [
+                {"version": "1.21.4", "version_type": "release", "date": "2024-12-03T10:12:57Z", "major": true},
+                {"version": "24w45a", "version_type": "snapshot", "date": "2024-11-06T12:00:00Z", "major": false},
+                {"version": "1.21.3", "version_type": "release", "date": "2024-10-23T12:00:00Z", "major": true},
+                {"version": "1.20.6", "version_type": "release", "date": "2024-04-29T12:00:00Z", "major": true}
+            ],
+            "loaders": [
+                {"icon": "fabric.svg", "name": "fabric", "supported_project_types": ["mod", "modpack"]},
+                {"icon": "forge.svg", "name": "forge", "supported_project_types": ["mod"]},
+                {"icon": "paper.svg", "name": "paper", "supported_project_types": ["plugin"]},
+                {"icon": "iris.svg", "name": "iris", "supported_project_types": ["shader"]},
+                {"icon": "datapack.svg", "name": "datapack", "supported_project_types": ["datapack"]}
+            ],
+            "categories": [
+                {"icon": "technology.svg", "name": "technology", "project_type": "mod", "header": "category"},
+                {"icon": "adventure.svg", "name": "adventure", "project_type": "mod", "header": "category"},
+                {"icon": "optimization.svg", "name": "optimization", "project_type": "mod", "header": "performance-impact"},
+                {"icon": "combat.svg", "name": "combat", "project_type": "modpack", "header": "category"},
+                {"icon": "decoration.svg", "name": "decoration", "project_type": "mod", "header": "category"}
+            ]
+        }"#,
+        )
+        .expect("the three lists")
+    }
+
+    fn loader_names(list: Vec<&LoaderTag>) -> Vec<String> {
+        list.iter().map(|loader| loader.name.clone()).collect()
+    }
+
+    fn category_names(list: Vec<&CategoryTag>) -> Vec<String> {
+        list.iter().map(|category| category.name.clone()).collect()
+    }
+
+    fn version_names(tags: &Tags, kind: &str) -> Vec<String> {
+        tags.game_versions_of(kind)
+            .iter()
+            .map(|version| version.version.clone())
+            .collect()
+    }
+
+    /// A loader is offered in a tab only when the API says it supports that kind
+    /// of project, and the list keeps the API's order. This is the filter the
+    /// reference's own browse page applies before it draws a Loader picker.
+    #[test]
+    fn the_loader_list_is_filtered_by_the_project_types_it_supports() {
+        let tags = tags();
+        assert_eq!(loader_names(tags.loaders_for("mod")), ["fabric", "forge"]);
+        assert_eq!(loader_names(tags.loaders_for("modpack")), ["fabric"]);
+        assert_eq!(loader_names(tags.loaders_for("plugin")), ["paper"]);
+        assert_eq!(loader_names(tags.loaders_for("shader")), ["iris"]);
+        assert_eq!(loader_names(tags.loaders_for("datapack")), ["datapack"]);
+        // a project type nobody supports is an empty picker, not every loader
+        assert!(tags.loaders_for("resourcepack").is_empty());
+    }
+
+    /// The filter a tab offers and the parameter the search sends are one rule
+    /// seen twice: each option is spelled `categories:<loader>`, one option is
+    /// one facet group, and two loaders in one filter are one *or* group -- two
+    /// values in one array, which the builder gets because the group's own
+    /// quotes and separators are the caller's.
+    #[test]
+    fn the_loader_filter_a_tab_offers_is_the_facet_the_search_reads() {
+        let tags = tags();
+        let facets: Vec<String> = tags
+            .loaders_for("mod")
+            .iter()
+            .map(|loader| format!("categories:{}", loader.name))
+            .collect();
+        assert_eq!(facets, ["categories:fabric", "categories:forge"]);
+
+        // one loader chosen: one group beside the project type's
+        let one = search_url_parts_with_facets("", Some("mod"), None, 20, 0, &facets[..1]);
+        assert_eq!(
+            one,
+            "https://api.modrinth.com/v2/search?query=&limit=20\
+             &facets=%5B%5B%22project_type%3Amod%22%5D%2C%5B%22categories%3Afabric%22%5D%5D"
+        );
+
+        // both chosen: they are alternatives, so they are one group of two
+        let either = facets.join("\",\"");
+        assert_eq!(either, "categories:fabric\",\"categories:forge");
+        let both = search_url_parts_with_facets("", Some("mod"), None, 20, 0, &[either]);
+        assert_eq!(
+            both,
+            "https://api.modrinth.com/v2/search?query=&limit=20\
+             &facets=%5B%5B%22project_type%3Amod%22%5D%2C%5B%22categories%3Afabric%22%2C%22categories%3Aforge%22%5D%5D"
+        );
+    }
+
+    /// A category belongs to one project type and one header, and the header is
+    /// the sidebar section it is drawn in -- so two categories under one header
+    /// are two rows of the same list, in the API's order.
+    #[test]
+    fn categories_are_filed_under_the_header_their_project_type_gives_them() {
+        let tags = tags();
+        assert_eq!(
+            category_names(tags.categories_under("mod", "category")),
+            ["technology", "adventure", "decoration"]
+        );
+        assert_eq!(
+            category_names(tags.categories_under("mod", "performance-impact")),
+            ["optimization"]
+        );
+        assert_eq!(
+            category_names(tags.categories_under("modpack", "category")),
+            ["combat"]
+        );
+        // a project type with no categories has no sections either
+        assert!(tags.categories_under("shader", "category").is_empty());
+        assert_eq!(tags.headers("mod"), ["category", "performance-impact"]);
+        assert_eq!(tags.headers("modpack"), ["category"]);
+        assert!(tags.headers("shader").is_empty());
+    }
+
+    /// The release types are the API's own strings, and the order is the order
+    /// the route lists them (newest first) rather than a sort of this launcher's.
+    #[test]
+    fn game_versions_are_split_by_release_type_in_the_order_the_api_lists_them() {
+        let tags = tags();
+        assert_eq!(
+            version_names(&tags, "release"),
+            ["1.21.4", "1.21.3", "1.20.6"]
+        );
+        assert_eq!(version_names(&tags, "snapshot"), ["24w45a"]);
+        assert!(tags.game_versions_of("beta").is_empty());
+        // every version is in one of the lists, and each list is a subset
+        assert!(
+            tags.game_versions_of("release").len() + tags.game_versions_of("snapshot").len()
+                == tags.game_versions.len()
+        );
+    }
+
+    /// A member entry is the whole user document with a role beside it -- the
+    /// same type a profile page reads -- so a member with no display name is
+    /// drawn under their username here too.
+    #[test]
+    fn a_member_entry_wraps_the_whole_user_document() {
+        let member: ModrinthMember = serde_json::from_str(
+            r#"{"role": "Owner", "user": {"id": "2REoufqX", "username": "Modrinth",
+                 "name": null, "avatar_url": "https://cdn.modrinth.com/x.webp", "bio": "",
+                 "created": "2023-11-13T23:22:36.604990Z", "role": "admin", "badges": 1}}"#,
+        )
+        .expect("the member document");
+        assert_eq!(member.role, "Owner");
+        assert_eq!(member.user.display_name(), "Modrinth");
+        assert_eq!(member.user.joined_label(), "November 13, 2023");
+        // and a document with no user at all is a member with no name rather
+        // than a parse failure
+        let bare: ModrinthMember =
+            serde_json::from_str(r#"{"role": "Member"}"#).expect("a bare member");
+        assert_eq!(bare.role, "Member");
+        assert_eq!(bare.user.username, "");
+    }
+
+    /// The two lists a card's tag row is composed from travel on the *hit*, so a
+    /// browse page draws them without a second request per card -- and an older
+    /// hit without them is a hit without tags, not a failure.
+    #[test]
+    fn a_search_hit_carries_the_tag_lists_its_card_draws() {
+        let hit: ModrinthSearchHit = serde_json::from_str(
+            r#"{"project_id": "AANobbMI", "slug": "sodium", "title": "Sodium",
+                "description": "Modern rendering engine", "author": "jellysquid3",
+                "downloads": 1, "follows": 1, "icon_url": "https://cdn/i.webp",
+                "latest_version": "mc1.21.1-0.6.0",
+                "versions": ["1.21.1", "1.21"], "categories": ["fabric", "optimization"]}"#,
+        )
+        .expect("a hit");
+        assert_eq!(hit.versions, ["1.21.1", "1.21"]);
+        assert_eq!(hit.categories, ["fabric", "optimization"]);
+        assert_eq!(hit.project_ref(), "AANobbMI");
+
+        let older: ModrinthSearchHit =
+            serde_json::from_str(r#"{"project_id": "x"}"#).expect("an older hit");
+        assert!(older.versions.is_empty() && older.categories.is_empty());
+        assert_eq!(older.project_ref(), "x");
+    }
 }

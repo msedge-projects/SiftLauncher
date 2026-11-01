@@ -4492,3 +4492,15 @@ this pass's: four Screenshots rows were flipped to DONE in the working tree whil
    `role="link"` that opens a server route; what exists is a selection model and a panel. That is real work done and real
    work still missing, and the row now says both.
 
+
+# Corrections to the ledger's dead-code count (2026-11-02)
+
+Checked against the source, one by one:
+
+- **`motion.rs` is NOT dead.** `shell.rs:948` and `shell.rs:1446` call `motion::held_for` for the rail tooltip's
+  hold timing. The ledger's "zero call sites" is wrong; the tooltip has used it since it was written.
+- **`pages/library.rs` was dead, and is now gone**: 975 lines behind a `pub mod library` that no code path ever
+  called. `git rm` plus the declaration removed; the live Library page is `pages/home.rs`.
+- **`rename_entry` stays, and says so itself.** Its doc comment now opens "Wired to nothing yet", names the parked
+  row control and why, and keeps the four tests: the rules are the part that has to be right, and a launcher that
+  renames without them can move a file out of the reader's sight. That is a documented core, not an accident.

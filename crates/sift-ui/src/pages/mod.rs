@@ -13,7 +13,6 @@
 pub mod about;
 pub mod home;
 pub mod instance;
-pub mod library;
 pub mod screenshots;
 pub mod servers;
 pub mod settings;

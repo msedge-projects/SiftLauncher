@@ -2358,6 +2358,9 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
     // Opening starts at the top. Without this the dialog inherited whatever offset it had when
     // it was last closed, and a capture caught it opening on `Account` with `Display`, the
     // first tab, scrolled out of sight above the rail.
+    // The frame that opens the dialog is the frame whose press landed on the rail, outside the
+    // plate: without this flag that same press would close what it just opened.
+    let just_opened = !state.was_open;
     if !state.was_open {
         state.rail_scroll = 0.0;
         state.scroll = 0.0;
@@ -2720,6 +2723,18 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
     if ui
         .interact(close_rect(dialog), egui::Id::new("sift-settings-close"), Sense::click())
         .clicked()
+    {
+        state.open = false;
+    }
+
+    // A press on the scrim closes the dialog: `NewModal.vue:222` defaults `closeOnClickOutside`
+    // to true and `:35` calls `hide()` from the overlay's own click handler. Only the close
+    // button and Escape did that here, so a reader who clicked the darkened page got nothing.
+    if !just_opened
+        && ui.input(|input| input.pointer.any_click())
+        && ui
+            .input(|input| input.pointer.interact_pos())
+            .is_some_and(|pointer| !dialog.contains(pointer))
     {
         state.open = false;
     }
