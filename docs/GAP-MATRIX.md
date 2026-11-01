@@ -2895,3 +2895,25 @@ launcher's bookkeeping beside the game's, and the mod this session installed is 
 `{instance}/mods` (where the installer writes it today) or `{instance}/minecraft/mods` (where the game
 reads it). That question is older than this page -- the install proof wrote to `{instance}/mods` and
 nothing has yet launched a game to see whether that is the right place.
+
+## The mods path is wrong, and the layout itself is the proof (2026-11-01)
+
+Two lines, read side by side:
+
+    sift-core/src/instance/mod.rs:109-110   ensure_dir(&root.join("minecraft"))?;
+                                            ensure_dir(&root.join("jarmods"))?;
+    sift-ui/src/install.rs:284              let mods = paths.instances_dir().join(&instance).join("mods");
+
+`Instance::create` builds a **Prism/MultiMC layout**: the instance folder is bookkeeping
+(`instance.cfg`, `mmc-pack.json`, `jarmods/`, `libraries/`) and the *game directory* is
+`<instance>/minecraft/`. In that layout the game reads `<instance>/minecraft/mods/`, so the installer
+writes one level too high, and `files_tab` lists one level too high for the same reason.
+
+**So the defect is one line in two places**, and the proof is the layout the codebase already committed
+to -- no launch and no reference capture required.
+
+**The change**: `install.rs:284` -> `...join(&instance).join("minecraft").join("mods")`, and
+`files_tab` -> `folder_entries(&instance.path.join("minecraft"))`. Both want the install test that
+asserts the written file's path, and the four-install proof re-run afterwards -- which is why they are
+recorded and not made in this round: a path change that breaks the only proven flow, shipped unverified,
+is the failure this session keeps paying for.
