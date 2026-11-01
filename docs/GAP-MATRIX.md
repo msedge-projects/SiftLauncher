@@ -2266,3 +2266,24 @@ This session has now recorded the same failure twice in different clothes: a sil
 that matches nothing looks exactly like a change that did not work. Every edit of this kind needs
 its own assertion -- the earlier commits in this file did assert, and the ones that skipped it are
 the ones that cost rounds.
+
+### The dialog closes, and the press that opens it no longer dismisses it (2026-11-01)
+
+Two captures, the same pixels sampled in both:
+
+| sample | open | after Escape |
+| --- | --- | --- |
+| (455,450) -- plate edge | #45464b | #16181c |
+| (720,280) -- plate interior | #151618 | #27292e |
+
+So Escape closes it, and the scrim and plate are gone rather than merely repainted.
+
+The first attempt at this was wrong in a way only a capture could show: the dismissal ran before
+the plate was built, so **the press that opened the dialog was also a click outside it** and closed
+it in the same frame. The capture pair came back byte-identical and looked like "the dialog never
+opens", which is what the previous round's file already suspected. The fix is a timestamp: the
+dismissal is ignored for a tenth of a second after opening, so the opening press cannot be the
+closing one.
+
+Still missing, and next: the close mark and the four rows answer nothing. Escape and an outside
+press are two of the four ways out; the other two are the ✕ and a chosen instance type.

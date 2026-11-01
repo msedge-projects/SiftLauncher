@@ -100,7 +100,7 @@ impl Shell {
     ///
     /// Drawn on a foreground layer so it sits over every page, which is where a modal belongs
     /// and is why this is a method taking the context rather than part of `ui`.
-    pub fn draw_create(&self, ctx: &egui::Context, screen: egui::Rect) {
+    pub fn draw_create(&mut self, ctx: &egui::Context, screen: egui::Rect) {
         let theme = &self.theme;
         let painter = ctx.layer_painter(egui::LayerId::new(
             egui::Order::Foreground,
@@ -108,6 +108,22 @@ impl Shell {
         ));
         painter.rect_filled(screen, 0.0, egui::Color32::from_black_alpha(120));
         let plate = egui::Rect::from_center_size(screen.center(), egui::vec2(576.0, 350.0));
+        // A modal has to be dismissable: the reference closes on Escape and on a click outside
+        // the plate. Without this the dialog is a trap, which is what the capture showed --
+        // every row and the close mark drawn, none of them answering.
+        let (pointer, clicked, escaped) = ctx.input(|input| {
+            (
+                input.pointer.interact_pos(),
+                input.pointer.any_click(),
+                input.key_pressed(egui::Key::Escape),
+            )
+        });
+        let settled = ctx.input(|input| input.time) > self.create_opened + 0.15;
+        if escaped || (settled && clicked && pointer.is_some_and(|point| !plate.contains(point))) {
+            self.create_open = false;
+            ctx.request_repaint();
+            return;
+        }
         painter.rect_filled(plate, 12.0, theme.RAISED_BG);
         painter.rect_stroke(
             plate,
@@ -220,6 +236,9 @@ pub struct Shell {
     /// Whether the reference's create dialog is open. The rail's plus sets it, as the
     /// reference's does, where this launcher used to create a Vanilla instance on the press.
     pub create_open: bool,
+    /// When it opened, on the frame clock. The press that opens the dialog is also a click
+    /// outside its plate, so the dismissal has to know it is not the same press.
+    pub create_opened: f64,
     /// The selected rail destination.
     pub rail: Rail,
     /// The hovered rail destination, if any. A press animates between the two, which is
@@ -306,6 +325,7 @@ impl Default for Shell {
         Shell {
             // The create dialog starts closed: the reference opens on Home with nothing over it.
             create_open: false,
+            create_opened: 0.0,
             // The reference opens on Home, and a launcher that opens on a catalogue looks
             // like a store rather than a launcher.
             rail: Rail::Home,
@@ -1007,6 +1027,7 @@ impl Shell {
             // press; the four instance types are the dialog's, and the quick-create default it
             // replaced was the only path this launcher had.
             self.create_open = true;
+            self.create_opened = ui.input(|input| input.time);
             // The window only redraws while something is in flight, so the frame that opens
             // the dialog has to ask for the one that draws it.
             ui.ctx().request_repaint();
