@@ -1914,3 +1914,31 @@ calls `install_file` into `{instances}/{id}/mods`.
 **Next step, and it is small**: create an instance through the UI, press Install again, and the
 toast should read "Installed Sodium 0.x into …". That single run would make this the first feature
 of the session verified by doing rather than by looking.
+
+# DONE, by doing: a mod installs into an instance (2026-11-01)
+
+The first feature of this project verified end to end by driving it, and the file on disk is the
+proof:
+
+1. **Create an instance** through the UI -- Home, "Create an instance" -> the Library shows
+   "Instance 1, Vanilla 1.21.4" and a toast says "Created Instance 1."
+2. **Search** Discover -> Mods -> `sodium` -> Sodium, Sodium Extra, Reese's Sodium Options.
+3. **Press Install** on the first card. Eight seconds later:
+
+> **Installed Sodium Sodium 0.9.3-beta.1 for Fabric 26.3 into Instance 1.**
+
+4. **On disk**:
+
+    /root/.local/share/SiftLauncher/instances/Instance 1/mods/sodium-fabric-0.9.3-beta.1+mc26.3.jar
+
+That is the brief's "file-management behaviour" for mods, working: the version was resolved for
+the instance, the primary file was downloaded, and it landed in the instance's `mods/` folder.
+
+Two things it is honest to note. The toast says "Sodium Sodium" because the version's own name is
+"Sodium 0.9.3-beta.1" and the project's is "Sodium" -- the reference prints the version name alone.
+And `pick_version` was called with an empty game version and loader, so it took the newest build
+rather than one chosen for the instance; the reference's picker is what replaces that, and the
+function already accepts both.
+
+**This is the row that changes the project's footing**: everything before it was pixels, and this
+is behaviour with a file behind it.
