@@ -544,3 +544,25 @@ reference's Files columns. Nothing is pushed, and there is no CI.
 
 **Lab state**: one instance (Fabric 26.3), its mods folder empty after the delete tests. `lab.sh` mounts
 the invoking checkout at `/scratch`, so it is safe to run from any clone.
+
+
+---
+
+## The next slice, spelled out (round 156)
+
+**Servers search: three edits, all located.**
+
+1. `servers.rs:1455` `heading_and_toolbar` returns `(f32, Rect)` -- that `Rect` is the **New-server
+   button**, not the search field. It must also return the plate's rect (computed at `:1490-1495`).
+2. `servers.rs:1195` `let (list_top, new_server) = { ... }` binds it; add the search rect to the binding.
+3. In that same caller -- which owns the `ui` -- register the press and loop events into
+   `state.search`, adding `state.search_focused` to `State` (`:231`).
+
+**The constraint that will bite if ignored**: this page reads presses **from the pointer**, not through
+egui, "because a full-column interaction registered later in the frame would take the press away"
+(`servers.rs:1198`). Wire the field accordingly, or the New-server press beside it stops working.
+
+**Then, in order of value**: server cards as targets (`draw_card` has no click at all); the project
+header's 64/20/13 pt against 96/24/16; the invented "How to install / Discord / Rate" row in the project
+Description; the skins page's toolbar decision (deliberate or wrong -- it is currently both in the docs);
+and the instance menu's four unpressed items (Play, Duplicate, Open folder, Delete).
