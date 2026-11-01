@@ -529,6 +529,15 @@ pub struct Picker {
     pub opened: f64,
 }
 
+/// Whether an install press has to ask where the mod goes.
+///
+/// A mod needs an existing instance, so two or more of them is a question only the reader can answer. A
+/// pack brings its own instance, so asking would be a question with no effect -- which is how this was
+/// found: the picker opened on the Modpacks tab and offered a choice that changed nothing.
+fn needs_picker(is_mod: bool, instances: usize) -> bool {
+    is_mod && instances >= 2
+}
+
 pub struct Shell {
     /// Whether the reference's create dialog is open. The rail's plus sets it, as the
     /// reference's does, where this launcher used to create a Vanilla instance on the press.
@@ -1513,8 +1522,7 @@ impl Shell {
             // reader wants the project's name rather than the archive's file stem.
             // Two or more instances means the reader has to say where a mod goes. A pack needs no
             // such answer -- it brings its own instance -- so the picker's last row is that path.
-            let is_mod = self.project_type == "mod";
-            if is_mod && crate::data::load().0.len() >= 2 {
+            if needs_picker(self.project_type == "mod", crate::data::load().0.len()) {
                 self.picker = Some(Picker {
                     kind: PickerKind::Install {
                         project: card.id.clone(),
@@ -2989,5 +2997,28 @@ mod instance_type_tests {
         for (title, description, _) in INSTANCE_TYPES {
             assert!(!description.is_empty(), "{title} has no description");
         }
+    }
+}
+
+#[cfg(test)]
+mod picker_tests {
+    use super::needs_picker;
+
+    #[test]
+    fn a_mod_with_a_choice_asks() {
+        assert!(needs_picker(true, 2));
+        assert!(needs_picker(true, 7));
+    }
+
+    #[test]
+    fn a_mod_with_one_instance_does_not() {
+        assert!(!needs_picker(true, 0));
+        assert!(!needs_picker(true, 1));
+    }
+
+    #[test]
+    fn a_pack_never_asks() {
+        assert!(!needs_picker(false, 0));
+        assert!(!needs_picker(false, 5));
     }
 }
