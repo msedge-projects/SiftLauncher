@@ -281,7 +281,11 @@ fn install_mod(job: &Job) -> Result<String, String> {
         ));
     }
 
-    let mods = paths.instances_dir().join(&instance).join("mods");
+    // The game directory, not the instance folder: `Instance::create` builds a Prism layout
+    // (`minecraft/`, `jarmods/`, `libraries/`) and the game reads `minecraft/mods`. Writing one
+    // level higher left every installed jar where nothing would load it and where the Files tab
+    // would not list it.
+    let mods = paths.instances_dir().join(&instance).join("minecraft").join("mods");
     install::install_file(&wire, &mods, version)?;
     Ok(success_line(&job.title, &version.name, &instance))
 }

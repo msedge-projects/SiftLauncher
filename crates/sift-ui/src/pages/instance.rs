@@ -468,7 +468,9 @@ fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
 
 /// The Files tab: the instance's folder, one row per entry.
 fn files_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
-    let entries = folder_entries(&instance.path);
+    // The game directory, which is what the reference's Files tab shows: the folder holding
+    // `mods/`, `config/`, `saves/` and `logs/`, not the instance's own bookkeeping beside it.
+    let entries = folder_entries(&instance.path.join("minecraft"));
     if entries.is_empty() {
         stub(ui, card, theme, Tab::Files, "This instance's folder is empty.");
         return;

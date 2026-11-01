@@ -2917,3 +2917,20 @@ to -- no launch and no reference capture required.
 asserts the written file's path, and the four-install proof re-run afterwards -- which is why they are
 recorded and not made in this round: a path change that breaks the only proven flow, shipped unverified,
 is the failure this session keeps paying for.
+
+### Both paths moved to the game directory; the re-walk did not land (2026-11-01)
+
+Two edits, tests green:
+
+* `install.rs:284` writes to `<instance>/minecraft/mods`;
+* `files_tab` lists `instance.path/minecraft`.
+
+The install proof was then re-walked on the corrected path -- create a Fabric instance, search
+`sodium`, press Install -- and **no jar appeared anywhere under `instances/`**. So the sequence did not
+complete, and the corrected path is **unverified**: the code now says what the layout says, and nothing
+has yet shown a mod landing there.
+
+That is the exact state this session's rules forbid shipping as "done", so it is recorded as open with
+its next step named: run the same sequence one step at a time, confirming the page from the frame before
+each press, because the last five aim errors were all of that shape and the lab is now empty of
+instances -- a fresh create is the first thing to check.
