@@ -1790,3 +1790,28 @@ functional defect found in this session -- found by clicking, not by looking.
 What it needs, in order: a version list per project (`/project/{id}/version`), a picker filtered by
 the instance's game version and loader, and an install step that writes to
 `{instance}/mods/`. All three exist as endpoints in `sift-net`; none is wired to this button.
+
+### The mod-install path, scoped against the code (2026-11-01)
+
+The defect has a shape now, and the primitives already exist:
+
+* `sift-game/src/install.rs:1164` -- `pub fn install_file(wire, dir, candidate)`: the one that
+  drops a jar into a `mods/` directory. Already tested (its own tests at `:1764-1800` install the
+  same file twice and check the second does not duplicate).
+* `sift-game/src/install.rs:1562` -- `pub fn install_pack_archive(...)`: what the Install button
+  calls today, and where the "not a readable pack" error at `:1495`/`:1583` comes from.
+* `sift-ui/src/install.rs` -- the job that drives it, and `failure_line` at `:315` which printed
+  the sentence in the capture.
+
+So the fix is a **branch, not a new subsystem**: a project whose file is a jar is a mod, and its
+archive goes through `install_file` into the chosen instance's `mods/`; a project whose archive
+carries `modrinth.index.json` or `manifest.json` stays on `install_pack_archive`.
+
+What is genuinely missing is the **target**: a mod needs an instance chosen before it can land, and
+the reference asks with a picker. Until that picker exists, the honest behaviour is: exactly one
+instance -> install into it and say so; none or several -> say which is needed. That is a smaller
+and more truthful slice than a silent failure, and it is testable without a picker.
+
+**Next round's whole job**: that branch, with the two existing functions, a test that a jar lands
+in `mods/` and a test that a pack still lands as a pack, then one driven capture of the same
+Install click producing a success toast instead of the failure one.
