@@ -3739,3 +3739,20 @@ check is one capture of the servers page's own promo area before and after a car
 
 **The mistake is the fifteenth of its kind and the first about where to look rather than where to press**:
 the address of the thing to compare is as much a hypothesis as the coordinate of the thing to click.
+
+### The detail panel draws at y 1140 -- off the screen (2026-11-01)
+
+The probe answered both questions at once:
+
+    promo rect=[[112,1140]-[1092,1245]]  selected=Some("play.cubecraft.net")
+
+**Selection works** -- the state holds the pressed card's address. And **the panel is drawn a thousand pixels
+down the page, below the 900-pixel window**, so it cannot be seen without scrolling. That is why two captures
+showed nothing: the thing I built renders off-screen, not badly.
+
+**A second finding falls out of the same numbers**: the promo spans x 112..1092, the *main column*, not a
+sidebar. The reference's `ServersPromo` is a sidebar card; ours is a full-width block under the lists. The
+row is open for that reason, and it is a layout gap rather than a missing component.
+
+**So the detail panel needs a home that is on screen** -- the natural one is directly under the toolbar, above
+"Your servers", where the reference's page-level content begins.
