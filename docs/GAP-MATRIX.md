@@ -3408,3 +3408,30 @@ against the source turned out to be a press that missed.**
 
 **Still unverified**: what each item does beyond Edit (which was already driven, opening the instance
 page). Play, Duplicate, Open folder and Delete are drawn and modelled; none has been pressed.
+
+## Skins and Screenshots audited against source (2026-11-01)
+
+Full report: `.scratch/reports/page-skins-screenshots.md` -- 44 rows, one table, every claim citing the reference's own file and line.
+
+**Five P0s, in the order they matter:**
+
+1. **The skins page invents a toolbar.** A search field, Wide/Slim tabs and an Add-skin button, none of
+   which exist in `Skins.vue:1104-1106` -- the reference's upload is the **grid's first tile**
+   (`VirtualSkinSectionList.vue:426-443`). An invented control is worse than a missing one: it teaches a
+   reader a layout the product does not have.
+2. **No rotatable 3D preview.** `skins.rs:1424-1433` blits a 2D atlas; the reference drags at
+   0.01 rad/px (`use-skin-preview-controls.ts:24-30`), and there is no nametag, no `Previewing` badge and
+   no Apply/Reset pair.
+3. **The preview column is 320px + 16px gap** where the source is `1fr:2.5fr` with a 40px gutter --
+   three columns at 1440 where the reference has four.
+4. **Skin cards carry name/author/model text** and never show the selected check or the hover
+   edit/delete overlay (`SkinButton.vue:90-96,118-123`).
+5. **Screenshots**: the hover caption is drawn permanently (`card.vue:233` is `opacity-0` until hover),
+   there is an invented page-level count pill, and **select mode, context menu and delete do not exist**.
+
+**A warning worth keeping**: `skins.rs:89-97`'s module docs are stale -- they claim there is no preview
+column and no shell wiring, both of which are false. **Documentation inside the source can lie as easily
+as a capture can**; the code below it is what counts.
+
+**Named first fix**: P0 1, because deleting an invented toolbar is a removal rather than a build, and it
+makes the page honest before anything is added to it.
