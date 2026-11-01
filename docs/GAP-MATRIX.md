@@ -1872,3 +1872,23 @@ What remains for the feature is the two ends: fetch the version list (the same d
 shape `search.rs` already uses), choose the instance (one -> it; none or several -> say which is
 needed), and call `install_file` into `{instance}/mods/`. The middle -- which version -- is done
 and tested.
+
+### The picker's other end: which instance (2026-11-01)
+
+`choose_instance(ids)` answers the second question a mod install has to ask, and both answers are
+tested:
+
+* **one instance** -> it, named back;
+* **none** -> "there is no instance to install into. Create one first.";
+* **several** -> "there are N instances and choosing one needs a picker that is not built yet."
+
+The count is in the message because "no instances" and "three instances" are different problems,
+and the reference's answer to the second is a modal that does not exist here. This is the honest
+interim the matrix promised, and it is the same shape as `pick_version`: a pure function with the
+decision in it, so the I/O that surrounds it is the only thing left to write.
+
+Left for the feature: fetch `version_url(project)` with the same download-and-parse shape
+`search.rs` uses, take `choose_instance` and `pick_version`, call
+`install_file(wire, {instance}/mods, &version)`, and report the summary. Roughly thirty lines in
+the job, and then the same driven Install click has to end in a success toast rather than a
+message about a picker.

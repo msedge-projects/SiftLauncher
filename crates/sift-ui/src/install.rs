@@ -285,6 +285,22 @@ fn record_project(paths: &SiftPaths, instance: &str, project: &str) {
     let _ = std::fs::write(&cfg, text);
 }
 
+/// Which instance a mod install should land in.
+///
+/// The reference asks with a picker; until that exists, one instance is unambiguous and is used,
+/// and none or several is answered with what the reader has to do rather than a guess. Naming the
+/// count is the point: "no instances" and "three instances" are different problems.
+fn choose_instance(ids: &[String]) -> Result<String, String> {
+    match ids {
+        [] => Err("there is no instance to install into. Create one first.".to_owned()),
+        [only] => Ok(only.clone()),
+        many => Err(format!(
+            "there are {} instances and choosing one needs a picker that is not built yet.",
+            many.len()
+        )),
+    }
+}
+
 /// The version a mod install should take.
 ///
 /// Modrinth returns versions newest first, so the first one that targets the instance's game
@@ -569,5 +585,28 @@ mod pick_tests {
         )
         .expect("the fixture parses");
         assert_eq!(pick_version(&all, "1.20.4", "fabric").map(|v| v.name.as_str()), Some("real"));
+    }
+}
+
+#[cfg(test)]
+mod instance_tests {
+    use super::choose_instance;
+
+    /// One instance is unambiguous, and is named back.
+    #[test]
+    fn one_instance_is_the_answer() {
+        assert_eq!(choose_instance(&["survival".to_owned()]), Ok("survival".to_owned()));
+    }
+
+    /// None and several are different answers, and both say what to do.
+    #[test]
+    fn none_and_several_say_what_is_needed() {
+        let none = choose_instance(&[]).expect_err("empty is an error");
+        assert!(none.contains("no instance"), "{none}");
+
+        let many = choose_instance(&["a".to_owned(), "b".to_owned(), "c".to_owned()])
+            .expect_err("several is an error");
+        assert!(many.contains('3'), "{many}");
+        assert!(many.contains("picker"), "{many}");
     }
 }
