@@ -1551,6 +1551,12 @@ enum Block {
     /// puts a row of theme cards under the heading, with no label of its own
     /// (`layout.vue:44-51`).
     Standalone(Control),
+    /// Several buttons on one line, left to right.
+    ///
+    /// `content-storage.vue:322-356` puts "Verify and repair" and "Clear unused" side by side in
+    /// a `flex gap-2.5`; a `Standalone` block per button stacks them, which is 36 points of
+    /// height and a different shape from the reference's row.
+    Buttons(&'static [Control]),
     /// A bordered warning callout (`Admonition.vue:4`: `rounded-2xl border p-4`, warning =
     /// `border-brand-orange bg-bg-orange`). The language tab's warning is one, and drawing it
     /// as a heading's description lost the box the reference gives it.
@@ -2174,15 +2180,19 @@ const RESOURCES_BLOCKS: &[Block] = &[
         big: false,
         control: None,
     },
-    Block::Standalone(Control::Button {
-        label: STORE_REPAIR_LABEL,
-        glyph: Some(Glyph::ShieldCheck),
-    }),
-    Block::Standalone(Control::Button {
-        label: STORE_CLEAR_LABEL,
-        glyph: Some(Glyph::Trash),
-    }),
     Block::StorageBar,
+    // `content-storage.vue` draws the bar (:295), then its legend (:306-320), then the two
+    // buttons (:322-356) -- the buttons come after the picture of what they act on.
+    Block::Buttons(&[
+        Control::Button {
+            label: STORE_REPAIR_LABEL,
+            glyph: Some(Glyph::ShieldCheck),
+        },
+        Control::Button {
+            label: STORE_CLEAR_LABEL,
+            glyph: Some(Glyph::Trash),
+        },
+    ]),
     Block::Row {
         label: STORE_CACHE_LIMIT_LABEL,
         description: Some(STORE_CACHE_LIMIT_DESCRIPTION),
@@ -3522,7 +3532,7 @@ fn draw_body(
 
     // The gap owed by the block above; a rule brings its own margins.
     let mut gap = 0.0;
-    for block in blocks {
+    for (index, block) in blocks.iter().enumerate() {
         if let Block::Rule = block {
             // The gap the block above owes is settled **before** the rule adds its own
             // margins. This branch used to jump straight to `CONTENT_SECTION_GAP` and drop
@@ -3586,6 +3596,9 @@ fn draw_body(
                 Block::SignInRequired { description } => {
                     eprintln!("probe sign-in y={:.1} description={:?}", y, description)
                 }
+                Block::Buttons(controls) => eprintln!(
+                    "probe buttons y={:.1} count={}", y, controls.len()
+                ),
                 Block::Rule => eprintln!("probe rule y={:.1}", y),
             }
         }
@@ -3606,6 +3619,15 @@ fn draw_body(
                         &body, ui, state, text, control, right, y, pointer,
                     ))
                 });
+                // What follows a heading decides how far it leaves: `mt-4` (16) above a group
+                // of rows, but a section that stacks a heading, a button or a field and a
+                // paragraph uses `gap-2.5` (10). The capture measures both: "Instances" to its
+                // first row at 348 to 392, and "App privacy" to its Manage preferences button at
+                // 231 to 272.
+                let trailing = match blocks.get(index + 1) {
+                    Some(Block::Standalone(_)) | Some(Block::Buttons(_)) => STANDALONE_GAP,
+                    _ => HEADING_TO_ROWS,
+                };
                 draw_labelled(
                     &body,
                     theme,
@@ -3616,7 +3638,7 @@ fn draw_body(
                     description,
                     control,
                     size,
-                ) + HEADING_TO_ROWS
+                ) + trailing
             }
             Block::Row {
                 label,
@@ -4043,6 +4065,47 @@ fn draw_body(
                 // they stack -- a heading, a button, a field and the paragraph under it -- so a
                 // standalone control is followed by ten points, not the row rhythm's 24.
                 control.height() + STANDALONE_GAP
+            }
+            Block::Buttons(controls) => {
+                // Left to right in the pane's own margin, `gap-2.5` between them
+                // (`content-storage.vue:322`). Each keeps its own width and its own press, so a
+                // row is exactly the same controls as a `Standalone` one under another.
+                let mut x = left;
+                let mut height: f32 = 0.0;
+                for control in controls {
+                    let width = control.width(&body);
+                    let control_height = control.height();
+                    let rect = Rect::from_min_size(pos2(x, y), egui::vec2(width, control_height));
+                    control.draw(&body, theme, rect.right(), rect.center().y);
+                    if let Control::Button { label, .. } = control {
+                        if let (Some(tip), Some(pointer)) = (button_tooltip(label), pointer) {
+                            if rect.contains(pointer) {
+                                state.hover_tip = Some((rect, tip));
+                            }
+                        }
+                        if !state.consumed
+                            && ui.input(|input| input.pointer.any_click())
+                            && pointer.is_some_and(|pointer| rect.contains(pointer))
+                        {
+                            state.pressed_button = Some(label);
+                            state.consumed = true;
+                        }
+                        if state.notice_for == Some(label) {
+                            if let Some(line) = &state.notice {
+                                body.text(
+                                    egui::pos2(rect.left(), rect.bottom() + 6.0),
+                                    Align2::LEFT_TOP,
+                                    line.clone(),
+                                    fonts::body(13.0),
+                                    theme.SECONDARY,
+                                );
+                            }
+                        }
+                    }
+                    x = rect.right() + STANDALONE_GAP;
+                    height = height.max(control_height);
+                }
+                height + STANDALONE_GAP
             }
             Block::PathText => {
                 let path = crate::data::instances_dir()
@@ -4829,8 +4892,16 @@ impl Control {
                     vec2(width, height),
                 );
                 // `ButtonFrame`'s `base` colour: `bg-surface-4 text-contrast`
-                // (`ButtonFrame.vue:45`), with `[&>svg]:text-primary` for the glyph.
-                painter.rect_filled(rect, CONTROL_RADIUS, theme.SUPER_RAISED_BG);
+                // (`ButtonFrame.vue:45`), with `[&>svg]:text-primary` for the glyph. The one
+                // exception is the store's "Clear unused", which is `type="colored" color="red"`
+                // (`content-storage.vue:344-355`): the capture shows it as a #8e3448 plate beside
+                // the base-coloured "Verify and repair", not a second grey one.
+                let danger = label == STORE_CLEAR_LABEL;
+                painter.rect_filled(
+                    rect,
+                    CONTROL_RADIUS,
+                    if danger { theme.RED } else { theme.SUPER_RAISED_BG },
+                );
                 let mut x = rect.left() + CONTROL_PADDING;
                 if let Some(glyph) = glyph {
                     icons::draw(
@@ -5280,7 +5351,9 @@ mod tests {
             (Tab::Window, 3),
             (Tab::LaunchHooks, 11),
             (Tab::Syncing, 6),
-            (Tab::Resources, 13),
+            // Twelve: the two store buttons are one block now, because the reference draws
+            // them side by side rather than stacked.
+            (Tab::Resources, 12),
             (Tab::Troubleshooting, 13),
         ];
 
@@ -5329,6 +5402,12 @@ mod tests {
                     }
                     Block::Note { text } => {
                         assert!(!text.is_empty(), "{} has an empty note", tab.label());
+                    }
+                    Block::Buttons(controls) => {
+                        assert!(!controls.is_empty(), "{} has an empty button row", tab.label());
+                        for control in controls {
+                            assert_control_is_lettered(tab, *control);
+                        }
                     }
                     Block::SignInRequired { description } => {
                         assert!(

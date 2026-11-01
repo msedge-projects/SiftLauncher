@@ -269,6 +269,47 @@ This is the merged work plan for making Sift Launcher identical to Modrinth App 
 
 ## 5. Settings
 
+### 5a. Driven against the reference, 2026-11-01 (supersedes the settings rows above that disagree)
+
+Every tab was opened on both clients at 1440x900 and read back with `tools/parity/probe.py`
+(OCR for words, colour runs for rectangles). The reference ran on display `:98`, a private X
+server: display `:99` is shared with other sessions, and a capture taken there is as likely to
+be another session's window as the reference's — one was, which is why this section exists.
+Captures: `.scratch/cap/ref98-tab-*.png` and `.scratch/cap/ours98-tab-*.png`.
+
+Coordinates below are window coordinates with the window at 0,0; both clients draw their own
+48-point title bar, so a screen capture needs no offset on this display.
+
+| # | element | reference | ours (before) | ours (after) | status |
+|---:|---|---|---|---|---|
+| S1 | rail rows at rest | 13 rows; `Feature flags` absent (`developerOnly`, `index.vue:211-213`) | 13 rows, and no way to reach `Feature flags` at all | 13 rows; six presses on the footer mark add the fourteenth | DONE |
+| S2 | rail row pitch | row tops 246, 290, 334, 378, then ACCOUNT heading 434, Profile 465, Java 639, Resources 853 | 240, 284, 328, 372, 428, 454, 624, 838 | 244, 288, 332, 376, 432, 462, 636, 854 — within 2-3 points everywhere | DONE |
+| S3 | rail footer | "Modrinth App 0.22.0" at 733, "Linux 20261025.0.616225" at 753, 24-point mark at 272,730 | same rows, "Sift Launcher 0.1.62" / "Linux 0.1.62" | unchanged; the mark is now the developer-mode button | DONE |
+| S4 | rail scrollbar | 4-point `--surface-5` thumb, 321 points in a 481-point pane, moving with the scroll | a fixed rectangle at the capture's coordinates that never moved | computed from the scroll offset and the content height | DONE |
+| S5 | Appearance | heading 231, description 259, card labels 420, sync row 653 | 231, 257, 419, 651 | unchanged (within 2) | DONE |
+| S6 | Features | Instances 348, Worlds 392, Files 444, Screenshots 496, Sidebar 580 | 344, 384, 431, 479, 560 | 350, 394, 446, 498, 582 | DONE |
+| S7 | Behavior | rule 316, Startup and navigation 348, Minimize app 391, Home and content 647 | no rule; 311, 350, 591 | rule 316, 350, 393, 652 | DONE |
+| S8 | Language | 20-point heading 231; a bordered orange callout 261..352; description 373; search field 424; "Standard languages" 473; rows from 487 at 44 pitch | the warning as the heading's sub-line; an invented `Select` on the category heading holding five of the locales; a search field that filtered nothing; 26-point rows | callout, description, search, category and 40-point bordered rows; the search filters; no select | DONE |
+| S9 | Profile, signed out | `EmptyState`: "Modrinth account required" 470, one line 505, brand button 545..591 | the whole signed-in form: upload, remove, username, bio | the empty state, with the button saying a Modrinth account is unavailable in this build | DONE (text) |
+| S10 | Social, signed out | same empty state, "You control who can interact with you, and manage blocked users with a Modrinth Account." | three chip rows and a blocked-users section | the empty state | DONE (text) |
+| S11 | Privacy | heading 231, "Manage preferences" 272, ads paragraph 309, Telemetry 399 | paragraph above the button: 231, 343, 261 | 231, 276, 313 | DONE |
+| S12 | Java and memory | four blocks at 275, 433, 591, 749; field 36 tall; buttons 34 tall under a 10-point gap | 275, 405, 535, 665 | 275, 433, 591, 749 | DONE |
+| S13 | Troubleshooting | each section is heading, button, description: 231, 274, 312, then 379 | heading carried the description, so the button and paragraph were swapped | 231, 282, 319 | DONE |
+| S14 | Resources | heading 231 with a "Calculating" status at the right; description 259; bar, legend, then the two buttons side by side at 332 (the destructive one red, #8e3448) | description, two stacked grey buttons, then the bar | bar, legend, then both buttons in one row, the destructive one red | DONE |
+| S15 | Syncing | rows at 297/363/429/495 with an edit IconButton beside each toggle; 16-point row gap | rows at 306/381/456/531 with a toggle only; 24-point gap | unchanged | OPEN — the edit button opens a modal this build does not have (BLOCKED-SERVICE), and the row gap is `gap-4` on this tab alone |
+| S16 | Profile and Social illustration | the Rinthbot artwork, 200 points tall above the title | absent; its space is kept so the words land where the capture puts them | absent | OPEN — no artwork ships in this tree |
+| S17 | Language locale list | ~30 locales with flag, translated name and coverage share (100%, 7%, 87%, ...) | five names, English at 100% and the rest at 0% | five names, same figures | OPEN — the coverage figure is what *this* build carries, which is the row's stated purpose; adding the reference's share would promise translations that are not here |
+| S18 | Theme cards | 3-up grid of ~199-point cards, label row with a sun or moon marker | 198x116 cards with a 42-point footer, markers drawn | unchanged | DONE |
+| S19 | Storage legend | three columns with a dot, a 16-point label and a semibold value | one inline line of 12-point text | unchanged | OPEN — measured, not yet drawn |
+| S20 | Heading gaps | `mt-4` (16) above a group of rows, `gap-2.5` (10) inside a section that stacks a heading, a control and a paragraph | one 16-point gap everywhere | the gap follows the next block | DONE |
+| S21 | Row line box | 28 points for both `text-lg` titles and `text-xl` headings, which is what makes a description-less row pitch at 52 | the galley's own height, so rows pitched at 47 | 28-point line box | DONE |
+| S22 | Text fields | `w-full` in every standalone field (532..1157 in the language tab) and 36 points tall | 200 points wide, 28 tall | full width, 36 tall | DONE |
+| S23 | Per-version Java buttons | Install recommended / Detect / Browse under each version's field | drew and reported nothing that could be seen; the answer went to a line the tab never drew | Browse opens the folder picker, Detect reads the runtime, Install recommended says the download service is missing — and the answer is drawn under the buttons | DONE |
+| S24 | Resources and Troubleshooting buttons | each acts and reports | all inert: "Verify and repair", "Clear unused", "Open backups folder", "Export debug info", "Manage preferences" | backups folder opens, debug info is written to `logs/debug-info.txt`, verify reads every instance's profile, and the two that cannot act say so under themselves | DONE |
+| S25 | Per-row reset | a quiet Button on feature-flag rows only (`feature-flag-settings.vue:63-69`) | a "Reset to default" pill on every changed row of every tab | feature-flag rows only | DONE |
+| S26 | Modal plate | 256..1183 x 115..788 at 1440x900 | 256..1184 x 114..786 | unchanged | DONE (within 2 points) |
+
+
 | # | element | reference (file:line) | reference value / behaviour | states & animation | ours (file:line) | gap | status | priority |
 |---:|---|---|---|---|---|---|---|---|
 | 186 | modal shell — plate width, rail vs tab strip | `apps/app-frontend/src/features/settings/app-settings-modal/index.vue:380-381`<br>`packages/ui/src/components/modal/NewModal.vue:743`<br>`packages/ui/src/components/modal/TabbedModal.vue:148` | `apps/app-frontend/src/features/settings/app-settings-modal/index.vue:380-381` width="928px" max-width="928px", capped by `packages/ui/src/components/modal/NewModal.vue:743` max-width min(928px, 100% - 2*var(--gap-lg)); the body is a two-column grid, `packages/ui/src/components/modal/TabbedModal.vue:148` grid-cols-[250px_minmax(0,1fr)] | static | `crates/sift-ui/src/pages/settings.rs:901` DIALOG_WIDTH 928, `:2503` clamps to screen - 2*DIALOG_MARGIN | none - rail, not tab strip, and the width matches | DONE | P0 |
