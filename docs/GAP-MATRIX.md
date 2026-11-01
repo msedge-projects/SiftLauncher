@@ -3957,3 +3957,14 @@ this launcher did not.
 One line: when a project is open the shared stack is given an empty rect instead of the remainder below the
 project's panel. The project page is thereby the first page in the app that **owns its whole column**, and it is
 visible in a single frame.
+
+### The invented action row is gone (2026-11-01)
+
+The Description tab now goes straight from the tab bar to the body: **no "How to install", no Discord, no Rate.**
+Those three were never in the reference -- its only actions are the header's Install and menu -- so they are
+removed rather than restyled.
+
+**Why removal and not a rework**: an invented control teaches a reader a layout the product does not have, and
+this document has now caught six of them (the loader row, the pinned version, the skins toolbar, the screenshots
+count pill, the hover caption and this row). **Every one came from a page being built before its source was
+read.**

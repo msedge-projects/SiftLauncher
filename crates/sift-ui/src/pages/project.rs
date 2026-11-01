@@ -342,6 +342,10 @@ fn description(ui: &mut Ui, card: Rect, theme: &Theme, project: &Project) {
         ("Rate", Glyph::Star),
     ]
     .into_iter()
+    // The reference's description tab has no action row -- its only actions are the Install button
+    // and the menu in the header. These three were invented here, so they are removed rather than
+    // restyled: a control nobody asked for teaches a layout the product does not have.
+    .take(0)
     .enumerate()
     {
         let text = painter.layout_no_wrap(label.to_owned(), fonts::body(13.0), theme.BASE);
