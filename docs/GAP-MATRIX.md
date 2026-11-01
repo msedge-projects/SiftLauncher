@@ -3915,3 +3915,16 @@ plumbing lands first and compiles, then the drawing lands against it.**
 
 The literal sits in a galley built near the end of `search_plate`; drawing it instead of the placeholder when
 `text` is non-empty is the next one-line change.
+
+# CLOSED: the skins search types, shows and filters (2026-11-01)
+
+The field reads **zzz** after typing it, and the Saved skins grid emptied when it did -- so the three parts
+hold on this page as they do on the servers page: **takes the keyboard, shows the query, filters the list.**
+
+It took two rounds and no revert, because this page's toolbar already owned the `Ui` and the state: the only
+work was the press, the event loop, and one line making the galley choose between the query and the
+placeholder.
+
+**Four pages now have working text input** -- Discover, the instance Files panel, Servers and Skins -- and each
+was built from the same recipe rather than from scratch. That is the compounding the last twenty rounds were
+for.

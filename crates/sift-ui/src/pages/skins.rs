@@ -974,8 +974,11 @@ fn search_plate(painter: &egui::Painter, rect: Rect, theme: &Theme, text: &str) 
         egui::pos2(rect.right() - SEARCH_GLYPH_INSET, rect.bottom()),
     );
     let clipped = painter.with_clip_rect(text_rect);
+    // The typed query replaces the placeholder once there is one -- the same rule the servers plate
+    // follows, so the two fields look alike in every state.
+    let shown = if text.is_empty() { SEARCH_PLACEHOLDER } else { text };
     let galley = clipped.layout_no_wrap(
-        SEARCH_PLACEHOLDER.to_owned(),
+        shown.to_owned(),
         fonts::body(SEARCH_TEXT_SIZE),
         theme.SECONDARY,
     );
