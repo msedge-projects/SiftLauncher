@@ -3390,3 +3390,21 @@ knob in either state.
 **Not claimed**: whether the switch filters installed projects. The row stays open and its evidence is
 recorded as a bad crop rather than a negative result, because those are different things and only one of
 them is information about the product.
+
+# CLOSED: the instance card's context menu opens (2026-11-01)
+
+    kebab Instance 2 rect=[[1080,154]-[1108,182]]   centre content (1094,168), screen (1094,188)
+
+Pressed there, the menu opens with the reference's items: **Play**, **Edit**, **Duplicate instance**,
+**Open folder**, and **Delete** in the danger colour, each with its own glyph.
+
+**So the brief's context-menu clause has had a working implementation all along**, and this document has
+called it "painted, not placed" twice -- on the strength of a press aimed at (1063,216), which is
+**twenty-eight points below and thirty-one to the left** of the button.
+
+That is the fifth feature this stretch found complete and merely unreached, after the Files panel, the
+tab bar, the card body and the category filter. **Five for five: every "unbuilt" claim that was checked
+against the source turned out to be a press that missed.**
+
+**Still unverified**: what each item does beyond Edit (which was already driven, opening the instance
+page). Play, Duplicate, Open folder and Delete are drawn and modelled; none has been pressed.
