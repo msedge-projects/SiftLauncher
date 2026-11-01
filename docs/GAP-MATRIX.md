@@ -1767,3 +1767,26 @@ The lesson, and it is the fourth form of the same one:
 
 All four cost rounds. All four were avoidable with the probe that prints the widget's own rect --
 which is now the first thing to do rather than the last.
+
+## P0 found by driving: Install on a mod runs the modpack installer (2026-11-01)
+
+Clicked **Install** on the Sodium card in a live search. The button works -- it fetches -- and then
+reports, verbatim:
+
+> Could not install Sodium: that archive is not a readable pack: invalid pack: neither
+> modrinth.index.json nor manifest.json is present.
+
+That message is the whole bug in one line. A **mod** is a `.jar`; the installer is looking for a
+**modpack**'s `modrinth.index.json` or a CurseForge `manifest.json`. So the download path is
+wired, the archive is fetched, and the wrong reader is applied to it.
+
+The reference's behaviour, for comparison: Install on a mod opens a version picker (game version,
+loader), asks which instance to install into, then writes the jar into that instance's
+`mods/` folder and shows progress. None of those three steps exists here.
+
+**Scope**: this is the brief's "file-management behaviour" row, and it is the first genuine
+functional defect found in this session -- found by clicking, not by looking.
+
+What it needs, in order: a version list per project (`/project/{id}/version`), a picker filtered by
+the instance's game version and loader, and an install step that writes to
+`{instance}/mods/`. All three exist as endpoints in `sift-net`; none is wired to this button.
