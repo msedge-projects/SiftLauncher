@@ -4228,3 +4228,20 @@ than by reasoning about layering.
 
 **Parked, not shipped**: the button is out again, `Game::start_server` and the picker's `Join` kind stay (both
 compile, both are the hard half), and the row is open with five attempts recorded so nobody repeats them.
+
+# Skins: BLOCKED-SERVICE, not open (2026-11-01)
+
+The Skins P0s -- no faces on the cards, no preview column, the invented toolbar, the missing Apply/Reset -- all
+bottom out in one absence: **there is no skin to draw.** `skins.rs:557` says it plainly: no licence, no file, no
+download and **no texture URL** is available, so `Skin` carries a name, a source and a variant and nothing to render.
+
+So the renderer is not the missing piece; the *source* is. Marking these rows OPEN would invite someone to build a
+3D preview of nothing, which is the invented-control failure this document has caught six times.
+
+**Status: BLOCKED-SERVICE**, on the same footing as the account pages: they need Modrinth's skin API or a local
+file picker, and the second of those is buildable without the service -- a reader choosing a PNG from disk is enough
+to give the renderer something to draw.
+
+**That is the recommended path**: a local skin file (the Files panel already knows how to read a folder), the 64x64
+grid parsed into head/body rectangles, and the cards' faces drawn from it. No service required, and every part
+verifiable in this lab.
