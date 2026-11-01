@@ -2126,17 +2126,25 @@ const WINDOW_BLOCKS: &[Block] = &[
         description: Some(WINDOW_FULLSCREEN_DESCRIPTION),
         control: Control::Switch { on: false },
     },
+    // `window-settings.vue:30-64`: both are `type="number"` inputs bound to
+    // `settings.game_resolution`, so they open on the instance defaults -- the capture reads
+    // 854 and 480 -- rather than on a placeholder. `Enter width…` remains the catalogue's
+    // placeholder for an emptied field.
     Block::Row {
         label: WINDOW_WIDTH_LABEL,
         description: Some(WINDOW_WIDTH_DESCRIPTION),
-        control: Control::Text {
-            placeholder: WINDOW_WIDTH_PLACEHOLDER,
+        control: Control::Number {
+            value: 854,
+            unit: "",
         },
     },
     Block::Row {
         label: WINDOW_HEIGHT_LABEL,
         description: Some(WINDOW_HEIGHT_DESCRIPTION),
-        control: Control::Text { placeholder: WINDOW_HEIGHT_PLACEHOLDER },
+        control: Control::Number {
+            value: 480,
+            unit: "",
+        },
     },
 ];
 
@@ -5695,8 +5703,9 @@ mod tests {
             Control::Slider { .. } => None,
             Control::Text { placeholder } => Some(placeholder),
             Control::TextArea { placeholder, .. } => Some(placeholder),
-            // The unit is the word this control has; its number is not one.
-            Control::Number { unit, .. } => Some(unit),
+            // The unit is the word this control has; its number is not one. A unitless number
+            // (the Window tab's width and height) has no word at all, like a switch.
+            Control::Number { unit, .. } => (!unit.is_empty()).then_some(unit),
             // A chip group's words are its options; the row's label names the group.
             Control::Chips { options, .. } => options.first().copied(),
             Control::Select { value, .. } => Some(value),
