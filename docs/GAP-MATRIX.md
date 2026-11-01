@@ -2751,3 +2751,17 @@ every element verified, five and a half remain.
 
 That is the session's most useful number, and it is the one it had been getting wrong in its own
 favour while telling the reader it was measuring.
+
+### The library shows what the dialog wrote (2026-11-01)
+
+Aimed at the instance page and missed it -- the click landed on the card without opening it -- but the
+frame answered a different question: the card reads **"Instance 2 / Fabric 26.3"**.
+
+That is the create dialog's two writes arriving in the interface: the loader component the profile
+carries and the Minecraft version the manifest gave. Before this session the same card read
+"Vanilla 1.21.4" for every instance, because every instance was one.
+
+**How an instance page opens is now an open question with a named shape**: the card's body did not
+open it, so it is either the ⋮ menu beside the play button or the play button itself. One capture of
+each settles it, and it must precede any work on the page -- the brief's file-management requirements
+live behind that door.
