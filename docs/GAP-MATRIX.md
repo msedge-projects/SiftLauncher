@@ -2228,3 +2228,18 @@ plate's rect from inside `draw_create` on any frame, then click. Two numbers.
 Four API guesses went into this round before the answer was to pass the screen rect in from the
 frame (`ui.max_rect()`): this egui version keeps no `screen_rect` on the context, on the input, or
 on `RawInput`. Reading the caller's own rect was the obvious move and the last one tried.
+
+### The dialog never runs, so the click never lands (2026-11-01)
+
+The probe printed nothing in a full run: `draw_create` is never called, so `create_open` is never
+true, so the press at (32,394) is not reaching the rail's plus. The click, not the drawing, is the
+broken end.
+
+And (32,394) was itself derived from a **scaled screenshot** -- the same error this document has
+now recorded five times. The rail's real button rects have only ever been printed once, for the
+compass, and the rest have been estimated.
+
+**So the next step is one probe, not one guess**: print the `create` rect and the pointer from the
+rail's own code, exactly as was done for `rail1` two rounds before the compass started working.
+Every control this session has found has been found that way; every control estimated from a
+picture has cost a round.
