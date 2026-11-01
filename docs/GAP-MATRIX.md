@@ -3694,3 +3694,15 @@ this launcher has none, so the press selects instead. That is a smaller behaviou
 is drivable -- which the "open a detail view" version was not, without building a whole page.
 
 **Two audit rows closed, both driven**: the servers search (types, shows, filters) and now the cards.
+
+### The selection can be taken back (2026-11-01)
+
+Two presses on the same card and the bar is gone; one press and it appears -- the two halves were captured in
+consecutive rounds. So the highlight is a **toggle**, not a one-way state a reader cannot undo.
+
+**Why it matters more than it looks**: the last round's risk was a highlight that does nothing, which is its
+own kind of lie. A toggle is not the reference's behaviour -- the reference opens a detail view -- but it is a
+**complete, reversible, honest** behaviour, and it is the correct placeholder until that view is built.
+
+**Recorded as the honest gap**: pressing a card in the reference goes somewhere; here it selects. The row
+stays open on that basis rather than being closed on a bar.

@@ -1295,7 +1295,13 @@ pub fn draw(
                         .clicked();
                     let address = &section.cards[index].address;
                     if pressed {
-                        state.selected = Some(address.clone());
+                        // A second press on the same card clears the selection: the highlight is a
+                        // toggle until the detail view exists, so it can always be undone.
+                        state.selected = if state.selected.as_deref() == Some(address.as_str()) {
+                            None
+                        } else {
+                            Some(address.clone())
+                        };
                         ui.ctx().request_repaint();
                     }
                     if state.selected.as_deref() == Some(address.as_str()) {
