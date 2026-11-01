@@ -455,6 +455,12 @@ const NO_RESULTS_HEADING: &str = "No matching screenshots";
 /// `app.screenshots.no-results-description`.
 const NO_RESULTS_BODY: &str = "Try a different search or filter.";
 
+/// `app.screenshots.error-heading`.
+const ERROR_HEADING: &str = "Failed to load screenshots";
+
+/// `commonMessages.retryButton`.
+const RETRY: &str = "Retry";
+
 /// The month names `Intl.DateTimeFormat` prints for `month: 'long'`.
 const MONTHS: [&str; 12] = [
     "January", "February", "March", "April", "May", "June", "July", "August", "September",
@@ -602,6 +608,8 @@ pub struct State {
     shots: Vec<Shot>,
     /// Whether the folder has been read once.
     scanned: bool,
+    /// Why the last scan failed, when it did. Drawn as the error state (`index.vue:1506-1517`).
+    error: Option<String>,
     /// The cards the reader has selected, by the path that names them.
     selected: BTreeSet<PathBuf>,
     /// The open card menu: which card, and where its top-left corner goes.
@@ -632,6 +640,7 @@ impl Default for State {
             search_focused: false,
             shots: Vec::new(),
             scanned: false,
+            error: None,
             selected: BTreeSet::new(),
             menu: None,
             armed: None,
@@ -1139,9 +1148,29 @@ pub fn draw(
     // and comes back to find it.
     // shortcut: the list is scanned on the first draw and while empty, not once it has
     // shots, until a file watcher can report a new screenshot. A delete re-reads it by hand.
-    if !state.scanned || state.shots.is_empty() {
-        state.shots = read_shots();
+    if !state.scanned || (state.shots.is_empty() && state.error.is_none()) {
+        match read_shots() {
+            Ok(shots) => {
+                state.shots = shots;
+                state.error = None;
+            }
+            Err(message) => {
+                state.shots.clear();
+                state.error = Some(message);
+            }
+        }
         state.scanned = true;
+    }
+
+    // A scan that failed is not an empty folder: the source draws an error state carrying the
+    // query's own message and a Retry button (`index.vue:1506-1517`).
+    if let Some(message) = state.error.clone() {
+        if error_state(ui, rect, theme, &message) {
+            state.scanned = false;
+            state.error = None;
+            ui.ctx().request_repaint();
+        }
+        return false;
     }
     state.prune();
 
@@ -2251,7 +2280,15 @@ fn delete_paths(state: &mut State, paths: &[PathBuf], seconds: f64) {
             }
             state.armed = None;
             state.menu = None;
-            state.shots = read_shots();
+            // The re-scan after a delete can fail too, and says so rather than showing an
+            // emptied page as if the files were gone.
+            match read_shots() {
+                Ok(shots) => {
+                    state.shots = shots;
+                    state.error = None;
+                }
+                Err(message) => state.error = Some(message),
+            }
             state.scanned = true;
             state.say(seconds, deleted_sentence(count));
         }
@@ -2958,6 +2995,82 @@ fn empty_state(
     );
 }
 
+/// The error state: `EmptyState type="error"` with the query's message and a Retry button
+/// (`index.vue:1506-1517`). Returns whether the reader pressed Retry.
+fn error_state(ui: &mut Ui, rect: Rect, theme: &Theme, message: &str) -> bool {
+    let painter = ui.painter();
+    let retry_height = CONTROL_HEIGHT;
+    let total = ILLUSTRATION_HEIGHT + HEADING_LINE + EMPTY_TEXT_GAP + EMPTY_BODY_LINE
+        + EMPTY_TEXT_GAP * 2.0
+        + retry_height;
+    if rect.height() < total || rect.width() < 1.0 {
+        return false;
+    }
+    let top = rect.center().y - total / 2.0;
+    let centre_x = rect.center().x;
+
+    icons::draw(
+        painter,
+        Glyph::CircleAlert,
+        Rect::from_center_size(
+            egui::pos2(centre_x, top + ILLUSTRATION_HEIGHT / 2.0),
+            Vec2::splat(ILLUSTRATION_GLYPH),
+        ),
+        theme.SECONDARY,
+    );
+    let heading_y = top + ILLUSTRATION_HEIGHT + HEADING_LINE / 2.0;
+    painter.text(
+        egui::pos2(centre_x, heading_y),
+        Align2::CENTER_CENTER,
+        ERROR_HEADING,
+        fonts::semibold(HEADING_SIZE),
+        theme.CONTRAST,
+    );
+    painter.text(
+        egui::pos2(
+            centre_x,
+            heading_y + HEADING_LINE / 2.0 + EMPTY_TEXT_GAP + EMPTY_BODY_LINE / 2.0,
+        ),
+        Align2::CENTER_CENTER,
+        message,
+        fonts::body(EMPTY_BODY_SIZE),
+        theme.SECONDARY,
+    );
+
+    // The Retry button: an outlined `Button` under the message.
+    let width = text_button_width(painter, RETRY, theme);
+    let button = Rect::from_min_size(
+        egui::pos2(
+            centre_x - width / 2.0,
+            heading_y + HEADING_LINE / 2.0 + EMPTY_TEXT_GAP + EMPTY_BODY_LINE + EMPTY_TEXT_GAP * 2.0,
+        ),
+        egui::vec2(width, retry_height),
+    );
+    painter.rect_filled(button, CONTROL_RADIUS, theme.SURFACE_4);
+    painter.rect_stroke(
+        button,
+        CONTROL_RADIUS,
+        Stroke::new(STROKE_WIDTH, theme.SURFACE_5),
+        egui::StrokeKind::Inside,
+    );
+    painter.text(
+        button.center(),
+        Align2::CENTER_CENTER,
+        RETRY,
+        fonts::semibold(BUTTON_TEXT_SIZE),
+        theme.CONTRAST,
+    );
+    // The press is read from the pointer, the way the toolbar's are: this page registers its
+    // controls that way after the ordering that steals an `interact` from a rect under another.
+    ui.input(|input| {
+        input.pointer.primary_clicked()
+            && input
+                .pointer
+                .interact_pos()
+                .is_some_and(|at| button.contains(at))
+    })
+}
+
 // ---------------------------------------------------------------------------
 // Reading the disk
 // ---------------------------------------------------------------------------
@@ -3083,11 +3196,19 @@ fn stamp_from_unix(seconds: i64) -> Stamp {
 /// formats [SHOT_EXTENSIONS] names. A folder or file that cannot be read is skipped — the same
 /// rule the launcher's data loading uses — because one unreadable instance must not hide the
 /// rest.
-fn read_shots() -> Vec<Shot> {
+fn read_shots() -> Result<Vec<Shot>, String> {
     let mut shots = Vec::new();
-    let Ok(instances) = fs::read_dir(crate::data::instances_dir()) else {
-        // No instances folder yet is an ordinary first run, not an error.
-        return shots;
+    let instances = match fs::read_dir(crate::data::instances_dir()) {
+        Ok(read) => read,
+        // No instances folder yet is an ordinary first run, not an error; anything else is a
+        // folder that exists and cannot be read, which the page must say rather than draw as an
+        // empty one.
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(shots),
+        Err(error) => {
+            return Err(format!(
+                "The screenshots folder could not be read: {error}"
+            ))
+        }
     };
     for instance in instances.flatten() {
         // The instance root is the Prism-style folder; the game writes into its `minecraft/`
@@ -3140,7 +3261,7 @@ fn read_shots() -> Vec<Shot> {
             });
         }
     }
-    shots
+    Ok(shots)
 }
 
 

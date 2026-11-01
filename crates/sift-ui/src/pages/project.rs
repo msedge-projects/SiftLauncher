@@ -61,6 +61,15 @@ use crate::theme::{Theme, STROKE_WIDTH};
 /// The page column's inset: `p-6` (`Index.vue:48`).
 const PAGE_PADDING: f32 = 24.0;
 
+/// The menu's width under the kebab: a `ContextMenu` popover, wide enough for its longest row.
+const MENU_WIDTH: f32 = 200.0;
+
+/// A menu row's height.
+const MENU_ROW: f32 = 32.0;
+
+/// `p-1` inside the menu's plate.
+const MENU_PAD: f32 = 4.0;
+
 /// The gap between the header, the tabs and the card: `gap-4` (`Index.vue:48`).
 const BLOCK_GAP: f32 = 16.0;
 
@@ -302,16 +311,16 @@ impl Channel {
 }
 
 /// One release, as `GET /v2/project/{id}/version` returns it.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Version {
     /// `version_number`: the version's own name.
-    pub number: &'static str,
+    pub number: String,
     /// `name`: the longer label the row's tooltip carries.
-    pub name: &'static str,
+    pub name: String,
     /// `game_versions`: the Minecraft versions the file runs on.
-    pub game_versions: &'static [&'static str],
+    pub game_versions: Vec<String>,
     /// `loaders`: the platforms the file is built for.
-    pub loaders: &'static [&'static str],
+    pub loaders: Vec<String>,
     /// `version_type`.
     pub channel: Channel,
     /// `date_published`.
@@ -321,14 +330,14 @@ pub struct Version {
 }
 
 /// One gallery image, as `project.gallery` returns it.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Image {
     /// `url`: the thumbnail the grid draws.
-    pub url: &'static str,
+    pub url: String,
     /// `title`.
-    pub title: &'static str,
+    pub title: String,
     /// `description`.
-    pub description: &'static str,
+    pub description: String,
     /// `created`.
     pub created: Date,
 }
@@ -338,37 +347,43 @@ pub struct Image {
 #[derive(Clone)]
 pub struct Project {
     /// The project's name.
-    pub title: &'static str,
+    pub title: String,
     /// The team that publishes it.
-    pub author: &'static str,
+    pub author: String,
     /// The one-line summary the header shows.
-    pub summary: &'static str,
-    /// The longer description, already broken into paragraphs.
-    pub body: &'static [&'static str],
+    pub summary: String,
+    /// The longer description, already broken into paragraphs. Empty until the project endpoint
+    /// has answered.
+    pub body: Vec<String>,
     /// The loader and environment tags the header shows.
-    pub tags: &'static [(&'static str, Glyph)],
-    /// Game versions the project supports, newest first.
-    pub game_versions: &'static [&'static str],
+    pub tags: Vec<(String, Glyph)>,
+    /// Game versions the project supports, newest first, from the `version` endpoint.
+    pub game_versions: Vec<String>,
     /// The download count, abbreviated.
-    pub downloads: &'static str,
+    pub downloads: String,
     /// The follower count, abbreviated.
-    pub followers: &'static str,
+    pub followers: String,
     /// The icon's URL.
-    pub icon: &'static str,
+    pub icon: String,
     /// The project's links, by the catalogue's `project.about.links.*` labels.
-    pub links: &'static [&'static str],
+    pub links: Vec<String>,
     /// The team, as `(name, role)`.
-    pub creators: &'static [(&'static str, &'static str)],
-    /// When it was first published.
-    pub published: Date,
-    /// When it last changed.
-    pub updated: Date,
+    pub creators: Vec<(String, String)>,
+    /// When it was first published, when the API said.
+    pub published: Option<Date>,
+    /// When it last changed, when the API said.
+    pub updated: Option<Date>,
     /// The licence it ships under.
-    pub license: &'static str,
+    pub license: String,
+    /// The project's slug, which its Modrinth URL ends with (`modrinth.com/{type}/{slug}`). A
+    /// search hit has no slug, and Modrinth resolves the id in the same position.
+    pub slug: String,
+    /// Labrinth's `project_type`: `mod`, `modpack`, `resourcepack`, `shader`, `datapack`.
+    pub kind: String,
     /// The gallery, in the order the reference shows it.
-    pub gallery: &'static [Image],
+    pub gallery: Vec<Image>,
     /// The releases, newest first.
-    pub versions: &'static [Version],
+    pub versions: Vec<Version>,
 }
 
 /// The page's tabs. `Description` is the default.
@@ -424,6 +439,10 @@ pub struct State {
     pub channels: Vec<Channel>,
     /// The loader chips the reader has toggled on.
     pub loaders: Vec<&'static str>,
+    /// A press the page took and could not act on, waiting for the shell.
+    pressed: Option<Press>,
+    /// Whether the header's menu is open.
+    menu: bool,
 }
 
 impl Default for State {
@@ -434,11 +453,36 @@ impl Default for State {
             viewer: None,
             channels: Vec::new(),
             loaders: Vec::new(),
+            pressed: None,
+            menu: false,
         }
     }
 }
 
+/// A press the page took but cannot act on.
+///
+/// The page draws the reference's Install button and kebab menu, and the work behind both is the
+/// shell's: the installer, the menus and the routes all live there, and this page's `draw`
+/// returns a `bool` rather than an action (`shell.rs:812-833`). So the press is recorded here
+/// and the shell takes it -- which is one line on the shell's side and no new seam:
+///
+/// ```ignore
+/// if let Some(press) = self.project_state.take_press() { self.press_install(&project) }
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Press {
+    /// The header's Install button.
+    Install,
+    /// The header's kebab menu.
+    More,
+}
+
 impl State {
+    /// Take the last press, if the page is holding one.
+    pub fn take_press(&mut self) -> Option<Press> {
+        self.pressed.take()
+    }
+
     /// The tab that is showing, clamped to the tabs this project offers.
     pub fn current(&self, project: &Project) -> Tab {
         let offered = tabs(project);
@@ -516,14 +560,17 @@ fn gallery_grid(inner_width: f32) -> (usize, f32) {
 fn filtered_versions<'a>(
     versions: &'a [Version],
     channels: &[Channel],
-    loaders: &[&'static str],
+    loaders: &[&str],
 ) -> Vec<&'a Version> {
     versions
         .iter()
         .filter(|version| {
             (channels.is_empty() || channels.contains(&version.channel))
                 && (loaders.is_empty()
-                    || version.loaders.iter().any(|loader| loaders.contains(loader)))
+                    || version
+                        .loaders
+                        .iter()
+                        .any(|loader| loaders.contains(&loader.as_str())))
         })
         .collect()
 }
@@ -612,9 +659,10 @@ pub fn draw(
 
     // Every rectangle a press is read against, for `SIFT_PROJECT_PROBE`.
     let mut probe_rows: Vec<(String, Rect)> = vec![("column".to_owned(), column)];
+    let mut owed = false;
 
     // ---- The header, with its rule and its 16-point foot ----
-    let header_height = header(ui, column, theme, images, project, &mut probe_rows);
+    let header_height = header(ui, column, theme, images, project, state, &mut probe_rows);
     let rule_y = column.top() + header_height + HEADER_PAD_BOTTOM;
     ui.painter().rect_filled(
         Rect::from_min_size(
@@ -625,10 +673,12 @@ pub fn draw(
         theme.DIVIDER,
     );
 
+    // The header's menu, over the page, under the kebab it was opened from.
+    owed |= header_menu(ui, column, theme, project, state);
+
     // ---- The tab strip ----
     let offered = tabs(project);
     let strip_top = rule_y + STROKE_WIDTH + BLOCK_GAP;
-    let mut owed = false;
     let strip = if offered.len() > 1 {
         let (strip, sliding) =
             tab_strip(ui, column, strip_top, theme, state, project, &offered, &mut probe_rows);
@@ -670,6 +720,11 @@ pub fn draw(
     // The gallery's viewer is drawn last, over everything the page owns.
     owed |= viewer(ui, rect, theme, images, state, project);
     probe(ui, &probe_rows);
+    if std::env::var_os("SIFT_PROJECT_PROBE").is_some() {
+        if let Some(press) = state.pressed {
+            eprintln!("project-probe holding press={press:?}");
+        }
+    }
     owed
 }
 
@@ -703,12 +758,13 @@ fn header(
     theme: &Theme,
     images: &mut Images,
     project: &Project,
+    state: &mut State,
     probe_rows: &mut Vec<(String, Rect)>,
 ) -> f32 {
     let painter = ui.painter();
     let avatar = Rect::from_min_size(column.min, Vec2::splat(AVATAR));
     painter.rect_filled(avatar, 16, theme.BUTTON_BG);
-    if let Some(texture) = images.get(ui.ctx(), project.icon) {
+    if let Some(texture) = images.get(ui.ctx(), &project.icon) {
         painter.image(
             texture.id(),
             avatar,
@@ -733,7 +789,7 @@ fn header(
     painter.text(
         egui::pos2(text_left, column.top()),
         Align2::LEFT_TOP,
-        project.title,
+        project.title.as_str(),
         fonts::semibold(TITLE_SIZE),
         theme.CONTRAST,
     );
@@ -745,7 +801,7 @@ fn header(
         .max(1.0);
     let summary = clamp_to_lines(
         painter,
-        project.summary,
+        &project.summary,
         fonts::body(SUMMARY_SIZE),
         theme.SECONDARY,
         summary_width,
@@ -763,8 +819,8 @@ fn header(
     let meta_top = summary_top + summary_height + META_CONTENT_GAP;
     let mut x = text_left;
     for (index, (glyph, value)) in [
-        (Glyph::Download, project.downloads),
-        (Glyph::Heart, project.followers),
+        (Glyph::Download, project.downloads.as_str()),
+        (Glyph::Heart, project.followers.as_str()),
     ]
     .into_iter()
     .enumerate()
@@ -796,14 +852,28 @@ fn header(
         }
     }
     x += META_GAP;
-    for (tag, glyph) in project.tags {
-        let chip = tag_rect(painter, egui::pos2(x, meta_top), theme, tag, Some(*glyph));
+    for (tag, glyph) in &project.tags {
+        let chip = tag_rect(painter, egui::pos2(x, meta_top), theme, tag.as_str(), Some(*glyph));
         x = chip.right() + TAG_GAP;
     }
 
-    // The install button and the kebab menu. Both are drawn at the reference's size and left
-    // without an action: the installer is the shell's, and this page cannot return one.
+    // The install button and the kebab menu. Both are drawn at the reference's size; the work
+    // behind them is the shell's, so a press is recorded for it to take rather than dropped.
     primary_button(painter, install, theme, "Install", Glyph::Download);
+    if ui
+        .interact(install, egui::Id::new("project-install"), Sense::click())
+        .clicked()
+    {
+        state.pressed = Some(Press::Install);
+        ui.ctx().request_repaint();
+    }
+    if ui
+        .interact(kebab, egui::Id::new("project-more"), Sense::click())
+        .clicked()
+    {
+        state.menu = !state.menu;
+        ui.ctx().request_repaint();
+    }
     icons::draw(
         painter,
         Glyph::EllipsisVertical,
@@ -817,6 +887,113 @@ fn header(
     // The header's own height: the taller of the avatar and the text column.
     let text_height = TITLE_LINE + SUMMARY_GAP + summary_height + META_CONTENT_GAP + TAG_HEIGHT;
     AVATAR.max(text_height)
+}
+
+/// The header's menu: the rows the reference's kebab carries that this build can carry out
+/// (Index.vue:376-400).
+///
+/// The reference's list is Follow (disabled, "Coming soon"), Save (disabled, "Coming soon"),
+/// Open in Modrinth, a divider and Report. Follow and Save are account state this build has no
+/// client for, and Report is a page this launcher does not have. What is left is the project's
+/// own link twice: open it, or copy it. Both are real, and a row that copied nothing would be
+/// the one outcome a menu must not have.
+fn header_menu(
+    ui: &mut Ui,
+    column: Rect,
+    theme: &Theme,
+    project: &Project,
+    state: &mut State,
+) -> bool {
+    if !state.menu {
+        return false;
+    }
+    let rows = [
+        ("Open in Modrinth", Glyph::External),
+        ("Copy link", Glyph::ClipboardCopy),
+    ];
+    let plate = Rect::from_min_size(
+        egui::pos2(column.right() - MENU_WIDTH, column.top() + KEBAB + 4.0),
+        egui::vec2(MENU_WIDTH, rows.len() as f32 * MENU_ROW + 2.0 * MENU_PAD),
+    );
+    let painter = ui.painter();
+    painter.rect_filled(plate, 10, theme.SUPER_RAISED_BG);
+    painter.rect_stroke(
+        plate,
+        10,
+        Stroke::new(STROKE_WIDTH, theme.SURFACE_5),
+        egui::StrokeKind::Inside,
+    );
+
+    let url = format!("https://modrinth.com/{}/{}", project.kind, project.slug);
+    let mut chosen = None;
+    for (index, (label, glyph)) in rows.into_iter().enumerate() {
+        let row = Rect::from_min_size(
+            egui::pos2(
+                plate.left() + MENU_PAD,
+                plate.top() + MENU_PAD + index as f32 * MENU_ROW,
+            ),
+            egui::vec2(plate.width() - 2.0 * MENU_PAD, MENU_ROW),
+        );
+        let response = ui.interact(row, egui::Id::new(("project-menu", index)), Sense::click());
+        if response.hovered() {
+            ui.painter().rect_filled(row, 8, theme.SURFACE_4);
+        }
+        icons::draw(
+            ui.painter(),
+            glyph,
+            Rect::from_center_size(
+                egui::pos2(row.left() + TAG_PAD_X + TAG_GLYPH / 2.0, row.center().y),
+                Vec2::splat(TAG_GLYPH),
+            ),
+            theme.BASE,
+        );
+        ui.painter().text(
+            egui::pos2(row.left() + TAG_PAD_X + TAG_GLYPH + TAG_GAP, row.center().y),
+            Align2::LEFT_CENTER,
+            label,
+            fonts::body(TAG_TEXT),
+            theme.BASE,
+        );
+        if response.clicked() {
+            chosen = Some(index);
+        }
+    }
+
+    // A press anywhere else puts the menu away.
+    let (pointer, clicked) = ui.input(|input| {
+        (input.pointer.interact_pos(), input.pointer.primary_clicked())
+    });
+    if clicked && !pointer.is_some_and(|at| plate.contains(at)) {
+        state.menu = false;
+    }
+
+    match chosen {
+        Some(0) => {
+            state.menu = false;
+            open_url(&url);
+            true
+        }
+        Some(1) => {
+            state.menu = false;
+            ui.ctx().copy_text(url);
+            true
+        }
+        _ => false,
+    }
+}
+
+/// Ask the desktop to open a URL, the way openUrl does in the reference (Index.vue:404-408).
+fn open_url(url: &str) {
+    let opened = if cfg!(target_os = "windows") {
+        std::process::Command::new("cmd")
+            .args(["/C", "start", url])
+            .spawn()
+    } else if cfg!(target_os = "macos") {
+        std::process::Command::new("open").arg(url).spawn()
+    } else {
+        std::process::Command::new("xdg-open").arg(url).spawn()
+    };
+    let _ = opened;
 }
 
 /// Lay text out and, if it takes more rows than the sheet's clamp allows, drop words from its
@@ -1058,12 +1235,18 @@ fn tab_strip(
 /// The reference's tab is `Card` wrapping `ProjectPageDescription` (`Description.vue:1-5`); the
 /// action row this page used to draw above the body was invented, and is gone.
 fn description(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project) {
+    if project.body.is_empty() {
+        // A card carries no description; the project endpoint does. Saying so is the honest
+        // state, and it is what the reference shows while its own query is pending.
+        empty_tab(ui, inner, theme, "No description yet.");
+        return;
+    }
     let painter = ui.painter();
     let mut heights = Vec::new();
     let mut total = 0.0;
-    for paragraph in project.body {
+    for paragraph in &project.body {
         let galley = painter.layout(
-            (*paragraph).to_owned(),
+            paragraph.clone(),
             fonts::body(SUMMARY_SIZE),
             theme.BASE,
             inner.width(),
@@ -1130,7 +1313,7 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
             if !project
                 .versions
                 .iter()
-                .any(|version| version.loaders.contains(&loader))
+                .any(|version| version.loaders.iter().any(|shipped| shipped == loader))
             {
                 continue;
             }
@@ -1186,7 +1369,7 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
         );
     }
 
-    let shown = filtered_versions(project.versions, &state.channels, &state.loaders);
+    let shown = filtered_versions(&project.versions, &state.channels, &state.loaders);
     let table_top = filter_row.bottom() + VERSION_FILTER_GAP;
     if shown.is_empty() {
         empty_tab(
@@ -1304,7 +1487,7 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
                 painter.text(
                     egui::pos2(name.left(), name.center().y),
                     Align2::LEFT_CENTER,
-                    version.number,
+                    &version.number,
                     fonts::label(SUMMARY_SIZE),
                     theme.CONTRAST,
                 );
@@ -1319,7 +1502,7 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
                     painter,
                     games,
                     theme,
-                    version.game_versions,
+                    &version.game_versions,
                 );
                 x += columns[2];
 
@@ -1328,7 +1511,7 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
                     egui::pos2(x, band.top()),
                     egui::vec2(columns[3], TABLE_ROW),
                 );
-                chip_run(painter, platforms, theme, version.loaders);
+                chip_run(painter, platforms, theme, &version.loaders);
                 x += columns[3];
 
                 // Published: relative time, font-medium.
@@ -1362,7 +1545,7 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
 }
 
 /// A run of `TagItem` chips, one row, clipped to the column they are given.
-fn chip_run(painter: &egui::Painter, column: Rect, theme: &Theme, labels: &[&'static str]) {
+fn chip_run(painter: &egui::Painter, column: Rect, theme: &Theme, labels: &[String]) {
     let painter = painter.with_clip_rect(column);
     let mut x = column.left();
     for label in labels {
@@ -1370,7 +1553,7 @@ fn chip_run(painter: &egui::Painter, column: Rect, theme: &Theme, labels: &[&'st
             &painter,
             egui::pos2(x, column.center().y - TAG_HEIGHT / 2.0),
             theme,
-            label,
+            label.as_str(),
             None,
         );
         x = chip.right() + TAG_GAP;
@@ -1448,7 +1631,7 @@ fn gallery(
                 probe_rows.push((format!("gallery {index}"), item));
                 probe_rows.push((format!("gallery-picture {index}"), picture));
                 let clipped = painter.with_clip_rect(picture);
-                match images.get(ui.ctx(), image.url) {
+                match images.get(ui.ctx(), &image.url) {
                     Some(texture) => {
                         let uv = cover_uv(texture.size_vec2(), picture.size());
                         clipped.image(texture.id(), picture, uv, Color32::WHITE);
@@ -1466,13 +1649,13 @@ fn gallery(
                 painter.text(
                     body.min,
                     Align2::LEFT_TOP,
-                    image.title,
+                    image.title.as_str(),
                     fonts::semibold(GALLERY_TITLE),
                     theme.CONTRAST,
                 );
                 let description = clamp_to_lines(
                     &painter,
-                    image.description,
+                    &image.description,
                     fonts::body(GALLERY_BODY),
                     theme.SECONDARY,
                     body.width(),
@@ -1560,7 +1743,7 @@ fn viewer(
         egui::pos2(page.right() - 48.0, page.bottom() - 96.0),
     );
     let mut picture = box_rect;
-    if let Some(texture) = images.get(ui.ctx(), image.url) {
+    if let Some(texture) = images.get(ui.ctx(), &image.url) {
         let size = texture.size_vec2();
         let scale = (box_rect.width() / size.x).min(box_rect.height() / size.y);
         picture = Rect::from_center_size(box_rect.center(), size * scale);
@@ -1670,8 +1853,8 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
 
     // Version chips, wrapping at the panel's width, at `gap-1` (4) between them.
     let mut x = rect.left();
-    for version in project.game_versions {
-        let label = painter.layout_no_wrap((*version).to_owned(), fonts::body(16.0), theme.BASE);
+    for version in &project.game_versions {
+        let label = painter.layout_no_wrap(version.clone(), fonts::body(16.0), theme.BASE);
         let chip = chip_at(painter, egui::pos2(x, y), theme, &label, 16.0, None);
         if chip.right() > rect.right() {
             x = rect.left();
@@ -1688,8 +1871,8 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
             project
                 .tags
                 .iter()
-                .filter(|(tag, _)| matches!(*tag, "Fabric" | "Forge" | "NeoForge" | "Quilt"))
-                .copied()
+                .filter(|(tag, _)| matches!(tag.as_str(), "Fabric" | "Forge" | "NeoForge" | "Quilt"))
+                .map(|(tag, glyph)| (tag.clone(), *glyph))
                 .collect::<Vec<_>>(),
         ),
         (
@@ -1697,8 +1880,8 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
             project
                 .tags
                 .iter()
-                .filter(|(tag, _)| *tag == "Client-side" || *tag == "Server-side")
-                .copied()
+                .filter(|(tag, _)| tag == "Client-side" || tag == "Server-side")
+                .map(|(tag, glyph)| (tag.clone(), *glyph))
                 .collect::<Vec<_>>(),
         ),
     ] {
@@ -1736,27 +1919,32 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
         theme.CONTRAST,
     );
     y += 24.0;
-    for link in project.links {
+    for link in &project.links {
         painter.text(
             egui::pos2(rect.left(), y),
             Align2::LEFT_TOP,
-            *link,
+            link.as_str(),
             fonts::body(16.0),
             theme.LINK,
         );
         y += 24.0;
     }
     y += 8.0;
+    let creators: Vec<(&str, &str)> = project
+        .creators
+        .iter()
+        .map(|(name, role)| (name.as_str(), role.as_str()))
+        .collect();
     y += section(
         painter,
         rect,
         y,
         theme,
         "Creators", // project.about.creators.title
-        project.creators,
+        &creators,
     );
-    let published = project.published.long();
-    let updated = project.updated.long();
+    let published = project.published.map(Date::long).unwrap_or_default();
+    let updated = project.updated.map(Date::long).unwrap_or_default();
     y += section(
         painter,
         rect,
@@ -1769,7 +1957,7 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
             // project.about.details.updated
             ("Updated", updated.as_str()),
             // project.license.title
-            ("License", project.license),
+            ("License", project.license.as_str()),
         ],
     );
 
@@ -1866,101 +2054,146 @@ fn section(
 /// reference's own first card.
 pub fn sample() -> Project {
     Project {
-        title: "Fabulously Optimized",
-        author: "Fabulously Optimized",
-        summary: "Beautiful graphics, speedy performance and familiar features in a simple package. Wilderness Bound beta!",
-        body: &[
-            "A simple Minecraft modpack focusing on performance and graphics enhancements.",
-            "Fabulously Optimized is faster than competing game clients, thanks to modern performance mods like Sodium, Lithium, and others. The bundled mods have been carefully selected to be safe in your worlds and provide noticeable speed benefits on any device.",
+        title: "Fabulously Optimized".to_owned(),
+        author: "Fabulously Optimized".to_owned(),
+        summary: "Beautiful graphics, speedy performance and familiar features in a simple package. Wilderness Bound beta!"
+            .to_owned(),
+        body: vec![
+            "A simple Minecraft modpack focusing on performance and graphics enhancements.".to_owned(),
+            "Fabulously Optimized is faster than competing game clients, thanks to modern performance mods like Sodium, Lithium, and others. The bundled mods have been carefully selected to be safe in your worlds and provide noticeable speed benefits on any device."
+                .to_owned(),
         ],
-        tags: &[
-            ("Lightweight", Glyph::Sparkles),
-            ("Multiplayer", Glyph::Users),
-            ("Optimization", Glyph::Rocket),
-            ("Fabric", Glyph::Box),
-            ("Client-side", Glyph::Monitor),
+        tags: vec![
+            ("Lightweight".to_owned(), Glyph::Sparkles),
+            ("Multiplayer".to_owned(), Glyph::Users),
+            ("Optimization".to_owned(), Glyph::Rocket),
+            ("Fabric".to_owned(), Glyph::Box),
+            ("Client-side".to_owned(), Glyph::Monitor),
         ],
-        game_versions: &["26.3", "26.2", "26.1.x", "1.21.x", "1.20.x", "1.19.x", "1.18.1-1.18.2", "1.17.1", "1.16.5"],
-        downloads: "19.6M downloads",
-        followers: "5.0K followers",
-        icon: "https://cdn.modrinth.com/data/1KVo5zza/d8152911f8fd5d7e9a8c499fe89045af81fe816e_96.webp",
-        // project.about.links.{source,issues,wiki,discord}
-        links: &["View source", "Report issues", "Visit wiki", "Join Discord"],
-        // `GET /v2/project/1KVo5zza`.
-        published: Date { year: 2022, month: 2, day: 10 },
-        updated: Date { year: 2026, month: 10, day: 20 },
-        license: "BSD-3-Clause",
-        // `GET /v2/project/1KVo5zza` at `gallery`.
-        gallery: &[
+        game_versions: ["26.3", "26.2", "26.1.x", "1.21.x", "1.20.x", "1.19.x", "1.18.1-1.18.2", "1.17.1", "1.16.5"]
+            .iter()
+            .map(|version| (*version).to_owned())
+            .collect(),
+        downloads: "19.6M downloads".to_owned(),
+        followers: "5.0K followers".to_owned(),
+        icon: "https://cdn.modrinth.com/data/1KVo5zza/d8152911f8fd5d7e9a8c499fe89045af81fe816e_96.webp".to_owned(),
+        links: vec![
+            "View source".to_owned(),
+            "Report issues".to_owned(),
+            "Visit wiki".to_owned(),
+            "Join Discord".to_owned(),
+        ],
+        creators: vec![
+            ("Robitobi01".to_owned(), "Owner".to_owned()),
+            ("unmojang".to_owned(), "Maintainer".to_owned()),
+            ("trimbe".to_owned(), "Maintainer".to_owned()),
+        ],
+        published: Some(Date { year: 2022, month: 2, day: 10 }),
+        updated: Some(Date { year: 2026, month: 10, day: 20 }),
+        license: "BSD-3-Clause".to_owned(),
+        slug: "fabulously-optimized".to_owned(),
+        kind: "modpack".to_owned(),
+        gallery: vec![
             Image {
-                url: "https://cdn.modrinth.com/data/1KVo5zza/images/ce41746dbf8f3d2a9661875c18b5667778233ccf_350.webp",
-                title: "Title screen",
-                description: "The title screen as the pack leaves it, with the panorama and the quick-play buttons untouched.",
+                url: "https://cdn.modrinth.com/data/1KVo5zza/images/ce41746dbf8f3d2a9661875c18b5667778233ccf_350.webp".to_owned(),
+                title: "Title screen".to_owned(),
+                description: "The title screen as the pack leaves it, with the panorama and the quick-play buttons untouched."
+                    .to_owned(),
                 created: Date { year: 2023, month: 3, day: 4 },
             },
             Image {
-                url: "https://cdn.modrinth.com/data/1KVo5zza/images/044a5b9cb85394be95656a1ebcfe135466420da9.png",
-                title: "Mod menu",
-                description: "Every bundled mod in one list, with the ones that change rendering already configured.",
+                url: "https://cdn.modrinth.com/data/1KVo5zza/images/044a5b9cb85394be95656a1ebcfe135466420da9.png".to_owned(),
+                title: "Mod menu".to_owned(),
+                description: "Every bundled mod in one list, with the ones that change rendering already configured."
+                    .to_owned(),
                 created: Date { year: 2023, month: 5, day: 19 },
             },
             Image {
-                url: "https://cdn.modrinth.com/data/1KVo5zza/images/9d5ddd3392ce89295caa1030ca930f71f5c6b49a_350.webp",
-                title: "FPS in high render distance",
-                description: "A 32-chunk render distance at a frame rate the vanilla client does not reach.",
+                url: "https://cdn.modrinth.com/data/1KVo5zza/images/9d5ddd3392ce89295caa1030ca930f71f5c6b49a_350.webp".to_owned(),
+                title: "FPS in high render distance".to_owned(),
+                description: "A 32-chunk render distance at a frame rate the vanilla client does not reach.".to_owned(),
                 created: Date { year: 2024, month: 1, day: 8 },
             },
             Image {
-                url: "https://cdn.modrinth.com/data/1KVo5zza/images/38f70f307f1a0b17d8ed4526d1636317e8c12d1d_350.webp",
-                title: "Sunrise behind a hill",
-                description: "Shader-ready lighting with the pack's own sky and fog settings.",
+                url: "https://cdn.modrinth.com/data/1KVo5zza/images/38f70f307f1a0b17d8ed4526d1636317e8c12d1d_350.webp".to_owned(),
+                title: "Sunrise behind a hill".to_owned(),
+                description: "Shader-ready lighting with the pack's own sky and fog settings.".to_owned(),
                 created: Date { year: 2025, month: 7, day: 21 },
             },
         ],
-        // `GET /v2/project/1KVo5zza/version?limit=4`, newest first.
-        versions: &[
+        versions: vec![
             Version {
-                number: "15.0.0-beta.2",
-                name: "Wilderness Bound beta 2",
-                game_versions: &["26.3"],
-                loaders: &["fabric"],
+                number: "15.0.0-beta.2".to_owned(),
+                name: "Wilderness Bound beta 2".to_owned(),
+                game_versions: vec!["26.3".to_owned()],
+                loaders: vec!["fabric".to_owned()],
                 channel: Channel::Beta,
                 published: Date { year: 2026, month: 10, day: 20 },
                 downloads: 2_184_302,
             },
             Version {
-                number: "15.0.0-beta.1",
-                name: "Wilderness Bound beta 1",
-                game_versions: &["26.3"],
-                loaders: &["fabric"],
+                number: "15.0.0-beta.1".to_owned(),
+                name: "Wilderness Bound beta 1".to_owned(),
+                game_versions: vec!["26.3".to_owned()],
+                loaders: vec!["fabric".to_owned()],
                 channel: Channel::Beta,
                 published: Date { year: 2026, month: 10, day: 11 },
                 downloads: 1_406_881,
             },
             Version {
-                number: "14.1.1",
-                name: "Maintenance release",
-                game_versions: &["26.2"],
-                loaders: &["fabric"],
+                number: "14.1.1".to_owned(),
+                name: "Maintenance release".to_owned(),
+                game_versions: vec!["26.2".to_owned()],
+                loaders: vec!["fabric".to_owned()],
                 channel: Channel::Release,
                 published: Date { year: 2026, month: 10, day: 11 },
                 downloads: 8_902_114,
             },
             Version {
-                number: "13.6.0",
-                name: "Sodium 0.7 update",
-                game_versions: &["26.1.2"],
-                loaders: &["fabric"],
+                number: "13.6.0".to_owned(),
+                name: "Sodium 0.7 update".to_owned(),
+                game_versions: vec!["26.1.2".to_owned()],
+                loaders: vec!["fabric".to_owned()],
                 channel: Channel::Release,
                 published: Date { year: 2026, month: 9, day: 28 },
                 downloads: 7_203_559,
             },
         ],
-        creators: &[
-            ("Robitobi01", "Owner"),
-            ("unmojang", "Maintainer"),
-            ("trimbe", "Maintainer"),
-        ],
+    }
+}
+
+/// A project page for a card the reader pressed, before the project endpoint has answered.
+///
+/// The card carries the name, the team, the summary, the tags, the two counts and the icon — the
+/// search response's own fields — and nothing else. So those are the page's, and everything that
+/// only `GET /v2/project/{id}` has (the description, the gallery, the releases, the links, the
+/// creators, the licence and the two dates) starts empty and says so. **An honest empty page
+/// beats another project's prose**, which is what showing the sample for every card amounted to.
+///
+/// The slug is the card's id: Modrinth resolves `modrinth.com/{type}/{id}` the same way it
+/// resolves the slug, and a search hit carries no slug.
+pub fn from_card(card: &crate::shell::Card) -> Project {
+    Project {
+        title: card.title.clone(),
+        author: card.author.clone(),
+        summary: card.summary.clone(),
+        body: Vec::new(),
+        tags: card.tags.clone(),
+        game_versions: Vec::new(),
+        downloads: card.downloads.clone(),
+        followers: card.followers.clone(),
+        icon: card.icon.clone(),
+        links: Vec::new(),
+        creators: Vec::new(),
+        published: None,
+        updated: None,
+        license: String::new(),
+        slug: card.id.clone(),
+        // Discover searches modpacks (the page's own title says so), and the card carries no
+        // type of its own; a project page opened from anywhere else keeps the sample's.
+        kind: "modpack".to_owned(),
+        gallery: Vec::new(),
+        versions: Vec::new(),
     }
 }
 
@@ -1978,6 +2211,20 @@ mod tests {
     /// The tabs are in the reference's order and each has a label: a tab that rendered an
     /// empty string would be an invisible target.
     #[test]
+    /// The page records the presses it cannot carry out, and the shell can take them.
+    #[test]
+    fn a_press_the_page_cannot_act_on_waits_for_the_shell() {
+        let mut state = State::default();
+        assert_eq!(state.take_press(), None, "nothing is pressed on a fresh page");
+        state.pressed = Some(Press::Install);
+        assert_eq!(state.take_press(), Some(Press::Install));
+        assert_eq!(
+            state.take_press(),
+            None,
+            "a press is taken once, not answered twice"
+        );
+    }
+
     fn the_tabs_are_named_and_ordered() {
         assert_eq!(Tab::ALL.map(Tab::label), ["Description", "Versions", "Gallery"]);
     }
@@ -1990,7 +2237,7 @@ mod tests {
         assert!(tabs(&project).contains(&Tab::Gallery));
 
         let mut without = project.clone();
-        without.gallery = &[];
+        without.gallery = Vec::new();
         assert_eq!(tabs(&without), vec![Tab::Description, Tab::Versions]);
         assert!(
             !tabs(&without).contains(&Tab::Gallery),
@@ -2003,7 +2250,7 @@ mod tests {
     #[test]
     fn a_tab_the_project_does_not_offer_falls_back_to_the_description() {
         let mut project = sample();
-        project.gallery = &[];
+        project.gallery = Vec::new();
         let mut state = State::default();
         state.tab = Some(Tab::Gallery);
         assert_eq!(state.current(&project), Tab::Description);
@@ -2108,26 +2355,26 @@ mod tests {
     #[test]
     fn the_version_chips_filter_one_dimension_at_a_time() {
         let project = sample();
-        let all = filtered_versions(project.versions, &[], &[]);
+        let all = filtered_versions(&project.versions, &[], &[]);
         assert_eq!(all.len(), project.versions.len(), "no chip is the whole table");
 
-        let betas = filtered_versions(project.versions, &[Channel::Beta], &[]);
+        let betas = filtered_versions(&project.versions, &[Channel::Beta], &[]);
         assert_eq!(betas.len(), 2, "the sample has two betas");
         assert!(betas.iter().all(|version| version.channel == Channel::Beta));
 
-        let releases = filtered_versions(project.versions, &[Channel::Release], &[]);
+        let releases = filtered_versions(&project.versions, &[Channel::Release], &[]);
         assert_eq!(releases.len(), 2);
 
-        let none = filtered_versions(project.versions, &[Channel::Alpha], &[]);
+        let none = filtered_versions(&project.versions, &[Channel::Alpha], &[]);
         assert!(none.is_empty(), "a channel with no versions leaves an empty table");
 
-        let fabric = filtered_versions(project.versions, &[], &["fabric"]);
+        let fabric = filtered_versions(&project.versions, &[], &["fabric"]);
         assert_eq!(fabric.len(), project.versions.len(), "every sample version is Fabric");
 
-        let forge = filtered_versions(project.versions, &[], &["forge"]);
+        let forge = filtered_versions(&project.versions, &[], &["forge"]);
         assert!(forge.is_empty(), "a loader the project does not ship leaves nothing");
 
-        let beta_and_fabric = filtered_versions(project.versions, &[Channel::Beta], &["fabric"]);
+        let beta_and_fabric = filtered_versions(&project.versions, &[Channel::Beta], &["fabric"]);
         assert_eq!(
             beta_and_fabric.len(),
             2,
