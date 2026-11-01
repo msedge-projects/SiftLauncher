@@ -2765,3 +2765,23 @@ carries and the Minecraft version the manifest gave. Before this session the sam
 open it, so it is either the ⋮ menu beside the play button or the play button itself. One capture of
 each settles it, and it must precede any work on the page -- the brief's file-management requirements
 live behind that door.
+
+## P0: an instance cannot be opened at all (2026-11-01)
+
+Two attempts, both negative:
+
+* a press on the **card body** does nothing -- no navigation, no selection;
+* a press on the **⋮ beside the play button** opens no menu.
+
+So this launcher has **no way into an instance**. The reference's card opens the instance page from its
+body and its overflow menu carries the per-instance actions; here the body is inert and the menu is
+painted, not placed.
+
+That makes the Instance page not merely unbuilt but **unreachable**, and it is the reason the brief's
+file-management clause has no entry point: `mods/`, `config/`, worlds and logs all live behind a door
+with no handle. The jar this session installed into `Instance 2/mods/` is on disk and invisible from
+the product.
+
+**The next slice is the door, not the room**: make the card body open the instance page (the shell
+already tracks `open_instance`), then the ⋮ menu as a popup with the reference's items. Only then does
+building the page itself make sense.
