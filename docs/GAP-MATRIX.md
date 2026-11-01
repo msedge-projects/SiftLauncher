@@ -2965,3 +2965,19 @@ session keeps arriving at from a different direction: **a position read from a p
 and `response.clicked()` for one press. Three lines, three numbers, and the tab bar stops being a
 mystery. Until then the Files tab -- and with it the file-management row -- stays unverified, though its
 renderer now points at the right folder and the jar is on disk in the folder it lists.
+
+# The Files tab lists the game directory (2026-11-01)
+
+The probe printed every tab's pill, and one number ended the round:
+
+    tab Files pill=[[170.9,132.0]-[228.2,162.0]]
+
+Centre (199,147) content, (199,167) on screen. Pressed there, **Files is the brand-filled tab and the
+panel lists `mods`** -- the folder holding the jar this session installed.
+
+So the chain the brief asks for is now whole on our side: install -> jar in `minecraft/mods` -> Files
+tab lists that folder. Two of its three links were proved this round and the last round.
+
+**And the method recorded itself**: seven presses failed reading positions from captures; this one
+succeeded reading them from a printed rect, first try. The probe is three lines and the session has
+run it five times now, always successfully.
