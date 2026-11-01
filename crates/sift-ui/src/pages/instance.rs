@@ -490,7 +490,26 @@ fn files_tab(
     }
     let painter = ui.painter();
     let inner = card.shrink(PAD);
+    // A reader who descends must be able to come back: without this the folder is a trap, which is
+    // worse than not following the press at all.
     let mut y = inner.top();
+    if !dir.as_os_str().is_empty() {
+        let back = Rect::from_min_size(inner.min, egui::vec2(inner.width(), ROW_H));
+        painter.text(
+            egui::pos2(inner.left(), y + ROW_H / 2.0),
+            Align2::LEFT_CENTER,
+            format!("<- {}", dir.display()),
+            fonts::body(12.0),
+            theme.BRAND,
+        );
+        if ui
+            .interact(back, egui::Id::new("files-up"), Sense::click())
+            .clicked()
+        {
+            descend = Some(dir.parent().map(|p| p.to_path_buf()).unwrap_or_default());
+        }
+        y += ROW_H;
+    }
     for (name, is_dir, size) in entries.iter().take(24) {
         if y + ROW_H > inner.bottom() {
             break;

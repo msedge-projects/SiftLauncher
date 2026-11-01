@@ -3057,3 +3057,15 @@ found this time by locating the function's closing brace structurally rather tha
 **What the view still is not**: it lists names with a glyph, has no breadcrumb, cannot go back up, and
 has no per-row actions. The reference has all four. Those are the next rows, and they are now the only
 things between this panel and the brief's file-manager description.
+
+### The folder is no longer a trap (2026-11-01)
+
+One composed capture, two states:
+
+* **descended**: `<- mods` in the brand colour above `sodium-fabric-0.9.3-beta.1+mc26.3.jar`;
+* **after pressing that row**: back at the game directory, listing `mods`.
+
+So the Files view now goes in and comes out, and both were verified in the same run rather than inferred
+from one direction. The back row is the whole breadcrumb for now -- a single parent step rather than the
+reference's clickable path segments -- and it is enough to stop the view being a dead end, which was the
+worse defect of the two.
