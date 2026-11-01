@@ -3968,3 +3968,15 @@ removed rather than restyled.
 this document has now caught six of them (the loader row, the pinned version, the skins toolbar, the screenshots
 count pill, the hover caption and this row). **Every one came from a page being built before its source was
 read.**
+
+### The header scale needs the header's layout, not three numbers (2026-11-01)
+
+Changed 64/20/13 to the reference's 96/24/16 and the page **broke visibly**: the title and summary ran into
+the tab row, because the header's height and the tab row's offset were sized for the smaller type.
+
+**Reverted rather than half-fixed.** A page at the wrong scale is a parity row; a page whose header overlaps
+its tabs is a defect a reader would hit, and the trade is not close.
+
+The audit's row stands, with the missing half now written down: the three sizes **and** the header height and
+tab offset have to move together -- `ProjectPageHeader.vue` stacks avatar, title, summary and tabs in one column
+and the constant is that column's height, not three font sizes in isolation.
