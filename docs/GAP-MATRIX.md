@@ -3095,3 +3095,18 @@ manager does. The fifth, acting on a file other than deleting it, is still open.
 **The overlap hazard the last note worried about does not exist**, and the probe answered it in the same
 line it printed: `remove` sits inside the file row, but only *file* rows carry the control and only
 *directory* rows carry a press, so no reader can delete a file by trying to open it.
+
+### The round trip closes: install, delete in Files, install again (2026-11-01)
+
+After the delete emptied `mods/`, the Discover install was run once more and the jar is back:
+
+    sodium-fabric-0.9.3-beta.1+mc26.3.jar
+
+So the full cycle works through the product in both directions -- **no stale state, no cached listing,
+no instance whose mods folder the app has lost track of.** That was the risk worth checking after adding
+a destructive action, and it did not materialise.
+
+**Open, and next**: the delete has no confirmation and no undo. One press removes a jar silently, where
+the reference asks first. Two-step arming would fix it -- a press paints the row's control in the
+disabled colour and stores its name, a second press on the same row removes -- and it needs one field on
+the page state beside `files_dir`, which is now a known shape to add.
