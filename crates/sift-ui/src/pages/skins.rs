@@ -724,6 +724,25 @@ pub fn draw(
     // and comes back to find it.
     // shortcut: the folder is scanned on the first draw and while empty, not once it has
     // files, until a file watcher can report a new PNG.
+    // A dropped PNG is a new skin: the tile promises "Drag and drop", so the page takes the files
+    // the window hands it and rescans when any of them was one.
+    let dropped: Vec<std::path::PathBuf> = ui.ctx().input(|input| {
+        input
+            .raw
+            .dropped_files
+            .iter()
+            .map(|file| file.path().to_path_buf())
+            .collect()
+    });
+    if !dropped.is_empty() {
+        let taken = crate::skins::accept_drop(&crate::skins::skins_dir(), &dropped);
+        if taken > 0 {
+            state.files = crate::skins::list();
+            state.scanned = true;
+            ui.ctx().request_repaint();
+        }
+    }
+
     if !state.scanned || state.files.is_empty() {
         state.files = crate::skins::list();
         state.scanned = true;

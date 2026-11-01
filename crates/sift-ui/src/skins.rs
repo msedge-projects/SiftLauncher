@@ -51,6 +51,33 @@ pub fn skins_dir() -> PathBuf {
 }
 
 /// Every skin in the launcher's own folder, sorted by name.
+/// Take the PNGs out of a drop and put them where the page reads skins from.
+///
+/// Only a `.png` is a skin: a dropped folder or a JPEG is skipped rather than renamed into something
+/// the grid would try to decode. The file keeps its own name, so a second drop of the same name
+/// replaces the first -- which is what a reader dragging a corrected copy expects.
+pub fn accept_drop(dir: &std::path::Path, paths: &[std::path::PathBuf]) -> usize {
+    if std::fs::create_dir_all(dir).is_err() {
+        return 0;
+    }
+    let mut taken = 0;
+    for path in paths {
+        let is_png = path
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("png"));
+        if !is_png || !path.is_file() {
+            continue;
+        }
+        let Some(name) = path.file_name() else {
+            continue;
+        };
+        if std::fs::copy(path, dir.join(name)).is_ok() {
+            taken += 1;
+        }
+    }
+    taken
+}
+
 pub fn list() -> Vec<SavedSkin> {
     list_in(&skins_dir())
 }
