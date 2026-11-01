@@ -1339,7 +1339,33 @@ pub fn draw(
                 egui::pos2(area.left(), top),
                 egui::vec2(width, promo_height()),
             );
-            draw_promo(ui, promo, theme);
+            // A selected card shows its server where the promo sits: a second rendering of data the
+            // card already carries, which is the smallest thing that is not a placeholder.
+            let chosen = state
+                .selected
+                .as_ref()
+                .and_then(|address| state.servers.iter().find(|server| &server.address == address));
+            match chosen {
+                Some(server) => {
+                    let painter = ui.painter();
+                    painter.rect_filled(promo, 8.0, theme.SURFACE_4);
+                    painter.text(
+                        egui::pos2(promo.left() + 12.0, promo.top() + 12.0),
+                        egui::Align2::LEFT_TOP,
+                        &server.name,
+                        fonts::semibold(14.0),
+                        theme.TEXT_PRIMARY,
+                    );
+                    painter.text(
+                        egui::pos2(promo.left() + 12.0, promo.top() + 36.0),
+                        egui::Align2::LEFT_TOP,
+                        &server.address,
+                        fonts::body(12.0),
+                        theme.SECONDARY,
+                    );
+                }
+                None => draw_promo(ui, promo, theme),
+            }
         });
 
     // Last, for the reason the toast is last in the shell: anything drawn after a modal would

@@ -3724,3 +3724,18 @@ the MOTD, the live count, and one action ("Join"). It needs no new fetching and 
 
 **What it is not**: a route. The reference's is a page with its own URL and its own loading state; a panel is
 a smaller thing and should be recorded as such rather than as parity.
+
+### The selected server now renders where the promo sits -- unobserved (2026-11-01)
+
+The servers page draws the chosen card's server into the `promo` rect (`servers.rs:1342`), and the promo
+only when nothing is chosen. It compiles and the tests pass.
+
+**It was not seen.** The capture I compared cropped the *shell's* sidebar -- "Sync settings across
+instances" -- which is a different card from the servers page's own promo, and the two frames were
+identical because I was looking at the wrong rectangle.
+
+So this is **landed and unverified**, and the note says so rather than describing it as working. The next
+check is one capture of the servers page's own promo area before and after a card press.
+
+**The mistake is the fifteenth of its kind and the first about where to look rather than where to press**:
+the address of the thing to compare is as much a hypothesis as the coordinate of the thing to click.
