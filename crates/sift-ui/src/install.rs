@@ -312,7 +312,43 @@ fn toast_line(status: &Status, job: Option<&Job>) -> Option<String> {
 /// say which card it is about.
 fn failure_line(title: &str, reason: &str) -> String {
     let title = if title.is_empty() { "that pack" } else { title };
+    // A project whose archive is not a pack is a mod or a resource pack, and this button has no
+    // path for either: the engine's sentence blames the file for something the button never
+    // tried to do, which tells the reader their download was broken. It is not -- the button is
+    // pack-only by construction, and the fix is a version picker rather than a better reader.
+    if reason.starts_with("that archive is not a readable pack") {
+        return format!(
+            "Could not install {title}: this button installs modpacks, and installing a mod needs \
+             a version picker that is not built yet."
+        );
+    }
     format!("Could not install {title}: {reason}")
+}
+
+#[cfg(test)]
+mod failure_tests {
+    use super::failure_line;
+
+    /// The engine's pack-reader sentence is replaced, because it blames the archive for a
+    /// limitation of the button.
+    #[test]
+    fn a_non_pack_says_the_button_is_the_limit() {
+        let line = failure_line(
+            "Sodium",
+            "that archive is not a readable pack: invalid pack: neither modrinth.index.json nor manifest.json is present",
+        );
+        assert!(line.contains("installs modpacks"), "{line}");
+        assert!(line.contains("version picker"), "{line}");
+        assert!(!line.contains("not a readable pack"), "{line}");
+    }
+
+    /// Every other reason is passed through whole: the engine's words are the only ones that
+    /// say what actually went wrong.
+    #[test]
+    fn another_reason_keeps_the_engine_s_words() {
+        let line = failure_line("Cobblemon", "connection reset");
+        assert_eq!(line, "Could not install Cobblemon: connection reset");
+    }
 }
 
 #[cfg(test)]

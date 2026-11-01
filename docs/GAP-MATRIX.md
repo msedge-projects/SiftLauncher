@@ -1840,3 +1840,17 @@ which `sift-net` already models. That is the next feature, not the next patch.
 ("not a readable pack") when the truth is that this button has no mod path at all. Fixing the
 *sentence* is a five-line change in `failure_line` and is worth doing on its own; fixing the
 *behaviour* is the picker.
+
+### The message is fixed, and the capture proves it (2026-11-01)
+
+Driven end to end: Discover, Mods tab, `sodium`, Install on the first card. The toast now reads
+
+> **Could not install Sodium: this button installs modpacks, and installing a mod needs a version
+> picker that is not built yet.**
+
+which is true, names the reader's own project, and stops blaming the archive. Two unit tests hold
+it: one asserts the pack-reader sentence is replaced, the other that every other engine reason
+passes through whole -- because the engine's words are the only ones that say what actually went
+wrong when something *is* broken.
+
+The behaviour is still pack-only. What changed is that the launcher now says so.
