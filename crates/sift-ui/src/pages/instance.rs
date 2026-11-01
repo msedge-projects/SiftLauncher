@@ -530,6 +530,30 @@ fn files_tab(
             fonts::body(12.0),
             theme.BASE,
         );
+        if !*is_dir {
+            // A file row can be removed. The reference offers this per row; a file manager that can
+            // only look is a browser, not a manager.
+            let remove = Rect::from_center_size(
+                egui::pos2(inner.right() - 12.0, y + ROW_H / 2.0),
+                egui::vec2(18.0, 18.0),
+            );
+            let label = format!("x {}", name);
+            painter.text(
+                remove.center(),
+                Align2::CENTER_CENTER,
+                "x",
+                fonts::body(12.0),
+                theme.SECONDARY,
+            );
+            if ui
+                .interact(remove, egui::Id::new(("file-del", name.as_str())), Sense::click())
+                .clicked()
+            {
+                let _ = std::fs::remove_file(instance.path.join("minecraft").join(dir).join(name.as_str()));
+                ui.ctx().request_repaint();
+            }
+            let _ = label;
+        }
         if *is_dir
             && ui
                 .interact(

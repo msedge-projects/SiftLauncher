@@ -3069,3 +3069,17 @@ So the Files view now goes in and comes out, and both were verified in the same 
 from one direction. The back row is the whole breadcrumb for now -- a single parent step rather than the
 reference's clickable path segments -- and it is enough to stop the view being a dead end, which was the
 worse defect of the two.
+
+### The remove control is drawn and its press is not yet aimed (2026-11-01)
+
+A file row now carries an `x` at its right edge, and a press there **left the jar in place** -- the
+file is intact, which is the important half: no accidental deletion, and the listing still shows
+`1.8 MB` beside the name.
+
+The press was aimed from a crop, and the crop shows the size label ending around x 1120 where the
+control was drawn at the card's inner right minus twelve -- the eighth press this session to be aimed
+from a picture and miss.
+
+**The probe, again three lines**: print `remove` beside the `("file-del", name)` id, press that rect's
+centre, then check the folder. Until then the action exists in code, is safe in practice, and is
+unverified in behaviour.
