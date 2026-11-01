@@ -3083,3 +3083,15 @@ from a picture and miss.
 **The probe, again three lines**: print `remove` beside the `("file-del", name)` id, press that rect's
 centre, then check the folder. Until then the action exists in code, is safe in practice, and is
 unverified in behaviour.
+
+# A file can be removed from inside the app (2026-11-01)
+
+Probe: **`remove=[[1071,227]-[1089,245]]`**, centre (1080,236) content. Pressed there, and
+`Instance 2/minecraft/mods/` went from one jar to none.
+
+So the Files panel now **lists, descends, returns, and removes** -- four of the five things a file
+manager does. The fifth, acting on a file other than deleting it, is still open.
+
+**The overlap hazard the last note worried about does not exist**, and the probe answered it in the same
+line it printed: `remove` sits inside the file row, but only *file* rows carry the control and only
+*directory* rows carry a press, so no reader can delete a file by trying to open it.
