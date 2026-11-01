@@ -368,3 +368,21 @@ The scrolling figure is `SIFT_FRAME_LOG` while twenty wheel-down and twenty whee
 clicks were sent: 30-frame windows, so a sample rather than a profile. Startup is a poll to
 window appearance and RAM is `/proc/<pid>/status`, so both are lower bounds on a busier
 machine.
+
+## Re-measured 2026-11-01, after the create dialog and the install path landed
+
+Measured by hand, because the committed harness is broken (see below):
+
+| budget | limit | measured |
+| --- | --- | --- |
+| idle RSS | <= 20 MB for the software rasteriser gate; 110 MB recorded for this build | **111,104 KB = 108.5 MiB** |
+| idle CPU | 0 ticks over 60 s recorded | **0 ticks over 10 s** |
+
+The RSS is within 0.5 MiB of the 110.2 MB this document recorded before the dialog work, so the
+create dialog, the install path and the two corrected defaults have not moved the idle budget.
+
+**`tools/lightness-measure.sh` is broken and must not be trusted**: it hard-codes
+`/data/workspace/PalantirMC/crates/sift-ui/target/release/SiftUi`, a checkout that no longer exists,
+and reports `idle_rss_mb=0.0`, `window=none` and `startup_ms=7566` -- all artefacts of measuring a
+file that is not there. Repairing it (or deleting it in favour of the two commands above) is an open
+row, because a measurement tool that silently reports zeroes is worse than no tool.
