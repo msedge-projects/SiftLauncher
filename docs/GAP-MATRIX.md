@@ -2287,3 +2287,18 @@ closing one.
 
 Still missing, and next: the close mark and the four rows answer nothing. Escape and an outside
 press are two of the four ways out; the other two are the ✕ and a chosen instance type.
+
+### The rows answer, and the choice shows (2026-11-01)
+
+Driven: open the dialog from the rail's plus, click the first row at its centre, capture. **Custom
+setup carries a brand ring** and the three below it do not -- `.scratch/cap/r74-a.png`, cropped over
+the rows.
+
+So the dialog now has three of the four ways out the reference has: Escape, a press outside, and
+the close mark, plus a row that remembers being chosen. What none of them does yet is *act*: the
+ring records an intention, and every one of the four flows behind these rows -- custom setup's
+loader picker, the project search, the .mrpack chooser, the Prism import -- is still to come.
+
+The first sampling of this capture read the wrong column (`x 434`, two points left of the row's
+own edge at 448) and reported "both edges the raised background", which would have been a false
+negative. Looking at the crop settled it; the pixel probe, aimed properly, is what should have.

@@ -185,12 +185,33 @@ impl Shell {
             crate::fonts::semibold(14.0),
             theme.CONTRAST,
         );
+        let close = egui::Rect::from_min_size(
+            egui::pos2(plate.right() - 40.0, plate.top() + 12.0),
+            egui::vec2(24.0, 24.0),
+        );
+        if settled && clicked && pointer.is_some_and(|point| close.contains(point)) {
+            self.create_open = false;
+            ctx.request_repaint();
+            return;
+        }
         for (index, (title, description, _)) in INSTANCE_TYPES.iter().enumerate() {
             let row = egui::Rect::from_min_size(
                 egui::pos2(left, plate.top() + 166.0 + index as f32 * 42.0),
                 egui::vec2(right - left, 38.0),
             );
+            if settled && clicked && pointer.is_some_and(|point| row.contains(point)) {
+                self.create_choice = Some(index);
+                ctx.request_repaint();
+            }
             painter.rect_filled(row, 10.0, theme.SURFACE_4);
+            if self.create_choice == Some(index) {
+                painter.rect_stroke(
+                    row,
+                    10.0,
+                    egui::Stroke::new(1.0, theme.BRAND),
+                    egui::StrokeKind::Inside,
+                );
+            }
             painter.text(
                 egui::pos2(row.left() + 14.0, row.top() + 7.0),
                 egui::Align2::LEFT_TOP,
@@ -239,6 +260,9 @@ pub struct Shell {
     /// When it opened, on the frame clock. The press that opens the dialog is also a click
     /// outside its plate, so the dismissal has to know it is not the same press.
     pub create_opened: f64,
+    /// Which instance type the reader has chosen, if any. The four rows answer a press by
+    /// remembering it; the flows behind them come one at a time.
+    pub create_choice: Option<usize>,
     /// The selected rail destination.
     pub rail: Rail,
     /// The hovered rail destination, if any. A press animates between the two, which is
@@ -326,6 +350,7 @@ impl Default for Shell {
             // The create dialog starts closed: the reference opens on Home with nothing over it.
             create_open: false,
             create_opened: 0.0,
+            create_choice: None,
             // The reference opens on Home, and a launcher that opens on a catalogue looks
             // like a store rather than a launcher.
             rail: Rail::Home,
@@ -1027,6 +1052,7 @@ impl Shell {
             // press; the four instance types are the dialog's, and the quick-create default it
             // replaced was the only path this launcher had.
             self.create_open = true;
+            self.create_choice = None;
             self.create_opened = ui.input(|input| input.time);
             // The window only redraws while something is in flight, so the frame that opens
             // the dialog has to ask for the one that draws it.
