@@ -1545,10 +1545,10 @@ impl Shell {
                 egui::vec2(g::PANEL - 48.0, 400.0),
             );
             let used = crate::pages::project::panel(ui, block, &self.theme, &project);
-            shared = Rect::from_min_max(
-                egui::pos2(panel.left(), panel.top() + 20.0 + used + 16.0),
-                panel.max,
-            );
+            // The reference hides the default sidebar on a project page (`sidebar/index.vue:165-167`):
+            // the project's own column is the whole of it, so nothing is left for the shared stack.
+            let _ = used;
+            shared = Rect::NOTHING;
         }
 
         let signed_in = self

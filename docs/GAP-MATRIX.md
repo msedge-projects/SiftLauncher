@@ -3946,3 +3946,14 @@ for it should be pages of work rather than rounds.
 **And it is the same correction this document keeps making in the other direction**: the ledger said "invented
 toolbar, wrong card text, no preview" -- three small rows -- where the source says the page has no renderer.
 **Read the source before estimating, not just before believing.**
+
+# CLOSED: a project page hides the shared sidebar (2026-11-01)
+
+Opened a project from Discover and the whole right column is now the project's own: description tabs, Install,
+and the compatibility block (Minecraft: Java Edition, Platforms, Links, Creators, Details). **The "Getting
+started" and "News" stack is gone**, which is what the reference does (`sidebar/index.vue:165-167`) and what
+this launcher did not.
+
+One line: when a project is open the shared stack is given an empty rect instead of the remainder below the
+project's panel. The project page is thereby the first page in the app that **owns its whole column**, and it is
+visible in a single frame.
