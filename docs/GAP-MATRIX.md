@@ -3679,3 +3679,18 @@ not one:
 
 **Left unlanded rather than half-landed**, because a selection state with no visible difference is
 indistinguishable from no selection at all -- and this document has four retractions saying so.
+
+# CLOSED: server cards are targets, and selection is visible (2026-11-01)
+
+Pressed a card and the **Modrinth SMP** row grew a brand-green bar on its leading edge that was not there
+before -- and the card above it did not. So the audit's second P0 is closed: cards respond to the pointer,
+and the response is visible rather than merely recorded.
+
+**Three edits, all landed at once because the geometry already existed**: `State::selected`, the initialiser,
+and the caller binding the returned rects to interact, set the selection and paint the bar.
+
+**And one deliberate simplification worth naming**: the reference opens a *detail view* on a card press and
+this launcher has none, so the press selects instead. That is a smaller behaviour, honestly chosen, and it
+is drivable -- which the "open a detail view" version was not, without building a whole page.
+
+**Two audit rows closed, both driven**: the servers search (types, shows, filters) and now the cards.

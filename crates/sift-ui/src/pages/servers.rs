@@ -235,6 +235,9 @@ pub struct State {
     pub search: String,
     /// Whether the field is taking the keyboard.
     pub search_focused: bool,
+    /// The server whose card was last pressed. The reference opens a detail view; until there is one,
+    /// selection is shown as a brand bar on the card's leading edge.
+    pub selected: Option<String>,
     /// The order the rows are drawn in.
     pub sort: Sort,
     /// The rows: the samples, or whatever the reader has added.
@@ -261,6 +264,7 @@ impl Default for State {
         State {
             search: String::new(),
             search_focused: false,
+            selected: None,
             sort: Sort::default(),
             servers: samples(),
             live: Vec::new(),
@@ -1271,7 +1275,7 @@ pub fn draw(
                 if blocks > 0 {
                     top += BLOCK_GAP;
                 }
-                draw_section(
+                let cards = draw_section(
         ui.painter(),
         area.left(),
         width,
@@ -1281,6 +1285,27 @@ pub fn draw(
         &state.live,
         &state.icons.0,
     );
+                for (index, card) in cards.iter().enumerate() {
+                    let pressed = ui
+                        .interact(
+                            *card,
+                            egui::Id::new(("server-card", card.left() as i32, card.top() as i32)),
+                            Sense::click(),
+                        )
+                        .clicked();
+                    let address = &section.cards[index].address;
+                    if pressed {
+                        state.selected = Some(address.clone());
+                        ui.ctx().request_repaint();
+                    }
+                    if state.selected.as_deref() == Some(address.as_str()) {
+                        ui.painter().rect_filled(
+                            Rect::from_min_size(card.min, egui::vec2(4.0, card.height())),
+                            2.0,
+                            theme.BRAND,
+                        );
+                    }
+                }
                 top += section_height(section);
                 blocks += 1;
             }
