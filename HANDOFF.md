@@ -614,3 +614,48 @@ the project header, and the skins grid's tiles.
 **Measured state at this point**: 175 commits, tree clean, 176 tests, idle 105.3 MB with zero idle ticks,
 one verified audit row closed (the servers search), 101 audit rows still open across five pages, nothing
 pushed and no CI.
+
+
+---
+
+## Closing state, for whoever reads this next (2026-11-01, round 178)
+
+**192 commits on local master, tree clean, 176 tests passing, release build green, nothing pushed, no CI.**
+
+### Works, and was verified by driving (not by capture)
+
+* **Create an instance**: rail plus -> Custom setup -> name -> loader chip -> Create. Writes
+  `net.fabricmc.fabric-loader` and the Minecraft version into `mmc-pack.json`.
+* **Install a mod**: Discover -> Mods -> search -> Install. Five jars across three profiles, versions
+  chosen *for the instance* (`0.6.13+mc1.21.4`, `0.9.3-beta.1+mc26.3`).
+* **Files panel** on the instance page: lists, descends, returns, arms, removes; delete then reinstall
+  round-trips.
+* **Discover**: search typed, tabs, pager, sort menu and selection, view-count menu, category filter,
+  Ctrl+F.
+* **Servers**: search types-shows-filters, cards are targets, selection toggles, a detail panel shows live
+  status, Copy IP copies the address.
+* **Smoke**: every rail page opens; no panic in the log; About renders version and notices.
+
+### Two rules this stretch paid for
+
+1. **Print the widget's rect before pressing it** -- fifteen presses failed on aim alone; not one was a
+   product defect.
+2. **When a capture says a feature is missing, read the source** -- five features called unbuilt were
+   complete and unreached.
+
+### Known-broken or unverified, in priority order
+
+1. **The clipboard action** (`Copy IP`) changes its label but the clipboard itself was never read back --
+   no `xclip` in the lab. Verify before trusting.
+2. **No server join path.** The reference's Join launches the game; nothing here does.
+3. **The skins page toolbar** is a documented deliberate deviation that the audit read as a defect -- decide
+   one way and record it.
+4. **The shell sidebar promo draws on every page**; the reference hides it on a project page.
+5. **101 audit rows** in `.scratch/reports/` are unworked, and **23 matrix rows are UNKNOWN** pending captures
+   that do not exist yet.
+
+### The one habit that would have saved the most time
+
+Grep this document for the *symptom* before theorising. The servers panel took six rounds because a plate
+painted on a lower layer is covered by later paint -- **a fact already written here**, from the create
+dialog, two hundred rounds earlier.
