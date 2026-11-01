@@ -180,13 +180,18 @@ impl Shell {
                     egui::vec2(row.width(), 28.0),
                 );
                 painter.rect_filled(field, 8.0, theme.BUTTON_BG);
-                painter.text(
-                    egui::pos2(field.left() + 10.0, field.center().y),
-                    egui::Align2::LEFT_CENTER,
-                    value,
-                    crate::fonts::body(13.0),
-                    theme.SECONDARY,
-                );
+                // The first row's text comes from the real field placed below; painting the
+                // placeholder here as well would draw it twice, and did -- the probe showed the
+                // state holding "abc" while the plate still read "Name your instance".
+                if index != 0 {
+                    painter.text(
+                        egui::pos2(field.left() + 10.0, field.center().y),
+                        egui::Align2::LEFT_CENTER,
+                        value,
+                        crate::fonts::body(13.0),
+                        theme.SECONDARY,
+                    );
+                }
             }
             // The name takes typing: a real `TextEdit` over the painted plate, in an area on
             // the same foreground layer. A painted field that cannot be typed into is the exact
@@ -205,6 +210,10 @@ impl Shell {
                 egui::TextEdit::singleline(&mut name)
                     .id(egui::Id::new("create-name-field"))
                     .hint_text("Name your instance")
+                    // The default visuals paint this field's text in a colour close enough to
+                    // the plate to be invisible -- the probe showed the state holding "abc"
+                    // while the plate looked empty. The theme's own ink fixes it.
+                    .text_color(theme.CONTRAST)
                     .desired_width(name_field.width()),
             );
             self.create_name = name;

@@ -2393,3 +2393,23 @@ all.
 
 That comparison is the last cheap step before the field works, and the code around it is now
 correct by measurement rather than by hope: rect, hover and focus are all confirmed on screen.
+
+### The field's state works; its paint does not (2026-11-01)
+
+The decisive probe:
+
+    name local="abc"  stored="abc"
+
+So keyboard input **reaches the widget and is stored on the shell** -- the field is functional in every
+sense except that it draws nothing. Removing the duplicate placeholder made it plainly empty, and an
+explicit `.text_color(theme.CONTRAST)` changed not one pixel: the two captures hash identically.
+
+That leaves one line of enquiry for the next round, and it is narrow: a `TextEdit` placed on the
+frame's `Ui` **after** `CentralPanel::show` has returned is drawn outside that panel's clip
+rectangle, so egui culls its glyphs while still delivering input to it. The fix is to place the field
+inside a `show` block -- an `Area` positioned with `fixed_pos(name_field.min)` and the widget put at
+`Rect::from_min_size(Pos2::ZERO, size)`, which is what the earlier attempt did *before* the rect
+was known to be wrong.
+
+The distinction this round earned: **input works, painting is culled.** Those are separate faults
+and the session has been treating them as one.
