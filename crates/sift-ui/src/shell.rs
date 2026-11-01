@@ -2700,6 +2700,9 @@ fn card(
         egui::Id::new(("result-install", index)),
         Sense::click(),
     );
+    if std::env::var_os("SIFT_CARD_PROBE").is_some() {
+        eprintln!("card {index} rect={rect:?} install={install:?}");
+    }
     if button.clicked() {
         Press::Install
     } else if card.clicked() {
