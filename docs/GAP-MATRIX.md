@@ -3024,3 +3024,19 @@ in this session the same situation produced a half-written file and three repair
 memory before the anchor failed and are written out verbatim in the attempt: the `files_dir` field and
 the call site that captures the descent. The next session needs the `files_tab` body as it actually is
 today -- re-read it rather than recalling it -- and then the row press.
+
+### Files navigation: attempt two, reverted, with the exact tail found (2026-11-01)
+
+Applied the three known edits (state field, call site, signature) and the compiler named the two
+remaining consequences at once: `State` must lose `Copy`, and `files_tab` must end with `descend`.
+
+The next script tried to do both and failed on its tail anchor -- the function does not end at
+`\n}\n\nfn logs_tab(`, because a doc comment sits between them. **It failed before writing**, so the
+file was restored from git and the tree is green again.
+
+So the navigation is now **five edits with four known verbatim**: the state field, the call site, the
+signature, and `Copy` off the derive -- all written in this document's previous entries -- plus one that
+needs the function's *actual* last two lines, which no attempt has yet printed.
+
+**The single thing the next session should do first**: print `files_tab`'s final five lines, and the
+anchor problem disappears.
