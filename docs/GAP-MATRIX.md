@@ -2823,3 +2823,23 @@ Given that `Action::Edit` already calls `open_instance_page` and that function a
 dispatch carries Play, Duplicate and OpenFolder.
 
 **Recorded rather than claimed**: one press wired, no page opened, two named candidates, one probe.
+
+# The instance page is reachable, and it was built all along (2026-11-01)
+
+The card's press works once it is aimed at the card's own rect: **`[[88,120]-[1116,216]]`**, centre
+content (602,168) -- my press at screen (400,130) was ten points above its top edge, the session's
+sixth aim error and its third in the instance doorway.
+
+What it opens is not an empty page:
+
+* a header reading **Instance 2 / Fabric 26.3** with its install path and a **Play** button;
+* tabs **Content, Files, Screenshots, Worlds, Logs**;
+* a Description panel listing **Loader: Fabric, Game version: 26.3, Last played: --, Path: ...**.
+
+So the Instance page was not "untouched": it exists, is populated from the profile the create dialog
+wrote, and was simply **unreachable**. Three rounds of this session called it unbuilt; one press at a
+printed coordinate shows it complete enough to have a Files tab -- which is where the brief's
+file-management behaviour lives.
+
+**Next**: press **Files** (and **Content**) and drive them, then compare each against the reference's
+own instance page, which has never been captured either.

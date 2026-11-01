@@ -716,11 +716,8 @@ fn list(
         // place (`InstanceItem.vue`). This was the missing press: `Action::Edit` already opened
         // the page and nothing ever emitted it. Registered before the play pill and the kebab so
         // those two, being later, win the press inside their own rects.
-        if ui
-            .interact(card, egui::Id::new(("card", &instance.id)), Sense::click())
-            .clicked()
-            && matches!(action, Action::None)
-        {
+        let card_response = ui.interact(card, egui::Id::new(("card", &instance.id)), Sense::click());
+        if card_response.clicked() && matches!(action, Action::None) {
             menu.open_for = None;
             action = Action::Edit(instance.id.clone());
         }
