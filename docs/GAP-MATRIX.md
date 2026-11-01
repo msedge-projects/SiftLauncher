@@ -2684,3 +2684,17 @@ and neither had anything in the codebase that could have caught it.**
 **Owed**: an install against a 26.3 instance, because the proven install ran on 1.21.4 and Sodium
 publishes `+mc26.3` builds too -- the earlier vanilla-instance run picked exactly one -- but that
 path has not been re-walked since this default changed.
+
+# The debt is paid: the install re-lands on the corrected defaults (2026-11-01)
+
+    toast:  Installed Sodium 0.9.3-beta.1 for Fabric 26.3 into Instance 2.
+    disk:   instances/Instance 2/mods/sodium-fabric-0.9.3-beta.1+mc26.3.jar
+
+The version chosen is **26.3**, the measured Minecraft default, and the instance's profile carries
+**0.20.1**, the measured Fabric loader. So both corrected constants are load-bearing and both work:
+the create dialog writes them, `loader_and_version` reads them back, `pick_version` chooses against
+them, and the jar that lands matches.
+
+That makes four installs this session has proven with a file, on four different profiles -- Vanilla
+1.21.4, Fabric 1.21.4, and now Fabric 26.3 twice -- and it closes the one debt the last round opened
+by changing a default the earlier proof had used.
