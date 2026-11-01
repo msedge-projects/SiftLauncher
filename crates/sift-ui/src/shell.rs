@@ -159,10 +159,10 @@ impl Shell {
         if self.create_step == 1 {
             for (index, (label, value)) in [
                 ("Name", "Name your instance"),
-                // Not "Fabric": the loader is not wired into `Instance::create` yet, and the
-                // instance this dialog makes is Vanilla. A row that cannot change the outcome
-                // must not claim a value the outcome does not have.
-                ("Loader", "Vanilla"),
+                // The chips below decide this; the label reports what they chose. The value is
+                // still not written into the instance -- that is the next slice -- so the chips
+                // change the dialog and not yet the profile.
+                ("Loader", self.create_loader.as_str()),
                 ("Game version", "1.21.4"),
             ]
             .into_iter()
@@ -224,6 +224,31 @@ impl Shell {
             );
 
             self.create_name = name;
+            // The loader chips, under the Loader row: the control the reference offers, which
+            // this step had as a painted label only.
+            for (index, loader) in ["Vanilla", "Fabric", "NeoForge"].into_iter().enumerate() {
+                let chip = egui::Rect::from_min_size(
+                    egui::pos2(left + index as f32 * 92.0, plate.top() + 238.0),
+                    egui::vec2(84.0, 26.0),
+                );
+                let chosen = self.create_loader == loader;
+                painter.rect_filled(
+                    chip,
+                    8.0,
+                    if chosen { theme.BRAND } else { theme.SURFACE_4 },
+                );
+                painter.text(
+                    chip.center(),
+                    egui::Align2::CENTER_CENTER,
+                    loader,
+                    crate::fonts::semibold(12.0),
+                    if chosen { theme.ACCENT_CONTRAST } else { theme.BASE },
+                );
+                if settled && clicked && pointer.is_some_and(|point| chip.contains(point)) {
+                    self.create_loader = loader.to_owned();
+                    ctx.request_repaint();
+                }
+            }
             // The button that finishes the step. It uses the path the rail's plus used to run
             // -- the one that creates an instance -- so the dialog can be walked end to end.
             // What it does not yet do is read the typed name or the loader; that is the next
@@ -368,6 +393,10 @@ pub struct Shell {
     /// The name typed into the custom setup. Empty means the reference's placeholder shows and
     /// Create would use the default name.
     pub create_name: String,
+    /// The loader the reader picked in the custom setup: "Vanilla" until something else is
+    /// chosen. The chips are the reference's three common loaders; Forge and Quilt arrive with
+    /// the profile work that writes them.
+    pub create_loader: String,
     /// The selected rail destination.
     pub rail: Rail,
     /// The hovered rail destination, if any. A press animates between the two, which is
@@ -458,6 +487,7 @@ impl Default for Shell {
             create_choice: None,
             create_step: 0,
             create_name: String::new(),
+            create_loader: "Vanilla".to_owned(),
             // The reference opens on Home, and a launcher that opens on a catalogue looks
             // like a store rather than a launcher.
             rail: Rail::Home,

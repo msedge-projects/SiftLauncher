@@ -2562,3 +2562,16 @@ uid, which is the only thing the reader looks for.
 
 The loader *version* is the one fact still missing -- it has to come from a Fabric meta endpoint or a
 pinned default -- and that is a decision, not a discovery.
+
+### The loader is a control now, not a label (2026-11-01)
+
+Three chips under the Loader row -- **Vanilla**, **Fabric**, **NeoForge** -- with the chosen one
+brand-filled, and the Loader row reporting the choice. Captured; the default is Vanilla, which is
+what the dialog still creates.
+
+Two limits, both stated in the code and here: the click that changes the chip has not been
+demonstrated in this round (the press aimed at Fabric landed between chips), and the chosen value is
+not yet written into the instance profile -- it changes the dialog and not yet the product.
+
+That second limit is the three-step change the last note scoped: a component in `mmc-pack.json`
+with uid `net.fabricmc.fabric-loader`, which is the only thing `loader_and_version` reads.
