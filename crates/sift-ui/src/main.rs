@@ -97,7 +97,7 @@ impl eframe::App for App {
         // The create dialog sits over every page, on a foreground layer, which is why it is
         // drawn after the panel rather than inside it.
         if shell.create_open {
-            shell.draw_create(&ctx, screen);
+            shell.draw_create(&ctx, screen, ui);
         }
         log.end();
         // Only while something is in flight. An idle window draws nothing at all, which is

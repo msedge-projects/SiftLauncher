@@ -2357,3 +2357,21 @@ the one that took twelve rounds to find so that this round would not have to.
 `draw_create(ctx, screen)` becomes `draw_create(ctx, screen, ui)`, called before the panel
 closure takes `ui` by `&mut`, and the field placed on it directly. One signature, one call site,
 one field.
+
+### Placed on the frame's ui, still no typing (2026-11-01)
+
+The Area was removed and the field placed with `ui.put(name_field, ...)` on the Ui the frame draws
+through. Driven again -- open, Custom setup, click the field, type "Fabric Test" -- and the capture
+**still shows the placeholder**.
+
+So the coordinate space was not the only fault, or not the fault at all. What is known: the field
+compiles, is placed at an absolute rect on a real ui, and receives nothing.
+
+**The next probe is the same three values, re-taken on this placement**: `response.rect`,
+`hovered()`, `clicked()` from inside the `ui.put`. If `rect` is now the field's own position and
+the click still does not hover it, the ui it is placed on is not the one taking input -- the
+settings modal's fields work through the same `place_field`, so the difference between the two call
+sites is the thing to compare, and that comparison is cheaper than any further guess.
+
+Recorded plainly: two rounds on this field, both ending without typing. The one thing that has
+worked every time is the probe; the thing that has failed every time is changing the code first.

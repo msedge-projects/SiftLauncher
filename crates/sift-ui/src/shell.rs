@@ -100,7 +100,7 @@ impl Shell {
     ///
     /// Drawn on a foreground layer so it sits over every page, which is where a modal belongs
     /// and is why this is a method taking the context rather than part of `ui`.
-    pub fn draw_create(&mut self, ctx: &egui::Context, screen: egui::Rect) {
+    pub fn draw_create(&mut self, ctx: &egui::Context, screen: egui::Rect, ui: &mut egui::Ui) {
         let theme = &self.theme;
         let painter = ctx.layer_painter(egui::LayerId::new(
             egui::Order::Foreground,
@@ -195,22 +195,18 @@ impl Shell {
                 egui::pos2(left, plate.top() + 82.0),
                 egui::vec2(right - left, 28.0),
             );
+            // Placed on the frame's own `ui`, which carries real screen coordinates. The Area
+            // this replaced put the widget at the layer's origin -- the probe found it at
+            // (0,0) with nothing under the click -- because `ui.put`'s rect is read inside the
+            // area, not on the screen.
             let mut name = self.create_name.clone();
-            egui::Area::new(egui::Id::new("create-name"))
-                .order(egui::Order::Foreground)
-                .fixed_pos(name_field.min)
-                .show(ctx, |ui| {
-                    ui.put(
-                        egui::Rect::from_min_size(
-                            egui::Pos2::ZERO,
-                            name_field.size(),
-                        ),
-                        egui::TextEdit::singleline(&mut name)
-                            .id(egui::Id::new("create-name-field"))
-                            .hint_text("Name your instance")
-                            .desired_width(name_field.width()),
-                    );
-                });
+            ui.put(
+                name_field,
+                egui::TextEdit::singleline(&mut name)
+                    .id(egui::Id::new("create-name-field"))
+                    .hint_text("Name your instance")
+                    .desired_width(name_field.width()),
+            );
             self.create_name = name;
             return;
         }
