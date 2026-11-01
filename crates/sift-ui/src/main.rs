@@ -36,6 +36,8 @@ mod images;
 mod nbt;
 mod search;
 mod shell;
+/// The skins on this machine, and the folder they live in.
+mod skins;
 /// The reference's palette, geometry, type and motion as egui values.
 mod theme;
 mod widgets;

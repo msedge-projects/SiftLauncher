@@ -102,7 +102,34 @@ impl Images {
     /// Synchronous, unlike [`Images::get`]: the file is on the disk the caller has just read, and a
     /// screenshot decodes in a few milliseconds -- a worker would cost a frame of latency for it.
     pub fn get_file(&mut self, ctx: &egui::Context, path: &std::path::Path) -> Option<TextureHandle> {
-        let key = path.display().to_string();
+        self.get_file_with(ctx, path, egui::TextureOptions::LINEAR, "smooth")
+    }
+
+    /// The same file, sampled nearest instead of smooth.
+    ///
+    /// A screenshot is a photograph and wants bilinear filtering; a Minecraft skin is eight
+    /// texels of face blown up to a hundred points, and smoothing it turns a pixel-art face
+    /// into a gradient. The two samplings are separate cache entries, because the texture is
+    /// uploaded with its sampling baked in and one path cannot be both.
+    pub fn get_file_nearest(
+        &mut self,
+        ctx: &egui::Context,
+        path: &std::path::Path,
+    ) -> Option<TextureHandle> {
+        self.get_file_with(ctx, path, egui::TextureOptions::NEAREST, "nearest")
+    }
+
+    /// Decode `path` once and cache it under its path and sampling.
+    fn get_file_with(
+        &mut self,
+        ctx: &egui::Context,
+        path: &std::path::Path,
+        options: egui::TextureOptions,
+        sampling: &str,
+    ) -> Option<TextureHandle> {
+        // The sampling is part of the key: a path asked for both ways gets one texture each,
+        // and the suffix keeps that key from colliding with a URL.
+        let key = format!("file:{sampling}:{}", path.display());
         self.tick += 1;
         let tick = self.tick;
         match self.entries.get_mut(&key) {
@@ -123,7 +150,7 @@ impl Images {
         };
         let size = [image.width() as usize, image.height() as usize];
         let pixels = egui::ColorImage::from_rgba_unmultiplied(size, image.as_raw());
-        let texture = ctx.load_texture(key.clone(), pixels, egui::TextureOptions::LINEAR);
+        let texture = ctx.load_texture(key.clone(), pixels, options);
         self.entries.insert(key, Entry::Ready(texture.clone(), tick));
         self.evict();
         Some(texture)

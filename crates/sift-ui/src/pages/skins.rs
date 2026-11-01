@@ -66,9 +66,8 @@
 //! taking the library's rule: the reference's 2.5fr list column at 1440 is about 660 points
 //! wide and lays out four ~156-point tiles, where this page lays out five 180-point ones
 //! across the full content column. Two grids that line up on two pages was judged worth
-//! more than one grid that matches a column the page does not draw yet — the preview column
-//! the source puts in that other 1fr is not drawn at all, because there is no skin renderer
-//! (see the module's closing note).
+//! more than one grid that matches the source's own column split exactly. The preview
+//! column the source puts in the other 1fr *is* drawn — a fixed 320-point plate, see below.
 //!
 //! **The grid at 1440.** The shell's content column is 996 points
 //! (`PANEL_LEFT - CONTENT_LEFT - 16`, `pages/mod.rs:39-58`), the page's 24-point insets
@@ -86,24 +85,27 @@
 //! page would give five 183.2-point columns, which is neither the source's grid nor the
 //! library's.
 //!
-//! **No renderer, so no preview column and no skin faces.** The source's whole left column
-//! is a 3D `SkinPreviewRenderer` (`Skins.vue:1093-1237`), and each card's face is a baked
-//! skin image (`BakedSkinButton.vue:27-45`). Neither exists here: the page is two
-//! columns' worth of content flattened into one, and a card is a `SUPER_RAISED_BG` plate
-//! with the shirt glyph, the skin's name, its author and its model tag.
-//!
-//! **This file is not wired into the shell yet.** `pages/mod.rs` declares no `skins` module
-//! and `Page` has no `Skins` variant, so nothing calls [`draw`]. Declaring the module and
-//! adding the route are outside this file's brief.
+//! **Faces from a local file, not from a renderer.** The source's whole left column is a 3D
+//! `SkinPreviewRenderer` (`Skins.vue:1093-1237`), and each card's face is a baked skin image
+//! (`BakedSkinButton.vue:27-45`). This launcher has no renderer and no skin service, so the
+//! page reads PNGs from `<platform data root>/skins/` (see `crate::skins`) and draws the one
+//! face every skin format agrees on: the head's front at atlas `(8,8,8,8)` and its overlay at
+//! `(40,8,8,8)`, scaled into the card's picture plate and into the preview column. The grid
+//! falls back to the eight sample rows only while the folder is empty; the moment a file is
+//! there, the saved skins are the section's content. There is still no 3D model, no camera,
+//! no drag-to-rotate: a face is the part of the reference this source can actually feed.
 //!
 //! [`draw`] returns `false`: nothing on this page animates, and the search plate is a
 //! painted stand-in for the widget another agent owns (see [`search_plate`]).
+
+use std::path::PathBuf;
 
 use eframe::egui::{self, Align2, Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
 
 use crate::fonts;
 use crate::icons::{self, Glyph};
 use crate::images::Images;
+use crate::skins::SavedSkin;
 use crate::theme::Theme;
 
 // ---------------------------------------------------------------------------
@@ -481,9 +483,18 @@ pub struct State {
     pub query: String,
     /// Whether the search field is taking the keyboard.
     pub query_focused: bool,
-    /// The skin the preview column shows. Nothing changes it yet: a card is painted, not
-    /// interactive, so this is the first skin until cards report presses.
+    /// The sample skin the preview column shows when no saved file is selected.
     pub selected: &'static str,
+    /// The saved skin the preview column shows, if the reader picked one.
+    ///
+    /// A path rather than a name: two folders can hold files with the same stem, and the
+    /// selection has to survive the grid being filtered by the query.
+    pub selected_file: Option<PathBuf>,
+    /// The skins found in the launcher's `skins/` folder, in the order the reader sees them.
+    pub files: Vec<SavedSkin>,
+    /// Whether the folder has been read at least once. An empty list is re-read on later
+    /// draws, so the first skin a reader drops in appears without a restart.
+    scanned: bool,
     /// The authored skins' composed views, uploaded once each.
     textures: Vec<Option<egui::TextureHandle>>,
 }
@@ -496,6 +507,8 @@ impl std::fmt::Debug for State {
             .field("model", &self.model)
             .field("query", &self.query)
             .field("selected", &self.selected)
+            .field("selected_file", &self.selected_file)
+            .field("files", &self.files.len())
             .field(
                 "textures",
                 &self.textures.iter().filter(|slot| slot.is_some()).count(),
@@ -512,6 +525,9 @@ impl Default for State {
             query: String::new(),
             query_focused: false,
             selected: SKINS[0].name,
+            selected_file: None,
+            files: Vec::new(),
+            scanned: false,
             textures: Vec::new(),
         }
     }
@@ -630,6 +646,23 @@ fn visible_skins(model: Model, query: Option<&str>) -> Vec<Skin> {
         .collect()
 }
 
+/// The saved skins matching the query, in file order.
+///
+/// **The model tab does not filter these.** A PNG does not record whether its arms are wide
+/// or slim -- the model is account metadata in the reference, not a pixel in the texture --
+/// so hiding a file that is visibly on disk because the tab says "Slim" would be a worse
+/// lie than showing it under both tabs. The sample grid above still follows the tab.
+fn visible_saved(files: &[SavedSkin], query: Option<&str>) -> Vec<SavedSkin> {
+    files
+        .iter()
+        .filter(|skin| match query {
+            None => true,
+            Some(query) => contains_ignore_case(&skin.name, query),
+        })
+        .cloned()
+        .collect()
+}
+
 /// Whether `haystack` contains `needle`, ignoring ASCII case. `to_ascii_lowercase` rather
 /// than `to_lowercase`: the sample data is ASCII, and the ASCII fold is the one that cannot
 /// change a string's length.
@@ -669,25 +702,40 @@ pub fn draw(
     images: &mut crate::images::Images,
     state: &mut State,
 ) -> bool {
-    // Every skin's view, uploaded on first use and read by name below: the grid closure
-    // cannot borrow the state mutably, and a skin's view does not change while the page is up.
+    // Every sample skin's view, uploaded on first use and read by name below: the grid
+    // closure cannot borrow the state mutably, and a view does not change while the page is
+    // up.
     let textures: Vec<(&'static str, Option<egui::TextureHandle>)> = SKINS
         .iter()
         .map(|skin| (skin.name, skin_texture(ui.ctx(), state, skin.name)))
         .collect();
+
     // The page owns its rect (`pages/mod.rs`'s seam); paint the page colour first so the
     // grid sits on `--color-bg` even if the caller did not clear the column.
     ui.painter().rect_filled(rect, 0, theme.BG);
 
-    // `Images` is the project-icon cache and there is nothing to ask it for: a skin's face
-    // would come from a texture this page does not have (no file, no download link), and
-    // the reference bakes those previews through its own WebGL renderer
-    // (`SkinPreviewRendererImpl.vue`), not through an icon URL. When a renderer lands, this
-    // is the call that changes: `if let Some(texture) = images.get(ui.ctx(), &skin.texture)`.
-    let _ = images;
-
     if rect.width() <= 2.0 * PAGE_PADDING || rect.height() <= 2.0 * PAGE_PADDING {
         return false;
+    }
+
+    // The folder is read on the first draw, not on every frame: a scan is filesystem I/O on
+    // the UI thread, and a list of saved skins is stable for the whole visit. An empty list
+    // is re-read on later draws, because that is the reader who drops in their first skin
+    // and comes back to find it.
+    // shortcut: the folder is scanned on the first draw and while empty, not once it has
+    // files, until a file watcher can report a new PNG.
+    if !state.scanned || state.files.is_empty() {
+        state.files = crate::skins::list();
+        state.scanned = true;
+    }
+    // A selection that named a deleted file falls back to the first one, so the preview
+    // always has a face to show while the folder has any.
+    if state
+        .selected_file
+        .as_ref()
+        .is_none_or(|path| !state.files.iter().any(|skin| &skin.path == path))
+    {
+        state.selected_file = state.files.first().map(|skin| skin.path.clone());
     }
 
     let toolbar_bottom = heading_and_toolbar(ui, rect, theme, state);
@@ -707,7 +755,7 @@ pub fn draw(
             egui::pos2(content_left, toolbar_bottom),
             egui::pos2(content_left + PREVIEW_WIDTH, rect.bottom() - PAGE_PADDING),
         );
-        draw_preview(ui, preview, theme, state);
+        draw_preview(ui, preview, theme, state, images);
         grid_left = preview.right() + PREVIEW_GAP;
     }
 
@@ -735,12 +783,40 @@ pub fn draw(
     // `Context::content_rect`.
     let grid = grid_layout_in(grid_rect.width(), ui.ctx().content_rect().width());
     let query = state.query();
-    let visible = visible_skins(state.model, query);
+    // **Saved files win the Saved grid.** The eight `SKINS` rows are sample data so a
+    // capture taken on a machine with no skins still shows a grid. The moment the folder has
+    // a PNG, the real saved skins take the section and the samples stay where they belong,
+    // in the Default skins strip under it. The model tab filters the samples only: a file
+    // does not record its arm style (see `visible_saved`).
+    let using_files = !state.files.is_empty();
+    let visible_files = visible_saved(&state.files, query);
+    let samples = visible_skins(state.model, query);
+    let visible_count = if using_files {
+        visible_files.len()
+    } else {
+        samples.len()
+    };
+
+    // The saved skins' 64x64 atlases, through the icon cache: decoded once and sampled
+    // nearest, because a skin is pixel art (see `Images::get_file_nearest`). A file that
+    // will not decode is `None` and keeps the glyph its card has always drawn.
+    let saved_textures: Vec<Option<egui::TextureHandle>> = visible_files
+        .iter()
+        .map(|skin| images.get_file_nearest(ui.ctx(), &skin.path))
+        .collect();
+
+    let probing = std::env::var_os("SIFT_SKINS_PROBE").is_some();
+    if probing {
+        eprintln!(
+            "skins: page={rect:?} preview={} grid={grid_rect:?} files={} visible={visible_count} columns={} card={}x{}",
+            show_preview, state.files.len(), grid.columns, grid.card_width, grid.card_height
+        );
+    }
 
     // Where the next section starts: the saved grid, its rows, and the gap below it.
     let mut below_grid = grid_rect.top();
 
-    match empty_state(query, visible.len()) {
+    match empty_state(query, visible_count) {
         // The source's own state for "nothing saved": the Saved-skins grid's first tile is
         // the add dropzone (`VirtualSkinSectionList.vue:426-443`), drawn where the first
         // card would be. There is no prose because the reference has none.
@@ -763,7 +839,7 @@ pub fn draw(
             // The reference's Saved-skins grid holds the add dropzone as its first tile
             // (`VirtualSkinSectionList.vue:426-443`), so the reader's own skins start at the
             // second slot whether the list is empty or not.
-            let slots = visible.len() + 1;
+            let slots = visible_count + 1;
             let rows = slots.div_ceil(columns);
             let grid_height =
                 (rows as f32 * (grid.card_height + GRID_GAP) - GRID_GAP).max(GRID_MIN_HEIGHT);
@@ -789,7 +865,7 @@ pub fn draw(
                         egui::vec2(grid_rect.width(), content_height),
                         Sense::hover(),
                     );
-                    let painter = ui.painter();
+                    let painter = ui.painter().clone();
                     for slot in 0..slots {
                         let column = slot % columns;
                         let row = slot / columns;
@@ -803,18 +879,52 @@ pub fn draw(
                         );
                         // Slot zero is the dropzone; the reader's own skins start at the
                         // second slot (`VirtualSkinSectionList.vue:426-443`).
-                        match slot.checked_sub(1).and_then(|index| visible.get(index)) {
-                            Some(skin) => draw_card(
-                                painter,
+                        let Some(index) = slot.checked_sub(1) else {
+                            dropzone_tile(&painter, card, theme);
+                            continue;
+                        };
+                        if using_files {
+                            let Some(skin) = visible_files.get(index) else {
+                                dropzone_tile(&painter, card, theme);
+                                continue;
+                            };
+                            // The card is the selection control, so it has to be a target:
+                            // the reference's `SkinButton` is a button with `aria-pressed`
+                            // (`SkinButton.vue:80`), and the preview above is what it
+                            // selects into.
+                            let id = egui::Id::new(("skin-card", skin.path.clone()));
+                            let response = ui.interact(card, id, Sense::click());
+                            if response.clicked() {
+                                state.selected_file = Some(skin.path.clone());
+                                // The preview was drawn before the grid this frame; ask for
+                                // the frame that draws the face the reader just chose.
+                                ui.ctx().request_repaint();
+                            }
+                            let selected = state.selected_file.as_ref() == Some(&skin.path);
+                            draw_saved_card(
+                                &painter,
                                 card,
                                 theme,
                                 skin,
-                                textures
-                                    .iter()
-                                    .find(|(name, _)| *name == skin.name)
-                                    .and_then(|(_, texture)| texture.as_ref()),
-                            ),
-                            None => dropzone_tile(painter, card, theme),
+                                saved_textures.get(index).and_then(|texture| texture.as_ref()),
+                                selected,
+                                response.hovered(),
+                            );
+                            if probing {
+                                eprintln!(
+                                    "skins: card slot={slot} name={:?} rect={card:?} face={:?} selected={selected}",
+                                    skin.name,
+                                    square_in(card_face_rect(card, false))
+                                );
+                            }
+                        } else if let Some(skin) = samples.get(index) {
+                            let texture = textures
+                                .iter()
+                                .find(|(name, _)| *name == skin.name)
+                                .and_then(|(_, texture)| texture.as_ref());
+                            draw_sample_card(&painter, card, theme, skin, texture);
+                        } else {
+                            dropzone_tile(&painter, card, theme);
                         }
                     }
 
@@ -853,7 +963,7 @@ pub fn draw(
                             let badge = egui::pos2(tile.right() - 14.0, tile.top() + 14.0);
                             painter.circle_filled(badge, 9.0, theme.BRAND);
                             icons::draw(
-                                painter,
+                                &painter,
                                 Glyph::Check,
                                 Rect::from_center_size(badge, Vec2::splat(11.0)),
                                 theme.ACCENT_CONTRAST,
@@ -1214,6 +1324,47 @@ pub const ATLAS: usize = 64;
 pub const VIEW_W: usize = 16;
 pub const VIEW_H: usize = 32;
 
+/// A rectangle in the 64x64 atlas, in texels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AtlasRect {
+    /// Left edge, in texels from the atlas's left.
+    pub x: usize,
+    /// Top edge, in texels from the atlas's top.
+    pub y: usize,
+    /// Width in texels.
+    pub w: usize,
+    /// Height in texels.
+    pub h: usize,
+}
+
+impl AtlasRect {
+    /// The rectangle as the normalised UV corner pair `egui::Painter::image` samples with.
+    pub fn uv(self) -> Rect {
+        let atlas = ATLAS as f32;
+        Rect::from_min_max(
+            egui::pos2(self.x as f32 / atlas, self.y as f32 / atlas),
+            egui::pos2((self.x + self.w) as f32 / atlas, (self.y + self.h) as f32 / atlas),
+        )
+    }
+}
+
+/// The head's front face in a 64x64 skin: the eight by eight texels the face is drawn from.
+pub const HEAD_FRONT: AtlasRect = AtlasRect {
+    x: 8,
+    y: 8,
+    w: 8,
+    h: 8,
+};
+
+/// The head's overlay (the "hat" layer): a second eight by eight face drawn over the first,
+/// where a PNG's alpha lets a hood, a mask or hair sit on top of the skin.
+pub const HEAD_OVERLAY: AtlasRect = AtlasRect {
+    x: 40,
+    y: 8,
+    w: 8,
+    h: 8,
+};
+
 /// The six front faces, as (atlas x, atlas y, width, height, view x, view y).
 const FACES: [(usize, usize, usize, usize, usize, usize); 6] = [
     (8, 8, 8, 8, 4, 0),      // head
@@ -1423,14 +1574,22 @@ fn skin_texture(
     art_texture(ctx, state, index)
 }
 
-/// Draw the preview column: the chosen skin's tile at preview size, its name, the edit button,
-/// and the account bar at the foot.
+/// Draw the preview column: the chosen skin's face, its name, the edit button, and the
+/// account bar at the foot.
 ///
-/// `// shortcut: a plate with the skin glyph, not a render; upgrade when a skin texture or a
-/// renderer exists.` The reference draws a rotatable 3D model here (`SkinPreviewRenderer`), and
-/// a still plate is the honest version of that: it shows which skin is being looked at without
-/// pretending to be the skin.
-fn draw_preview(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State) {
+/// **A face, not a render.** The reference draws a rotatable 3D model here
+/// (`SkinPreviewRenderer`). There is no renderer in this launcher, so the column shows the
+/// eight-by-eight head the selected skin's atlas holds, enlarged with nearest sampling: the
+/// same pixels the card shows at thumbnail size, at a size a reader can actually look at.
+/// The account bar and the edit plate are unchanged -- they are painted stand-ins for
+/// controls owned elsewhere, and this column's brief is the face.
+fn draw_preview(
+    ui: &mut Ui,
+    rect: Rect,
+    theme: &Theme,
+    state: &mut State,
+    images: &mut Images,
+) {
     let painter = ui.painter();
     painter.rect_filled(rect, PREVIEW_RADIUS, theme.RAISED_BG);
 
@@ -1442,42 +1601,90 @@ fn draw_preview(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State) {
     );
     painter.rect_filled(bar, PREVIEW_RADIUS, theme.SUPER_RAISED_BG);
 
-    let chosen = SKINS
-        .iter()
-        .find(|skin| skin.name == state.selected)
-        .copied()
-        .unwrap_or(SKINS[0]);
     let plate = Rect::from_min_max(rect.min, egui::pos2(rect.right(), bar.top()));
-    // The character, at the view's own proportions: sixteen texels across, thirty-two down.
-    let width = (plate.width() * 0.42).min(128.0);
-    let glyph = Rect::from_center_size(
-        plate.center() - egui::vec2(0.0, 32.0),
-        egui::vec2(width, width * VIEW_H as f32 / VIEW_W as f32),
-    );
-    if let Some(texture) = skin_texture(ui.ctx(), state, chosen.name) {
-        painter.image(
-            texture.id(),
-            glyph,
-            Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-            egui::Color32::WHITE,
+    let chosen_file = state
+        .selected_file
+        .as_ref()
+        .and_then(|path| state.files.iter().find(|skin| &skin.path == path))
+        .cloned();
+    let file_texture = chosen_file
+        .as_ref()
+        .and_then(|skin| images.get_file_nearest(ui.ctx(), &skin.path));
+
+    // The big face sits above the name, centred in the part of the plate the account bar and
+    // the edit button leave. The view branch below keeps the sample skins' full elevation.
+    if let Some(skin) = &chosen_file {
+        let side = (plate.width() * 0.58).min(200.0);
+        let face = Rect::from_center_size(
+            plate.center() - egui::vec2(0.0, 40.0),
+            Vec2::splat(side),
         );
+        if let Some(texture) = &file_texture {
+            draw_face(painter, face, texture);
+        } else {
+            icons::draw(
+                painter,
+                Glyph::Shirt,
+                Rect::from_center_size(face.center(), Vec2::splat(side * 0.5)),
+                theme.SECONDARY,
+            );
+        }
+        painter.text(
+            egui::pos2(plate.center().x, face.bottom() + 12.0),
+            Align2::CENTER_TOP,
+            &skin.name,
+            fonts::semibold(18.0),
+            theme.CONTRAST,
+        );
+        // The file has no author: a PNG on disk is not attributed to anyone. The model tag
+        // is what the card prints, and it is the one field that is always known.
+        painter.text(
+            egui::pos2(plate.center().x, face.bottom() + 36.0),
+            Align2::CENTER_TOP,
+            Model::Classic.label(),
+            fonts::body(13.0),
+            theme.SECONDARY,
+        );
+        if std::env::var_os("SIFT_SKINS_PROBE").is_some() {
+            eprintln!("skins: preview-face={face:?} name={:?}", skin.name);
+        }
     } else {
-        icons::draw(painter, Glyph::Shirt, glyph, theme.SECONDARY);
+        let chosen = SKINS
+            .iter()
+            .find(|skin| skin.name == state.selected)
+            .copied()
+            .unwrap_or(SKINS[0]);
+        // The character, at the view's own proportions: sixteen texels across, thirty-two down.
+        let width = (plate.width() * 0.42).min(128.0);
+        let glyph = Rect::from_center_size(
+            plate.center() - egui::vec2(0.0, 32.0),
+            egui::vec2(width, width * VIEW_H as f32 / VIEW_W as f32),
+        );
+        if let Some(texture) = skin_texture(ui.ctx(), state, chosen.name) {
+            painter.image(
+                texture.id(),
+                glyph,
+                Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                egui::Color32::WHITE,
+            );
+        } else {
+            icons::draw(painter, Glyph::Shirt, glyph, theme.SECONDARY);
+        }
+        painter.text(
+            egui::pos2(plate.center().x, glyph.bottom() + 12.0),
+            Align2::CENTER_TOP,
+            chosen.name,
+            fonts::semibold(18.0),
+            theme.CONTRAST,
+        );
+        painter.text(
+            egui::pos2(plate.center().x, glyph.bottom() + 36.0),
+            Align2::CENTER_TOP,
+            chosen.author,
+            fonts::body(13.0),
+            theme.SECONDARY,
+        );
     }
-    painter.text(
-        egui::pos2(plate.center().x, glyph.bottom() + 12.0),
-        Align2::CENTER_TOP,
-        chosen.name,
-        fonts::semibold(18.0),
-        theme.CONTRAST,
-    );
-    painter.text(
-        egui::pos2(plate.center().x, glyph.bottom() + 36.0),
-        Align2::CENTER_TOP,
-        chosen.author,
-        fonts::body(13.0),
-        theme.SECONDARY,
-    );
 
     // The edit button, centred under the name, in the same plate the toolbar's Add skin uses.
     let edit_size = egui::vec2(120.0, 32.0);
@@ -1523,24 +1730,131 @@ fn draw_preview(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State) {
     );
 }
 
-/// One skin card: a plain plate with the skin's name, its author and its model.
+/// The plate a card leaves for its picture: below the top padding, above the name line.
+fn card_face_rect(rect: Rect, has_author: bool) -> Rect {
+    let tag_top = rect.bottom() - CARD_PADDING - TAG_HEIGHT;
+    let name_top = if has_author {
+        tag_top - CARD_TEXT_GAP - AUTHOR_LINE - CARD_TEXT_GAP - NAME_LINE
+    } else {
+        tag_top - CARD_TEXT_GAP - NAME_LINE
+    };
+    Rect::from_min_max(
+        egui::pos2(rect.left() + CARD_PADDING, rect.top() + CARD_PADDING),
+        egui::pos2(rect.right() - CARD_PADDING, name_top - CARD_TEXT_GAP),
+    )
+}
+
+/// The largest square that fits in `rect`, centred: a face has one side, and the card's
+/// picture area is taller than it is wide.
+fn square_in(rect: Rect) -> Rect {
+    let side = rect.width().min(rect.height()).max(0.0);
+    Rect::from_center_size(rect.center(), Vec2::splat(side))
+}
+
+/// Draw a 64x64 atlas's head: the front face, then the overlay over it.
 ///
-/// Geometry from `SkinButton.vue:153-162` -- the 31/40 box, the 20-point radius and the
-/// 1-point edge -- with the contents inset by `CARD_PADDING`. The name, author and tag stack
-/// up from the bottom the way the reference's action row sits at `bottom-3`
-/// (`SkinButton.vue:118-123`).
-fn draw_card(
+/// The two rectangles are the skin format's own coordinates -- `(8,8,8,8)` and
+/// `(40,8,8,8)` -- and both are scaled into the same square, so the hat layer lands exactly
+/// over the face it belongs to. The overlay's transparent texels leave the face beneath
+/// showing, which is the whole point of the second layer.
+fn draw_face(painter: &egui::Painter, plate: Rect, texture: &egui::TextureHandle) {
+    let face = square_in(plate);
+    if face.width() < 1.0 {
+        return;
+    }
+    for part in [HEAD_FRONT, HEAD_OVERLAY] {
+        painter.image(texture.id(), face, part.uv(), Color32::WHITE);
+    }
+}
+
+/// Which picture a card's plate carries.
+enum CardFace<'a> {
+    /// A composed 16x32 front elevation: the authored sample skins.
+    View(&'a egui::TextureHandle),
+    /// A 64x64 skin atlas: the head's front and overlay are drawn.
+    Atlas(&'a egui::TextureHandle),
+    /// No texture: the shirt glyph stands in.
+    None,
+}
+
+/// A sample skin's card: the view, the name, the author and the model.
+fn draw_sample_card(
     painter: &egui::Painter,
     rect: Rect,
     theme: &Theme,
     skin: &Skin,
     texture: Option<&egui::TextureHandle>,
 ) {
-    painter.rect_filled(rect, CARD_RADIUS, theme.SUPER_RAISED_BG);
+    draw_card(
+        painter,
+        rect,
+        theme,
+        skin.name,
+        Some(skin.author),
+        skin.model,
+        false,
+        false,
+        texture.map_or(CardFace::None, CardFace::View),
+    );
+}
+
+/// A saved skin's card: the face cut from its atlas, its name and its model.
+fn draw_saved_card(
+    painter: &egui::Painter,
+    rect: Rect,
+    theme: &Theme,
+    skin: &SavedSkin,
+    texture: Option<&egui::TextureHandle>,
+    selected: bool,
+    hovered: bool,
+) {
+    draw_card(
+        painter,
+        rect,
+        theme,
+        &skin.name,
+        None,
+        Model::Classic,
+        selected,
+        hovered,
+        texture.map_or(CardFace::None, CardFace::Atlas),
+    );
+}
+
+/// One skin card: a plate with the skin's picture, its name, an optional author and its model.
+///
+/// Geometry from `SkinButton.vue:153-162` -- the 31/40 box, the 20-point radius and the
+/// 1-point edge -- with the contents inset by `CARD_PADDING`. The name, author and tag stack
+/// up from the bottom the way the reference's action row sits at `bottom-3`
+/// (`SkinButton.vue:118-123`).
+#[allow(clippy::too_many_arguments)]
+fn draw_card(
+    painter: &egui::Painter,
+    rect: Rect,
+    theme: &Theme,
+    name: &str,
+    author: Option<&str>,
+    model: Model,
+    selected: bool,
+    hovered: bool,
+    face: CardFace<'_>,
+) {
+    // `hover:bg-surface-4` and the selected edge are the reference's two card states
+    // (`SkinButton.vue:55, 173-197`); the press that produces them is the grid's.
+    let plate = if hovered {
+        theme.SURFACE_4
+    } else {
+        theme.SUPER_RAISED_BG
+    };
+    painter.rect_filled(rect, CARD_RADIUS, plate);
     painter.rect_stroke(
         rect,
         CARD_RADIUS,
-        Stroke::new(crate::theme::STROKE_WIDTH, theme.SURFACE_5),
+        if selected {
+            Stroke::new(2.0, theme.BRAND)
+        } else {
+            Stroke::new(crate::theme::STROKE_WIDTH, theme.SURFACE_5)
+        },
         egui::StrokeKind::Inside,
     );
 
@@ -1552,7 +1866,7 @@ fn draw_card(
         egui::vec2(
             content_width.min(text_width_of(
                 painter,
-                skin.model.label(),
+                model.label(),
                 fonts::label(TAG_TEXT_SIZE),
                 TAG_PADDING,
             )),
@@ -1560,34 +1874,34 @@ fn draw_card(
         ),
     );
     let author_top = tag.top() - CARD_TEXT_GAP - AUTHOR_LINE;
-    let name_top = author_top - CARD_TEXT_GAP - NAME_LINE;
+    let name_top = match author {
+        Some(_) => author_top - CARD_TEXT_GAP - NAME_LINE,
+        None => tag.top() - CARD_TEXT_GAP - NAME_LINE,
+    };
 
-    // The skin's own face would be here (`BakedSkinButton.vue:27-45` bakes a preview and
-    // hands it to `SkinButton`'s `<img>`). There is no renderer in this launcher, so the
-    // shirt glyph stands in on the plate, sized to whatever room the text leaves.
-    let face = Rect::from_min_max(
-        egui::pos2(rect.left() + CARD_PADDING, rect.top() + CARD_PADDING),
-        egui::pos2(rect.right() - CARD_PADDING, name_top - CARD_TEXT_GAP),
-    );
-    if face.width() > 1.0 && face.height() > 1.0 {
-        match texture {
-            Some(texture) => {
-                // The view's own 1:2 proportions, as tall as the face allows.
-                let height = face.height().min(face.width() * 2.0).max(16.0);
+    let face_rect = card_face_rect(rect, author.is_some());
+    if face_rect.width() > 1.0 && face_rect.height() > 1.0 {
+        match face {
+            // The sample skins' elevation keeps its own 1:2 proportions.
+            CardFace::View(texture) => {
+                let height = face_rect.height().min(face_rect.width() * 2.0).max(16.0);
                 let size = egui::vec2(height / 2.0, height);
                 painter.image(
                     texture.id(),
-                    Rect::from_center_size(face.center(), size),
+                    Rect::from_center_size(face_rect.center(), size),
                     Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
                     egui::Color32::WHITE,
                 );
             }
-            None => {
-                let side = (face.height() * 0.5).clamp(16.0, 64.0);
+            // **The face a saved skin's card is about.** Eight texels of head, nearest
+            // sampled, scaled into the plate the shirt glyph used to fill.
+            CardFace::Atlas(texture) => draw_face(painter, face_rect, texture),
+            CardFace::None => {
+                let side = (face_rect.height() * 0.5).clamp(16.0, 64.0);
                 icons::draw(
                     painter,
                     Glyph::Shirt,
-                    Rect::from_center_size(face.center(), Vec2::splat(side)),
+                    Rect::from_center_size(face_rect.center(), Vec2::splat(side)),
                     theme.SECONDARY,
                 );
             }
@@ -1600,20 +1914,22 @@ fn draw_card(
             egui::pos2(text_left, name_top),
             egui::vec2(content_width, NAME_LINE),
         ),
-        skin.name,
+        name,
         fonts::semibold(NAME_SIZE),
         theme.CONTRAST,
     );
-    clipped_line(
-        painter,
-        Rect::from_min_size(
-            egui::pos2(text_left, author_top),
-            egui::vec2(content_width, AUTHOR_LINE),
-        ),
-        skin.author,
-        fonts::body(AUTHOR_SIZE),
-        theme.SECONDARY,
-    );
+    if let Some(author) = author {
+        clipped_line(
+            painter,
+            Rect::from_min_size(
+                egui::pos2(text_left, author_top),
+                egui::vec2(content_width, AUTHOR_LINE),
+            ),
+            author,
+            fonts::body(AUTHOR_SIZE),
+            theme.SECONDARY,
+        );
+    }
 
     // The model tag: the app's pill, filled with the page behind the card so it reads as a
     // cut-out rather than another plate.
@@ -1627,10 +1943,26 @@ fn draw_card(
     painter.text(
         tag.center(),
         Align2::CENTER_CENTER,
-        skin.model.label(),
+        model.label(),
         fonts::label(TAG_TEXT_SIZE),
         theme.SECONDARY,
     );
+
+    // The reference marks the selected tile with a 24-point contrast disc and a check
+    // (`SkinButton.vue:90-96`), over the picture at the top-right corner.
+    if selected {
+        let badge = egui::pos2(
+            rect.right() - CARD_PADDING - 12.0,
+            rect.top() + CARD_PADDING + 12.0,
+        );
+        painter.circle_filled(badge, 12.0, theme.CONTRAST);
+        icons::draw(
+            painter,
+            Glyph::Check,
+            Rect::from_center_size(badge, Vec2::splat(15.0)),
+            theme.BG,
+        );
+    }
 }
 
 /// A pill's width around its label: the text plus the padding either side.
@@ -2027,5 +2359,182 @@ mod tests {
             padded.query, "  mossy ",
             "the stored text keeps what was typed"
         );
+    }
+
+    /// The two head rectangles are the skin format's own coordinates, expressed as the UV
+    /// corners `Painter::image` samples with: an atlas of 64 texels puts the front face at
+    /// 0.125..0.25 on both axes and the overlay at 0.625..0.75 across.
+    #[test]
+    fn the_head_rectangles_map_to_the_atlas_uv() {
+        let close = |a: f32, b: f32| (a - b).abs() < 1e-6;
+        let front = HEAD_FRONT.uv();
+        assert!(close(front.min.x, 0.125), "8 / 64");
+        assert!(close(front.min.y, 0.125), "8 / 64");
+        assert!(close(front.max.x, 0.25), "16 / 64");
+        assert!(close(front.max.y, 0.25), "16 / 64");
+
+        let overlay = HEAD_OVERLAY.uv();
+        assert!(close(overlay.min.x, 0.625), "40 / 64");
+        assert!(close(overlay.min.y, 0.125), "8 / 64");
+        assert!(close(overlay.max.x, 0.75), "48 / 64");
+        assert!(close(overlay.max.y, 0.25), "16 / 64");
+    }
+
+    /// Both head rectangles are the same eight by eight, inside the atlas, and the overlay is
+    /// the second layer over the same face -- not a different part of the skin.
+    #[test]
+    fn the_overlay_is_the_same_face_at_the_hat_coordinates() {
+        assert_eq!((HEAD_FRONT.w, HEAD_FRONT.h), (8, 8));
+        assert_eq!((HEAD_OVERLAY.w, HEAD_OVERLAY.h), (8, 8));
+        assert_eq!(HEAD_FRONT.w, HEAD_OVERLAY.w);
+        assert_eq!(HEAD_FRONT.h, HEAD_OVERLAY.h);
+        for rect in [HEAD_FRONT, HEAD_OVERLAY] {
+            assert!(rect.x + rect.w <= ATLAS, "head stays inside the atlas");
+            assert!(rect.y + rect.h <= ATLAS, "head stays inside the atlas");
+        }
+        assert_ne!(HEAD_FRONT.x, HEAD_OVERLAY.x, "the overlay is a second layer");
+    }
+
+    /// A face is square: in a card's taller-than-wide picture plate the largest square is the
+    /// plate's width, centred, so the card never stretches the eight-by-eight head.
+    #[test]
+    fn a_face_is_the_largest_square_in_its_plate() {
+        let tall = Rect::from_min_max(egui::pos2(10.0, 20.0), egui::pos2(110.0, 260.0));
+        let face = square_in(tall);
+        assert_eq!(face.width(), 100.0);
+        assert_eq!(face.height(), 100.0);
+        assert_eq!(face.center(), tall.center());
+
+        let wide = Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(300.0, 120.0));
+        let face = square_in(wide);
+        assert_eq!((face.width(), face.height()), (120.0, 120.0));
+        assert_eq!(face.center(), wide.center());
+    }
+
+    /// The picture plate ends above the name, and a card with an author line reserves one more
+    /// line than a saved skin's card, whose file has no author.
+    #[test]
+    fn a_saved_card_leaves_the_face_more_room_than_a_sample_card() {
+        let card = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(180.0, 232.26));
+        let saved = card_face_rect(card, false);
+        let sample = card_face_rect(card, true);
+        assert!(saved.height() > sample.height(), "one fewer text line");
+        assert!(
+            (saved.bottom() - (sample.bottom() + AUTHOR_LINE + CARD_TEXT_GAP)).abs() < 0.001,
+            "the name moves up by exactly the author line and its gap"
+        );
+        assert!(saved.width() > 1.0 && saved.height() > 1.0);
+        assert!(saved.top() > card.top(), "the face is inset by the card padding");
+        assert!(saved.bottom() < card.bottom(), "the face ends above the tag");
+    }
+
+    /// The saved list is filtered by the query but not by the model tab: a PNG does not carry
+    /// an arm style, so a file the reader can see is not hidden by the other tab.
+    #[test]
+    fn the_saved_grid_matches_names_and_ignores_the_model_tab() {
+        let files = [
+            SavedSkin {
+                name: "Overgrown".to_owned(),
+                path: PathBuf::from("/skins/Overgrown.png"),
+            },
+            SavedSkin {
+                name: "night-shift".to_owned(),
+                path: PathBuf::from("/skins/night-shift.png"),
+            },
+        ];
+        assert_eq!(visible_saved(&files, None).len(), 2);
+        assert_eq!(visible_saved(&files, Some("OVER")).len(), 1);
+        assert_eq!(visible_saved(&files, Some("night")).len(), 1);
+        assert_eq!(visible_saved(&files, Some("zzz")).len(), 0);
+        assert_eq!(
+            visible_saved(&files, Some("over"))[0],
+            files[0].clone(),
+            "the match keeps the file it came from"
+        );
+    }
+
+    /// A real 64x64 PNG is what the page lists, and the head texels a generated one carries
+    /// are the texels the UV corners name. This is the source path end to end without a GPU:
+    /// write an atlas, list it, decode it, and read one known pixel back through the same
+    /// rectangle the painter samples.
+    #[test]
+    fn a_generated_atlas_lists_and_its_head_pixels_are_where_the_rect_says() {
+        let dir = std::env::temp_dir().join(format!("sift-skins-atlas-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("scratch");
+        // A 64x64 RGBA atlas with a distinctive head face and a transparent overlay.
+        let mut bytes = vec![0_u8; ATLAS * ATLAS * 4];
+        for y in 0..8 {
+            for x in 0..8 {
+                let at = ((8 + y) * ATLAS + 8 + x) * 4;
+                bytes[at..at + 4].copy_from_slice(&[255, (x * 32) as u8, (y * 32) as u8, 255]);
+            }
+        }
+        let path = dir.join("Generated.png");
+        write_png(&path, ATLAS as u32, ATLAS as u32, &bytes);
+
+        let listed = crate::skins::list_in(&dir);
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].name, "Generated");
+
+        let decoded = image::load_from_memory(&std::fs::read(&path).expect("read"))
+            .expect("decode")
+            .to_rgba8();
+        assert_eq!(decoded.dimensions(), (ATLAS as u32, ATLAS as u32));
+        let face = HEAD_FRONT.uv();
+        let atlas_x = (face.min.x * ATLAS as f32) as u32;
+        let atlas_y = (face.min.y * ATLAS as f32) as u32;
+        assert_eq!((atlas_x, atlas_y), (8, 8), "the UV corner is the head's origin");
+        let pixel = decoded.get_pixel(atlas_x, atlas_y);
+        assert_eq!(pixel.0, [255, 0, 0, 255], "the head's first texel");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A PNG encoder for the test above: one truecolour-with-alpha image, zlib through
+    /// `flate2` (already a dependency), no fixture on disk. Every row is filter 0.
+    fn write_png(path: &std::path::Path, width: u32, height: u32, rgba: &[u8]) {
+        use std::io::Write;
+
+        fn crc32(bytes: &[u8]) -> u32 {
+            let mut crc = 0xffff_ffff_u32;
+            for byte in bytes {
+                crc ^= u32::from(*byte);
+                for _ in 0..8 {
+                    crc = if crc & 1 == 1 {
+                        0xedb8_8320 ^ (crc >> 1)
+                    } else {
+                        crc >> 1
+                    };
+                }
+            }
+            !crc
+        }
+        fn chunk(out: &mut Vec<u8>, kind: &[u8; 4], data: &[u8]) {
+            out.extend_from_slice(&(data.len() as u32).to_be_bytes());
+            let mut body = kind.to_vec();
+            body.extend_from_slice(data);
+            out.extend_from_slice(&body);
+            out.extend_from_slice(&crc32(&body).to_be_bytes());
+        }
+
+        let mut raw = Vec::with_capacity((width as usize * 4 + 1) * height as usize);
+        for row in 0..height as usize {
+            raw.push(0);
+            raw.extend_from_slice(&rgba[row * width as usize * 4..(row + 1) * width as usize * 4]);
+        }
+        let mut encoder =
+            flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::fast());
+        encoder.write_all(&raw).expect("deflate");
+        let compressed = encoder.finish().expect("deflate finish");
+
+        let mut ihdr = Vec::new();
+        ihdr.extend_from_slice(&width.to_be_bytes());
+        ihdr.extend_from_slice(&height.to_be_bytes());
+        ihdr.extend_from_slice(&[8, 6, 0, 0, 0]);
+        let mut png = b"\x89PNG\r\n\x1a\n".to_vec();
+        chunk(&mut png, b"IHDR", &ihdr);
+        chunk(&mut png, b"IDAT", &compressed);
+        chunk(&mut png, b"IEND", &[]);
+        std::fs::write(path, png).expect("write png");
     }
 }
