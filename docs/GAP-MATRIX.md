@@ -2996,3 +2996,17 @@ per-row actions; ours stops at the first level.
 (`FilesState { path, ... }`), a breadcrumb above the list, and a press on a directory row that replaces
 `path` with `path.join(name)`. The renderer already takes any directory -- `folder_entries` is generic
 -- so this is navigation, not a second renderer.
+
+### The navigation attempt was reverted; it needs five call sites, not three (2026-11-01)
+
+Started the Files navigation -- `files_dir` on the page state, a `descend` from a pressed folder row --
+and the compiler found five consequences the edit had not accounted for:
+
+* `State` derives `Copy`, which a `PathBuf` forbids;
+* `files_tab` gains a parameter and a return type, so its call site and its two `return`s change;
+* the row loop where the press belongs is a different function from the one the edit landed in.
+
+Reverted wholesale rather than half-fixed, because a tree that does not build is worse than a feature
+that is not started. **The scope is now exact**: one state field (and `Copy` off), one signature, one
+call site, two returns, one press inside `files_tab`'s own loop. Five places, all named by the compiler
+in a single build -- which is the cheapest possible way to learn them.
