@@ -3124,3 +3124,16 @@ honest about what the next press will do -- and unlike the modal it costs no sta
 **What this panel now does**: lists, descends, returns, arms, removes, and reflects changes made outside
 it. What it does not do: reveal in the OS, open a file, drag or drop one, or show a file's size
 relationship to a limit. Those are the remaining rows.
+
+### Keyboard shortcuts: Ctrl+F does nothing (2026-11-01)
+
+Pressed `ctrl+f` on Discover and typed `sodium`. The field still reads its placeholder -- **"Search
+modpacks..."** -- and the listing is unchanged, so the keystrokes went nowhere.
+
+Two facts from one frame, both worth having: **the keyboard-shortcut clause has no implementation on
+this page at all**, and the tab state was Modpacks rather than Mods, which is why the result list shows
+a modpack. The second is a reminder that even a shortcut test has to establish the page it is on first.
+
+**A shortcut is not hard here** -- egui delivers `ctrl+f` as a key press, and the search field already
+has focus logic; what it lacks is someone asking `wants_keyboard_input` before focusing it. That is the
+next edit, and unlike drag and drop it can be **driven and verified** in this lab.
