@@ -3284,3 +3284,17 @@ among four items.
 So both selects on Discover's toolbar are real: **sort** (opens and selects) and **view count** (opens).
 Choosing a count is the next row, and the routine is the one that has just worked twice: press the
 control at a computed centre, then press an item at a computed centre.
+
+### The category list is labels, not filters (2026-11-01)
+
+Pressed "Adventure" in the sidebar and the frame either side is identical: **no check, no redraw, no
+change of listing.**
+
+And the crop says why in one look: **the categories have no checkboxes at all.** The reference's
+sidebar draws a control beside each category and filtering by it; ours draws a word. "Hide already
+installed" above it *does* have a switch -- so the sidebar is not uniformly unfinished, it is unfinished
+exactly where filtering lives.
+
+**Named next**: a control per category (the reference's checkbox), a selected set on the page state, and
+the category facets added to the request the way the search text already is. The facet machinery exists
+-- the mod card's tag chips come from the same vocabulary -- so this is a UI gap rather than a data one.
