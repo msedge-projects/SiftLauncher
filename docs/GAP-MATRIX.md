@@ -2575,3 +2575,24 @@ not yet written into the instance profile -- it changes the dialog and not yet t
 
 That second limit is the three-step change the last note scoped: a component in `mmc-pack.json`
 with uid `net.fabricmc.fabric-loader`, which is the only thing `loader_and_version` reads.
+
+# A Fabric instance exists on disk (2026-11-01)
+
+The chip click, the Create press and the profile write all landed, and the proof is a file rather
+than a screen:
+
+    instances/Instance 5/mmc-pack.json -> net.minecraft, net.fabricmc.fabric-loader
+
+Every other instance in the folder carries `net.minecraft` alone. So the dialog's loader choice now
+reaches the profile -- the component uid `loader_and_version` reads back -- and it does so through the
+three steps scoped two rounds ago: a chip control, a component written after creation, and a pinned
+loader version (0.16.9, with a meta lookup as the follow-up).
+
+Two things this does and does not settle. It settles that a Fabric instance can exist, which is what
+the install proof has been waiting on since round 59. It does not settle the loader *version*: the
+profile claims 0.16.9 because that is pinned, not because anything asked Fabric what the current
+loader is.
+
+**Next run**: create a Fabric instance, then install Sodium into it and watch the jar land in
+`Instance N/mods/` -- the positive case that the Vanilla refusal has been standing in for since
+round 59.

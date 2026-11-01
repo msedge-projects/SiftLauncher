@@ -1469,6 +1469,34 @@ impl Shell {
                         .file_name()
                         .map(|name| name.to_string_lossy().into_owned())
                         .unwrap_or(name);
+                    // The loader the chips chose, written into the profile as the one component
+                    // `loader_and_version` reads back. A pinned loader version for now: a meta
+                    // lookup is the follow-up, and it is a decision rather than a discovery.
+                    if self.create_loader != "Vanilla" {
+                        let path = instance.root().join("mmc-pack.json");
+                        if let Ok(text) = std::fs::read_to_string(&path) {
+                            if let Ok(mut json) =
+                                serde_json::from_str::<serde_json::Value>(&text)
+                            {
+                                let uid = if self.create_loader == "Fabric" {
+                                    "net.fabricmc.fabric-loader"
+                                } else {
+                                    "net.neoforged"
+                                };
+                                if let Some(list) =
+                                    json.get_mut("components").and_then(|value| value.as_array_mut())
+                                {
+                                    list.push(serde_json::json!({
+                                        "uid": uid,
+                                        "version": "0.16.9",
+                                    }));
+                                    if let Ok(patched) = serde_json::to_string_pretty(&json) {
+                                        let _ = std::fs::write(&path, patched);
+                                    }
+                                }
+                            }
+                        }
+                    }
                     self.toast = Some(format!("Created {made}."));
                     self.create_name.clear();
                     self.instances = crate::data::load().0;
