@@ -68,6 +68,10 @@ struct Job {
     project: String,
     /// The project's name: the new instance's name, and the subject of both sentences.
     title: String,
+    /// The instance the reader picked for a mod install. `None` means nobody chose, and the
+    /// single-instance rule (`choose_instance`) decides -- which is what a one-instance library
+    /// wants and what a two-instance library must be asked about.
+    instance: Option<String>,
 }
 
 /// One worker's word, tagged with the install it belongs to.
@@ -123,12 +127,20 @@ impl Install {
     /// folder. `Resolving` is set here, on the frame that asked, not when the worker's first
     /// word arrives: that is the frame the person who pressed the button sees.
     pub fn start(&mut self, project: &str, title: &str) {
+        self.start_in(project, title, None);
+    }
+
+    /// Start an install into a named instance: the picker's path. The instance is carried into the
+    /// worker so the decision is made once, in the place the reader made it, rather than re-derived
+    /// from whatever the library looks like when the worker runs.
+    pub fn start_in(&mut self, project: &str, title: &str, instance: Option<String>) {
         if self.busy() {
             return;
         }
         let job = Job {
             project: project.to_owned(),
             title: title.to_owned(),
+            instance,
         };
         self.generation = self.generation.wrapping_add(1);
         let generation = self.generation;
@@ -247,7 +259,15 @@ fn install_mod(job: &Job) -> Result<String, String> {
 
     let entries = crate::data::load().0;
     let ids: Vec<String> = entries.iter().map(|entry| entry.id.clone()).collect();
-    let instance = choose_instance(&ids)?;
+    let instance = match job.instance.clone() {
+        Some(chosen) if ids.iter().any(|id| id == &chosen) => chosen,
+        Some(chosen) => {
+            return Err(format!(
+                "the instance {chosen} is no longer in the library, so there is nothing to install into."
+            ))
+        }
+        None => choose_instance(&ids)?,
+    };
     // What the instance runs, so the version is chosen for it rather than being the newest
     // release on the project. The loader goes in lower case because the API spells it that way
     // ("fabric"), and "Vanilla" matches nothing, which falls back to the newest build as
@@ -490,6 +510,7 @@ mod tests {
 
     fn job(project: &str) -> Job {
         Job {
+            instance: None,
             project: project.to_owned(),
             title: "Cobblemon".to_owned(),
         }
