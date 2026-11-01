@@ -1726,3 +1726,21 @@ So the button exists, is drawn in the right place, and swallows its click somewh
 `ui.interact` and `self.text.clear()`. The next probe is the same one that settled every other
 question: print `hit.hovered()`, `hit.clicked()` and the rect for `Id::new("search-clear")` on
 any frame with a click pending.
+
+### The clear button fires; the text comes back (2026-11-01)
+
+    clear rect=[[1090,142]-[1106,158]] pointer=[1097,148] hovered=true clicked=true
+
+The click **is** delivered and `self.text.clear()` runs. The field then shows the old text again,
+which means the text is put back between the widget and its owner -- a controlled-input seam, not
+a hit-testing one. `Search` owns `text`, and the shell owns the query it passes down; if the shell
+hands `sodium` back into the widget every frame, clearing the widget lasts exactly one frame.
+
+So the row is now precise and belongs to the shell, not the widget:
+
+**The clear button works; the field's text is re-seeded from the owner every frame.**
+
+The fix is in the shell: either stop writing the query into the widget after the first frame, or
+let the widget be the single owner and read `query()` back after `ui()` returns -- which the shell
+already does at line 1469 for the request, so the direction of truth needs deciding once rather
+than both being written.
