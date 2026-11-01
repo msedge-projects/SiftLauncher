@@ -587,6 +587,10 @@ pub struct Shell {
     home: crate::pages::home::State,
     /// The project whose page is open, if any. `None` means the rail's own page is showing.
     open_project: Option<crate::pages::project::Project>,
+    /// The card that opened the project page. The page shows a sample project -- it has no id of its
+    /// own -- so the install it asks for is the card's, and the card is the only thing that knows which
+    /// project the reader was looking at.
+    open_card: Option<Card>,
     /// The open project's tab.
     project_state: crate::pages::project::State,
     /// The Discover search field: its text, its focus and its blink phase.
@@ -669,6 +673,7 @@ impl Default for Shell {
             instances: crate::data::load().0,
             home: crate::pages::home::State::default(),
             open_project: None,
+            open_card: None,
             project_state: crate::pages::project::State::default(),
             search: crate::widgets::search::Search::default(),
             results: crate::search::Search::default(),
@@ -826,6 +831,18 @@ impl Shell {
                         &mut self.project_state,
                         &project,
                     );
+                    // The page records a header press and the shell acts on it: this is the seam every
+                    // page uses, because a page cannot reach the installer.
+                    if let Some(press) = self.project_state.take_press() {
+                        match press {
+                            crate::pages::project::Press::Install => {
+                                if let Some(card) = self.open_card.clone() {
+                                    self.press_install(&card);
+                                }
+                            }
+                            crate::pages::project::Press::More => {}
+                        }
+                    }
                     let _ = project;
                     result
                 }
@@ -2322,6 +2339,7 @@ impl Shell {
                     );
                 }
                 let mut opened = false;
+                let mut opened_card: Option<Card> = None;
                 // No modulo: an empty list is a state drawn above, not a list to repeat, and
                 // `index % 0` is a panic rather than a card.
                 for index in 0..results.len() {
@@ -2331,13 +2349,18 @@ impl Shell {
                     let label = self.install.label(&result.id);
                     match card(ui, &self.theme, index, result, &mut self.icons, label) {
                         Press::None => {}
-                        Press::Card => opened = true,
+                        Press::Card => {
+                            opened = true;
+                            opened_card = Some(result.clone());
+                        }
                         Press::Install => self.press_install(result),
                     }
                 }
                 if opened {
                     // Any card opens the sample project for now; the real one carries the
-                    // project's own slug once search is wired.
+                    // project's own slug once search is wired. The card is kept either way, because
+                    // it is what the page's Install press needs.
+                    self.open_card = opened_card.take();
                     self.open_project = Some(crate::pages::project::sample());
                 }
             });
@@ -2698,6 +2721,7 @@ enum Press {
 /// Owned rather than borrowed: half the cards come from a search reply, whose strings the
 /// page does not own, and a card that borrowed them would tie the list to the reply's
 /// lifetime for no gain.
+#[derive(Clone)]
 pub struct Card {
     /// The project's stable id (`"1KVo5zza"`), which is what `version_url` takes and what the
     /// install button is keyed by.
