@@ -1815,3 +1815,28 @@ and more truthful slice than a silent failure, and it is testable without a pick
 **Next round's whole job**: that branch, with the two existing functions, a test that a jar lands
 in `mods/` and a test that a pack still lands as a pack, then one driven capture of the same
 Install click producing a success toast instead of the failure one.
+
+### Why the Install button is not being "fixed" with a gate (2026-11-01)
+
+Reading the call site settled a design question that a hurried patch would have got wrong. The
+comment above the pack call already states the intent:
+
+> A project that is not a pack fails here with the engine's own words ... which is the honest
+> answer for the Mod and Resource Pack tabs: this button installs packs into instances of their own.
+
+So the button is pack-only **by construction**, and the reference is not: on a mod it opens a
+version picker, then asks which instance, then writes the jar. Two shortcuts were considered and
+both are wrong:
+
+* **Hiding Install on non-modpack tabs** would remove a control the reference shows -- a parity
+  regression dressed as a fix.
+* **Installing into "the one instance" when there is exactly one** is the smaller truthful step,
+  but it is still an install without a version choice, and it silently picks a loader.
+
+The real fix needs the picker, and the picker needs the version list (`/project/{id}/version`),
+which `sift-net` already models. That is the next feature, not the next patch.
+
+**What is wrong today and can be said in one sentence**: the failure message blames the archive
+("not a readable pack") when the truth is that this button has no mod path at all. Fixing the
+*sentence* is a five-line change in `failure_line` and is worth doing on its own; fixing the
+*behaviour* is the picker.
