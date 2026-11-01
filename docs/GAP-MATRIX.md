@@ -3894,3 +3894,15 @@ the criterion rather than as a wish, so the row cannot quietly become permanent:
 
 **What this does not excuse**: the search field inside that toolbar still does nothing, and a control that
 does nothing is not covered by "deliberate". The toolbar may stay; its inert field may not.
+
+### The skins search filters, and still shows its placeholder (2026-11-01)
+
+Typed zzz into the skins field: **the Saved skins grid emptied**, so the query reaches the filter and the
+page filters by it. The plate still reads "Search skins...", so the display half is missing -- exactly the
+state the servers field was in for one round before its literal was drawn.
+
+**Three edits, no revert, and the reason is now routine**: this page's toolbar function already takes a Ui
+AND the state, so the press and the event loop belong in it directly -- no rect to return, no caller to
+change. **The cheapest form of the recipe this project has found.**
+
+**Next, one line**: pass the query into search_plate and draw it when non-empty, as servers.rs does.

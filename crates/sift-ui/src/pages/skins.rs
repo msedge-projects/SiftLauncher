@@ -479,6 +479,8 @@ pub struct State {
     /// at the point of use -- the same rule `widgets/search.rs:254-267` states for the
     /// shell's field.
     pub query: String,
+    /// Whether the search field is taking the keyboard.
+    pub query_focused: bool,
     /// The skin the preview column shows. Nothing changes it yet: a card is painted, not
     /// interactive, so this is the first skin until cards report presses.
     pub selected: &'static str,
@@ -508,6 +510,7 @@ impl Default for State {
         State {
             model: Model::default(),
             query: String::new(),
+            query_focused: false,
             selected: SKINS[0].name,
             textures: Vec::new(),
         }
@@ -905,6 +908,33 @@ fn heading_and_toolbar(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State
 
     let search = Rect::from_min_size(row.min, egui::vec2(search_width, CONTROL_HEIGHT));
     search_plate(&painter, search, theme);
+    // The plate is a field here too: this function owns the `Ui` and the state, which is exactly what
+    // the servers page's toolbar lacked when its search was inert.
+    if ui
+        .interact(search, egui::Id::new("skins-search"), Sense::click())
+        .clicked()
+    {
+        state.query_focused = true;
+        ui.ctx().request_repaint();
+    }
+    if state.query_focused {
+        for event in ui.input(|i| i.events.clone()) {
+            match event {
+                egui::Event::Text(text) => {
+                    state.query.push_str(&text);
+                    ui.ctx().request_repaint();
+                }
+                egui::Event::Key { key: egui::Key::Backspace, pressed: true, .. } => {
+                    state.query.pop();
+                    ui.ctx().request_repaint();
+                }
+                egui::Event::Key { key: egui::Key::Escape, pressed: true, .. } => {
+                    state.query_focused = false;
+                }
+                _ => {}
+            }
+        }
+    }
     model_tabs(
         ui,
         &painter,
