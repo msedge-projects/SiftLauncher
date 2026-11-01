@@ -1942,3 +1942,19 @@ function already accepts both.
 
 **This is the row that changes the project's footing**: everything before it was pixels, and this
 is behaviour with a file behind it.
+
+### The install sentence, corrected and re-driven (2026-11-01)
+
+Before: "Installed **Sodium Sodium** 0.9.3-beta.1 for Fabric 26.3 into Instance 1."
+
+After, from the same driven click:
+
+> **Installed Sodium 0.9.3-beta.1 for Fabric 26.3 into Instance 1.**
+
+A version's own name usually carries the project's, so the rule is: print the version name alone
+when it already begins with the project's, and prefix the project's name only when it does not --
+which is what the reference does, and what two tests now hold (one for each case).
+
+That closes the second of the three honest notes from the install milestone. The third -- that
+`pick_version` was given an empty game version and loader -- still stands, and it needs the
+picker rather than a sentence.

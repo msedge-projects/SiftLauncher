@@ -217,6 +217,24 @@ fn run_install(job: Job, generation: u64, sender: Sender<Reply>) {
     let _ = sender.send(Reply { generation, status });
 }
 
+
+/// The sentence a finished mod install owes.
+///
+/// A version's own name usually already carries the project's -- Modrinth names the Sodium
+/// release "Sodium 0.9.3-beta.1" -- so printing both gave "Installed Sodium Sodium 0.9.3-beta.1".
+/// The reference prints the version name alone; the project's name is added only when the
+/// version does not carry it.
+fn success_line(title: &str, version_name: &str, instance: &str) -> String {
+    let named = version_name
+        .to_ascii_lowercase()
+        .starts_with(&title.to_ascii_lowercase());
+    if named || title.is_empty() {
+        format!("Installed {version_name} into {instance}.")
+    } else {
+        format!("Installed {title} {version_name} into {instance}.")
+    }
+}
+
 /// Install a mod into the one instance there is.
 ///
 /// The same shape as a pack install -- resolve, fetch, write -- with two differences that the
@@ -243,10 +261,7 @@ fn install_mod(job: &Job) -> Result<String, String> {
 
     let mods = paths.instances_dir().join(&instance).join("mods");
     install::install_file(&wire, &mods, version)?;
-    Ok(format!(
-        "Installed {} {} into {instance}.",
-        job.title, version.name
-    ))
+    Ok(success_line(&job.title, &version.name, &instance))
 }
 
 /// Resolve the newest pack, fetch its archive, import it as an instance, fill it.
@@ -650,5 +665,29 @@ mod instance_tests {
             .expect_err("several is an error");
         assert!(many.contains('3'), "{many}");
         assert!(many.contains("picker"), "{many}");
+    }
+}
+
+#[cfg(test)]
+mod success_tests {
+    use super::success_line;
+
+    /// The version's name already carrying the project is the common case, and the project's is
+    /// not printed twice.
+    #[test]
+    fn a_version_that_names_its_project_is_not_doubled() {
+        assert_eq!(
+            success_line("Sodium", "Sodium 0.9.3-beta.1", "Instance 1"),
+            "Installed Sodium 0.9.3-beta.1 into Instance 1."
+        );
+    }
+
+    /// When it does not, the project's name goes in front, as the toast needs to say which card.
+    #[test]
+    fn a_version_that_does_not_is_prefixed() {
+        assert_eq!(
+            success_line("Cobblemon", "1.6.1", "survival"),
+            "Installed Cobblemon 1.6.1 into survival."
+        );
     }
 }
