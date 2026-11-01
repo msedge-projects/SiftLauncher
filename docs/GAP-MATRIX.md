@@ -3998,3 +3998,16 @@ value this note does not yet have, and it is the only thing left to read.
 
 **With that one number, the whole header is a single edit**: 96 / 24 / 16 / stats +72 / tabs +104, driven once and
 captured against the reference's proportions.
+
+# CLOSED: the project header at the reference's scale (2026-11-01)
+
+The five coupled values moved together and the page is intact: **96 pt avatar**, **24 pt title**, **16 pt summary**
+wrapping to two lines, the stats row beneath it, and the tab strip **below the text block** -- Description,
+Versions, Gallery, no overlap.
+
+Six edits in one pass, first try, after two rounds of reading. **That is the arithmetic this document has been
+repeating**: the reading cost two rounds, the editing cost one, and every earlier attempt that skipped the reading
+cost a build, a revert and a round.
+
+**The row is closed on a capture**, not on a diff: the header's proportions now match the source's 96/24/16 with the
+tab strip in the column beneath it (`ProjectPageHeader.vue:13`, `page-header/index.vue:13,20-22`).

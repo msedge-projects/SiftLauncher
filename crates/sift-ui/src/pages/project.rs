@@ -112,7 +112,7 @@ pub fn draw(
     let painter = ui.painter();
 
     // ---- Header: the tile, the name and summary, the stats, and the actions ----
-    let tile = Rect::from_min_size(rect.min + egui::vec2(0.0, 8.0), Vec2::splat(64.0));
+    let tile = Rect::from_min_size(rect.min + egui::vec2(0.0, 8.0), Vec2::splat(96.0));
     painter.rect_filled(tile, 12, theme.BUTTON_BG);
     if let Some(texture) = images.get(ui.ctx(), project.icon) {
         painter.image(
@@ -127,20 +127,20 @@ pub fn draw(
         egui::pos2(text_x, tile.top()),
         Align2::LEFT_TOP,
         project.title,
-        fonts::title(20.0),
+        fonts::title(24.0),
         theme.CONTRAST,
     );
     let summary = painter.layout(
         project.summary.to_owned(),
-        fonts::body(13.0),
+        fonts::body(16.0),
         theme.SECONDARY,
         rect.width() - 320.0,
     );
-    painter.galley(egui::pos2(text_x, tile.top() + 26.0), summary, theme.SECONDARY);
+    painter.galley(egui::pos2(text_x, tile.top() + 34.0), summary, theme.SECONDARY);
 
     // The stats row: downloads then followers, each with its glyph, then the tag pills.
     let mut x = text_x;
-    let stats_y = tile.top() + 52.0;
+    let stats_y = tile.top() + 72.0;
     for (glyph, value) in [
         (Glyph::Download, project.downloads),
         (Glyph::Heart, project.followers),
@@ -209,7 +209,7 @@ pub fn draw(
 
     // ---- The page's own tab strip ----
     let tabs = Rect::from_min_size(
-        egui::pos2(rect.left(), rect.top() + 84.0),
+        egui::pos2(rect.left(), rect.top() + 124.0),
         egui::vec2(rect.width(), 36.0),
     );
     let mut tab_x = tabs.left();
