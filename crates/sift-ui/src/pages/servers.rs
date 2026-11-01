@@ -238,6 +238,8 @@ pub struct State {
     /// The server whose card was last pressed. The reference opens a detail view; until there is one,
     /// selection is shown as a brand bar on the card's leading edge.
     pub selected: Option<String>,
+    /// The address last copied from the detail panel, so the button can say so.
+    pub copied: Option<String>,
     /// The order the rows are drawn in.
     pub sort: Sort,
     /// The rows: the samples, or whatever the reader has added.
@@ -265,6 +267,7 @@ impl Default for State {
             search: String::new(),
             search_focused: false,
             selected: None,
+            copied: None,
             sort: Sort::default(),
             servers: samples(),
             live: Vec::new(),
@@ -1312,6 +1315,29 @@ pub fn draw(
                         None => "offline".to_owned(),
                     }
                 );
+                // The one action this panel can honestly offer today: put the address where a reader
+                // can paste it. A "Join" that launched nothing would be a button that lies.
+                let join = Rect::from_min_size(
+                    egui::pos2(panel.right() - 96.0, panel.top() + 16.0),
+                    egui::vec2(84.0, 30.0),
+                );
+                let copied = state.copied.as_deref() == Some(server.address.as_str());
+                painter.rect_filled(join, 6.0, theme.BUTTON_BG_SELECTED);
+                painter.text(
+                    join.center(),
+                    egui::Align2::CENTER_CENTER,
+                    if copied { "Copied" } else { "Copy IP" },
+                    fonts::semibold(12.0),
+                    theme.BUTTON_TEXT_SELECTED,
+                );
+                if ui
+                    .interact(join, egui::Id::new("server-copy"), Sense::click())
+                    .clicked()
+                {
+                    ui.ctx().copy_text(server.address.clone());
+                    state.copied = Some(server.address.clone());
+                    ui.ctx().request_repaint();
+                }
                 painter.text(
                     egui::pos2(panel.left() + 12.0, panel.top() + 48.0),
                     egui::Align2::LEFT_TOP,

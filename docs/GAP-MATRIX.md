@@ -3833,3 +3833,17 @@ stretch that no revert was needed**, and it is the direct difference between thi
 **What the panel is**: a second rendering of data already on screen, which is a smaller thing than the
 reference's server page and should be recorded as such. **What it is not**: a route, a join action, or a MOTD
 block -- the summary is still the card's, not a description.
+
+### The panel's one action copies the address -- label verified, clipboard not (2026-11-01)
+
+A "Copy IP" button sits on the panel's right; pressed, it reads **"Copied"**. So the press lands, the state
+changes and the label follows.
+
+**The clipboard itself is unverified**: the lab has no `xclip`, so nothing could read the selection back.
+The call is `ui.ctx().copy_text(server.address.clone())`, which is egui's own clipboard path and the same one
+the rest of the app uses -- but "the same code as elsewhere" is an argument, not a capture, and this document
+records it as an argument.
+
+**Why copy rather than join**: the reference's panel has a Join that launches the game; this launcher has no
+server-join path at all, and **a button that launched nothing would be a button that lies**. Copying is the
+one action the page can honestly offer, and it is genuinely useful to a reader pasting an address.
