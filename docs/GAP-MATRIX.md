@@ -3520,3 +3520,21 @@ painting pass, and the press has to be registered wherever the page *does* have 
 
 Reverted, tree green. **The next attempt starts one function higher**, and the work is then the same
 four lines used on Discover: interact, focus flag, event loop, and the filter that already exists.
+
+### The search rect is returned to the caller -- one read left (2026-11-01)
+
+`heading_and_toolbar`'s signature is the answer the last round was looking for:
+
+    fn heading_and_toolbar(painter, rect, theme, count, shown) -> (f32, Rect)
+
+**It returns the search field's rect.** So the drawing pass already computes the geometry, and its caller --
+which owns the `Ui` -- can register a press on that rect and write `state.search`. No new geometry, no
+second painter function: one `interact` at the call site plus the event loop Discover already uses.
+
+Tried to patch the call site by pattern and **the destructuring did not match**, so nothing was written and
+the tree stayed green. **The one unknown is now a single line of someone else's code** -- the exact form of
+the `let (...) = heading_and_toolbar(...)` binding -- and after that the change is four lines.
+
+**This is the whole recipe, written out so it does not have to be rediscovered**: read the binding, add
+`state.search_focused`, interact on the returned rect, loop over `Event::Text`/`Backspace`/`Escape` into
+`state.search`, and the filter already runs.
