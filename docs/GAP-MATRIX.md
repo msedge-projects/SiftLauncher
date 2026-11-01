@@ -16,7 +16,9 @@
 
 **DONE means driven or tested, and the row names the evidence.** Of the 90 DONE rows as counted on 2026-11-01, four rest on a capture measurement with its numbers in the gap cell (rows 1–3 and 8, all dated), 51 on a value compared on both sides — the sheet's line against our constant, both cited — 20 on the report's bare "none", 5 on a Renderer row whose risk is "nothing today", 6 on a match by absence, and **4 on nothing at all** (rows 284, 288, 289, 295 were flipped from OPEN to DONE in the working tree while this pass was being written, with no note and no evidence added — see §Counts). **No DONE row in this file names a test or a driven run.** That is the honest reading of the word as the table uses it, and it is the weakest part of this document: a token that matches is not a behaviour that works. A row that claims a behaviour rather than a value should not be believed as DONE until a drive or a test is written into it.
 
-**OPEN rows were re-read on 2026-11-01.** 29 OPEN rows whose evidence was a press that never landed, or a drive that never happened, were checked against the source. 15 are now `VERIFIED` and 14 `OPEN-WITH-CAUSE`; the list, with the `file:line` read for each, is in §Verification ledger under "The rows that were called unbuilt and were merely unreached". Those 29 take OPEN from the 504 this file carried at HEAD (`dc3d330`) to 475. The count stands at **471 OPEN** as this paragraph was written, because four more rows left OPEN in the working tree while the pass ran — see §Counts, and see them named.
+**OPEN rows were re-read on 2026-11-01.** 30 OPEN rows whose evidence was a press that never landed, or a drive that never happened, were checked against the source. 15 are now `VERIFIED` and 15 `OPEN-WITH-CAUSE`; the list, with the `file:line` read for each, is in §Verification ledger under "The rows that were called unbuilt and were merely unreached". Those 30 take OPEN from the 504 this file carried at HEAD (`dc3d330`) to 474. The count stands at **470 OPEN** as this paragraph was written, because four more rows left OPEN in the working tree while the pass ran — see §Counts, and see them named.
+
+**Citations are the reports', and they were true when the report was written.** Checked on 2026-11-01: 610 of the 612 `file:line` citations in the `ours` column still resolve to a file in this tree at a line it contains — the two that do not are `src/settings.rs`, which became `crates/sift-ui/src/pages/settings.rs`, and a `lib.rs` the crate has never had. **Resolving is not agreeing.** A citation that points inside a file can still point at code that has moved: `instance.rs:470-512` is cited by twelve Files-tab rows and now lands in `rename_entry` and the Content tab, not in the file list at all. That is why a row this file has re-read carries its own dated `file:line`, and why an unread row's citation is a lead rather than a fact.
 
 **Every count in this file is re-derived with a script, and says when.** The command is in §Counts; a number here without a date is a number to re-run.
 
@@ -724,7 +726,7 @@ This is the merged work plan for making Sift Launcher identical to Modrinth App 
 | 588 | Screenshots — Export selection as ZIP | `index.vue:1685-1693`<br>`af/helpers/instance.ts:266-268` | Bar button → save dialog → `export_screenshots(keys, path)` (`index.vue:1685-1693`, `:1226-1246`; backend `af/helpers/instance.ts:266-268`). | — (this report has no states column) | None (listed as missing at `sift-ui/pages/screenshots.rs:91`). | No export. | OPEN | P2 |
 | 589 | Screenshots — Custom groups | `index.vue:874-980` | New group from the toolbar or selection bar, inline rename, delete with description, remove-from-group (`index.vue:874-980`, `:1583`, `:1665-1684`; copy `:250-317`). | — (this report has no states column) | Month buckets only (`sift-ui/pages/screenshots.rs:577-618`). | No user groups. | OPEN | P3 |
 | 590 | Screenshots — Go to the owning instance | `index.vue:1100-1102` | Options menu `Go to instance` routes to `/instance/<id>` (`index.vue:1100-1102`, `:1083-1087`). | — (this report has no states column) | The instance name is painted on each card's caption (`sift-ui/pages/screenshots.rs:1265-1354`, caption at `:1322`, helper `instance_and_date` at `:652`); no press. | No navigation from a screenshot to its instance. | OPEN | P3 |
-| 591 | Worlds — Per-world menu | `af/components/ui/world/WorldItem.vue:328-424`<br>`worlds/index.vue:105`<br>`af/helpers/worlds.ts:220-223` | Play/stop, refresh, copy address (servers), Edit, Open folder, Don’t show on home, Create shortcut, Desync, Delete (`af/components/ui/world/WorldItem.vue:328-424`); Open folder calls `showWorldInFolder` (`worlds/index.vue:105`; `af/helpers/worlds.ts:220-223`). | — (this report has no states column) | None — no hit targets in the tab (`sift-ui/pages/instance.rs:438-466`). | No world actions at all. | OPEN | P1 |
+| 591 | Worlds — Per-world menu | `af/components/ui/world/WorldItem.vue:328-424`<br>`worlds/index.vue:105`<br>`af/helpers/worlds.ts:220-223` | Play/stop, refresh, copy address (servers), Edit, Open folder, Don’t show on home, Create shortcut, Desync, Delete (`af/components/ui/world/WorldItem.vue:328-424`); Open folder calls `showWorldInFolder` (`worlds/index.vue:105`; `af/helpers/worlds.ts:220-223`). | — (this report has no states column) | None — no hit targets in the tab (`sift-ui/pages/instance.rs:438-466`). | No world actions at all. RE-VERIFIED 2026-11-01: a world row is a hit target that launches the instance into that world (instance.rs:655-663, returned at :673) — the menu itself, Play/stop, Edit, Open folder, Create shortcut and Delete, is still absent. | OPEN-WITH-CAUSE | P1 |
 | 592 | Worlds — Delete with confirmation | `af/components/ui/world/modal/ConfirmRemoveWorldModal.vue:25-75`<br>`worlds/index.vue:702-715`<br>`af/helpers/worlds.ts:151-153` | Modal with two copies: `Delete world` + “This world and all its contents will be permanently deleted…” for singleplayer, `Remove server` with `Remove here` / `Remove everywhere` for a synced server (`af/components/ui/world/modal/ConfirmRemoveWorldModal.vue:25-75`; dispatch `worlds/index.vue:702-715`; backend `af/helpers/worlds.ts:151-153`, `:189-194`). | — (this report has no states column) | None. | No delete, no confirm. | OPEN | P1 |
 | 593 | Worlds — Edit a world | `af/components/ui/world/modal/EditSingleplayerWorldModal.vue:18`<br>`af/helpers/worlds.ts:121-145` | Rename (`rename_world`), reset icon (`reset_world_icon`), display status (`set_world_display_status`) from one modal (`af/components/ui/world/modal/EditSingleplayerWorldModal.vue:18`, `:43-44`; helpers `af/helpers/worlds.ts:121-145`). | — (this report has no states column) | None. | No rename/reset. | OPEN | P2 |
 | 594 | Worlds — Import / export / duplicate a world | `af/helpers/worlds.ts:147-149` | **Not stated in source** — no import, export or duplicate control exists in the Worlds tab, and no helper names one. `backup_world` is defined (`af/helpers/worlds.ts:147-149`) but has **no call site** in `af/` or `ui/`. | — (this report has no states column) | None. | n/a for parity; a world import/export is a product decision, not a port. | NOT-IN-SOURCE | — |
@@ -781,10 +783,10 @@ grep -E '^\| *[0-9]+ *\|' docs/GAP-MATRIX.md \
 
 | status | rows | share | what it means here |
 |---|---:|---:|---|
-| OPEN | 471 | 75.4% | matched against nothing yet: a claim about the product that cites a source read or a capture |
+| OPEN | 470 | 75.2% | matched against nothing yet: a claim about the product that cites a source read or a capture |
 | DONE | 90 | 14.4% | shown equal — by a measurement with numbers, or a value compared on both sides |
 | VERIFIED | 15 | 2.4% | the code exists and was read on 2026-11-01; the row's "absent" was false |
-| OPEN-WITH-CAUSE | 14 | 2.2% | still open, with the cause and its `file:line` now named |
+| OPEN-WITH-CAUSE | 15 | 2.4% | still open, with the cause and its `file:line` now named |
 | RENDERER-RISK | 15 | 2.4% | open work that also needs a renderer decision |
 | NOT-IN-SOURCE | 12 | 1.9% | nothing in 0.22.0 to port |
 | BLOCKED-SERVICE | 8 | 1.3% | needs a hosted service this app has no client for |
@@ -792,9 +794,9 @@ grep -E '^\| *[0-9]+ *\|' docs/GAP-MATRIX.md \
 
 **What this count overturns.** The table that stood here said **472 OPEN and 118 DONE**. The file itself held **504 OPEN and 86 DONE** at HEAD (`dc3d330`) when it was counted on 2026-11-01. The 118 was never in the rows: it was a figure written into this paragraph after a verification pass and never carried back into the `status` column, which is exactly the drift this section exists to catch. `docs/PARITY-LOG.md` carries a third set — "633 status-bearing rows: 93 DONE, 512 OPEN, 9 blocked-service, 16 renderer-risk, 13 not-in-source, 2 deliberate" — which sums to 645 rather than the 633 it claims, and which counts a status (`DELIBERATE`, 2 rows) that no row in this file carries; the deliberate deviation it refers to lives in the ledger prose, not in a row.
 
-**How 504 became 471, in full.** 504 − 29 (the rows re-read in §"The rows that were called unbuilt and were merely unreached": 15 VERIFIED + 14 OPEN-WITH-CAUSE) = 475, − 4 = 471. **The 4 are not this pass's work and carry no evidence.** Rows 284, 288, 289 and 295 — four Screenshots rows — were OPEN at HEAD and were DONE in the working tree when this section was re-counted at 19:02 UTC, with no note, no measurement and no `file:line` added to any of them. Something else was editing this tree at the same time (four `crates/sift-ui` files were also modified and uncommitted). They are counted as they stand, because a count that hides them would be the same lie as the 118 — but **they are DONE by assertion, which is the one thing this file now says a DONE row may not be.** A later pass should either write their evidence or put them back.
+**How 504 became 470, in full.** 504 − 30 (the rows re-read in §"The rows that were called unbuilt and were merely unreached": 15 VERIFIED + 15 OPEN-WITH-CAUSE) = 474, − 4 = 470. **The 4 are not this pass's work and carry no evidence.** Rows 284, 288, 289 and 295 — four Screenshots rows — were OPEN at HEAD and were DONE in the working tree when this section was re-counted at 19:02 UTC, with no note, no measurement and no `file:line` added to any of them. Something else was editing this tree at the same time (four `crates/sift-ui` files were also modified and uncommitted). They are counted as they stand, because a count that hides them would be the same lie as the 118 — but **they are DONE by assertion, which is the one thing this file now says a DONE row may not be.** A later pass should either write their evidence or put them back.
 
-**Treat 625 rows / 471 OPEN / 90 DONE / 15 VERIFIED / 14 OPEN-WITH-CAUSE as the numbers, dated 2026-11-01 19:02 UTC, and the other two sets as history.**
+**Treat 625 rows / 470 OPEN / 90 DONE / 15 VERIFIED / 15 OPEN-WITH-CAUSE as the numbers, dated 2026-11-01, and the other two sets as history.**
 
 | priority | rows | share |
 |---|---:|---:|
@@ -832,11 +834,11 @@ was 24 and whose rows were 36 tall — so they are closed against measurements r
 open against a state that no longer exists. Its report is `.scratch/reports/verify-wave1.md`;
 five further rows could not be judged from the two captures it had and name the crops they need.
 
-Read against each other, on the 2026-11-01 count: **86 DONE** rows are matched and stand here as regression guards, four of them on a measurement with numbers and the rest on a value compared on both sides; **15 VERIFIED** rows have their code read and cited but have never been driven; **12** have nothing in 0.22.0 to match; **8** wait on a hosted service and **15** on a renderer decision — 23 rows that are open work but cannot be closed by drawing alone.
+Read against each other, on the 2026-11-01 count: **90 DONE** rows are matched and stand here as regression guards — four of them on a measurement with numbers, 51 on a value compared on both sides, and four on nothing at all (see above); **15 VERIFIED** rows have their code read and cited but have never been driven; **12** have nothing in 0.22.0 to match; **8** wait on a hosted service and **15** on a renderer decision — 23 rows that are open work but cannot be closed by drawing alone.
 
-**The DONE count did not move from 86 to 118.** That sentence stood here and was wrong: wave four wrote 32 passes into this paragraph and never wrote them into the `status` column, so an earlier "118" was a claim about a table that did not contain it. The figure today is 86, dated, re-derived from the file. If a later pass passes more rows, it edits the rows.
+**The DONE count did not move from 86 to 118.** That sentence stood here and was wrong: wave four wrote 32 passes into this paragraph and never wrote them into the `status` column, so an earlier "118" was a claim about a table that did not contain it. The file held 86 at HEAD (`dc3d330`) and holds 90 as this is written, and the four-row difference is the unexplained flip named above — not a pass. If a later pass passes more rows, it edits the rows and says what it measured.
 
-That leaves **471 plain OPEN** rows, plus 14 OPEN-WITH-CAUSE that are open with their cause now written down — 485 open rows in all, of which the P0 and P1 share is what this document exists to order. The priority table above is re-derived in the same pass and is unchanged: 155 P0, 194 P1.
+That leaves **470 plain OPEN** rows, plus 15 OPEN-WITH-CAUSE that are open with their cause now written down — 485 open rows in all, of which the P0 and P1 share is what this document exists to order. The priority table above is re-derived in the same pass and is unchanged: 155 P0, 194 P1.
 
 ## Verification ledger
 
@@ -4375,7 +4377,7 @@ so every claim below names a measured rect or a file on disk rather than a look 
 verdict was then written down as though it were a fact about the code. This project has paid for that six times over — the
 Files panel, the tab bar, the card body, the category filter, the instance card's context menu and the search field's clear
 button were all recorded as unbuilt and all six were complete and unreached. So every OPEN row whose evidence was of that
-kind was re-read against the source: **29 rows checked, 15 reclassified VERIFIED, 14 reclassified OPEN-WITH-CAUSE, and not
+kind was re-read against the source: **30 rows checked, 15 reclassified VERIFIED, 15 reclassified OPEN-WITH-CAUSE, and not
 one line of Rust changed.**
 
 **How each was checked.** Not by capture and not by a press: by opening the file the row names and reading for the widget or
@@ -4415,10 +4417,11 @@ feature behind it is not. The fifteen VERIFIED rows carry no drive: they are wha
 | 566 | Files tab — Delete a single item — confirm | VERIFIED | arm, then remove | `instance.rs:782-813` |
 | 585 | Screenshots — Copy image to clipboard | OPEN-WITH-CAUSE | no image clipboard: egui's carries text | `screenshots.rs:79-81`, `:558-561` |
 | 586 | Screenshots — Show in folder | VERIFIED | Show in folder selects the file in the file manager | `screenshots.rs:437`, `:2004-2024` |
+| 591 | Worlds — Per-world menu | OPEN-WITH-CAUSE | a world row launches the instance into that world; the menu is still absent | `instance.rs:655-663`, `:673` |
 
-**What changed in the counts.** OPEN 504 → **475**, these 29 rows being the whole of the difference: 15 VERIFIED and 14
+**What changed in the counts.** OPEN 504 → **474**, these 30 rows being the whole of the difference: 15 VERIFIED and 15
 OPEN-WITH-CAUSE. No row was added, removed or renumbered, and every gap cell keeps the report's words with a dated
-`RE-VERIFIED 2026-11-01:` sentence after them. (The file's own count reads 471 OPEN, not 475, for a reason that is not
+`RE-VERIFIED 2026-11-01:` sentence after them. (The file's own count reads 470 OPEN, not 474, for a reason that is not
 this pass's: four Screenshots rows were flipped to DONE in the working tree while it ran. §Counts names them.)
 
 **Three findings worth more than the reclassification:**
