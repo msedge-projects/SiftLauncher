@@ -199,6 +199,9 @@ pub struct State {
     pub tab: Tab,
     /// Where the Files tab is looking, relative to the game directory.
     pub files_dir: std::path::PathBuf,
+    /// The file a first press has armed for removal. The second press on the same row removes it:
+    /// one press is too cheap for a destructive action, and the reference asks before deleting.
+    pub pending_delete: Option<String>,
 }
 
 /// Draw the page's content column.
@@ -313,7 +316,7 @@ pub fn draw(
     match state.tab {
         Tab::Content => overview(ui, card, theme, instance),
         Tab::Files => {
-            if let Some(next) = files_tab(ui, card, theme, instance, &state.files_dir) {
+            if let Some(next) = files_tab(ui, card, theme, instance, &state.files_dir, &mut state.pending_delete) {
                 state.files_dir = next;
             }
         }
@@ -479,6 +482,7 @@ fn files_tab(
     theme: &Theme,
     instance: &Instance,
     dir: &std::path::Path,
+    pending: &mut Option<String>,
 ) -> Option<std::path::PathBuf> {
     let mut descend: Option<std::path::PathBuf> = None;
     // The game directory, which is what the reference's Files tab shows: the folder holding
@@ -537,19 +541,27 @@ fn files_tab(
                 egui::pos2(inner.right() - 12.0, y + ROW_H / 2.0),
                 egui::vec2(18.0, 18.0),
             );
+            let armed = pending.as_deref() == Some(name.as_str());
             let label = format!("x {}", name);
             painter.text(
                 remove.center(),
                 Align2::CENTER_CENTER,
                 "x",
                 fonts::body(12.0),
-                theme.SECONDARY,
+                if armed { theme.BRAND } else { theme.SECONDARY },
             );
             if ui
                 .interact(remove, egui::Id::new(("file-del", name.as_str())), Sense::click())
                 .clicked()
             {
-                let _ = std::fs::remove_file(instance.path.join("minecraft").join(dir).join(name.as_str()));
+                if armed {
+                    let _ = std::fs::remove_file(
+                        instance.path.join("minecraft").join(dir).join(name.as_str()),
+                    );
+                    *pending = None;
+                } else {
+                    *pending = Some(name.clone());
+                }
                 ui.ctx().request_repaint();
             }
             let _ = label;

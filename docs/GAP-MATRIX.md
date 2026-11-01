@@ -3110,3 +3110,17 @@ a destructive action, and it did not materialise.
 the reference asks first. Two-step arming would fix it -- a press paints the row's control in the
 disabled colour and stores its name, a second press on the same row removes -- and it needs one field on
 the page state beside `files_dir`, which is now a known shape to add.
+
+# Removal is two-step now, and both steps were measured (2026-11-01)
+
+* **one press**: the file count stays at **1** and the row's control turns brand-green -- armed, not
+  destructive;
+* **second press**: the count goes to **0**, and the armed state clears.
+
+So the hazard the last round named is closed: a stray press arms, and only a second press on the same row
+removes. The armed colour is the only affordance, which is thinner than the reference's modal but is
+honest about what the next press will do -- and unlike the modal it costs no state beyond one string.
+
+**What this panel now does**: lists, descends, returns, arms, removes, and reflects changes made outside
+it. What it does not do: reveal in the OS, open a file, drag or drop one, or show a file's size
+relationship to a limit. Those are the remaining rows.
