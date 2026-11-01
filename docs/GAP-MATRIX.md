@@ -3805,3 +3805,14 @@ appear without moving a pixel.
 **Six rounds on one panel, and the last five were spent looking for a geometry bug that did not exist.** The
 real defect was the same one already written in this document, under a different page: *a plate drawn on a
 lower layer is covered by whatever is painted after it.*
+
+### The panel's third line needs `Shown`, not a string (2026-11-01)
+
+Tried to add the live player count with `shown_of(server, &state.live)` and the compiler answered:
+**`Shown: ToString` is not satisfied** -- it is a struct, not a formatted string, and the card must print its
+fields.
+
+Reverted; tree green. **The detail panel stays as it was verified last round**: name and address, both real,
+both on screen. The count is one field away and the next attempt should read `fn shown_of`'s return type
+before reaching for it -- which is the same rule that has cost this session the most and keeps costing it:
+read the signature, then write the call.
