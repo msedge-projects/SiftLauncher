@@ -1153,10 +1153,12 @@ pub fn draw(
     theme: &crate::theme::Theme,
     images: &mut crate::images::Images,
     state: &mut State,
-) -> bool {
+) -> Option<String> {
     // The page owns its rect (`pages/mod.rs`'s seam); paint the page colour first so the cards
     // sit on `--color-bg` even if the caller did not clear the column.
     ui.painter().rect_filled(rect, 0, theme.BG);
+    // A Join press travels upwards: the page knows the address, the shell knows the instances.
+    let mut pressed_join: Option<String> = None;
     if !state.loaded {
         state.loaded = true;
         state.servers.extend(read_store());
@@ -1171,7 +1173,7 @@ pub fn draw(
     let _ = images;
 
     if rect.width() <= 2.0 * PAGE_PADDING || rect.height() <= 2.0 * PAGE_PADDING {
-        return false;
+        return None;
     }
 
     // The source's first branch: an account with no servers at all gets `ServerListEmpty`
@@ -1179,7 +1181,7 @@ pub fn draw(
     if state.servers.is_empty() {
         let painter = ui.painter();
         empty_state(painter, rect, theme);
-        return false;
+        return None;
     }
 
     let query = state.search.as_str();
@@ -1252,7 +1254,7 @@ pub fn draw(
         egui::pos2(rect.right() - PAGE_PADDING, rect.bottom() - PAGE_PADDING),
     );
     if view.width() < 1.0 || view.height() < 1.0 {
-        return false;
+        return None;
     }
 
     let height = content_height(&sections, show_no_match);
@@ -1271,81 +1273,6 @@ pub fn draw(
             let mut top = area.top();
             let mut blocks = 0;
 
-            // The chosen server's panel sits at the foot of the content column, which is the one
-            // place on this page that is on screen at 1440x900 without scrolling.
-            if let Some(server) = state
-                .selected
-                .as_ref()
-                .and_then(|address| state.servers.iter().find(|s| &s.address == address))
-            {
-                let panel = Rect::from_min_size(
-                    // Relative to the page's own rect, which is the viewport -- `area` is the
-                    // scrollable content and its bottom is off screen whenever the list is long.
-                    egui::pos2(area.left(), rect.bottom() - DETAIL_HEIGHT - 8.0),
-                    egui::vec2(width, DETAIL_HEIGHT),
-                );
-                let painter = ui.ctx().layer_painter(egui::LayerId::new(
-                    egui::Order::Foreground,
-                    egui::Id::new("server-detail"),
-                ));
-                painter.rect_filled(panel, 8.0, theme.SURFACE_4);
-                painter.text(
-                    egui::pos2(panel.left() + 12.0, panel.top() + 10.0),
-                    egui::Align2::LEFT_TOP,
-                    &server.name,
-                    fonts::semibold(14.0),
-                    theme.TEXT_PRIMARY,
-                );
-                painter.text(
-                    egui::pos2(panel.left() + 12.0, panel.top() + 32.0),
-                    egui::Align2::LEFT_TOP,
-                    &server.address,
-                    fonts::body(12.0),
-                    theme.SECONDARY,
-                );
-                // The same `Shown` the card builds, read for its own fields rather than formatted:
-                // `players` is a pair, `loader` and `version` are strings, `motd` is the summary.
-                let shown = shown_of(server, &state.live);
-                let detail = format!(
-                    "{} {}  ·  {}",
-                    shown.loader,
-                    shown.version,
-                    match shown.players {
-                        Some((online, max)) => format!("{online}/{max} online"),
-                        None => "offline".to_owned(),
-                    }
-                );
-                // The one action this panel can honestly offer today: put the address where a reader
-                // can paste it. A "Join" that launched nothing would be a button that lies.
-                let join = Rect::from_min_size(
-                    egui::pos2(panel.right() - 96.0, panel.top() + 16.0),
-                    egui::vec2(84.0, 30.0),
-                );
-                let copied = state.copied.as_deref() == Some(server.address.as_str());
-                painter.rect_filled(join, 6.0, theme.BUTTON_BG_SELECTED);
-                painter.text(
-                    join.center(),
-                    egui::Align2::CENTER_CENTER,
-                    if copied { "Copied" } else { "Copy IP" },
-                    fonts::semibold(12.0),
-                    theme.BUTTON_TEXT_SELECTED,
-                );
-                if ui
-                    .interact(join, egui::Id::new("server-copy"), Sense::click())
-                    .clicked()
-                {
-                    ui.ctx().copy_text(server.address.clone());
-                    state.copied = Some(server.address.clone());
-                    ui.ctx().request_repaint();
-                }
-                painter.text(
-                    egui::pos2(panel.left() + 12.0, panel.top() + 48.0),
-                    egui::Align2::LEFT_TOP,
-                    detail,
-                    fonts::body(11.0),
-                    theme.SECONDARY,
-                );
-            }
 
             for section in &sections {
                 if section.total == 0 {
@@ -1451,7 +1378,81 @@ pub fn draw(
     // be drawn on top of it.
     draw_dialog(ui, rect, theme, state);
 
-    false
+            // The chosen server's panel sits at the foot of the content column, which is the one
+            // place on this page that is on screen at 1440x900 without scrolling.
+            if let Some(server) = state
+                .selected
+                .as_ref()
+                .and_then(|address| state.servers.iter().find(|s| &s.address == address))
+            {
+                let panel = Rect::from_min_size(
+                    egui::pos2(rect.left() + PAGE_PADDING, rect.bottom() - DETAIL_HEIGHT - 8.0),
+                    egui::vec2(rect.width() - 2.0 * PAGE_PADDING, DETAIL_HEIGHT),
+                );
+                let painter = ui.ctx().layer_painter(egui::LayerId::new(
+                    egui::Order::Foreground,
+                    egui::Id::new("server-detail"),
+                ));
+                painter.rect_filled(panel, 8.0, theme.SURFACE_4);
+                painter.text(
+                    egui::pos2(panel.left() + 12.0, panel.top() + 10.0),
+                    egui::Align2::LEFT_TOP,
+                    &server.name,
+                    fonts::semibold(14.0),
+                    theme.TEXT_PRIMARY,
+                );
+                painter.text(
+                    egui::pos2(panel.left() + 12.0, panel.top() + 32.0),
+                    egui::Align2::LEFT_TOP,
+                    &server.address,
+                    fonts::body(12.0),
+                    theme.SECONDARY,
+                );
+                // The same `Shown` the card builds, read for its own fields rather than formatted:
+                // `players` is a pair, `loader` and `version` are strings, `motd` is the summary.
+                let shown = shown_of(server, &state.live);
+                let detail = format!(
+                    "{} {}  ·  {}",
+                    shown.loader,
+                    shown.version,
+                    match shown.players {
+                        Some((online, max)) => format!("{online}/{max} online"),
+                        None => "offline".to_owned(),
+                    }
+                );
+                // The one action this panel can honestly offer today: put the address where a reader
+                // can paste it. A "Join" that launched nothing would be a button that lies.
+                let join = Rect::from_min_size(
+                    egui::pos2(panel.right() - 96.0, panel.top() + 16.0),
+                    egui::vec2(84.0, 30.0),
+                );
+                let copied = state.copied.as_deref() == Some(server.address.as_str());
+                painter.rect_filled(join, 6.0, theme.BUTTON_BG_SELECTED);
+                painter.text(
+                    join.center(),
+                    egui::Align2::CENTER_CENTER,
+                    if copied { "Copied" } else { "Copy IP" },
+                    fonts::semibold(12.0),
+                    theme.BUTTON_TEXT_SELECTED,
+                );
+                if ui
+                    .interact(join, egui::Id::new("server-copy"), Sense::click())
+                    .clicked()
+                {
+                    ui.ctx().copy_text(server.address.clone());
+                    state.copied = Some(server.address.clone());
+                    ui.ctx().request_repaint();
+                }
+                painter.text(
+                    egui::pos2(panel.left() + 12.0, panel.top() + 48.0),
+                    egui::Align2::LEFT_TOP,
+                    detail,
+                    fonts::body(11.0),
+                    theme.SECONDARY,
+                );
+            }
+
+    pressed_join
 }
 
 /// The `New server` dialog.

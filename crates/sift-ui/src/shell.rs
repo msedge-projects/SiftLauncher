@@ -110,14 +110,18 @@ impl Shell {
     /// the arrangement that works -- a plate on a foreground layer covers the widgets behind it, and
     /// the create dialog spent ten rounds learning that.
     pub fn draw_picker(&mut self, ctx: &egui::Context, screen: egui::Rect, ui: &mut egui::Ui) {
-        let Some((project, title)) = self.picker.clone() else {
+        let Some(picker) = self.picker.clone() else {
             return;
         };
-        if self.picker_opened <= 0.0 {
+        let (project, title, join_address) = match &picker.kind {
+            PickerKind::Install { project, title } => (project.clone(), title.clone(), None),
+            PickerKind::Join { address } => (String::new(), String::new(), Some(address.clone())),
+        };
+        if picker.opened <= 0.0 {
             self.picker_opened = ctx.input(|input| input.time);
         }
         let now = ctx.input(|input| input.time);
-        let settled = now > self.picker_opened + 0.15;
+        let settled = now > picker.opened + 0.15;
         let pointer = ctx.pointer_interact_pos();
         let clicked = ctx.input(|input| input.pointer.any_click());
 
@@ -136,14 +140,20 @@ impl Shell {
         painter.text(
             egui::pos2(plate.left() + 24.0, plate.top() + 22.0),
             egui::Align2::LEFT_TOP,
-            format!("Install {title}"),
+            match &join_address {
+                Some(address) => format!("Join {address} from which instance?"),
+                None => format!("Install {title}"),
+            },
             crate::fonts::heading(18.0),
             theme.CONTRAST,
         );
         painter.text(
             egui::pos2(plate.left() + 24.0, plate.top() + 48.0),
             egui::Align2::LEFT_TOP,
-            "Choose the instance a mod should go into, or let a pack bring its own.",
+            match &join_address {
+                Some(_) => "The game launches with --quickPlayMultiplayer and connects on load.",
+                None => "Choose the instance a mod should go into, or let a pack bring its own.",
+            },
             crate::fonts::body(12.0),
             theme.SECONDARY,
         );
@@ -172,7 +182,12 @@ impl Shell {
                 theme.SECONDARY,
             );
             if settled && clicked && pointer.is_some_and(|point| row.contains(point)) {
-                self.install.start_in(&project, &title, Some(entry.id.clone()));
+                match &join_address {
+                    Some(address) => {
+                        self.game.start_server(&entry.id, address);
+                    }
+                    None => self.install.start_in(&project, &title, Some(entry.id.clone())),
+                }
                 self.picker = None;
                 return;
             }
@@ -497,13 +512,30 @@ pub const INSTANCE_TYPES: [(&str, &str, bool); 4] = [
     ),
 ];
 
+/// What the picker is asking about: an install's destination, or the instance to join a server from.
+#[derive(Debug, Clone)]
+pub enum PickerKind {
+    /// Where a mod should be installed.
+    Install { project: String, title: String },
+    /// Which instance should join this address.
+    Join { address: String },
+}
+
+/// The picker's own state: what it is asking, and when it opened so the press that opened it
+/// cannot also dismiss it.
+#[derive(Debug, Clone)]
+pub struct Picker {
+    pub kind: PickerKind,
+    pub opened: f64,
+}
+
 pub struct Shell {
     /// Whether the reference's create dialog is open. The rail's plus sets it, as the
     /// reference's does, where this launcher used to create a Vanilla instance on the press.
     pub create_open: bool,
     /// The install picker: the project a press asked to install, while the reader chooses where.
     /// `(project id, title)`. The reference asks this before it writes anything.
-    pub picker: Option<(String, String)>,
+    pub picker: Option<Picker>,
     /// When the picker opened, so a press that opened it cannot also dismiss it.
     picker_opened: f64,
     /// When it opened, on the frame clock. The press that opens the dialog is also a click
@@ -806,7 +838,14 @@ impl Shell {
                 &mut self.icons,
                 &mut self.servers,
             );
-            result
+            if let Some(address) = result {
+                // The page says which server; the picker asks which instance should join it.
+                self.picker = Some(Picker {
+                    kind: PickerKind::Join { address },
+                    opened: 0.0,
+                });
+            }
+            false
         } else if self.rail == Rail::Skins {
             // The skins page owns its own state; the shell keeps it beside the others so the
             // selection survives a trip to another page.
@@ -1476,8 +1515,13 @@ impl Shell {
             // such answer -- it brings its own instance -- so the picker's last row is that path.
             let is_mod = self.project_type == "mod";
             if is_mod && crate::data::load().0.len() >= 2 {
-                self.picker = Some((card.id.clone(), card.title.clone()));
-                self.picker_opened = 0.0;
+                self.picker = Some(Picker {
+                    kind: PickerKind::Install {
+                        project: card.id.clone(),
+                        title: card.title.clone(),
+                    },
+                    opened: 0.0,
+                });
             } else {
                 self.install.start(&card.id, &card.title);
             }

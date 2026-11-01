@@ -4183,3 +4183,18 @@ into `--quickPlaySingleplayer` -- the existing mechanism, reached for the first 
 because the screen carries the window's 20-point title bar and my numbers did not. **The printed rect, plus the
 offset, landed first try.** Two lessons in this project are now so well evidenced that they should be assumed rather
 than rediscovered: print the rect, and add twenty.
+
+# Server join: the engine path is ready, the button is not (2026-11-01)
+
+**Built and compiling**: `Game::start_server` writes `JoinServerOnLaunch` and `JoinServerOnLaunchAddress`
+into the instance for exactly one launch, clears them afterwards, and the engine's `join_target` turns them into
+`--quickPlayMultiplayer`. The picker carries a `Join` kind and asks "Join <address> from which instance?".
+
+**Not built**: the server panel's Join button. It is drawn, hovers, and **never receives a click** -- the probe says
+`hover=true click=false` on three different mechanisms (`ui.interact`, `pointer.primary_clicked`, `pointer.any_released`),
+with the panel drawn both before and after the list. The panel sits inside a `ScrollArea` whose own interaction takes
+the press, and every ordering tried so far loses to it.
+
+**So the button is reverted and the finding recorded.** The next attempt should not retry the three mechanisms
+above; it should either move the panel out of the scroll area entirely (a sibling layer, as the create dialog is) or
+put Join on the card row, where presses already work.

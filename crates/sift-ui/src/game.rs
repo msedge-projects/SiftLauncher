@@ -77,7 +77,14 @@ struct Reply {
 
 /// The function one worker runs. A pointer rather than a trait object so a test
 /// can substitute a worker without starting a network or a game.
-type Worker = fn(String, u64, Option<(String, String, String)>, Option<String>, Sender<Reply>);
+type Worker = fn(
+    String,
+    u64,
+    Option<(String, String, String)>,
+    Option<String>,
+    Option<String>,
+    Sender<Reply>,
+);
 
 /// The launcher's single game process and the channel its worker answers on.
 pub struct Game {
@@ -130,7 +137,14 @@ impl Game {
     }
 
     pub fn start(&mut self, instance_id: &str) {
-        self.start_with(instance_id, None);
+        self.start_with(instance_id, None, None);
+    }
+
+    /// Start `instance_id` and join `address` at launch, which the engine turns into
+    /// `--quickPlayMultiplayer`. The address is written into the instance for exactly one launch,
+    /// the same way a world is.
+    pub fn start_server(&mut self, instance_id: &str, address: &str) {
+        self.start_with(instance_id, None, Some(address.to_owned()));
     }
 
     /// Start `instance_id` with `world` opened, which the engine turns into
@@ -140,10 +154,10 @@ impl Game {
     /// the world is passed somewhere disposable instead.` The world travels through the
     /// instance's own settings because that is where the engine reads a join target from.
     pub fn start_world(&mut self, instance_id: &str, world: &str) {
-        self.start_with(instance_id, Some(world.to_owned()));
+        self.start_with(instance_id, Some(world.to_owned()), None);
     }
 
-    fn start_with(&mut self, instance_id: &str, world: Option<String>) {
+    fn start_with(&mut self, instance_id: &str, world: Option<String>, server: Option<String>) {
         if self.busy() {
             return;
         }
@@ -157,7 +171,7 @@ impl Game {
         let account = self.account.clone();
         let spawned = std::thread::Builder::new()
             .name("sift-launch".to_owned())
-            .spawn(move || worker(instance_id, launch, account, world, sender));
+            .spawn(move || worker(instance_id, launch, account, world, server, sender));
         if let Err(error) = spawned {
             self.status = Status::Failed(format!("could not start a launch worker: {error}"));
         }
@@ -197,9 +211,10 @@ fn run_launch(
     launch: u64,
     account: Option<(String, String, String)>,
     world: Option<String>,
+    server: Option<String>,
     sender: Sender<Reply>,
 ) {
-    let status = match launch_instance(&instance_id, launch, account, world, &sender) {
+    let status = match launch_instance(&instance_id, launch, account, world, server, &sender) {
         Ok(status) => status,
         Err(reason) => Status::Failed(reason),
     };
@@ -214,6 +229,7 @@ fn launch_instance(
     launch: u64,
     account: Option<(String, String, String)>,
     world: Option<String>,
+    server: Option<String>,
     sender: &Sender<Reply>,
 ) -> Result<Status, String> {
     // This thread owns the paths because it owns every disk and network call a
@@ -233,6 +249,21 @@ fn launch_instance(
                 .set_str("QuickPlayWorld", world.clone());
             if instance.save().is_ok() {
                 world_written = true;
+            }
+        }
+    }
+    // A server to join is a setting too: `JoinServerOnLaunch` plus the address, which the engine
+    // parses into `--quickPlayMultiplayer`. Set for one launch and removed with the world below.
+    let mut server_written = false;
+    if let Some(address) = &server {
+        let root = paths.configured_instances_dir().join(&instance_id);
+        if let Ok(mut instance) = sift_core::instance::Instance::open(&root) {
+            instance.settings_mut().set_bool("JoinServerOnLaunch", true);
+            instance
+                .settings_mut()
+                .set_str("JoinServerOnLaunchAddress", address.clone());
+            if instance.save().is_ok() {
+                server_written = true;
             }
         }
     }
@@ -295,10 +326,18 @@ fn launch_instance(
     // The setting has done its job: the plan above already holds the argument. Removed before
     // anything else can fail, so a launch that goes wrong does not leave the next one pointing
     // at a world nobody asked for.
-    if world_written {
+    if world_written || server_written {
         let root = paths.configured_instances_dir().join(&instance_id);
         if let Ok(mut instance) = sift_core::instance::Instance::open(&root) {
-            if instance.settings_mut().remove("QuickPlayWorld") {
+            let mut changed = false;
+            if world_written && instance.settings_mut().remove("QuickPlayWorld") {
+                changed = true;
+            }
+            if server_written {
+                instance.settings_mut().set_bool("JoinServerOnLaunch", false);
+                changed = true;
+            }
+            if changed {
                 let _ = instance.save();
             }
         }
@@ -389,6 +428,7 @@ mod tests {
         _launch: u64,
         _account: Option<(String, String, String)>,
         _world: Option<String>,
+        _server: Option<String>,
         _sender: Sender<Reply>,
     ) {
         WORKERS_STARTED.fetch_add(1, Ordering::SeqCst);
