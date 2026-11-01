@@ -1526,11 +1526,7 @@ fn search_field(ui: &mut Ui, rect: Rect, state: &mut State) -> bool {
     }
 
     let mut changed = false;
-    let events = ui.input(|input| input.events.clone());
-    if std::env::var_os("SIFT_SHOTS_PROBE").is_some() && !events.is_empty() {
-        eprintln!("screenshots-probe focused events={events:?}");
-    }
-    for event in events {
+    for event in ui.input(|input| input.events.clone()) {
         match event {
             egui::Event::Text(text) => {
                 // A query is one line: a pasted newline would make the plate's own single
