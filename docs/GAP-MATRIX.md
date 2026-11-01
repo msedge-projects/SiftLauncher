@@ -4156,3 +4156,18 @@ quoting bug in the shell heredoc, then a missing PIL in the lab).
 
 **What is still thin**: the tiles are drawn but not interactive -- no hover caption, no selection, no context menu,
 which is exactly what the Skins/Screenshots audit called out as P0 5.
+
+# Screenshot tiles: hover caption and an armed remove (2026-11-01)
+
+The caption appears **only under the pointer** -- `2026-11-03_12.00.00.png` and an `x` on the hovered tile, nothing on
+the other two -- and the `x` removes in two presses: **3 files after the first, 2 after the second**, with the
+file-system counted between them.
+
+Both halves of the audit's P0 5 that this page can do today are therefore done: the caption is a hover state rather
+than a permanent band, and a screenshot can be removed. **Select mode and a context menu remain**, and the reference
+has both.
+
+**And the aim: three presses were needed.** The tile's own rect says `[[112,206]-[433,388]]`; the control sits at its
+bottom-right. Two presses missed by more than 70 points vertically, and the third landed only once the **20-point
+title-bar offset** was added -- the single oldest lesson in this project, relearned because I trusted a crop over the
+number.

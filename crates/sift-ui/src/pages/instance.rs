@@ -320,7 +320,7 @@ pub fn draw(
                 state.files_dir = next;
             }
         }
-        Tab::Screenshots => screenshots_tab(ui, card, theme, images, instance),
+        Tab::Screenshots => screenshots_tab(ui, card, theme, images, instance, &mut state.pending_delete),
         Tab::Worlds => worlds_tab(ui, card, theme, instance),
         Tab::Logs => logs_tab(ui, card, theme, instance),
     }
@@ -386,6 +386,7 @@ fn screenshots_tab(
     theme: &Theme,
     images: &mut Images,
     instance: &Instance,
+    pending: &mut Option<String>,
 ) {
     let shots = screenshot_files(&instance.path);
     if shots.is_empty() {
@@ -424,6 +425,55 @@ fn screenshots_tab(
                 Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
                 egui::Color32::WHITE,
             );
+        }
+        // The caption is a hover state, as the reference's is (card.vue:233 is opacity-0 until
+        // hover); drawing it permanently was one of the audit's P0s on this page.
+        let name = shot
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let hovered = ui
+            .ctx()
+            .pointer_interact_pos()
+            .is_some_and(|pointer| tile.contains(pointer));
+        let armed = pending.as_deref() == Some(name.as_str());
+        if hovered || armed {
+            let bar = Rect::from_min_size(
+                egui::pos2(tile.left(), tile.bottom() - 22.0),
+                egui::vec2(tile.width(), 22.0),
+            );
+            painter.rect_filled(bar, 0.0, egui::Color32::from_black_alpha(180));
+            painter.text(
+                egui::pos2(bar.left() + 8.0, bar.center().y),
+                Align2::LEFT_CENTER,
+                &name,
+                fonts::body(11.0),
+                theme.BASE,
+            );
+            // Armed like the Files rows: one press arms, a second on the same tile removes.
+            let remove = Rect::from_center_size(
+                egui::pos2(bar.right() - 14.0, bar.center().y),
+                egui::vec2(20.0, 18.0),
+            );
+            painter.text(
+                remove.center(),
+                Align2::CENTER_CENTER,
+                "x",
+                fonts::body(12.0),
+                if armed { theme.BRAND } else { theme.BASE },
+            );
+            if ui
+                .interact(remove, egui::Id::new(("shot-del", name.as_str())), Sense::click())
+                .clicked()
+            {
+                if armed {
+                    let _ = std::fs::remove_file(shot);
+                    *pending = None;
+                } else {
+                    *pending = Some(name.clone());
+                }
+                ui.ctx().request_repaint();
+            }
         }
     }
 }
