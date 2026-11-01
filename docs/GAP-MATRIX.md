@@ -792,7 +792,7 @@ grep -E '^\| *[0-9]+ *\|' docs/GAP-MATRIX.md \
 | BLOCKED-SERVICE | 8 | 1.3% | needs a hosted service this app has no client for |
 | **total** | **625** | 100.0% | |
 
-**What this count overturns.** The table that stood here said **472 OPEN and 118 DONE**. The file itself held **504 OPEN and 86 DONE** at HEAD (`dc3d330`) when it was counted on 2026-11-01. The 118 was never in the rows: it was a figure written into this paragraph after a verification pass and never carried back into the `status` column, which is exactly the drift this section exists to catch. `docs/PARITY-LOG.md` carries a third set — "633 status-bearing rows: 93 DONE, 512 OPEN, 9 blocked-service, 16 renderer-risk, 13 not-in-source, 2 deliberate" — which sums to 645 rather than the 633 it claims, and which counts a status (`DELIBERATE`, 2 rows) that no row in this file carries; the deliberate deviation it refers to lives in the ledger prose, not in a row.
+**What this count overturns.** The table that stood here said **472 OPEN and 118 DONE**. The file itself held **504 OPEN and 86 DONE** at HEAD (`dc3d330`) when it was counted on 2026-11-01. The 118 was never in the rows: it was a figure written into this paragraph after a verification pass and never carried back into the `status` column, which is exactly the drift this section exists to catch. The ledger below, under "The totals, counted at last" (and `docs/PARITY-LOG.md` after it), carries a third set — "633 status-bearing rows: 93 DONE, 512 OPEN, 9 blocked-service, 16 renderer-risk, 13 not-in-source, 2 deliberate" — which sums to 645 rather than the 633 it claims, and which counts a status (`DELIBERATE`, 2 rows) that no row in this file carries; the deliberate deviation it refers to lives in the ledger prose, not in a row. It counted every table that mentions a status instead of the rows that carry one, and it is corrected where it stands.
 
 **How 504 became 469, in full.** 504 − 31 (the rows re-read in §"The rows that were called unbuilt and were merely unreached": 15 VERIFIED + 16 OPEN-WITH-CAUSE) = 473, − 4 = 469. **The 4 are not this pass's work and carry no evidence.** Rows 284, 288, 289 and 295 — four Screenshots rows — were OPEN at HEAD and were DONE in the working tree when this section was re-counted at 19:02 UTC, with no note, no measurement and no `file:line` added to any of them. Something else was editing this tree at the same time (four `crates/sift-ui` files were also modified and uncommitted). They are counted as they stand, because a count that hides them would be the same lie as the 118 — but **they are DONE by assertion, which is the one thing this file now says a DONE row may not be.** A later pass should either write their evidence or put them back.
 
@@ -842,8 +842,9 @@ That leaves **469 plain OPEN** rows, plus 16 OPEN-WITH-CAUSE that are open with 
 
 ## Verification ledger
 
-Three verification passes have been run, each by a child agent that decoded the captures rather
-than reading the code, and each has been acted on in the same session.
+The first three verification passes are in the table below; each was run by a child agent that decoded the captures
+rather than reading the code, and each was acted on in the same session. Waves four to seven and the driven rounds that
+followed them are their own entries under it.
 
 | pass | scope | rows judged | outcome | what it changed |
 | --- | --- | --- | --- | --- |
@@ -2781,9 +2782,17 @@ Counting every table row that carries a status token:
 **633 status-bearing rows** (the per-status counts sum higher because some rows carry two, such as
 OPEN and RENDERER-RISK together).
 
-So the figure this session repeated -- "118 DONE / 472 OPEN" -- **overstated completions by 25 rows and
-understated the open work by 40**. The true ratio at this point is **93 done against 512 open**: for
-every element verified, five and a half remain.
+**CORRECTED 2026-11-01: these numbers do not describe this file's rows.** A scripted count of the numbered rows (§Counts)
+gives **625 rows** — 86 DONE and 504 OPEN at HEAD — and the table above is 7 DONE and 8 OPEN higher, with one extra of
+each other status and 2 DELIBERATE that live in a ledger table rather than in a row. What happened is the same mistake in
+a new coat: it counted every table in the document that mentions a status token instead of the rows that carry one, which
+is why its own sum (93 + 512 + 9 + 16 + 13 + 2 = 645) is larger than the 633 it prints and why it needed a note about rows
+"carrying two". **The direction of its conclusion survives — "118 DONE" overstated completions — but none of its numbers
+do.**
+
+So the figure this session repeated -- "118 DONE / 472 OPEN" -- **overstated completions by 32 rows and
+understated the open work by 32**. The ratio at that point was **86 done against 504 open** -- read from §Counts, not from
+the table above it -- so for every element verified, five and a half remained.
 
 That is the session's most useful number, and it is the one it had been getting wrong in its own
 favour while telling the reader it was measuring.
