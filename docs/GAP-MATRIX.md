@@ -2057,3 +2057,28 @@ What the frame shows, in screen coordinates (add 20 for the window manager's tit
 **Lesson**: a tooltip is a free label. Hovering before clicking costs one second and would have
 saved three rounds of wrong rail coordinates -- and unlike a screenshot estimate it is the
 application telling you what the control is.
+
+## P1: creating an instance has no modal, so no Fabric instance can exist (2026-11-01)
+
+Hovered (tooltip confirmed the button) and clicked the rail's **+**: the launcher created
+**"Instance 2, Vanilla 1.21.4"** instantly, with the toast "Created Instance 2" and no dialog at
+all.
+
+That is a real parity gap with consequences beyond itself. The reference's create flow is a modal
+with a **name**, a **loader** (Fabric/Forge/NeoForge/Quilt/Vanilla), a **game version** and the
+option to start from a modpack. This launcher's is a single press that always produces the same
+Vanilla instance, which means:
+
+* **no Fabric instance can be created**, so the positive install proof (a jar chosen *for* an
+  instance) cannot be demonstrated through the UI at all -- the refusal proven last round is the
+  only outcome reachable;
+* the mod picker's loader question has nothing to answer about, because every instance answers
+  "Vanilla";
+* and a reader who wants anything but Vanilla has no path in the product.
+
+**So the next feature is the create modal, not the install picker** -- the picker has no meaning
+until instances can differ. That reorders the remaining work, and the matrix now says so.
+
+Side effect worth noting for the next run: there are now **two** instances, so `choose_instance`
+will refuse with "there are 2 instances and choosing one needs a picker that is not built yet" --
+the multi-instance branch that was only unit-tested until now.
