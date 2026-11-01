@@ -3660,3 +3660,22 @@ push by index, renamed the early `return;` and spliced the tail. **No anchor, no
 **The second commit** is the caller's: bind the returned vec and register an `interact` per rect, ordered
 before any other press handling in that frame -- the ordering this file warns about, and the one the
 searches honoured.
+
+### The second half needs a visible effect, or it is dead code (2026-11-01)
+
+The rects exist and are ignored. Wiring only the `interact` would make the app *report* a press nobody can
+see -- which is the same failure this session spent a hundred rounds unlearning, so it was not landed.
+
+**What a press should do, decided now rather than during the edit**: select the card, because the reference
+opens the server's detail view from it and there is no detail view here yet. So the slice is four edits,
+not one:
+
+1. `State::selected: Option<String>` (the server's address), and its initialiser.
+2. `draw_section` takes `selected: Option<&str>` and passes a `chosen: bool` into `draw_card`.
+3. `draw_card` paints the chosen state -- the reference's card border and background shift on selection.
+4. The caller binds the returned rects, interacts per card, and sets `State::selected`.
+
+**Then it is drivable**: press a card, capture, and see the border change; press another, see it move.
+
+**Left unlanded rather than half-landed**, because a selection state with no visible difference is
+indistinguishable from no selection at all -- and this document has four retractions saying so.
