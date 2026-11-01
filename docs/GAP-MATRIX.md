@@ -2858,3 +2858,23 @@ visible on disk.
 **Next**: the same probe as every other -- print the tab rects and `hovered()` -- then wire the press
 to a tab index and draw the Files view. The page's own scaffolding (header, path, Play, tab bar) is
 already there and already reads from the profile.
+
+### Correction: the tabs are wired; the Files view is a stub (2026-11-01)
+
+Read the source after the press failed, and it overturns the last note twice:
+
+* **the tabs are interactive** -- `ui.interact` at `pages/instance.rs:294`, dispatching to a per-tab
+  renderer at :313. So the press that did nothing was aimed wrong again, not wired wrong.
+* **the Files view is a stub**, and says so: `files_tab` at :473 draws
+  *"This instance's folder is empty."* -- whatever the folder holds.
+
+That is a much better finding than "the tabs are painted, not placed". The page's structure is real;
+the **file manager is a placeholder**, and the mod this session installed into
+`instances/Instance 2/mods/` would be shown as an empty folder.
+
+So the brief's file-management clause needs a Files view built on the real folder -- listing
+`mods/` at minimum, with the reference's columns and row actions -- rather than a control re-wired.
+
+**Also worth changing in how this is measured**: three rounds of this doorway have produced three
+different causes, and every one of them was read from a capture rather than from the source. The
+source answered in one grep what three captures could not.
