@@ -159,7 +159,10 @@ impl Shell {
         if self.create_step == 1 {
             for (index, (label, value)) in [
                 ("Name", "Name your instance"),
-                ("Loader", "Fabric"),
+                // Not "Fabric": the loader is not wired into `Instance::create` yet, and the
+                // instance this dialog makes is Vanilla. A row that cannot change the outcome
+                // must not claim a value the outcome does not have.
+                ("Loader", "Vanilla"),
                 ("Game version", "1.21.4"),
             ]
             .into_iter()

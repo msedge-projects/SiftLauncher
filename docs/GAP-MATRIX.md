@@ -2529,3 +2529,14 @@ Two honest options, and the smaller one is next:
 
 Option 1 costs a line and removes a false statement from the product; option 2 is the feature. Both
 are better than the current state, which looks finished and is not.
+
+### The loader row tells the truth now (2026-11-01)
+
+The custom-setup step reads **Name** · *Name your instance*, **Loader** · *Vanilla*, **Game version** ·
+*1.21.4* -- and Vanilla/1.21.4 is exactly what pressing Create produces. The row that said "Fabric"
+while making a Vanilla instance is gone.
+
+That is the last false statement the dialog was making, and it cost one line. The feature behind it
+is still owed: `Instance::create` takes a name and a Minecraft version, not a loader, so a Fabric
+instance cannot be created until that signature grows. Until then the row names the truth rather
+than a wish.
