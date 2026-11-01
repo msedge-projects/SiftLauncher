@@ -1892,3 +1892,25 @@ Left for the feature: fetch `version_url(project)` with the same download-and-pa
 `install_file(wire, {instance}/mods, &version)`, and report the summary. Roughly thirty lines in
 the job, and then the same driven Install click has to end in a success toast rather than a
 message about a picker.
+
+### The mod path runs end to end (2026-11-01)
+
+`install_mod` is wired as the fallback for a project whose archive is not a pack, and the driven
+Install click proves the path executes:
+
+> **Could not install Sodium: there is no instance to install into. Create one first.**
+
+That sentence can only come from the new code: the pack attempt failed with "not a readable pack",
+the fallback ran, it enumerated the instances (there are none in this profile), and
+`choose_instance` produced its tested refusal. So the chain works -- fallback, enumerate, decide,
+report -- and the only thing standing between this and a real install is an instance to put the
+jar in.
+
+`install_mod` does the rest of the reference's job already: it resolves `version_url(project)`
+through the same cached `wire.document` a pack install uses, parses the version list, hands it to
+`pick_version` (empty game version and loader until an instance is chosen to read them from), and
+calls `install_file` into `{instances}/{id}/mods`.
+
+**Next step, and it is small**: create an instance through the UI, press Install again, and the
+toast should read "Installed Sodium 0.x into …". That single run would make this the first feature
+of the session verified by doing rather than by looking.

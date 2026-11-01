@@ -198,13 +198,55 @@ impl Install {
 
 /// One worker: run the engine and always leave a terminal status behind.
 fn run_install(job: Job, generation: u64, sender: Sender<Reply>) {
-    let status = match install_pack(&job, generation, &sender) {
+    // A pack first, then a mod. The button cannot know which kind a project is until the
+    // archive has been read, and the reference's answer -- a version picker for mods -- is not
+    // built yet, so the fallback carries the mod path with the honest refusals inside it.
+    let pack = install_pack(&job, generation, &sender);
+    let pack = match pack {
+        Err(reason) if reason.starts_with("that archive is not a readable pack") => {
+            install_mod(&job)
+        }
+        other => other,
+    };
+    let status = match pack {
         Ok(summary) => Status::Done(summary),
         Err(reason) => Status::Failed(reason),
     };
     // A closed receiver means the window is gone; dropping the last word is right then, and
     // there is no one left to report a failure to anyway.
     let _ = sender.send(Reply { generation, status });
+}
+
+/// Install a mod into the one instance there is.
+///
+/// The same shape as a pack install -- resolve, fetch, write -- with two differences that the
+/// reference has too: the version is chosen for the *instance* rather than being the newest
+/// (\`pick_version\`), and the target is an instance that already exists (\`choose_instance\`),
+/// because a mod goes into a game folder rather than creating one.
+fn install_mod(job: &Job) -> Result<String, String> {
+    let paths = SiftPaths::at(platform_data_root(System::current()));
+    let wire = Wire::new(paths.meta_dir());
+
+    let ids: Vec<String> = crate::data::load()
+        .0
+        .into_iter()
+        .map(|instance| instance.id)
+        .collect();
+    let instance = choose_instance(&ids)?;
+
+    let url = sift_net::modrinth::version_url(&job.project);
+    let body = wire.document(&url)?;
+    let versions: Vec<sift_net::modrinth::ModrinthProjectVersion> =
+        serde_json::from_str(&body).map_err(|error| format!("{url}: {error}"))?;
+    let version = pick_version(&versions, "", "")
+        .ok_or_else(|| format!("{} has no version with a file to download", job.title))?;
+
+    let mods = paths.instances_dir().join(&instance).join("mods");
+    install::install_file(&wire, &mods, version)?;
+    Ok(format!(
+        "Installed {} {} into {instance}.",
+        job.title, version.name
+    ))
 }
 
 /// Resolve the newest pack, fetch its archive, import it as an instance, fill it.
