@@ -3153,3 +3153,17 @@ had lost input focus, and `xdotool key` went to whatever did have it.
 `windowfocus` when it is not the app. This session has met that exact failure before -- a click on an
 unfocused window only focuses it -- and the note is here so the next attempt does not read a driver
 problem as a code problem, or the reverse.
+
+### Settled: the window had focus, so the shortcut itself is what fails (2026-11-01)
+
+`xdotool getactivewindow getwindowname` answers **"Sift Launcher"**. So the keyboard was going to the
+right window, and the Ctrl+F that did nothing is a **code** failure, not a driver one.
+
+That also means the two clicks in the same run that did not switch tabs were separate misses, which is
+consistent with everything else this session has recorded about aiming.
+
+**The next probe is one line**: alongside the `ctrl+f` test, print
+`ui.input(|i| (i.modifiers.command, i.key_pressed(egui::Key::F), i.focused))`. If `command` is false,
+xdotool's ctrl is not arriving as a modifier; if the key press is false, the event is being consumed
+before this widget sees it; if both are true, the focus request is what fails -- and each of those three
+has a different one-line fix.
