@@ -3376,3 +3376,17 @@ that are known-complete, so the real figure is lower by an unknown amount that a
 
 **Two rules, both earned**: print the rect before pressing it; and when a capture says a feature is
 missing, read the source before believing the capture.
+
+### The hide-installed switch: pressed, not yet read (2026-11-01)
+
+Pressed at (1410,353) and the frame either side is **inconclusive** -- the crop I chose cut the control
+across its top edge, so the knob cannot be compared.
+
+That is the fifteenth aim error and the first one of the *reading* rather than the pressing: the press may
+have landed, and the evidence cannot say. **The fix is the same as always** -- crop the control whole, or
+better, print the switch's rect and the boolean behind it, which is a stricter test than a picture of a
+knob in either state.
+
+**Not claimed**: whether the switch filters installed projects. The row stays open and its evidence is
+recorded as a bad crop rather than a negative result, because those are different things and only one of
+them is information about the product.
