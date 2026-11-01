@@ -88,11 +88,17 @@ impl eframe::App for App {
         let App { shell, log } = self;
         log.begin();
         let mut animating = false;
+        let screen = ui.max_rect();
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE)
             .show(ui, |ui| {
                 animating = shell.ui(ui);
             });
+        // The create dialog sits over every page, on a foreground layer, which is why it is
+        // drawn after the panel rather than inside it.
+        if shell.create_open {
+            shell.draw_create(&ctx, screen);
+        }
         log.end();
         // Only while something is in flight. An idle window draws nothing at all, which is
         // both the budget in docs/LIGHTNESS.md and the reason a fan does not spin.

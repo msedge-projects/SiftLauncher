@@ -2243,3 +2243,26 @@ compass, and the rest have been estimated.
 rail's own code, exactly as was done for `rail1` two rounds before the compass started working.
 Every control this session has found has been found that way; every control estimated from a
 picture has cost a round.
+
+# The create dialog is on screen (2026-11-01)
+
+Captured at `.scratch/cap/r72-b.png`: a 576x350 plate over a scrim, "Create instance" and its
+close mark, "Already know what you want to play?" with the search plate and its placeholder, the
+centred "or", "Choose instance type", and the four rows -- Custom setup, Start from a mod or
+modpack, Upload a modpack, Import instance -- each with its description.
+
+Against `ref-create4.png` it is the same dialog in the same order with the same words. What
+differs: the reference gives each row an icon and the second a chevron, and its plate is on the
+reference's own raised surface; ours has neither icons nor chevron, and its row text sits two
+points higher. Those are the next slice's work, not this one's.
+
+**And the reason it took three rounds is worth the paragraph.** The `main.rs` edit that calls
+`draw_create` never applied: the anchor string did not match, `String::replace` did nothing, and
+nothing complained. The probe then correctly reported that `draw_create` was never called, and I
+read that as "the click is broken" and spent a round printing rail rectangles. The click was
+always fine; the call was missing.
+
+This session has now recorded the same failure twice in different clothes: a silent `.replace()`
+that matches nothing looks exactly like a change that did not work. Every edit of this kind needs
+its own assertion -- the earlier commits in this file did assert, and the ones that skipped it are
+the ones that cost rounds.
