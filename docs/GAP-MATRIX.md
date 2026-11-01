@@ -3770,3 +3770,20 @@ Anything placed relative to `area` inherits that.
 **So the fix is one word**: place the panel relative to `rect` -- the page's own rect, which *is* the
 viewport -- not `area`. That is the third attempt at this panel and the first where the reason is exact
 rather than suspected.
+
+### Stop: the panel is built and cannot be placed without knowing two rects (2026-11-01)
+
+Fifth attempt, `rect.bottom()` this time, and the foot of the page is still the card list. **So `rect` is
+content-relative too** -- the page function is handed the scrollable rect, and neither `area` nor `rect` is
+the viewport.
+
+**Five rounds on one panel is enough to stop and write down the one measurement that ends it**: print
+`rect`, `area`, and `ui.clip_rect()` together for one frame at 1440x900. The third is the viewport, and if it
+is what it says it is, the panel anchors to that and appears. **No further guessing.**
+
+**What is genuinely finished here**: the card **is** a target, the **selection is visible** (captured on the
+full frame), and the selection **toggles**. What is not finished is the panel that gives the selection a
+consequence -- it is drawn, and it is drawn off-screen.
+
+**Recorded as the honest state**: a bar that can be toggled and goes nowhere. That is better than no
+interaction and worse than the reference, and it is written down as the second rather than the first.

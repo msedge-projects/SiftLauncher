@@ -1276,7 +1276,9 @@ pub fn draw(
                 .and_then(|address| state.servers.iter().find(|s| &s.address == address))
             {
                 let panel = Rect::from_min_size(
-                    egui::pos2(area.left(), area.bottom() - DETAIL_HEIGHT),
+                    // Relative to the page's own rect, which is the viewport -- `area` is the
+                    // scrollable content and its bottom is off screen whenever the list is long.
+                    egui::pos2(area.left(), rect.bottom() - DETAIL_HEIGHT - 8.0),
                     egui::vec2(width, DETAIL_HEIGHT),
                 );
                 let painter = ui.painter();
