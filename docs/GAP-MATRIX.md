@@ -3816,3 +3816,20 @@ Reverted; tree green. **The detail panel stays as it was verified last round**: 
 both on screen. The count is one field away and the next attempt should read `fn shown_of`'s return type
 before reaching for it -- which is the same rule that has cost this session the most and keeps costing it:
 read the signature, then write the call.
+
+# The server panel carries live data (2026-11-01)
+
+    All the Mods 10
+    play.cubecraft.net
+    NeoForge 21.1.72 CubeCraft  ·  480/5000 online
+
+Three lines, all real: the name from the card, the address, and the **live status** -- loader, version and the
+current player count, which the page was already fetching for the cards and printing nowhere else.
+
+**The read-then-write rule paid off in the same call it was adopted**: `Shown`'s fields were grepped and the
+formatting written against them, so the compiler had nothing to refuse. **That is the first time in this
+stretch that no revert was needed**, and it is the direct difference between this round and the last three.
+
+**What the panel is**: a second rendering of data already on screen, which is a smaller thing than the
+reference's server page and should be recorded as such. **What it is not**: a route, a join action, or a MOTD
+block -- the summary is still the card's, not a description.

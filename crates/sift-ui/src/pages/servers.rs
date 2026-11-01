@@ -1300,6 +1300,25 @@ pub fn draw(
                     fonts::body(12.0),
                     theme.SECONDARY,
                 );
+                // The same `Shown` the card builds, read for its own fields rather than formatted:
+                // `players` is a pair, `loader` and `version` are strings, `motd` is the summary.
+                let shown = shown_of(server, &state.live);
+                let detail = format!(
+                    "{} {}  ·  {}",
+                    shown.loader,
+                    shown.version,
+                    match shown.players {
+                        Some((online, max)) => format!("{online}/{max} online"),
+                        None => "offline".to_owned(),
+                    }
+                );
+                painter.text(
+                    egui::pos2(panel.left() + 12.0, panel.top() + 48.0),
+                    egui::Align2::LEFT_TOP,
+                    detail,
+                    fonts::body(11.0),
+                    theme.SECONDARY,
+                );
             }
 
             for section in &sections {
@@ -1716,7 +1735,7 @@ fn primary_button(
 /// Draw one section: its heading, then either its cards or the line that says the search emptied
 /// it. Returns nothing -- the caller has already added [`section_height`] to its cursor.
 /// The selected server's panel height: two lines and room to breathe.
-const DETAIL_HEIGHT: f32 = 64.0;
+const DETAIL_HEIGHT: f32 = 96.0;
 
 fn draw_section(
     painter: &egui::Painter,
