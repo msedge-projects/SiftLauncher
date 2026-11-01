@@ -1711,3 +1711,18 @@ Withdrawn: "every search returns no results". It returned none because it was as
 
 **What survives from this whole thread is one defect**: the search field's clear button does
 nothing when clicked. One real bug in thirteen rounds of looking, and it was found by typing.
+
+### The clear button is always visible now, and still does not clear (2026-11-01)
+
+The reference shows the ✕ whenever the field has text; this drew it only while the pointer was
+over the field, so a click arriving with the pointer freshly moved found nothing to hit. That is
+fixed and the captures show the ✕ at the field's right edge without hover, on both sides of the
+comparison.
+
+**The click still does not clear.** Aimed at the ✕'s own centre (content 1098, screen 170, inside
+its 16-point hit rect), the text stays `sodium` in the after-capture.
+
+So the button exists, is drawn in the right place, and swallows its click somewhere between
+`ui.interact` and `self.text.clear()`. The next probe is the same one that settled every other
+question: print `hit.hovered()`, `hit.clicked()` and the rect for `Id::new("search-clear")` on
+any frame with a click pending.

@@ -155,7 +155,11 @@ impl Search {
             egui::pos2(rect.right() - 18.0, rect.center().y),
             Vec2::splat(16.0),
         );
-        let mut clear_shown = !self.text.is_empty() && response.hovered();
+        // Shown whenever there is something to clear, which is what the reference does and
+        // what makes the button clickable: gating it on `response.hovered()` meant the button
+        // only existed on a frame where the pointer had already been over the *field*, so the
+        // first click that arrived with the text in place found nothing to hit.
+        let mut clear_shown = !self.text.is_empty();
         let mut clear_hovered = false;
         if clear_shown {
             let hit = ui.interact(clear, Id::new("search-clear"), Sense::click());
