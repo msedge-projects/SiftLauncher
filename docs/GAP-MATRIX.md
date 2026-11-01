@@ -2785,3 +2785,22 @@ the product.
 **The next slice is the door, not the room**: make the card body open the instance page (the shell
 already tracks `open_instance`), then the ⋮ menu as a popup with the reference's items. Only then does
 building the page itself make sense.
+
+### The door exists; nothing turns the handle (2026-11-01)
+
+Read rather than guessed, and it changes the last round's finding from "unbuilt" to "unwired":
+
+* **`Shell::open_instance_page(&id)`** exists (shell.rs:1373) and is what puts the shell into the
+  instance page (`open_instance` at :481, drawn at :634).
+* It is reached by **`Action::Edit(id)`** (:1325), whose comment already says it is the reference's
+  instance page.
+* The library's card has an overflow menu with **`MenuItem::OpenFolder`** and siblings (:279), so the
+  menu's items are modelled too.
+
+What is missing is one press: **the card's body never emits `Action::Edit`**, and the ⋮ never opens a
+popup, so the menu's items cannot be reached. The plumbing is complete end to end and unconnected at
+the only place a reader can touch it.
+
+**The next slice is a single interaction**, not a page: emit `Action::Edit(id)` from a press on the
+card body, then capture the instance page it opens. Everything the brief asks of file management sits
+one click beyond that.
