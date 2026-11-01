@@ -138,6 +138,9 @@ fn load_at(state: &mut State, path: &std::path::Path) {
         return;
     };
     let known = known_labels();
+    if let Some(dev) = value.get("dev_mode").and_then(|entry| entry.as_bool()) {
+        state.dev_mode = dev;
+    }
     if let Some(theme) = value.get("theme").and_then(|entry| entry.as_str()) {
         if let Some(choice) = ThemeChoice::ALL
             .into_iter()
@@ -269,6 +272,17 @@ fn detect_java() -> Vec<(u32, String)> {
     found
 }
 
+/// The version a Java location row's key names, for the per-version actions under its field.
+fn version_of(key: &'static str) -> Option<u32> {
+    match key {
+        JAVA_LOCATION_25 => Some(25),
+        JAVA_LOCATION_21 => Some(21),
+        JAVA_LOCATION_17 => Some(17),
+        JAVA_LOCATION_8 => Some(8),
+        _ => None,
+    }
+}
+
 /// The tooltip a button carries, if the reference gives it one.
 fn button_tooltip(label: &str) -> Option<&'static str> {
     (label == STORE_CLEAR_LABEL).then_some(STORE_CLEAR_TOOLTIP)
@@ -279,16 +293,35 @@ fn button_tooltip(label: &str) -> Option<&'static str> {
 /// Separated from the frame so the rule can be tested without a window -- a button that cleared a
 /// reader's cache on one press would be the wrong behaviour to find by trying it.
 fn button_pressed(state: &mut State, label: &'static str) {
-    if label != CLEAR_CACHE_LABEL {
+    state.notice_for = Some(label);
+    if label == CLEAR_CACHE_LABEL {
+        if state.confirming == Some(label) {
+            state.notice = Some(clear_cache());
+            state.confirming = None;
+        } else {
+            state.confirming = Some(label);
+            state.notice = None;
+        }
         return;
     }
-    if state.confirming == Some(label) {
-        state.notice = Some(clear_cache());
-        state.confirming = None;
-    } else {
-        state.confirming = Some(label);
-        state.notice = None;
-    }
+    // The rest of the reference's buttons, each with the local action behind it. A button that
+    // draws and does nothing is the defect this page was driven to find, so every one of them
+    // ends in a sentence under itself -- including the ones whose action this build cannot take,
+    // which say so rather than leaving the reader guessing.
+    state.confirming = None;
+    state.notice = Some(match label {
+        BACKUPS_OPEN_LABEL => open_folder(&backups_dir()),
+        DEBUG_INFO_EXPORT_LABEL => export_debug_info(),
+        STORE_REPAIR_LABEL => verify_instances(),
+        // The reference purges content-cache entries no instance refers to
+        // (`content-storage.vue:344-355`). This launcher has no shared content store, so the
+        // honest answer is that there is nothing of that kind here.
+        STORE_CLEAR_LABEL => "This build keeps no unused content: nothing to clear.".to_owned(),
+        PRIVACY_MANAGE_LABEL => {
+            "Ad preferences are not available in this build.".to_owned()
+        }
+        _ => return,
+    });
 }
 
 /// The bar's height and its corner radius.
@@ -343,6 +376,116 @@ fn clear_cache() -> String {
     }
 }
 
+/// The folder the reference's "Open backups folder" opens: `showAppDbBackupsFolder`
+/// (`helpers/utils.js`), the app's own database backups.
+fn backups_dir() -> std::path::PathBuf {
+    crate::data::instances_dir()
+        .parent()
+        .map(|root| root.join("backups"))
+        .unwrap_or_else(|| std::path::PathBuf::from("backups"))
+}
+
+/// Open a folder in the desktop's file manager, and say what happened.
+///
+/// The alternative -- a button that draws and does nothing -- is the defect this replaced: the
+/// reference's handler is `showAppDbBackupsFolder()`, and this launcher keeps its own backups
+/// beside its data.
+fn open_folder(path: &std::path::Path) -> String {
+    if let Err(error) = std::fs::create_dir_all(path) {
+        return format!("Could not create {}: {error}", path.display());
+    }
+    let (command, argument) = if cfg!(target_os = "windows") {
+        ("explorer", path.display().to_string())
+    } else if cfg!(target_os = "macos") {
+        ("open", path.display().to_string())
+    } else {
+        ("xdg-open", path.display().to_string())
+    };
+    match std::process::Command::new(command).arg(argument).spawn() {
+        Ok(_) => format!("Opened {}.", path.display()),
+        Err(error) => format!("Could not open {}: {error}", path.display()),
+    }
+}
+
+/// Write a diagnostics report and say where it went.
+///
+/// `exportDebugInfo()` (`components/ui/download-manager/debug-info-export.ts`) zips the logs and
+/// the app's own facts and asks where to save it. This launcher writes the same facts as one
+/// text file into its logs folder: a written file rather than an inert button, and a format a
+/// support reader can open without a zip tool.
+fn export_debug_info() -> String {
+    let paths = sift_core::paths::SiftPaths::detect();
+    let logs = paths.logs_dir();
+    if let Err(error) = std::fs::create_dir_all(&logs) {
+        return format!("Could not create {}: {error}", logs.display());
+    }
+    let path = logs.join("debug-info.txt");
+    let instances = crate::data::load().0;
+    let mut report = String::new();
+    report.push_str(&format!("Sift Launcher {}\n", env!("CARGO_PKG_VERSION")));
+    report.push_str(&format!("platform: {} {}\n", std::env::consts::OS, std::env::consts::ARCH));
+    report.push_str(&format!("data root: {}\n", path_of_data_root().display()));
+    report.push_str(&format!("instances: {}\n", instances.len()));
+    for instance in &instances {
+        report.push_str(&format!("  - {} ({})\n", instance.name, instance.id));
+    }
+    report.push_str(&format!("java runtimes found: {}\n", detect_java().len()));
+    let log = logs.join("siftui.log");
+    if let Ok(text) = std::fs::read_to_string(&log) {
+        report.push_str("\n--- last 200 lines of siftui.log ---\n");
+        let lines: Vec<&str> = text.lines().collect();
+        let start = lines.len().saturating_sub(200);
+        for line in &lines[start..] {
+            report.push_str(line);
+            report.push('\n');
+        }
+    }
+    match std::fs::write(&path, report) {
+        Ok(()) => format!("Saved debug info to {}.", path.display()),
+        Err(error) => format!("Could not write {}: {error}", path.display()),
+    }
+}
+
+/// Where the launcher's data lives, which is what every other path here is relative to.
+fn path_of_data_root() -> std::path::PathBuf {
+    crate::data::instances_dir()
+        .parent()
+        .map(std::path::Path::to_path_buf)
+        .unwrap_or_default()
+}
+
+/// Check every instance's profile reads as JSON, which is what "Verify and repair" can honestly
+/// answer here: the reference's handler asks the app's database to check its own content store,
+/// and this launcher keeps its instances on disk instead.
+fn verify_instances() -> String {
+    let roots = crate::data::instances_dir();
+    let Ok(entries) = std::fs::read_dir(&roots) else {
+        return "No instances folder to check.".to_owned();
+    };
+    let mut checked = 0_usize;
+    let mut broken = 0_usize;
+    for entry in entries.filter_map(Result::ok) {
+        let dir = entry.path();
+        if !dir.is_dir() {
+            continue;
+        }
+        checked += 1;
+        let profile = dir.join("profile.json");
+        let ok = std::fs::read_to_string(&profile)
+            .ok()
+            .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+            .is_some();
+        if !ok {
+            broken += 1;
+        }
+    }
+    match (checked, broken) {
+        (0, _) => "No instances to check.".to_owned(),
+        (count, 0) => format!("Checked {count} instance(s): every profile reads."),
+        (count, bad) => format!("Checked {count} instance(s): {bad} profile(s) need repair."),
+    }
+}
+
 /// How many bytes a directory holds, following its subdirectories.
 fn directory_size(path: &std::path::Path) -> u64 {
     let Ok(entries) = std::fs::read_dir(path) else {
@@ -385,6 +528,7 @@ fn save_at(state: &State, path: &std::path::Path) {
         .collect::<serde_json::Map<_, _>>();
     let value = serde_json::json!({
         "theme": state.theme.label(),
+        "dev_mode": state.dev_mode,
         "sliders": sliders,
         "texts": texts,
         "chips": chips,
@@ -450,6 +594,9 @@ pub struct State {
     /// The button waiting for its second press, and the line to say under it.
     pub confirming: Option<&'static str>,
     pub notice: Option<String>,
+    /// Which control the notice belongs under, so a tab with several buttons draws the line
+    /// beside the one that was pressed rather than beside a fixed one.
+    pub notice_for: Option<&'static str>,
     /// The folder the picker is showing, while it is open.
     pub picking: Option<(std::path::PathBuf, PickFor)>,
     /// The tooltip to draw after the body: the button's rect and its words.
@@ -472,6 +619,17 @@ pub struct State {
     pub open: bool,
     /// The selected tab. The source opens on the first one (`index.vue:88-96`).
     pub tab: Tab,
+    /// Whether developer mode is on, which is what reveals the `Feature flags` row.
+    ///
+    /// The reference keeps this in `app-settings.json` (`developer_mode`), so it survives a
+    /// restart; it is written here for the same reason.
+    pub dev_mode: bool,
+    /// Presses on the footer's mark since the last toggle. The reference toggles when the
+    /// counter passes five -- the sixth press (`index.vue:355-361`).
+    pub dev_clicks: u32,
+    /// The tab that was selected when developer mode was last turned on, so turning it off can
+    /// fall back the way `onSuccess` does (`index.vue:329-340`).
+    pub dev_return: Option<Tab>,
 }
 
 /// One row of the source's rail, in the source's order (`index.vue:88-205`).
@@ -532,6 +690,17 @@ impl Tab {
     /// (`TabbedModal.vue` renders the pill from the tab's own metadata).
     pub fn is_beta(self) -> bool {
         matches!(self, Tab::Language)
+    }
+
+    /// Whether the reference hides this tab until developer mode is on.
+    ///
+    /// `app-settings-modal/index.vue:211-213` filters `tab.developerOnly` out of `availableTabs`
+    /// and `use-app-settings.ts:59` starts `devMode` false, so the rail has thirteen rows at
+    /// rest and fourteen after six presses on the Modrinth mark in its footer
+    /// (`index.vue:355-361`). Drawing the row anyway was an invented destination: the capture
+    /// of the reference's rail at 1440x900 has no `Feature flags` row at all.
+    pub fn developer_only(self) -> bool {
+        matches!(self, Tab::FeatureFlags)
     }
 
     pub fn label(&self) -> &'static str {
@@ -606,6 +775,13 @@ impl Tab {
 /// The modal's title: `label.settings` (`common-messages.ts:331-333`), rendered by
 /// `index.vue:387` at `text-2xl font-semibold text-contrast`.
 const DIALOG_TITLE: &str = "Settings";
+/// `app.settings.developer-mode-enabled` (`index.vue:74-77`).
+const DEVELOPER_MODE_LINE: &str = "Developer mode enabled.";
+/// The signed-out state's own words (`AccountProfileSettings.vue:343-350` and the button).
+const PROFILE_SIGN_IN_TITLE: &str = "Modrinth account required";
+const PROFILE_SIGN_IN_BUTTON: &str = "Sign in";
+/// What the press says while there is no Modrinth account service to open.
+const SIGN_IN_UNAVAILABLE: &str = "Signing in to Modrinth is not available in this build.";
 
 // --- rail labels: app-frontend/src/locales/en-US/index.json ---
 const TAB_APPEARANCE: &str = "Appearance"; // app.settings.tabs.appearance (:3125)
@@ -842,6 +1018,7 @@ const WRAPPER_PLACEHOLDER: &str = "Enter wrapper command..."; // app.settings.de
 const POST_EXIT_LABEL: &str = "Post-exit hook"; // app.settings.default-instance-options.post-exit-hook.title (:1703)
 const POST_EXIT_DESCRIPTION: &str = "Runs after the game closes."; // app.settings.default-instance-options.post-exit-hook.description (:1697)
 const POST_EXIT_PLACEHOLDER: &str = "Enter post-exit command..."; // app.settings.default-instance-options.post-exit-hook.placeholder (:1700)
+const HOOK_VARIABLES_LIST: &str = "$INST_NAME: The name of the instance\n$INST_ID: The name of the instance's folder\n$INST_DIR: The absolute path to the instance's folder\n$INST_MC_DIR: An alias for $INST_DIR\n$INST_JAVA: The absolute path to the java binary\n$INST_JAVA_ARGS: The JVM Arguments provided to the game"; // :56-79
 const HOOK_VARIABLES_INTRO: &str = "Hooks run in the working directory of the instance, with the following variables:"; // instance.settings.tabs.hooks.variables.description (:4226)
 
 // --- Syncing (settings/syncing/syncing-settings.vue) ---
@@ -965,6 +1142,11 @@ const RAIL_PADDING: f32 = 16.0;
 // a pane ending at 783, so the block is 56 points tall from the floor. (Two attempts at this
 // constant moved the ink the wrong way before the sign was read rather than guessed.)
 const RAIL_FOOTER: f32 = 56.0;
+/// The footer's own height: two 20-point lines (`text-sm` at `leading-5`), which the
+/// reference's capture puts at 733..773.
+const FOOTER_HEIGHT: f32 = 40.0;
+/// The mark beside them: `w-6 h-6`.
+const FOOTER_MARK: f32 = 24.0;
 
 const RAIL_ROW_GAP: f32 = 4.0;
 
@@ -1060,6 +1242,8 @@ const HEADING_TO_ROWS: f32 = 16.0;
 /// The gap between a row's text and its control: `gap-4` on the row's flex line
 /// (`AppearanceSettingRow.vue:20`).
 const ROW_CONTROL_GAP: f32 = 16.0;
+/// The line box a heading or a row title occupies, whatever its font size.
+const LINE_BOX: f32 = 28.0;
 
 /// A label column narrower than this would push a description to one word a line. The
 /// source's `min-w-0` lets the text column shrink to nothing (`AppearanceSettingRow.vue:21`);
@@ -1258,8 +1442,29 @@ const RESET_HEIGHT: f32 = 18.0;
 /// Room between that button and the control it resets.
 const RESET_GAP: f32 = 12.0;
 
-/// One row of a radio list: the reference's locale rows are `py-2` around 13-point text.
-const RADIO_ROW: f32 = 26.0;
+/// `Admonition.vue:4`: `rounded-2xl border p-4` -- a 16-point radius and padding.
+const ADMONITION_PAD: f32 = 16.0;
+const ADMONITION_RADIUS: u8 = 16;
+/// The warning glyph's column, which the callout's words start after.
+const ADMONITION_ICON: f32 = 32.0;
+/// The space the callout leaves under itself (`mb-4`).
+const ADMONITION_BELOW: f32 = 16.0;
+/// The space a paragraph leaves under itself before the next control (`gap-4`).
+const NOTE_BELOW: f32 = 16.0;
+/// The gap between the items of one section (`gap-2.5`).
+const STANDALONE_GAP: f32 = 10.0;
+
+/// The signed-out empty state's geometry, from the reference's capture at 1440x900: the
+/// illustration's space above the title, and the brand button's height (`size="xl"`).
+const EMPTY_STATE_ART: f32 = 238.0;
+const EMPTY_STATE_BUTTON: f32 = 46.0;
+
+/// One row of a radio list: `CheckCircleButton` size lg is `h-10`, and the column's `gap-1`
+/// puts the pitch at 44 -- the reference's locale rows start at 487 and 531.
+const RADIO_ROW: f32 = 40.0;
+const RADIO_GAP: f32 = 4.0;
+/// `rounded-[14px]`.
+const RADIO_RADIUS: u8 = 14;
 
 /// A chip's box, gap and padding, from `Chips.vue`: `px-3 py-1` around 12-point text.
 const CHIP_HEIGHT: f32 = 26.0;
@@ -1269,7 +1474,7 @@ const CHIP_PAD: f32 = 12.0;
 /// A field's plate: `TextInput.vue` is a 28-point box, wider than a select because it holds a
 /// path.
 const FIELD_WIDTH: f32 = 200.0;
-const FIELD_HEIGHT: f32 = 28.0;
+const FIELD_HEIGHT: f32 = 36.0;
 /// A multiline field's height: three lines and the counter under them.
 const AREA_HEIGHT: f32 = 88.0;
 
@@ -1346,6 +1551,33 @@ enum Block {
     /// puts a row of theme cards under the heading, with no label of its own
     /// (`layout.vue:44-51`).
     Standalone(Control),
+    /// A bordered warning callout (`Admonition.vue:4`: `rounded-2xl border p-4`, warning =
+    /// `border-brand-orange bg-bg-orange`). The language tab's warning is one, and drawing it
+    /// as a heading's description lost the box the reference gives it.
+    Admonition {
+        /// The warning's words, from the catalogue key its comment names.
+        text: &'static str,
+    },
+    /// A paragraph under the control it explains, on the pane's own left margin.
+    ///
+    /// `launch-hooks-settings.vue:96-101` is a heading, then a full-width field, then this
+    /// line: the reference puts the explanation *under* the field, and our rows carried it
+    /// above the control as a heading description.
+    Note {
+        /// The sentence, from the catalogue key its comment names.
+        text: &'static str,
+    },
+    /// The state a tab shows while nobody is signed in to a Modrinth account
+    /// (`AccountProfileSettings.vue:1-25`, `AccountSocialSettings.vue:1-26`: an `EmptyState`
+    /// with the shared `signInRequiredTitle`, a description and a brand Sign in button).
+    ///
+    /// Every control on the signed-in form is an account-service call, so drawing the form
+    /// while signed out was the largest invented surface on this page: the capture of the
+    /// reference at 1440x900 shows the empty state on both tabs.
+    SignInRequired {
+        /// The line under the title, which each tab words for itself.
+        description: &'static str,
+    },
     /// A `border-t` rule between sections (`features-settings.vue:325`).
     Rule,
 }
@@ -1497,6 +1729,11 @@ const BEHAVIOR_BLOCKS: &[Block] = &[
         // Signed out, the source draws this off and disabled (`:257-263`).
         control: Some(Control::Switch { on: false }),
     },
+    // `behavior-settings.vue:1` closes the sync row's section with `border-b border-divider
+    // pb-6` and `:31` opens the next with `mt-6`: one 1-px divider and 48 points between the
+    // sections, which the 1440x900 capture puts at y 316 with "Startup and navigation" at 348.
+    // Without it every section below the sync row sat 31 points high.
+    Block::Rule,
     Block::Heading {
         text: BEHAVIOR_STARTUP_HEADING,
         description: None,
@@ -1574,26 +1811,27 @@ const BEHAVIOR_BLOCKS: &[Block] = &[
 const LANGUAGE_BLOCKS: &[Block] = &[
     Block::Heading {
         text: LANGUAGE_TITLE,
-        description: Some(LANGUAGE_WARNING),
+        description: None,
         big: true,
         control: None,
     },
-    Block::Heading {
-        text: LANGUAGE_CATEGORY,
-        description: Some(LANGUAGE_DESCRIPTION),
-        big: false,
-        control: Some(Control::Select {
-            value: LANGUAGE_CURRENT,
-            options: &[
-                "English (United States)",
-                "Deutsch",
-                "Español",
-                "Français",
-                "Português (Brasil)",
-            ],
-        }),
+    // `index.vue:7-9`: `<Admonition type="warning" class="mb-4 mt-2">`, then the description
+    // paragraph, then the selector. The warning is a box, not a heading's sub-line, and there is
+    // no select anywhere in this tab (`language-settings-selector.vue:221-297` is a radio group
+    // with a search field) -- the select that used to sit on the heading was invented.
+    Block::Admonition {
+        text: LANGUAGE_WARNING,
+    },
+    Block::Note {
+        text: LANGUAGE_DESCRIPTION,
     },
     Block::Standalone(Control::Text { placeholder: LANGUAGE_SEARCH_PLACEHOLDER }),
+    Block::Heading {
+        text: LANGUAGE_CATEGORY,
+        description: None,
+        big: false,
+        control: None,
+    },
     Block::RadioList {
         key: LANGUAGE_CATEGORY,
         options: LANGUAGE_NAMES,
@@ -1685,97 +1923,30 @@ const FEATURE_FLAG_BLOCKS: &[Block] = &[
 /// signed-out `EmptyState`. It does not. `ModrinthAccountRequiredModal.vue` is how 0.22 asks a
 /// reader to sign in, so a signed-out body would be a state the reference does not have; the
 /// modal belongs with the settings dialog's own modal work.
-const PROFILE_BLOCKS: &[Block] = &[
-    Block::Heading {
-        text: PROFILE_PICTURE_LABEL,
-        description: Some(PROFILE_DESCRIPTION),
-        big: false,
-        control: None,
-    },
-    Block::Standalone(Control::Button {
-        label: PROFILE_UPLOAD_LABEL,
-        glyph: Some(Glyph::Upload),
-    }),
-    Block::Standalone(Control::Button {
-        label: PROFILE_REMOVE_LABEL,
-        glyph: Some(Glyph::Trash),
-    }),
-    Block::Row {
-        label: PROFILE_USERNAME_LABEL,
-        description: Some(PROFILE_USERNAME_DESCRIPTION),
-        control: Control::Text {
-            placeholder: PROFILE_USERNAME_PLACEHOLDER,
-        },
-    },
-    Block::Row {
-        label: PROFILE_BIO_LABEL,
-        description: Some(PROFILE_BIO_DESCRIPTION),
-        control: Control::TextArea {
-            placeholder: PROFILE_BIO_PLACEHOLDER,
-            limit: PROFILE_BIO_LIMIT,
-        },
-    },
-];
-
-/// The Social tab's signed-in body (`AccountSocialSettings.vue:25-202`): friend requests
-/// (`:26-44`), shared instance invites (`:46-63`) and hosting access invites (`:65-82`) --
-/// each a heading, its description and a group of chips -- then blocked users (`:85-102`).
-///
-/// The three settings are `Chips` groups, a choice of `everyone`, `mutual` and `none` or
-/// `everyone`, `friends` and `none` (`:31-40`, `:257-258`), drawn as chips and kept in the
-/// page's state. The blocked-users table (`:100-201`) is a row
-/// per blocked user with an `Unblock` action (`settings.social.blocked-users.unblock`,
-/// ui :6434), and the three restriction bullets (`:93-97`) are list items; the first is owed
-/// for its data and the second for want of a list block. The signed-out state
-/// (`settings.social.sign-in-required.title` / `.description`, ui :6491, :6488) is owed too.
-/// The friend-request and shared-instance choices, `everyone` / `mutual` / `none`
-/// (`AccountSocialSettings.vue:31-40`).
 const SOCIAL_CHOICES: &[&str] = &["Everyone", "Mutual", "No one"];
-/// The hosting-access choices, `everyone` / `friends` / `none` (`:257-258`).
 const HOSTING_CHOICES: &[&str] = &["Everyone", "Friends", "No one"];
 
-const SOCIAL_BLOCKS: &[Block] = &[
-    Block::Row {
-        label: SOCIAL_FRIEND_REQUESTS_LABEL,
-        description: Some(SOCIAL_FRIEND_REQUESTS_DESCRIPTION),
-        control: Control::Chips {
-            options: SOCIAL_CHOICES,
-            selected: 0,
-        },
-    },
-    Block::Row {
-        label: SOCIAL_SHARED_INSTANCES_LABEL,
-        description: Some(SOCIAL_SHARED_INSTANCES_DESCRIPTION),
-        control: Control::Chips {
-            options: SOCIAL_CHOICES,
-            selected: 0,
-        },
-    },
-    Block::Row {
-        label: SOCIAL_HOSTING_LABEL,
-        description: Some(SOCIAL_HOSTING_DESCRIPTION),
-        control: Control::Chips {
-            options: HOSTING_CHOICES,
-            selected: 0,
-        },
-    },
-    Block::Heading {
-        text: SOCIAL_BLOCKED_LABEL,
-        description: Some(SOCIAL_BLOCKED_DESCRIPTION),
-        big: false,
-        control: None,
-    },
-];
-
-/// The Privacy tab's rows (`privacy-settings.vue:77-113`): the ad-consent heading with its
-/// intro and the `Manage preferences` button, then telemetry and Discord Rich Presence.
+/// The Profile tab while signed out: one empty state and nothing else.
 ///
-/// `// owed:` the button's `Settings2Icon` is drawn, its click is not: the source opens the
-/// ad-consent window (`privacy-settings.vue:60-62`).
+/// `AccountProfileSettings.vue:1-25` is `<EmptyState v-if="!auth.user.value">`; the form below
+/// it -- avatar, username, bio -- only renders `v-else`. The capture of the reference at
+/// 1440x900 shows the title at y 470, the description at 505 and the brand button at 545.
+const PROFILE_BLOCKS: &[Block] = &[Block::SignInRequired {
+    description: "Sign in with a Modrinth account to customize your public profile.",
+}];
+
+/// The Social tab while signed out, for the same reason (`AccountSocialSettings.vue:1-26`).
+const SOCIAL_BLOCKS: &[Block] = &[Block::SignInRequired {
+    description: "You control who can interact with you, and manage blocked users with a Modrinth Account.",
+}];
+
 const PRIVACY_BLOCKS: &[Block] = &[
+    // `privacy-settings.vue`: the heading, then the Manage preferences button, then the
+    // paragraph that explains the ads. The capture puts them at 231, 272 and 309, so the
+    // paragraph is a `Note` under the button rather than the heading's sub-line.
     Block::Heading {
         text: PRIVACY_ADS_HEADING,
-        description: Some(PRIVACY_ADS_INTRO),
+        description: None,
         big: false,
         control: None,
     },
@@ -1783,6 +1954,9 @@ const PRIVACY_BLOCKS: &[Block] = &[
         label: PRIVACY_MANAGE_LABEL,
         glyph: Some(Glyph::Settings2),
     }),
+    Block::Note {
+        text: PRIVACY_ADS_INTRO,
+    },
     Block::Row {
         label: TELEMETRY_LABEL,
         description: Some(TELEMETRY_DESCRIPTION),
@@ -1894,33 +2068,48 @@ const WINDOW_BLOCKS: &[Block] = &[
 /// `instance.settings.tabs.hooks.variables.*.description`, :4229-4244) are `<li>` items with
 /// no list block to draw them in, so only the line that introduces them is ported.
 const LAUNCH_HOOKS_BLOCKS: &[Block] = &[
+    // `launch-hooks-settings.vue:96-101`: the heading, the full-width field, then the line that
+    // explains it. Each of the three hooks is that shape, and the block count is nine because
+    // the explanation is a block of its own rather than a heading's sub-line.
     Block::Heading {
         text: PRE_LAUNCH_LABEL,
-        description: Some(PRE_LAUNCH_DESCRIPTION),
+        description: None,
         big: false,
         control: None,
     },
     Block::Standalone(Control::Text { placeholder: PRE_LAUNCH_PLACEHOLDER }),
+    Block::Note {
+        text: PRE_LAUNCH_DESCRIPTION,
+    },
     Block::Heading {
         text: WRAPPER_LABEL,
-        description: Some(WRAPPER_DESCRIPTION),
+        description: None,
         big: false,
         control: None,
     },
     Block::Standalone(Control::Text { placeholder: WRAPPER_PLACEHOLDER }),
+    Block::Note {
+        text: WRAPPER_DESCRIPTION,
+    },
     Block::Heading {
         text: POST_EXIT_LABEL,
-        description: Some(POST_EXIT_DESCRIPTION),
+        description: None,
         big: false,
         control: None,
     },
     Block::Standalone(Control::Text { placeholder: POST_EXIT_PLACEHOLDER }),
+    Block::Note {
+        text: POST_EXIT_DESCRIPTION,
+    },
     Block::Heading {
         text: HOOK_VARIABLES_INTRO,
         description: None,
         big: false,
         control: None,
     },
+    // The six variables `launch-hooks-settings.vue:120-138` lists under that line, one per
+    // line -- the reference draws them as a `<ul>`.
+    Block::Note { text: HOOK_VARIABLES_LIST },
 ];
 
 /// The Syncing tab (`syncing-settings.vue:563-635`): one row per entry in `globalRows`
@@ -2047,9 +2236,12 @@ const RESOURCES_BLOCKS: &[Block] = &[
 /// report-an-ad description's `<support>` span is a link to support.modrinth.com
 /// (`:299-309`) and is drawn as its literal markup.
 const TROUBLESHOOTING_BLOCKS: &[Block] = &[
+    // `troubleshooting-settings.vue:217-250`: each of the four sections is a `flex flex-col
+    // gap-2.5` of a heading, a button, then the paragraph that explains it -- the paragraph is
+    // *under* the button, and the capture puts them at 231, 274 and 312.
     Block::Heading {
         text: APP_CACHE_TITLE,
-        description: Some(APP_CACHE_DESCRIPTION),
+        description: None,
         big: false,
         control: None,
     },
@@ -2057,9 +2249,12 @@ const TROUBLESHOOTING_BLOCKS: &[Block] = &[
         label: CLEAR_CACHE_LABEL,
         glyph: Some(Glyph::Trash),
     }),
+    Block::Note {
+        text: APP_CACHE_DESCRIPTION,
+    },
     Block::Heading {
         text: BACKUPS_TITLE,
-        description: Some(BACKUPS_DESCRIPTION),
+        description: None,
         big: false,
         control: None,
     },
@@ -2067,9 +2262,12 @@ const TROUBLESHOOTING_BLOCKS: &[Block] = &[
         label: BACKUPS_OPEN_LABEL,
         glyph: Some(Glyph::FolderOpen),
     }),
+    Block::Note {
+        text: BACKUPS_DESCRIPTION,
+    },
     Block::Heading {
         text: DEBUG_INFO_TITLE,
-        description: Some(DEBUG_INFO_DESCRIPTION),
+        description: None,
         big: false,
         control: None,
     },
@@ -2077,9 +2275,12 @@ const TROUBLESHOOTING_BLOCKS: &[Block] = &[
         label: DEBUG_INFO_EXPORT_LABEL,
         glyph: Some(Glyph::Download),
     }),
+    Block::Note {
+        text: DEBUG_INFO_DESCRIPTION,
+    },
     Block::Heading {
         text: REPORT_AD_TITLE,
-        description: Some(REPORT_AD_DESCRIPTION),
+        description: None,
         big: false,
         control: None,
     },
@@ -2087,6 +2288,9 @@ const TROUBLESHOOTING_BLOCKS: &[Block] = &[
         label: REPORT_AD_COPY_LABEL,
         glyph: Some(Glyph::Copy),
     }),
+    Block::Note {
+        text: REPORT_AD_DESCRIPTION,
+    },
     Block::Row {
         label: COPY_DETAILS_LABEL,
         description: Some(COPY_DETAILS_DESCRIPTION),
@@ -2165,7 +2369,7 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
             egui::StrokeKind::Inside,
         );
         draw_header(&painter, dialog, theme);
-        draw_rail(&painter, dialog, theme, state.tab, state.rail_scroll);
+        draw_rail(&painter, dialog, theme, state.tab, state.rail_scroll, state.dev_mode);
         let (pointer, held) = ui.input(|input| {
         (
             input.pointer.interact_pos(),
@@ -2437,15 +2641,62 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
     // The rail's rows are the only navigation. A row clipped away by the rail's overflow is
     // not a target: its centre has to be inside the rail for the click to count.
     let rail = rail_rect(dialog);
-    // The wheel over the rail moves it, clamped against how far its rows actually reach.
-    let rail_overflow = (rail_needed_height() - (rail.height() - 2.0 * RAIL_PADDING)).max(0.0);
+    // The wheel over the rail moves it, clamped against how far its rows actually reach. The
+    // pane is the rail less its padding and the footer's band, which is the height the rows are
+    // clipped to; measuring the overflow against the whole rail let the list scroll past its own
+    // last row by the footer's height.
+    let rail_pane = rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0
+        - (rail.top() + RAIL_PADDING);
+    let rail_overflow = (rail_needed_height(state.dev_mode) - rail_pane).max(0.0);
     let wheel = ui.ctx().input(|i| i.smooth_scroll_delta.y);
     if wheel != 0.0 && rail_overflow > 0.0 && ui.rect_contains_pointer(rail) {
         state.rail_scroll = (state.rail_scroll - wheel).clamp(0.0, rail_overflow);
     }
     state.rail_scroll = state.rail_scroll.min(rail_overflow);
 
-    let rows = rail_rows(dialog, state.rail_scroll);
+    // The footer's mark is the developer-mode button: six presses toggle it
+    // (`index.vue:355-361` increments then toggles once the counter passes five).
+    if ui
+        .interact(
+            footer_mark_rect(dialog),
+            egui::Id::new("sift-settings-dev-mode"),
+            Sense::click(),
+        )
+        .clicked()
+    {
+        state.dev_clicks += 1;
+        if state.dev_clicks > 5 {
+            state.dev_clicks = 0;
+            state.dev_mode = !state.dev_mode;
+            // The reference re-selects the same tab by identity and falls back to the first when
+            // it is no longer in the list (`index.vue:329-340`), so turning developer mode off
+            // while reading the flags does not leave a tab that is not on the rail.
+            if state.tab.developer_only() && !state.dev_mode {
+                state.tab = Tab::Appearance;
+            }
+            state.dirty = true;
+            ui.ctx().request_repaint();
+        }
+    }
+
+    let rows = rail_rows(dialog, state.rail_scroll, state.dev_mode);
+    // SIFT_SETTINGS_PROBE: print every rectangle a press will be read against, on the frames
+    // where a press happened. A screenshot cannot be clicked; a printed rect can.
+    if std::env::var_os("SIFT_SETTINGS_PROBE").is_some() && ui.input(|i| i.pointer.any_click()) {
+        eprintln!(
+            "probe dialog={:?} content={:?} rail={:?} close={:?} tab={:?} scroll={:.1} rail_scroll={:.1}",
+            dialog,
+            content_rect(dialog),
+            rail,
+            close_rect(dialog),
+            state.tab,
+            state.scroll,
+            state.rail_scroll
+        );
+        for (index, entry) in rows.iter().enumerate() {
+            eprintln!("probe tab-row {} {:?} row={:?} heading={:?}", index, entry.tab, entry.row, entry.heading);
+        }
+    }
     for (index, entry) in rows.into_iter().enumerate() {
         if entry.row.center().y <= rail.top() || entry.row.center().y >= rail.bottom() {
             continue;
@@ -2600,24 +2851,44 @@ struct RailRow {
     row: Rect,
 }
 
-/// How many rows the rail has: one per tab.
+/// How many tabs the rail carries at rest: one per entry in `Tab::ALL`.
 const TAB_COUNT: usize = Tab::ALL.len();
+
+/// The tabs the rail shows, in the reference's order.
+///
+/// `index.vue:211-213` filters the developer-only tab out unless `devMode` is on; thirteen rows
+/// at rest, fourteen with developer mode, which is what the 1440x900 captures of both clients
+/// show.
+fn visible_tabs(dev_mode: bool) -> Vec<Tab> {
+    let mut tabs = Tab::ALL.to_vec();
+    if dev_mode {
+        // `index.vue:110-125` declares it between Language and Profile.
+        let at = tabs
+            .iter()
+            .position(|tab| *tab == Tab::Profile)
+            .unwrap_or(tabs.len());
+        tabs.insert(at, Tab::FeatureFlags);
+    }
+    tabs
+}
 
 /// The height the rail wants at the reference's own pitch.
 ///
-/// Used only to decide whether it has to be compressed: the rows are the source's 40-point
-/// rows and 4-point gaps, the headings its category line, and the gaps between categories its
-/// `mt-3`.
-fn rail_needed_height() -> f32 {
+/// The rows are the source's 40-point rows and 4-point gaps, the headings its category line,
+/// and the gaps between categories its `mt-3`. The scroll container is a flex column with
+/// `gap-1` (`TabbedModal.vue:173,179`), so a heading is followed by the same 4-point gap as a
+/// row is -- without it every row below a heading sat four points high, which is what the
+/// reference capture measured (its first row starts at 246, not 242).
+fn rail_needed_height(dev_mode: bool) -> f32 {
     let mut height: f32 = 0.0;
     let mut previous: Option<Tab> = None;
-    for (index, tab) in Tab::ALL.into_iter().enumerate() {
+    for (index, tab) in visible_tabs(dev_mode).into_iter().enumerate() {
         let starts_category = previous.map_or(true, |last| last.category() != tab.category());
         if starts_category {
             if index > 0 {
                 height += CATEGORY_TOP_GAP;
             }
-            height += CATEGORY_LINE + CATEGORY_PADDING;
+            height += CATEGORY_LINE + CATEGORY_PADDING + RAIL_ROW_GAP;
         }
         height += RAIL_ROW_HEIGHT + RAIL_ROW_GAP;
         previous = Some(tab);
@@ -2626,15 +2897,11 @@ fn rail_needed_height() -> f32 {
 }
 
 /// Lay the rail out: category headings first, then a 40-point row and a 4-point gap for
-/// every tab.
-fn rail_rows(dialog: Rect, scroll: f32) -> [RailRow; TAB_COUNT] {
+/// every visible tab.
+fn rail_rows(dialog: Rect, scroll: f32, dev_mode: bool) -> Vec<RailRow> {
     let rail = rail_rect(dialog);
     let width = rail.width() - 2.0 * RAIL_PADDING;
-    let mut rows = [RailRow {
-        tab: Tab::Appearance,
-        heading: None,
-        row: Rect::NOTHING,
-    }; TAB_COUNT];
+    let mut rows: Vec<RailRow> = Vec::new();
 
     // The rail keeps the reference's own 40-point rows and 4-point gaps. It used to compress
     // them to 30 so that fourteen tabs fitted a 608-point pane, which made every row half
@@ -2649,7 +2916,7 @@ fn rail_rows(dialog: Rect, scroll: f32) -> [RailRow; TAB_COUNT] {
 
     let mut y = rail.top() + RAIL_PADDING - scroll;
     let mut previous: Option<Tab> = None;
-    for (index, tab) in Tab::ALL.into_iter().enumerate() {
+    for (index, tab) in visible_tabs(dev_mode).into_iter().enumerate() {
         let starts_category = previous.map_or(true, |last| last.category() != tab.category());
         let heading = if starts_category {
             // `mt-3` above a category that is not the first child (`TabbedModal.vue:180`).
@@ -2660,7 +2927,7 @@ fn rail_rows(dialog: Rect, scroll: f32) -> [RailRow; TAB_COUNT] {
                 pos2(rail.left() + RAIL_PADDING, y),
                 vec2(width, category_line),
             );
-            y = rect.bottom();
+            y = rect.bottom() + row_gap;
             Some(rect)
         } else {
             None
@@ -2670,12 +2937,30 @@ fn rail_rows(dialog: Rect, scroll: f32) -> [RailRow; TAB_COUNT] {
             pos2(rail.left() + RAIL_PADDING, y),
             vec2(width, row_height),
         );
-        rows[index] = RailRow { tab, heading, row };
+        rows.push(RailRow { tab, heading, row });
         y = row.bottom() + row_gap;
         previous = Some(tab);
     }
 
     rows
+}
+
+/// The rail's footer box: the mark, the product and its version, and the platform.
+///
+/// `index.vue:402-440` puts a 24-point mark beside two 20-point lines under `mt-auto`, which
+/// the capture puts at 733..773 in a plate that ends at 788.
+fn rail_footer_rect(dialog: Rect) -> Rect {
+    let rail = rail_rect(dialog);
+    Rect::from_min_max(
+        pos2(rail.left() + RAIL_PADDING, rail.bottom() - RAIL_PADDING - FOOTER_HEIGHT),
+        pos2(rail.right() - RAIL_PADDING, rail.bottom() - RAIL_PADDING),
+    )
+}
+
+/// The footer's mark, which is the developer-mode button.
+fn footer_mark_rect(dialog: Rect) -> Rect {
+    let footer = rail_footer_rect(dialog);
+    Rect::from_min_size(footer.min, Vec2::splat(FOOTER_MARK))
 }
 
 /// The title, the rule under it, and the close button.
@@ -2715,6 +3000,7 @@ fn draw_rail(
     theme: &theme::Theme,
     selected: Tab,
     scroll: f32,
+    dev_mode: bool,
 ) {
     let rail = rail_rect(dialog);
     // The rows stop above the footer's band: the rail's own scroller ends there, so a row
@@ -2726,7 +3012,7 @@ fn draw_rail(
     // scroller's own tail.
     let scrollable = Rect::from_min_max(
         rail.min,
-        pos2(rail.right(), rail.bottom() - RAIL_FOOTER - 40.0),
+        pos2(rail.right(), rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0),
     );
     let clipped = painter.with_clip_rect(scrollable);
 
@@ -2746,7 +3032,7 @@ fn draw_rail(
         Stroke::new(RULE_STROKE, theme.SURFACE_5),
     );
 
-    for entry in rail_rows(dialog, scroll) {
+    for entry in rail_rows(dialog, scroll, dev_mode) {
         if let Some(heading) = entry.heading {
             // `uppercase text-xs font-semibold tracking-wide` in the reference: the capture's
             // group labels are DISPLAY / ACCOUNT / INSTANCE DEFAULTS / SYSTEM in 12-point
@@ -2812,33 +3098,49 @@ fn draw_rail(
         }
     }
 
-    // The rail's scrollbar: 3 points wide at x 497..499 in the capture, #2d2f35, running
-    // y 223..543 -- 320 points, the share of the list that fits. The geometry is the capture's
-    // rather than a computed thumb because the rail's scroll is still a wheel handler with no
-    // fraction to draw from; the position becomes live with that.
-    painter.rect_filled(
-        Rect::from_min_size(
-            pos2(rail.right() - 9.0, rail.top() + 24.0),
-            vec2(3.0, 320.0),
-        ),
-        1.5,
-        Color32::from_rgb(0x2d, 0x2f, 0x35),
-    );
-    // The rail's footer, above its own bottom padding: the product, its version and the
-    // platform, in the reference's two-line stack (`TabbedModal.vue`'s sidebar footer).
+    // The rail's scrollbar: 4 points wide at x 497..500 in the capture, `--surface-5` (#42444a),
+    // 321 points tall in a 481-point pane. The thumb is the share of the list that fits and its
+    // offset is the scroll's, which is what makes it a scrollbar rather than a decoration: it
+    // used to be a fixed rectangle at the capture's coordinates, so it never moved.
     {
-        let footer = Rect::from_min_max(
-            pos2(rail.left() + RAIL_PADDING, rail.bottom() - RAIL_FOOTER),
-            pos2(rail.right() - RAIL_PADDING, rail.bottom() - RAIL_PADDING),
-        );
+        let scroller_top = rail.top() + RAIL_PADDING;
+        let scroller_bottom = rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0;
+        let visible = (scroller_bottom - scroller_top).max(1.0);
+        let content = rail_needed_height(dev_mode);
+        let travel = (content - visible).max(0.0);
+        if travel > 0.0 {
+            let thumb_h = (visible * visible / content).max(24.0);
+            let offset = (scroll / travel).clamp(0.0, 1.0) * (visible - thumb_h);
+            painter.rect_filled(
+                Rect::from_min_size(
+                    pos2(rail.right() - 8.0, scroller_top + offset),
+                    vec2(4.0, thumb_h),
+                ),
+                2.0,
+                theme.SURFACE_5,
+            );
+        }
+    }
+    // The rail's footer, above its own bottom padding: the product, its version and the
+    // platform, in the reference's two-line stack (`index.vue:402-440`).
+    {
+        let footer = rail_footer_rect(dialog);
         // The footer is outside the rows' clip, so it needs the rail's own.
         let foot = painter.with_clip_rect(rail);
+        // `Developer mode enabled.` sits above the mark in the brand colour while it is on
+        // (`index.vue:411-415`), which is the only sign the sixth press did anything.
+        if dev_mode {
+            foot.text(
+                pos2(footer.left(), footer.top() - 22.0),
+                Align2::LEFT_TOP,
+                DEVELOPER_MODE_LINE,
+                fonts::semibold(14.0),
+                theme.BRAND,
+            );
+        }
         // The reference puts a 24-point mark to the left of both lines and indents the text past
         // it; without the mark the footer reads as two stray labels under the rail.
-        let mark = Rect::from_min_size(
-            pos2(footer.left(), footer.top() + 1.0),
-            Vec2::splat(24.0),
-        );
+        let mark = footer_mark_rect(dialog);
         if let Some(texture) = crate::brand::mark(painter.ctx()) {
             foot.image(
                 texture.id(),
@@ -2865,7 +3167,7 @@ fn draw_rail(
         foot.text(
             pos2(text_left, footer.top() + 20.0),
             Align2::LEFT_TOP,
-            format!("Linux {}", env!("CARGO_PKG_VERSION")),
+            format!("{} {}", std::env::consts::OS, env!("CARGO_PKG_VERSION")),
             fonts::body(12.0),
             theme.SECONDARY,
         );
@@ -3256,6 +3558,37 @@ fn draw_body(
         }
 
         y += gap;
+        if std::env::var_os("SIFT_SETTINGS_PROBE").is_some() {
+            match *block {
+                Block::Row { label, control, .. } => eprintln!(
+                    "probe row y={:.1} left={:.1} right={:.1} label={:?} control={:?}",
+                    y, left, right, label, control
+                ),
+                Block::Heading { text, control, .. } => eprintln!(
+                    "probe heading y={:.1} left={:.1} right={:.1} label={:?} control={:?}",
+                    y, left, right, text, control
+                ),
+                Block::Standalone(control) => eprintln!(
+                    "probe standalone y={:.1} left={:.1} control={:?}",
+                    y, left, control
+                ),
+                Block::JavaLocation { version } => {
+                    eprintln!("probe java y={:.1} version={} left={:.1}", y, version, left)
+                }
+                Block::PathText => eprintln!("probe path y={:.1} left={:.1} right={:.1}", y, left, right),
+                Block::StorageBar => eprintln!("probe storage-bar y={:.1} left={:.1} right={:.1}", y, left, right),
+                Block::RadioList { key, selected, .. } => eprintln!(
+                    "probe radio y={:.1} key={:?} selected={:?}", y, key, selected
+                ),
+                Block::ThemeCards { selected } => eprintln!("probe theme-cards y={:.1} selected={:?}", y, selected),
+                Block::Admonition { text } => eprintln!("probe admonition y={:.1} text={:?}", y, text),
+                Block::Note { text } => eprintln!("probe note y={:.1} text={:?}", y, text),
+                Block::SignInRequired { description } => {
+                    eprintln!("probe sign-in y={:.1} description={:?}", y, description)
+                }
+                Block::Rule => eprintln!("probe rule y={:.1}", y),
+            }
+        }
         gap = match *block {
             Block::Heading {
                 text,
@@ -3435,8 +3768,13 @@ fn draw_body(
                     place_area(ui, state, label, placeholder, limit, rect);
                 }
                 // A row that differs from its declared default offers the way back, just left of
-                // the control it belongs to.
-                if row_changed(state, label) {
+                // the control it belongs to -- but only on the feature-flags tab, which is the
+                // one place the reference has a per-row reset
+                // (`feature-flag-settings.vue:63-69`: a quiet Button, disabled at the default).
+                // Everywhere else the reference's only reset is the floating unsaved-changes bar,
+                // so a reset pill on every changed row was an invented control at the wrong
+                // scope.
+                if tab == Tab::FeatureFlags && row_changed(state, label) {
                     let width = control.width(&body);
                     let pill = Rect::from_min_size(
                         egui::pos2(
@@ -3464,18 +3802,22 @@ fn draw_body(
                 row_height + ROW_GAP
             }
             Block::JavaLocation { version } => {
-                // Measured off `ref-settings-java.png`: an 18-point semibold label, a
-                // 578x36 field with a placeholder and a 28-point clear button 16 points to its
-                // right, then three 30-point buttons under the field with 10-point gaps.
+                // `java-installations.vue:31-46`: each version is a `flex flex-col gap-2.5` (10)
+                // column of an 18-point label with a 28-point line box and a `JavaSelector`,
+                // blocks separated by `gap-6` (24), and every block but the first carrying
+                // `mt-4` (16). The 1440x900 capture measures the pitch at 158 -- 275 to 433
+                // between the first two labels -- which is 28 + 10 + 36 + 10 + 34 + 40.
+                let lead = if version == 25 { 0.0 } else { 16.0 };
+                let y = y + lead;
                 let label = body.layout_no_wrap(
                     format!("Java {version} location"),
                     fonts::semibold(18.0),
                     theme.CONTRAST,
                 );
-                let label_h = label.size().y;
+                let label_h = label.size().y.max(LINE_BOX);
                 body.galley(pos2(left, y), label, theme.CONTRAST);
                 let field = Rect::from_min_size(
-                    pos2(left, y + label_h + 8.0),
+                    pos2(left, y + label_h + 10.0),
                     vec2(right - left - 44.0, 36.0),
                 );
                 body.rect_filled(field, 8, theme.BUTTON_BG);
@@ -3506,7 +3848,7 @@ fn draw_body(
                     ("Detect", 104.0, Some(Glyph::Search)),
                     ("Browse", 104.0, Some(Glyph::Folder)),
                 ] {
-                    let button = Rect::from_min_size(pos2(bx, by), vec2(width, 30.0));
+                    let button = Rect::from_min_size(pos2(bx, by), vec2(width, 34.0));
                     body.rect_filled(button, 8, theme.SUPER_RAISED_BG);
                     let mut text_left = button.left() + 12.0;
                     if let Some(glyph) = glyph {
@@ -3528,16 +3870,41 @@ fn draw_body(
                         fonts::semibold(13.0),
                         theme.BASE,
                     );
-                    // A click reports what the reference would open. None of the three can
-                    // finish without a Java toolchain to install into or a native folder
-                    // picker, so each says what it would do rather than pretending.
+                    // The three actions `JavaSelector.vue:63-87` puts under each version's field.
+                    // Two of them are this launcher's own: Browse opens the folder picker (which
+                    // already knows how to fill the row its folder's `release` file names), and
+                    // Detect reads the runtimes under the data root. Install recommended needs a
+                    // JVM download service, so it says so instead of pretending.
                     let hit = pointer.is_some_and(|pointer| button.contains(pointer))
                         && ui.input(|input| input.pointer.any_click());
                     if hit && !state.consumed {
-                        state.notice = Some(match text {
-                            "Install recommended" => format!("Installing Java {version}"),
-                            "Detect" => format!("Searching for Java {version}"),
-                            _ => format!("Choose a folder for Java {version}"),
+                        state.notice_for = Some(text);
+                        state.notice = Some(match (text, version_of(key)) {
+                            ("Install recommended", Some(looking_for)) => format!(
+                                "Installing Java {looking_for} needs a runtime download service, which this build does not have."
+                            ),
+                            ("Detect", Some(looking_for)) => match detect_java()
+                                .into_iter()
+                                .find(|(major, _)| *major == looking_for)
+                            {
+                                Some((_, path)) => {
+                                    state.texts.retain(|(known, _)| *known != key);
+                                    state.texts.push((key, path.clone()));
+                                    state.dirty = true;
+                                    format!("Found Java {looking_for} at {path}.")
+                                }
+                                None => format!("No Java {looking_for} runtime under the data root."),
+                            },
+                            _ => {
+                                // Browse: the same picker the tab's own Browse button opens.
+                                let java_root = crate::data::instances_dir()
+                                    .parent()
+                                    .map(|root| root.join("java"))
+                                    .filter(|path| path.is_dir())
+                                    .unwrap_or_else(|| std::path::PathBuf::from("/"));
+                                state.picking = Some((java_root, PickFor::Java));
+                                format!("Choose a folder for Java {version}.")
+                            }
                         });
                         state.consumed = true;
                     }
@@ -3553,7 +3920,23 @@ fn draw_body(
                     state.texts.retain(|(known, _)| *known != key);
                     state.consumed = true;
                 }
-                label_h + 8.0 + 36.0 + 10.0 + 30.0 + ROW_GAP
+                // The row's own answer, under the three buttons that produced it.
+                let mut extra = 0.0;
+                if state.notice_for.is_some_and(|owner| {
+                    owner == "Install recommended" || owner == "Detect" || owner == "Browse"
+                }) {
+                    if let Some(line) = &state.notice {
+                        body.text(
+                            egui::pos2(left, by + 34.0 + 8.0),
+                            Align2::LEFT_TOP,
+                            line.clone(),
+                            fonts::body(13.0),
+                            theme.SECONDARY,
+                        );
+                        extra = 26.0;
+                    }
+                }
+                lead + label_h + 10.0 + 36.0 + 10.0 + 34.0 + extra + ROW_GAP
             }
             Block::Standalone(control) => {
                 // A button that has just done its job says so, in its own place: the reference's
@@ -3581,7 +3964,14 @@ fn draw_body(
                     other => other,
                 };
                 // Left-aligned: the control's right edge is its own width past the inset.
-                let width = control.width(&body);
+                // A standalone field is the pane's width: every one of them is `w-full` in the
+                // reference (`launch-hooks-settings.vue:96`, `java-and-memory-settings:96`,
+                // `resource-management-settings/index.vue:91`), and the language search's plate
+                // measures 532..1157 in the 1440x900 capture -- 652 points, not 200.
+                let width = match control {
+                    Control::Text { .. } => right - left,
+                    other => other.width(&body),
+                };
                 // A text field's words come from the `TextEdit`'s own hint, so the plate below it
                 // is drawn without any: with both, a typed-in field shows the hint through its
                 // text.
@@ -3621,7 +4011,7 @@ fn draw_body(
                     }
                     // What a two-step button owes the reader: why nothing happened yet, and what
                     // happened when it did.
-                    if label == CLEAR_CACHE_LABEL || label == JAVA_DETECT_LABEL {
+                    if state.notice_for == Some(label) {
                         let line = state.notice.clone().or_else(|| {
                             state
                                 .confirming
@@ -3645,11 +4035,14 @@ fn draw_body(
                 if let Control::Text { placeholder } = control {
                     let rect = Rect::from_min_size(
                         egui::pos2(left, y),
-                        egui::vec2(FIELD_WIDTH, FIELD_HEIGHT),
+                        egui::vec2(right - left, FIELD_HEIGHT),
                     );
                     place_field(ui, state, placeholder, placeholder, rect);
                 }
-                control.height() + ROW_GAP
+                // The reference's sections are `flex flex-col gap-2.5` (10) between the items
+                // they stack -- a heading, a button, a field and the paragraph under it -- so a
+                // standalone control is followed by ten points, not the row rhythm's 24.
+                control.height() + STANDALONE_GAP
             }
             Block::PathText => {
                 let path = crate::data::instances_dir()
@@ -3744,52 +4137,90 @@ fn draw_body(
                     .find(|(known, _)| *known == key)
                     .map(|(_, value)| *value)
                     .unwrap_or(selected);
+                // The search field above the list filters it. Without this the field took typing
+                // and did nothing -- the language tab's own search was inert, which a screenshot
+                // cannot show and a reader notices on the first keystroke.
+                let query = state
+                    .texts
+                    .iter()
+                    .find(|(known, _)| *known == LANGUAGE_SEARCH_PLACEHOLDER)
+                    .map(|(_, typed)| typed.trim().to_lowercase())
+                    .unwrap_or_default();
+                let shown: Vec<&'static str> = options
+                    .iter()
+                    .copied()
+                    .filter(|option| query.is_empty() || option.to_lowercase().contains(&query))
+                    .collect();
+
                 let mut height: f32 = 0.0;
-                for (index, option) in options.iter().enumerate() {
+                for (index, option) in shown.iter().enumerate() {
+                    // `CheckCircleButton` size lg: a 40-point row in a `gap-1` column, so the
+                    // pitch is 44 -- the reference's first row starts at 487 and the second at
+                    // 531.
                     let row = Rect::from_min_size(
-                        egui::pos2(left, y + index as f32 * RADIO_ROW),
+                        egui::pos2(left, y + index as f32 * (RADIO_ROW + RADIO_GAP)),
                         egui::vec2(right - left, RADIO_ROW),
                     );
                     height = height.max(row.bottom() - y);
                     let lit = *option == chosen;
                     let over = pointer.is_some_and(|pointer| row.contains(pointer));
-                    body.circle_stroke(
-                        egui::pos2(row.left() + 8.0, row.center().y),
-                        6.0,
-                        Stroke::new(1.0, theme.DIVIDER),
+                    // `border` at 1px: brand while checked, the divider otherwise; the checked
+                    // row is `bg-brand-highlight`.
+                    body.rect_filled(
+                        row,
+                        RADIO_RADIUS,
+                        if lit {
+                            theme.BRAND_HIGHLIGHT
+                        } else if over {
+                            theme.RAISED_BG
+                        } else {
+                            Color32::TRANSPARENT
+                        },
                     );
-                    if lit {
-                        body.circle_filled(egui::pos2(row.left() + 8.0, row.center().y), 6.0, theme.BRAND);
-                    }
+                    body.rect_stroke(
+                        row,
+                        RADIO_RADIUS,
+                        Stroke::new(
+                            1.0,
+                            if lit { theme.BRAND } else { theme.DIVIDER },
+                        ),
+                        egui::StrokeKind::Inside,
+                    );
                     let coverage = LANGUAGE_OPTIONS
                         .iter()
                         .find(|(name, _)| name == option)
                         .map(|(_, share)| *share)
                         .unwrap_or(0);
                     body.text(
-                        egui::pos2(row.left() + 24.0, row.center().y),
+                        egui::pos2(row.left() + 16.0, row.center().y),
                         Align2::LEFT_CENTER,
                         *option,
-                        fonts::body(13.0),
-                        if lit {
-                            theme.CONTRAST
-                        } else if over {
-                            theme.CONTRAST
-                        } else {
-                            theme.BASE
-                        },
+                        fonts::body(16.0),
+                        if lit { theme.CONTRAST } else { theme.BASE },
                     );
+                    // The coverage share sits at the right, before the check circle: it exists to
+                    // stop a row promising a translation this build does not carry.
                     body.text(
-                        egui::pos2(row.right() - 4.0, row.center().y),
+                        egui::pos2(row.right() - 44.0, row.center().y),
                         Align2::RIGHT_CENTER,
                         format!("{coverage}%"),
-                        fonts::body(11.5),
-                        if coverage == 100 {
-                            theme.SECONDARY
-                        } else {
-                            theme.BUTTON_BG
-                        },
+                        fonts::body(14.0),
+                        theme.SECONDARY,
                     );
+                    // `CheckCircleButton`'s 24-point circle, filled and ticked when checked.
+                    let circle = pos2(row.right() - 20.0, row.center().y);
+                    if lit {
+                        body.circle_filled(circle, 12.0, theme.BRAND);
+                        body.text(
+                            circle,
+                            Align2::CENTER_CENTER,
+                            "✓",
+                            fonts::semibold(12.0),
+                            theme.ACCENT_CONTRAST,
+                        );
+                    } else {
+                        body.circle_stroke(circle, 11.5, Stroke::new(1.0, theme.DIVIDER));
+                    }
                     if !state.consumed
                         && ui.input(|input| input.pointer.any_click())
                         && over
@@ -3799,6 +4230,18 @@ fn draw_body(
                         state.dirty = true;
                         state.consumed = true;
                     }
+                }
+                if shown.is_empty() {
+                    // `language-settings-selector.vue`'s no-results line, in the same place the
+                    // first row would be.
+                    body.text(
+                        egui::pos2(left + 16.0, y + 14.0),
+                        Align2::LEFT_TOP,
+                        "No languages found",
+                        fonts::body(16.0),
+                        theme.SECONDARY,
+                    );
+                    height = 44.0;
                 }
                 height + ROW_GAP
             }
@@ -3954,6 +4397,132 @@ fn draw_body(
                 }
                 height + ROW_GAP
             }
+            Block::Admonition { text: words } => {
+                // `Admonition.vue:4`: `rounded-2xl border p-4`, and the warning variant is
+                // `border-brand-orange bg-bg-orange`. The capture puts the box at y 261..352 in
+                // the language tab -- 92 points for three 20-point lines and two 16-point pads.
+                // The callout's text column starts past its icon: the reference's first word
+                // is at x 581 in a box at 532, so the inset is 16 + a 20-point glyph + 12.
+                let inner = right - left - 2.0 * ADMONITION_PAD - ADMONITION_ICON;
+                let height = body
+                    .layout(
+                        words.to_owned(),
+                        fonts::body(16.0),
+                        theme.CONTRAST,
+                        inner,
+                    )
+                    .size()
+                    .y;
+                let box_ = Rect::from_min_size(
+                    egui::pos2(left, y),
+                    egui::vec2(right - left, height + 2.0 * ADMONITION_PAD),
+                );
+                body.rect_filled(box_, ADMONITION_RADIUS, theme.ORANGE_BG);
+                body.rect_stroke(
+                    box_,
+                    ADMONITION_RADIUS,
+                    Stroke::new(1.0, theme.ORANGE),
+                    egui::StrokeKind::Inside,
+                );
+                text(
+                    &body,
+                    box_.left() + ADMONITION_PAD + ADMONITION_ICON,
+                    box_.top() + ADMONITION_PAD,
+                    words,
+                    fonts::body(16.0),
+                    theme.CONTRAST,
+                    inner,
+                );
+                // `mt-2` above and `mb-4` below in `index.vue:7-9`: 8 above the box and 16
+                // under it, not the row rhythm's 24.
+                box_.height() + ADMONITION_BELOW
+            }
+            Block::Note { text: words } => {
+                // A paragraph under the control it explains: full pane width, `text-secondary`.
+                text(
+                    &body,
+                    left,
+                    y,
+                    words,
+                    fonts::body(ROW_DESCRIPTION_SIZE),
+                    theme.SECONDARY,
+                    right - left,
+                ) + NOTE_BELOW
+            }
+            Block::SignInRequired { description } => {
+                // `EmptyState` at the top of a tab that needs a Modrinth account: an
+                // illustration, a heading, a description and a brand sign-in button, all
+                // centred. The illustration is the reference's Rinthbot artwork, which this
+                // build does not carry; its space is kept so the words land where the capture
+                // puts them (title 470, description 505, button 545..591 at 1440x900).
+                let centre = (left + right) / 2.0;
+                let mut at = y + EMPTY_STATE_ART;
+                body.text(
+                    egui::pos2(centre, at),
+                    Align2::CENTER_TOP,
+                    PROFILE_SIGN_IN_TITLE,
+                    fonts::semibold(GROUP_HEADING_SIZE),
+                    theme.CONTRAST,
+                );
+                at += 28.0;
+                let wrapped = body
+                    .layout(
+                        description.to_owned(),
+                        fonts::body(ROW_DESCRIPTION_SIZE),
+                        theme.SECONDARY,
+                        right - left,
+                    )
+                    .size()
+                    .y;
+                body.text(
+                    egui::pos2(centre, at + 8.0),
+                    Align2::CENTER_TOP,
+                    description,
+                    fonts::body(ROW_DESCRIPTION_SIZE),
+                    theme.SECONDARY,
+                );
+                at += 8.0 + wrapped + 20.0;
+                let button = Rect::from_center_size(
+                    egui::pos2(centre, at + EMPTY_STATE_BUTTON / 2.0),
+                    egui::vec2(116.0, EMPTY_STATE_BUTTON),
+                );
+                body.rect_filled(button, 8, theme.BRAND);
+                let label = body.layout_no_wrap(
+                    PROFILE_SIGN_IN_BUTTON.to_owned(),
+                    fonts::semibold(16.0),
+                    theme.ACCENT_CONTRAST,
+                );
+                body.galley(
+                    egui::pos2(
+                        button.center().x - label.size().x / 2.0,
+                        button.center().y - label.size().y / 2.0,
+                    ),
+                    label,
+                    theme.ACCENT_CONTRAST,
+                );
+                if !state.consumed
+                    && ui.input(|input| input.pointer.any_click())
+                    && pointer.is_some_and(|pointer| button.contains(pointer))
+                {
+                    // The reference's button opens its Modrinth sign-in modal. This build has
+                    // no Modrinth account service, so the press says so rather than doing
+                    // nothing: a control that draws and cannot act has to say which it is.
+                    state.notice = Some(SIGN_IN_UNAVAILABLE.to_owned());
+                    state.consumed = true;
+                }
+                let mut height = EMPTY_STATE_ART + 28.0 + 8.0 + wrapped + 20.0 + EMPTY_STATE_BUTTON;
+                if let Some(line) = &state.notice {
+                    body.text(
+                        egui::pos2(centre, y + height + 14.0),
+                        Align2::CENTER_TOP,
+                        line.clone(),
+                        fonts::body(13.0),
+                        theme.SECONDARY,
+                    );
+                    height += 34.0;
+                }
+                height + ROW_GAP
+            }
             // Handled above.
             Block::Rule => 0.0,
         };
@@ -3998,7 +4567,10 @@ fn draw_labelled(
     let text_width = (right - left - control_width - ROW_CONTROL_GAP).max(MIN_TEXT_WIDTH);
 
     let mut y = top;
-    y += text(
+    // `text-lg` and `text-xl` both set a 28-point line box (`--text-*--line-height`), and the
+    // reference's rows are laid out by that box rather than by the glyphs' own height: its
+    // description-less rows pitch at 52 (28 + `gap-6`'s 24), where ours pitched at 47.
+    let label_height = text(
         painter,
         left,
         y,
@@ -4007,6 +4579,7 @@ fn draw_labelled(
         theme.CONTRAST,
         text_width,
     );
+    y += label_height.max(LINE_BOX);
     if let Some(description) = description {
         y += ROW_DESCRIPTION_GAP;
         // `--color-base` (#b0bac5), not the dimmer secondary: wave seven measured every row's
@@ -4347,11 +4920,29 @@ fn switch_knob(fraction: f32, track: Rect) -> Rect {
         assert_eq!(state.confirming, None, "the question is answered");
         assert!(state.notice.is_some(), "and the result is reported");
 
-        // Any other button is not this one.
-        let mut other = State::default();
-        button_pressed(&mut other, "Verify and repair");
-        assert_eq!(other.confirming, None);
-        assert!(other.notice.is_none());
+        // Any other button is not this one: it never asks, and it always answers. The assertion
+        // this replaced was `assert!(other.notice.is_none())` -- which is the inert button the
+        // page was driven to find, written down as if it were the contract.
+        for label in [
+            STORE_REPAIR_LABEL,
+            STORE_CLEAR_LABEL,
+            PRIVACY_MANAGE_LABEL,
+            DEBUG_INFO_EXPORT_LABEL,
+        ] {
+            let mut other = State::default();
+            button_pressed(&mut other, label);
+            assert_eq!(other.confirming, None, "{label} does not ask first");
+            assert!(
+                other.notice.is_some(),
+                "{label} answers when it is pressed"
+            );
+            assert_eq!(other.notice_for, Some(label), "{label} owns its answer");
+        }
+
+        // A label this build does not handle leaves the page alone rather than claiming a result.
+        let mut unknown = State::default();
+        button_pressed(&mut unknown, "Not a button here");
+        assert!(unknown.notice.is_none());
     }
 
 #[cfg(test)]
@@ -4494,19 +5085,23 @@ mod tests {
         for screen_size in [vec2(1440.0, 900.0), vec2(1600.0, 1200.0), vec2(1280.0, 800.0)] {
             let dialog = dialog_rect(Rect::from_min_size(pos2(0.0, 0.0), screen_size));
             let rail = rail_rect(dialog);
-            let rows = rail_rows(dialog, 0.0);
+            let rows = rail_rows(dialog, 0.0, false);
             assert_eq!(rows.len(), TAB_COUNT);
 
             // Every row is reachable: visible at the top of the rail's scroll, or visible once
             // it is scrolled to the bottom. A row in neither place is a tab nobody can select,
             // which is the bug this layout was changed for.
-            let overflow = (rail_needed_height() - (rail.height() - 2.0 * RAIL_PADDING)).max(0.0);
-            let bottom = rail_rows(dialog, overflow);
+            let pane = rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0
+                - (rail.top() + RAIL_PADDING);
+            let overflow = (rail_needed_height(false) - pane).max(0.0);
+            let bottom = rail_rows(dialog, overflow, false);
             for (index, row) in rows.iter().enumerate() {
-                let visible_top = row.row.top() >= rail.top() - 0.001
-                    && row.row.bottom() <= rail.bottom() + 0.001;
-                let visible_bottom = bottom[index].row.top() >= rail.top() - 0.001
-                    && bottom[index].row.bottom() <= rail.bottom() + 0.001;
+                let top_edge = rail.top() + RAIL_PADDING;
+                let bottom_edge = rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0;
+                let visible_top = row.row.top() >= top_edge - 0.001
+                    && row.row.bottom() <= bottom_edge + 0.001;
+                let visible_bottom = bottom[index].row.top() >= top_edge - 0.001
+                    && bottom[index].row.bottom() <= bottom_edge + 0.001;
                 assert!(
                     visible_top || visible_bottom,
                     "{} is unreachable at {screen_size:?} (overflow {overflow})",
@@ -4541,7 +5136,7 @@ mod tests {
     fn the_rail_is_compressed_only_as_far_as_it_must_be() {
         let dialog = dialog_rect(screen());
         let available = rail_rect(dialog).height() - 2.0 * RAIL_PADDING;
-        let needed = rail_needed_height();
+        let needed = rail_needed_height(false);
         assert!(
             needed > available,
             "fourteen rows at the source pitch are taller than the pane: {needed} > {available}"
@@ -4551,7 +5146,7 @@ mod tests {
         // with, because the ratio was what produced 29-point rows.
         let _ = (available, needed);
 
-        let rows = rail_rows(dialog, 0.0);
+        let rows = rail_rows(dialog, 0.0, false);
         for row in rows {
             assert!(
                 row.row.height() >= 30.0,
@@ -4670,17 +5265,23 @@ mod tests {
             // Fourteen, not thirteen: the reference separates its sync row from the Instances
             // section with a rule (wave seven measured it at y 316), and a rule is a block.
             (Tab::Features, 14),
-            (Tab::Behavior, 14),
-            (Tab::Language, 4),
-            (Tab::Profile, 5),
-            (Tab::Social, 4),
-            (Tab::Privacy, 4),
+            // Fifteen: the sync section's closing rule is a block of its own
+            // (`behavior-settings.vue:1` `border-b border-divider`).
+            (Tab::Behavior, 15),
+            // Six: heading, the warning callout, the description, the search field, the
+            // category heading and the list -- `index.vue:1-34` and the selector's own markup.
+            (Tab::Language, 6),
+            // One: the signed-out empty state. `AccountProfileSettings.vue:1-25` is an
+            // `EmptyState v-if="!auth.user.value"` and the form below it never renders here.
+            (Tab::Profile, 1),
+            (Tab::Social, 1),
+            (Tab::Privacy, 5),
             (Tab::JavaAndMemory, 14),
             (Tab::Window, 3),
-            (Tab::LaunchHooks, 7),
+            (Tab::LaunchHooks, 11),
             (Tab::Syncing, 6),
             (Tab::Resources, 13),
-            (Tab::Troubleshooting, 9),
+            (Tab::Troubleshooting, 13),
         ];
 
         for (tab, count) in ported {
@@ -4723,6 +5324,19 @@ mod tests {
                     }
                     // The bar draws measurements, not words: nothing to spell.
                     Block::StorageBar => {}
+                    Block::Admonition { text } => {
+                        assert!(!text.is_empty(), "{} has an empty callout", tab.label());
+                    }
+                    Block::Note { text } => {
+                        assert!(!text.is_empty(), "{} has an empty note", tab.label());
+                    }
+                    Block::SignInRequired { description } => {
+                        assert!(
+                            !description.is_empty(),
+                            "{} has an empty sign-in description",
+                            tab.label()
+                        );
+                    }
                     // The path row prints where the data lives, which is not a ported string.
                     Block::PathText => {}
                     Block::RadioList {
