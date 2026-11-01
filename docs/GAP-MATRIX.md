@@ -2082,3 +2082,26 @@ until instances can differ. That reorders the remaining work, and the matrix now
 Side effect worth noting for the next run: there are now **two** instances, so `choose_instance`
 will refuse with "there are 2 instances and choosing one needs a picker that is not built yet" --
 the multi-instance branch that was only unit-tested until now.
+
+### The create modal needs its capture before its code (2026-11-01)
+
+Tried to read the reference's create-instance component out of the source tree and could not
+reach it in this round: the checkout paths used earlier in the session (`.scratch/modrinth-0.22`,
+`/scratch/...` inside the container) do not resolve from here any more. That is a small thing to
+fix and it is the first step next round.
+
+What is not in doubt is what the modal contains, because the reference's own flow is visible in
+the product: **name**, **loader** (Fabric / Forge / NeoForge / Quilt / Vanilla), **game version**,
+and the option to start from a modpack instead of an empty instance. This launcher has none of it.
+
+The order that avoids another round of guessing:
+
+1. **Capture the reference's modal** -- launch the reference, press its create button, capture. One
+   run, and it fixes the layout, the field order and the default selections.
+2. Build the modal to that capture, with a test per field and a test that the created instance's
+   folder carries the chosen loader and version.
+3. Drive it: create a Fabric instance, then repeat the install click, and the positive proof that
+   has been owed since round 59 becomes reachable.
+
+Recorded rather than started, because starting a modal from memory is how the last twenty rounds
+of pixel work went.
