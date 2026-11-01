@@ -301,6 +301,11 @@ pub struct State {
     /// The instance ids `worlds` was read for. A create or a delete changes this list, and
     /// that change is what triggers the re-read.
     scanned: Vec<String>,
+    /// The library's search text. The reference's library toolbar carries a field in the
+    /// heading row, so the filter lives here rather than on a page of its own.
+    pub query: String,
+    /// Whether that field is taking the keyboard.
+    pub query_focused: bool,
 }
 
 impl State {
@@ -664,6 +669,58 @@ fn list(
         theme.CONTRAST,
     );
 
+    // The library's search field, in the heading row on the right. Three parts, as everywhere else on
+    // this launcher: it takes the keyboard, it shows the query, and the list below filters by it.
+    let field = Rect::from_min_size(
+        egui::pos2(rect.right() - 236.0, rect.top() + 16.0),
+        egui::vec2(224.0, 36.0),
+    );
+    painter.rect_filled(field, 8, theme.RAISED_BG);
+    painter.rect_stroke(field, 8, Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
+    let placeholder = "Search instances...";
+    let shown_text = if state.query.is_empty() { placeholder } else { state.query.as_str() };
+    painter.text(
+        egui::pos2(field.left() + 12.0, field.center().y),
+        Align2::LEFT_CENTER,
+        shown_text,
+        fonts::body(13.0),
+        if state.query.is_empty() { theme.SECONDARY } else { theme.BASE },
+    );
+    if ui
+        .interact(field, egui::Id::new("library-search"), Sense::click())
+        .clicked()
+    {
+        state.query_focused = true;
+    }
+    if state.query_focused {
+        for event in ui.input(|input| input.events.clone()) {
+            match event {
+                egui::Event::Text(text) => {
+                    state.query.push_str(&text);
+                    ui.ctx().request_repaint();
+                }
+                egui::Event::Key { key: egui::Key::Backspace, pressed: true, .. } => {
+                    state.query.pop();
+                    ui.ctx().request_repaint();
+                }
+                egui::Event::Key { key: egui::Key::Escape, pressed: true, .. } => {
+                    state.query_focused = false;
+                }
+                _ => {}
+            }
+        }
+    }
+    let needle = state.query.trim().to_lowercase();
+    let shown: Vec<&Entry> = instances
+        .iter()
+        .filter(|entry| {
+            needle.is_empty()
+                || entry.name.to_lowercase().contains(&needle)
+                || entry.loader.to_lowercase().contains(&needle)
+                || entry.version.to_lowercase().contains(&needle)
+        })
+        .collect();
+
     let mut action = Action::None;
 
     // An outside press closes the popover, the way the reference's panels close on a click
@@ -682,7 +739,7 @@ fn list(
     // The open row's kebab, kept so the popover can be drawn after every row: a panel drawn
     // in its row's turn would be painted under the card below it.
     let mut anchored: Option<(String, Rect)> = None;
-    for instance in instances.iter().take(ROWS_SHOWN) {
+    for instance in shown.iter().copied().take(ROWS_SHOWN) {
         let card = Rect::from_min_size(
             egui::pos2(rect.left(), y),
             egui::vec2(width, 96.0),

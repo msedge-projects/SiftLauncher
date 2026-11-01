@@ -4127,3 +4127,19 @@ lab was left with the mod enabled.
 **Why a rename and not a state flag**: the game reads `mods/*.jar`, so the switch has to be in the file name for the
 game to honour it. That is what every launcher in this family does, and it means the toggle is verifiable twice over
 -- in the panel and in the directory.
+
+# The library has a working search, and `pages/library.rs` is dead code (2026-11-01)
+
+Typing **vanilla** into the field beside the Library heading leaves **Instance 3 (Vanilla 26.3)** and removes the two
+Fabric instances. The field shows the query, takes the keyboard and filters -- the fifth page to get that treatment,
+and the first where the field is new rather than a stand-in.
+
+**And a discovery worth more than the feature**: `pages/library.rs` -- 540 lines, its own toolbar, grid layout, empty
+state and view toggle -- **has no callers at all**. `pub mod library;` is declared and `library::draw` is never
+called; the page that renders the instance list is `home.rs`'s library section. My first attempt at this search went
+into the dead module and changed nothing on screen, which is how the dead module was found: **by shipping a change
+to it and watching the screen not move.**
+
+**That is the same lesson as the presses, applied to code**: a change that has no effect is evidence about the
+change's *target*, not about the change. The next reader should treat `library.rs` as either a page to wire up or a
+file to delete -- it is currently neither.
