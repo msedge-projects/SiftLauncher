@@ -1281,7 +1281,10 @@ pub fn draw(
                     egui::pos2(area.left(), rect.bottom() - DETAIL_HEIGHT - 8.0),
                     egui::vec2(width, DETAIL_HEIGHT),
                 );
-                let painter = ui.painter();
+                let painter = ui.ctx().layer_painter(egui::LayerId::new(
+                    egui::Order::Foreground,
+                    egui::Id::new("server-detail"),
+                ));
                 painter.rect_filled(panel, 8.0, theme.SURFACE_4);
                 painter.text(
                     egui::pos2(panel.left() + 12.0, panel.top() + 10.0),

@@ -3787,3 +3787,21 @@ consequence -- it is drawn, and it is drawn off-screen.
 
 **Recorded as the honest state**: a bar that can be toggled and goes nowhere. That is better than no
 interaction and worse than the reference, and it is written down as the second rather than the first.
+
+# CLOSED: the selected server's panel is visible (2026-11-01)
+
+The foot of the servers page now shows a plate reading **All the Mods 10** over **play.cubecraft.net** --
+the selected card's name and address, on screen, with real data.
+
+**The cause was paint order, not geometry.** The panel was drawn before the cards, on the panel's own layer,
+so the cards painted over it every frame. The measurement settled the geometry in one line:
+
+    rect=[[88,48]-[1116,900]]   area=[[112,172]-[1092,1245]]   clip=[[0,172]-[1440,876]]
+
+`rect` was already the viewport. What was wrong was that the panel sat *under* the list. Painting it on a
+**foreground layer** -- the lesson the create dialog taught this codebase two hundred rounds ago -- made it
+appear without moving a pixel.
+
+**Six rounds on one panel, and the last five were spent looking for a geometry bug that did not exist.** The
+real defect was the same one already written in this document, under a different page: *a plate drawn on a
+lower layer is covered by whatever is painted after it.*
