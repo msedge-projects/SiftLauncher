@@ -498,19 +498,52 @@ fn files_tab(
     // worse than not following the press at all.
     let mut y = inner.top();
     if !dir.as_os_str().is_empty() {
-        let back = Rect::from_min_size(inner.min, egui::vec2(inner.width(), ROW_H));
-        painter.text(
-            egui::pos2(inner.left(), y + ROW_H / 2.0),
-            Align2::LEFT_CENTER,
-            format!("<- {}", dir.display()),
-            fonts::body(12.0),
-            theme.BRAND,
-        );
-        if ui
-            .interact(back, egui::Id::new("files-up"), Sense::click())
-            .clicked()
-        {
-            descend = Some(dir.parent().map(|p| p.to_path_buf()).unwrap_or_default());
+        // A breadcrumb, not a single back arrow: every ancestor is a target, so a reader three
+        // folders deep can come back to any of them in one press, as the reference's path bar does.
+        let crumbs: Vec<(String, std::path::PathBuf)> = {
+            let mut out: Vec<(String, std::path::PathBuf)> = Vec::new();
+            // The root crumb names the game directory itself, which is what this listing starts at.
+            out.push(("minecraft".to_owned(), std::path::PathBuf::new()));
+            let mut acc = std::path::PathBuf::new();
+            for part in dir.iter() {
+                acc = acc.join(part);
+                out.push((part.to_string_lossy().into_owned(), acc.clone()));
+            }
+            out
+        };
+        let mut x = inner.left();
+        for (label, target) in crumbs {
+            let text = painter.layout_no_wrap(label.clone(), fonts::body(12.0), theme.BRAND);
+            let width = text.size().x + 16.0;
+            if x + width > inner.right() {
+                break;
+            }
+            let hit = Rect::from_min_size(egui::pos2(x, y), egui::vec2(width, ROW_H));
+            if hit.contains(ui.ctx().pointer_interact_pos().unwrap_or(egui::pos2(-1.0, -1.0))) {
+                painter.rect_filled(hit, 4.0, theme.SURFACE_4);
+            }
+            painter.text(
+                egui::pos2(hit.left() + 8.0, y + ROW_H / 2.0),
+                Align2::LEFT_CENTER,
+                label,
+                fonts::body(12.0),
+                theme.BRAND,
+            );
+            if ui
+                .interact(hit, egui::Id::new(("files-crumb", x as i32)), Sense::click())
+                .clicked()
+            {
+                descend = Some(target);
+            }
+            x += width;
+            painter.text(
+                egui::pos2(x, y + ROW_H / 2.0),
+                Align2::LEFT_CENTER,
+                "/",
+                fonts::body(12.0),
+                theme.SECONDARY,
+            );
+            x += 10.0;
         }
         y += ROW_H;
     }

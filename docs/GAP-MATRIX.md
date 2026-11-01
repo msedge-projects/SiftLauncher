@@ -4090,3 +4090,13 @@ on the Modpacks tab and offered a where-to-put-it choice for something that crea
 
 **And the pill coordinate is settled at (227,117)** -- three earlier attempts pressed (209,154), thirty-seven
 points low, which is why the Mods tab kept "not switching" while the code was correct all along.
+
+# Files: the back row is a breadcrumb (2026-11-01)
+
+Descending into `mods` now shows **minecraft / mods /** above the listing, each segment a target, and pressing
+the root returns to the game directory -- both directions captured. At the root the bar is empty, which is correct
+for a two-level tree and would need the reference's fuller path bar once nesting is deeper.
+
+**The first attempt labelled the root "mods"**, giving "mods / mods /" on screen; the label belongs to the
+directory the listing starts at, which is `minecraft`. Caught by looking at the capture rather than by reasoning
+about the vector -- a small reminder that the picture still settles what the code cannot.
