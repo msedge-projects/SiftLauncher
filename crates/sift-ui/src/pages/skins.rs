@@ -907,7 +907,7 @@ fn heading_and_toolbar(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State
         .min((row.width() - tabs_width - upload_width - 2.0 * CONTROL_GAP).max(SEARCH_MIN_WIDTH));
 
     let search = Rect::from_min_size(row.min, egui::vec2(search_width, CONTROL_HEIGHT));
-    search_plate(&painter, search, theme);
+    search_plate(&painter, search, theme, &state.query);
     // The plate is a field here too: this function owns the `Ui` and the state, which is exactly what
     // the servers page's toolbar lacked when its search was inert.
     if ui
@@ -955,7 +955,7 @@ fn heading_and_toolbar(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State
 /// (`widgets/search.rs:74-252`). That widget is a sibling's work; this function paints the
 /// control's resting look so the row reads right in a capture, and the day the field lands
 /// its `ui` call replaces this one at the same rect.
-fn search_plate(painter: &egui::Painter, rect: Rect, theme: &Theme) {
+fn search_plate(painter: &egui::Painter, rect: Rect, theme: &Theme, text: &str) {
     painter.rect_filled(rect, SEARCH_PLATE_RADIUS, theme.RAISED_BG);
     icons::draw(
         painter,

@@ -3906,3 +3906,12 @@ AND the state, so the press and the event loop belong in it directly -- no rect 
 change. **The cheapest form of the recipe this project has found.**
 
 **Next, one line**: pass the query into search_plate and draw it when non-empty, as servers.rs does.
+
+### The skins plate now receives the query, and does not draw it yet (2026-11-01)
+
+The signature takes `text: &str` and the call passes `&state.query`; inside, the placeholder is still drawn
+unconditionally. That is the same two-commit split that worked for the servers panel and the card rects: **the
+plumbing lands first and compiles, then the drawing lands against it.**
+
+The literal sits in a galley built near the end of `search_plate`; drawing it instead of the placeholder when
+`text` is non-empty is the next one-line change.
