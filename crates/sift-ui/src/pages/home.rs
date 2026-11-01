@@ -712,6 +712,19 @@ fn list(
             theme.SECONDARY,
         );
 
+        // The card's own press opens the instance's page, which the reference does from the same
+        // place (`InstanceItem.vue`). This was the missing press: `Action::Edit` already opened
+        // the page and nothing ever emitted it. Registered before the play pill and the kebab so
+        // those two, being later, win the press inside their own rects.
+        if ui
+            .interact(card, egui::Id::new(("card", &instance.id)), Sense::click())
+            .clicked()
+            && matches!(action, Action::None)
+        {
+            menu.open_for = None;
+            action = Action::Edit(instance.id.clone());
+        }
+
         // The play button, right-aligned: the reference's green pill on every instance card.
         let play = Rect::from_center_size(
             egui::pos2(card.right() - 60.0, card.center().y),

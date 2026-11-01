@@ -2804,3 +2804,22 @@ the only place a reader can touch it.
 **The next slice is a single interaction**, not a page: emit `Action::Edit(id)` from a press on the
 card body, then capture the instance page it opens. Everything the brief asks of file management sits
 one click beyond that.
+
+### The press is wired and the page still does not open (2026-11-01)
+
+The card now registers its own press -- `ui.interact(card, ("card", id), Sense::click())` before the
+play pill and the kebab, emitting `Action::Edit` -- and a press at the card's centre still leaves the
+Library on screen. The frame is byte-identical to the one before the change.
+
+Two candidates, and the probe that separates them is the same shape as every other that worked:
+
+1. **the press is not landing on the card's rect** -- print `card` and `response.hovered()`, exactly as
+   the rail and the name field were settled;
+2. **the action is landing and not being acted on** -- print the action at the top of `Shell::act`,
+   which would show `Edit("Instance 2")` arriving and going nowhere.
+
+Given that `Action::Edit` already calls `open_instance_page` and that function already sets
+`open_instance`, (2) would mean the match arm is not reached -- worth knowing, because that same
+dispatch carries Play, Duplicate and OpenFolder.
+
+**Recorded rather than claimed**: one press wired, no page opened, two named candidates, one probe.
