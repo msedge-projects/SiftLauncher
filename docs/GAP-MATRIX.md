@@ -3593,3 +3593,31 @@ query, and it filters the list -- each verified by driving in the last two round
 all three. The plate draws the literal at the placeholder's position, which is honest but not identical --
 and the difference is now visible side by side rather than invisible, which is the right order to fix
 things in.
+
+# The count, with UNKNOWN included (2026-11-01, round 161)
+
+| status | rows |
+| --- | --- |
+| DONE | 93 |
+| OPEN | 512 |
+| BLOCKED-SERVICE | 9 |
+| RENDERER-RISK | 16 |
+| NOT-IN-SOURCE | 13 |
+| DELIBERATE | 2 |
+| UNKNOWN | 23 |
+| **total status-bearing rows** | **633** |
+
+**Read this table with two things in mind.**
+
+First, the **101 audit rows** from the two subagent reports (Skins/Screenshots, Servers/Project/About) are
+cited in the prose above but are **not** table rows, so they are not counted here: the real open surface is
+about **613**, not 512.
+
+Second, **93 DONE is a floor, not a total**. Five features this stretch were recorded as unfinished and
+turned out to be complete -- the Files panel, the tab bar, the card body, the category filter and the card's
+context menu -- because the presses that judged them had missed. Every one was corrected by reading the
+source. **An unknown number of the 512 OPEN rows are in the same state**, and the only way to find out is
+the same read-then-press sequence that found those five.
+
+**So the matrix's headline is unreliable in both directions and should never be quoted alone again**: it
+overstates progress where rows were closed on a capture, and understates it wherever a press missed.
