@@ -566,3 +566,26 @@ egui, "because a full-column interaction registered later in the frame would tak
 header's 64/20/13 pt against 96/24/16; the invented "How to install / Discord / Rate" row in the project
 Description; the skins page's toolbar decision (deliberate or wrong -- it is currently both in the docs);
 and the instance menu's four unpressed items (Play, Duplicate, Open folder, Delete).
+
+
+### The one unknown, printed (2026-11-01)
+
+`heading_and_toolbar` ends with:
+
+```rust
+egui::pos2(rect.right() - PAGE_PADDING - width, row_top),
+        egui::vec2(width, CONTROL_HEIGHT),
+    );
+    let search = Rect::from_min_size(
+        egui::pos2(button.left() - CONTROL_GAP - SEARCH_WIDTH, row_top),
+        egui::vec2(SEARCH_WIDTH, CONTROL_HEIGHT),
+    );
+    search_plate(painter, search, theme, shown);
+    primary_button(painter, button, theme, NEW_SERVER, Glyph::Plus);
+
+    (row_top + CONTROL_HEIGHT + HEADING_GAP, button)
+}
+```
+
+That is the return the third edit needs: add the plate's rect to the tuple here, then bind and use it at
+`servers.rs:1195`. **There is nothing else left to discover about this change.**
