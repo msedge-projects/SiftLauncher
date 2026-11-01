@@ -2843,3 +2843,18 @@ file-management behaviour lives.
 
 **Next**: press **Files** (and **Content**) and drive them, then compare each against the reference's
 own instance page, which has never been captured either.
+
+### The instance page's five tabs do not answer (2026-11-01)
+
+Pressed **Files** at its drawn position: the frame is byte-identical to the one before. So the page
+renders its header, its tabs and a Description panel, and **only the Description panel exists** -- the
+tabs are painted, not placed, which is the same shape as the create dialog's field and the card's
+overflow menu.
+
+That matters for the brief directly: **Files is where file management lives**, and it is a label on
+this page rather than a place. The jar installed into this instance's `mods/` folder is still only
+visible on disk.
+
+**Next**: the same probe as every other -- print the tab rects and `hovered()` -- then wire the press
+to a tab index and draw the Files view. The page's own scaffolding (header, path, Play, tab bar) is
+already there and already reads from the profile.
