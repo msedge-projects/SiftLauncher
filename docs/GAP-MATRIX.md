@@ -3167,3 +3167,21 @@ consistent with everything else this session has recorded about aiming.
 xdotool's ctrl is not arriving as a modifier; if the key press is false, the event is being consumed
 before this widget sees it; if both are true, the focus request is what fails -- and each of those three
 has a different one-line fix.
+
+# Ctrl+F: the key arrives, the field ignores the focus (2026-11-01)
+
+The probe answered all three questions in one line:
+
+    key probe: command=true keyF=true focused=true none_focused=true
+
+So the modifier arrives, the key press arrives, the window has focus, and nothing else holds egui's
+keyboard -- **the shortcut's own path is correct**. Pressing Ctrl+F does call `request_focus` on the
+search field.
+
+What fails is the field. It is hand-drawn (`widgets/search.rs`), and its text handling evidently keys off
+something other than `has_focus` -- most likely the `response` it gets from `interact` earlier in the
+same frame, which cannot see a focus granted after it. So the fix is in the field's text path, not in
+the shortcut, and the shortcut can stay as written.
+
+**This is the round's real result**: three candidate causes, one probe, and the one that was left is the
+only one that needs a code change. The probe cost one build and removed two of the three.
