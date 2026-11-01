@@ -1292,6 +1292,7 @@ pub fn draw(
         &state.icons.0,
     );
                 for (index, card) in cards.iter().enumerate() {
+
                     let pressed = ui
                         .interact(
                             *card,
@@ -1819,6 +1820,14 @@ fn draw_section(
 
 /// One server, drawn as `ServerListing.vue` lays it out: a 64-point plate, the name, the MOTD
 /// and the labels row in a column `ml-4` to the right of it (lines 15-105).
+/// The Join pill's rect on a card, in one place so the drawing and the press cannot disagree.
+fn join_pill(card: Rect) -> Rect {
+    Rect::from_min_size(
+        egui::pos2(card.right() - 96.0, card.center().y - 14.0),
+        egui::vec2(80.0, 28.0),
+    )
+}
+
 fn draw_card(
     painter: &egui::Painter,
     rect: Rect,
@@ -1931,6 +1940,7 @@ fn draw_card(
     x = label(painter, x, meta_top, &game, theme.TEXT_PRIMARY);
     x = bullet(painter, x, meta_centre, theme);
     label(painter, x, meta_top, &shown.loader, theme.TEXT_PRIMARY);
+
 }
 
 /// Draw one label of the card's bottom row and answer the x after it.

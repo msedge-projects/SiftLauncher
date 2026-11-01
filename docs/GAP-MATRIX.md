@@ -4198,3 +4198,18 @@ the press, and every ordering tried so far loses to it.
 **So the button is reverted and the finding recorded.** The next attempt should not retry the three mechanisms
 above; it should either move the panel out of the scroll area entirely (a sibling layer, as the create dialog is) or
 put Join on the card row, where presses already work.
+
+### The card pill was inert too, and it is out (2026-11-01)
+
+Drew Join on each card and pressed it: **the card selected, the pill did nothing** -- the same result as the panel,
+with the pointer check placed before the card's own interaction and reading `any_released`. So the press is not being
+eaten by ordering; **the page's own click handling is what consumes it**, and a press inside the card rect is handled
+as a selection before the pill is asked.
+
+**Removed rather than shipped**: an inert button is worse than a missing one, and this document has said so since the
+sixth invented control.
+
+**What still stands from this work, and is real**: `Game::start_server` (writes the two join settings for one launch,
+clears them after), the engine's `--quickPlayMultiplayer` path, and the picker's `Join` kind. **The only missing piece
+is a press that reaches it**, and the next attempt should give the servers page a click handler that checks the pill
+first -- one `pressed_join` decision at the top of the page's pointer handling, not a nested check inside the card loop.
