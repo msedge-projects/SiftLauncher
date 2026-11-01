@@ -2613,3 +2613,23 @@ single instance, which shows the Library rather than the empty Home the earlier 
 **Next run should confirm each step from the frame before taking the next**: launch, capture, check
 the page, then click. Two rounds have now been lost to assuming which page the app was on, and the
 matrix has said so twice.
+
+# CLOSED: a mod installs into a Fabric instance, chosen for it (2026-11-01)
+
+The proof owed since round 59, and it holds with every change made since:
+
+    toast:  Installed Sodium 0.6.13 for Fabric 1.21.4 into Instance 5.
+    disk:   instances/Instance 5/mods/sodium-fabric-0.6.13+mc1.21.4.jar
+
+Two things this proves at once. The install path works end to end -- search, version choice,
+download, write -- and **the version was chosen for the instance**: 0.6.13 for 1.21.4, not the
+newest 0.9.3-beta.1 for 26.3 that the same click installed before the picker existed. The Fabric
+component written by the create dialog is what made that choice possible.
+
+The run before this one failed for a reason worth recording with it: the compass is at **y 142**,
+not the 102 used in the two failed attempts. 102 is Play. The rail map in this document was right
+and the run ignored it.
+
+State of the lab after this round: one instance (`Instance 5`, Fabric 1.21.4) holding one mod. The
+five earlier instances were removed to give `choose_instance` a single answer -- lab data, created
+by this session, not the reader's.
