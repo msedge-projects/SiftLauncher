@@ -1268,6 +1268,35 @@ pub fn draw(
             let mut top = area.top();
             let mut blocks = 0;
 
+            // The chosen server's panel sits at the foot of the content column, which is the one
+            // place on this page that is on screen at 1440x900 without scrolling.
+            if let Some(server) = state
+                .selected
+                .as_ref()
+                .and_then(|address| state.servers.iter().find(|s| &s.address == address))
+            {
+                let panel = Rect::from_min_size(
+                    egui::pos2(area.left(), area.bottom() - DETAIL_HEIGHT),
+                    egui::vec2(width, DETAIL_HEIGHT),
+                );
+                let painter = ui.painter();
+                painter.rect_filled(panel, 8.0, theme.SURFACE_4);
+                painter.text(
+                    egui::pos2(panel.left() + 12.0, panel.top() + 10.0),
+                    egui::Align2::LEFT_TOP,
+                    &server.name,
+                    fonts::semibold(14.0),
+                    theme.TEXT_PRIMARY,
+                );
+                painter.text(
+                    egui::pos2(panel.left() + 12.0, panel.top() + 32.0),
+                    egui::Align2::LEFT_TOP,
+                    &server.address,
+                    fonts::body(12.0),
+                    theme.SECONDARY,
+                );
+            }
+
             for section in &sections {
                 if section.total == 0 {
                     continue;
@@ -1681,6 +1710,9 @@ fn primary_button(
 
 /// Draw one section: its heading, then either its cards or the line that says the search emptied
 /// it. Returns nothing -- the caller has already added [`section_height`] to its cursor.
+/// The selected server's panel height: two lines and room to breathe.
+const DETAIL_HEIGHT: f32 = 64.0;
+
 fn draw_section(
     painter: &egui::Painter,
     left: f32,

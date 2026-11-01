@@ -3756,3 +3756,17 @@ row is open for that reason, and it is a layout gap rather than a missing compon
 
 **So the detail panel needs a home that is on screen** -- the natural one is directly under the toolbar, above
 "Your servers", where the reference's page-level content begins.
+
+### Off-screen again, and the reason is now a single word (2026-11-01)
+
+Moved the panel to `area.bottom() - DETAIL_HEIGHT` and captured the whole frame: the **card selection bar is
+clearly visible** on "All the Mods 10" -- so that half of the interaction is confirmed by a full-frame capture
+for the first time -- and **the panel is still absent**.
+
+The cause is in the geometry, not the drawing: **`area` is the scrollable content rect, not the viewport.**
+Its bottom is past the window whenever the list is longer than the screen, which it is here (eight cards).
+Anything placed relative to `area` inherits that.
+
+**So the fix is one word**: place the panel relative to `rect` -- the page's own rect, which *is* the
+viewport -- not `area`. That is the third attempt at this panel and the first where the reason is exact
+rather than suspected.
