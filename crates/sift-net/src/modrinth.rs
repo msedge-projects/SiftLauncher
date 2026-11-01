@@ -1684,8 +1684,10 @@ mod tests {
     /// `GameVersionQueryData`), a loader is `{icon, name,
     /// supported_project_types, ...}` (`LoaderData`) and a category is
     /// `{icon, name, project_type, header}` (`CategoryData`). The fields this
-    /// crate does not read are here on purpose: a new key must not cost the
-    /// document, which is what every field's default gives.
+    /// crate does not read are here on purpose: an unknown key is ignored, which
+    /// is what lets a route add one without breaking this reader -- but the keys
+    /// the entry types do declare are required, so a document missing one is a
+    /// parse error rather than an empty field.
 
     fn tags() -> Tags {
         serde_json::from_str(
@@ -1865,5 +1867,36 @@ mod tests {
             serde_json::from_str(r#"{"project_id": "x"}"#).expect("an older hit");
         assert!(older.versions.is_empty() && older.categories.is_empty());
         assert_eq!(older.project_ref(), "x");
+    }
+
+    /// Unlike the documents around it, none of the bundle's three fields is
+    /// defaulted: a document that answers one list fails the parse and names the
+    /// list it did not answer. A caller that has one route's answer reads that
+    /// route's own array; this type is the three together.
+    #[test]
+    fn the_tag_bundle_requires_all_three_lists() {
+        let only_categories = serde_json::from_str::<Tags>(
+            r#"{"categories": [{"name": "technology", "project_type": "mod",
+                                "header": "category", "icon": "x"}]}"#,
+        )
+        .unwrap_err();
+        assert!(
+            only_categories.to_string().contains("missing field `game_versions`"),
+            "{only_categories}"
+        );
+
+        // the same document with the other two lists present reads, and an empty
+        // list is a list that arrived rather than one that did not
+        let complete: Tags = serde_json::from_str(
+            r#"{"game_versions": [], "loaders": [],
+                "categories": [{"name": "technology", "project_type": "mod",
+                                "header": "category", "icon": "x"}]}"#,
+        )
+        .expect("all three lists");
+        assert_eq!(complete.categories.len(), 1);
+        assert_eq!(complete.categories[0].name, "technology");
+        assert!(complete.loaders.is_empty() && complete.game_versions.is_empty());
+        assert!(complete.loaders_for("mod").is_empty());
+        assert_eq!(complete.headers("mod"), ["category"]);
     }
 }

@@ -992,6 +992,29 @@ mod tests {
         assert_eq!(m["library_directory"], "/libraries");
     }
 
+
+    /// The profile name and the folder id are different strings once a second
+    /// instance takes a name the first one already had: `instance_var_map` is
+    /// given the display name, which is what the game shows, and the id -- the
+    /// folder's own name -- is not a token at all.
+    #[test]
+    fn a_duplicated_name_keeps_its_profile_name_and_its_folder_id_apart() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = crate::paths::SiftPaths::at(dir.path());
+        std::fs::create_dir_all(paths.instances_dir()).unwrap();
+        let first = crate::instance::Instance::create(&paths.instances_dir(), "Same", "1.21.1")
+            .expect("first instance");
+        let second = crate::instance::Instance::create(&paths.instances_dir(), "Same", "1.21.1")
+            .expect("second instance");
+        assert_eq!(first.id(), "Same");
+        assert_eq!(second.id(), "Same_1");
+        assert_eq!(second.name(), "Same");
+
+        let map = instance_var_map(&paths, &second, &profile());
+        assert_eq!(map["profile_name"], "Same");
+        assert_ne!(map["profile_name"], second.id());
+    }
+
     // ---- the join target -------------------------------------------------
 
     /// A server target is two pairs of arguments, placed after whatever the
