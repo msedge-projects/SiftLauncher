@@ -3645,3 +3645,18 @@ printed with its leading offset. Nothing was written; the tree stayed clean.
 
 **Next attempt**: read `servers.rs:1665-1672` with `sed -n` (no offset), edit those five lines by hand, and
 the rest follows the search-field recipe exactly.
+
+### First of two commits: `draw_section` now hands back the card rects (2026-11-01)
+
+`draw_section` returns `Vec<Rect>` -- one per card, pushed where the card is drawn -- and its empty branch
+returns an empty vec. The caller ignores it for now, which is exactly why this could land on its own: **a
+dropped `Vec` is not an error**, so the geometry move and the interaction that will use it are two commits
+that cannot break each other.
+
+**The line-based edit is what made it work** after two failed attempts at text anchors: instead of matching
+whitespace, it found the function by its `fn` line, walked to the closing brace, inserted the vec and the
+push by index, renamed the early `return;` and spliced the tail. **No anchor, no offset, nothing to guess.**
+
+**The second commit** is the caller's: bind the returned vec and register an `interact` per rect, ordered
+before any other press handling in that frame -- the ordering this file warns about, and the one the
+searches honoured.

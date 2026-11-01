@@ -1633,7 +1633,8 @@ fn draw_section(
     section: &Section<'_>,
     live: &[(String, Option<sift_net::slp::Status>)],
     icons: &[(String, egui::TextureHandle)],
-) {
+) -> Vec<Rect> {
+    let mut cards: Vec<Rect> = Vec::new();
     // `h2.m-0.text-xl.font-semibold.text-primary` (`index.vue:169`).
     painter.text(
         egui::pos2(left, top),
@@ -1653,7 +1654,7 @@ fn draw_section(
             fonts::body(LABEL_SIZE),
             theme.SECONDARY,
         );
-        return;
+        return cards;
     }
 
     for (index, server) in section.cards.iter().enumerate() {
@@ -1667,7 +1668,9 @@ fn draw_section(
         .find(|(address, _)| address == &server.address)
         .map(|(_, texture)| texture);
     draw_card(painter, card, theme, server, &shown, icon);
+        cards.push(card);
     }
+    cards
 }
 
 // ---------------------------------------------------------------------------
