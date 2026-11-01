@@ -2670,3 +2670,17 @@ every instance profile was **0.16.9** -- several releases stale, guessed rather 
 The constant is now 0.20.1 with the measured response in its comment, and the lookup is still the
 open row: a default that happens to be current today is not the same thing as asking. What changed is
 that the number is now a measurement with a date on it, which is the most this round's budget allows.
+
+### The Minecraft default was stale too (2026-11-01)
+
+The same test applied to the other remote fact: `https://piston-meta.mojang.com/mc/game/version_manifest_v2.json`
+answers `"latest": {"release": "26.3"}`, and this launcher's `DEFAULT_MC_VERSION` was **1.21.4** --
+which was not chosen as a default at all, but was the version the install proof happened to use.
+
+Corrected to 26.3 with the manifest quoted in the constant's comment. The pattern is now explicit
+and worth carrying: **two constants that mirror remote facts were both wrong, both found by asking,
+and neither had anything in the codebase that could have caught it.**
+
+**Owed**: an install against a 26.3 instance, because the proven install ran on 1.21.4 and Sodium
+publishes `+mc26.3` builds too -- the earlier vanilla-instance run picked exactly one -- but that
+path has not been re-walked since this default changed.
