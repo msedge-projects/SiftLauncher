@@ -81,6 +81,9 @@ impl Search {
             && ui.input(|i| i.modifiers.command && i.key_pressed(egui::Key::F))
         {
             ui.memory_mut(|m| m.request_focus(Id::new("search-field")));
+            // The field tracks its own focus flag -- that is what its text path reads, not egui's
+            // memory focus. Without this the shortcut granted a focus nothing would look at.
+            self.focused = true;
             ui.ctx().request_repaint();
         }
 

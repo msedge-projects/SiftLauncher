@@ -3185,3 +3185,19 @@ the shortcut, and the shortcut can stay as written.
 
 **This is the round's real result**: three candidate causes, one probe, and the one that was left is the
 only one that needs a code change. The probe cost one build and removed two of the three.
+
+### Setting the field's own flag is not enough (2026-11-01)
+
+The shortcut now sets `self.focused = true` as well as requesting egui's focus, and the drive is **still
+negative**: placeholder showing, no text, listing unchanged.
+
+So the condition at `widgets/search.rs:103` is not simply `self.focused`. Something earlier in the same
+frame clears it or gates it -- line 100 sets `self.focused = false` on some other event, and the run
+presses a tab pill immediately before the shortcut, which is exactly the kind of press that would.
+
+**The probe is now one line at the text path**: print `self.focused` and `i.events.len()` at line 103 and
+inside the loop. Two rounds of guessing at this widget have produced two negative drives; the third
+attempt should print rather than reason.
+
+**Recorded as owed**: Ctrl+F does not work, the code that tries to make it work is in the tree, and it is
+marked here rather than described as finished.
