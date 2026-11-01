@@ -3435,3 +3435,23 @@ as a capture can**; the code below it is what counts.
 
 **Named first fix**: P0 1, because deleting an invented toolbar is a removal rather than a build, and it
 makes the page honest before anything is added to it.
+
+### The audit's top P0 collides with a documented decision (2026-11-01)
+
+Checked `skins.rs` before deleting the "invented" toolbar, and its own header says it is not an
+accident:
+
+    skins.rs:41  has no search field, no model tabs and no `Upload` button in a toolbar: the only upload
+    skins.rs:47  The toolbar, the two empty states and the author line are therefore this launcher's ...
+
+So the toolbar is a **recorded deviation**, not an invention -- the same category as the two rows this
+document already marks DELIBERATE. The subagent read the pixels against `Skins.vue` and was right about
+the difference; it did not have the code's own note saying the difference was chosen.
+
+**That changes the fix from "delete it" to "decide it"**: either the deviation is right and the row is
+DELIBERATE with its reason, or it is wrong and the toolbar goes. **What it must not be is a P0 defect and
+a documented decision at the same time**, which is what the last two entries made it.
+
+**And the method lesson repeats, one layer up**: the source corrected the capture last round; this round
+the source's *comments* corrected an audit. Neither a picture nor a report is evidence about intent --
+only the code and its notes are.
