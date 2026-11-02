@@ -2964,7 +2964,9 @@ fn card(
     // fetch failed. Rounded corners are the tile's: a texture drawn into a square rect inside
     // a rounded plate keeps the plate's corner showing, which is what the reference does.
     if let Some(texture) = icons.get(ui.ctx(), &result.icon) {
-        let inner = tile.shrink(2.0);
+        // Measured from the reference's card: its icon is inset inside the 100-point tile with the plate's own
+        // ring still visible around it, where a 2-point inset filled the tile edge to edge.
+        let inner = tile.shrink(7.0);
         painter.image(
             texture.id(),
             inner,
