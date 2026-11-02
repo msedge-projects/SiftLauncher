@@ -35,7 +35,7 @@ at the top of `docs/GAP-MATRIX.md`: print it from the code or scan it from the p
 ## What is still open, with its cause
 - **Discover is not faceted by category chips the way the reference's sidebar is** (the chips exist; the panel's
   category press is one facet at a time, as the reference's is).
-- **The pager appears once**, above the list; the reference has a second one under it.
+- The pager now appears at both ends of the results, as the reference's does (`draw_pager` with a tag per strip).
 - **Screenshots' "New group"** answers with a toast that says groups are not built.
 - **Follow / Save / Report** on a project need an account service this build has no client for.
 - **The Servers page** cannot be compared until Modrinth's hosting accepts this client version.

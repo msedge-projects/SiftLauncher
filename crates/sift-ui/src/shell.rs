@@ -1904,6 +1904,110 @@ impl Shell {
     /// pack into the same instances folder while the first is still filling it, and the
     /// engine's own transfer ceiling is one queue. The refusal is said rather than swallowed,
     /// because a press that silently does nothing reads as a broken button.
+/// The numbered page strip, above the list and again under it.
+    ///
+    /// The reference draws one at each end of the results; a reader who has scrolled to the last card should not
+    /// have to scroll back to turn the page. \`tag\` keeps the two strips' widget ids apart.
+    fn draw_pager(&mut self, ui: &mut Ui, right_edge: f32, y: f32, tag: &str) {
+    if let Some(range) = self.result_range() {
+        let pages = self.result_pages();
+        let middle = y;
+        let right = right_edge;
+        // An empty search says so where the strip would be; there are no pages to turn.
+        if range == "No results" {
+            ui.painter().text(
+                egui::pos2(right, middle),
+                Align2::RIGHT_CENTER,
+                range,
+                crate::fonts::body(12.0),
+                self.theme.SECONDARY,
+            );
+        } else {
+            let next = egui::Rect::from_center_size(
+                egui::pos2(right - 12.0, middle),
+                egui::Vec2::splat(22.0),
+            );
+            let mut x = next.left() - 6.0;
+            for item in pager_items(self.page + 1, pages).into_iter().rev() {
+                let label = match item {
+                    Some(number) => number.to_string(),
+                    None => "…".to_owned(),
+                };
+                let ink = if item == Some(u64::from(self.page) + 1) {
+                    self.theme.BUTTON_TEXT_SELECTED
+                } else {
+                    self.theme.SECONDARY
+                };
+                let galley = ui.painter().layout_no_wrap(
+                    label.clone(),
+                    crate::fonts::body(16.0),
+                    ink,
+                );
+                let width = if item.is_some() { PAGER_CELL } else { galley.size().x + 8.0 };
+                // A 36x36 cell at radius 18 with a 16-point numeral: the reference's
+                // current-page disc measures 924..959 by 182..217, and this used to be a
+                // 22-tall plate with 12-point text.
+                let cell = egui::Rect::from_center_size(
+                    egui::pos2(x - width / 2.0, middle),
+                    egui::vec2(width, PAGER_CELL),
+                );
+                if item == Some(u64::from(self.page) + 1) {
+                    ui.painter().rect_filled(cell, 18, self.theme.BUTTON_BG_SELECTED);
+                }
+                ui.painter().galley(
+                    egui::pos2(cell.center().x - galley.size().x / 2.0, middle - galley.size().y / 2.0),
+                    galley,
+                    ink,
+                );
+                if let Some(number) = item {
+                    if number != u64::from(self.page) + 1
+                        && ui
+                            .interact(cell, egui::Id::new(("page", tag, number)), egui::Sense::click())
+                            .clicked()
+                    {
+                        self.page = (number - 1) as u32;
+                        self.results.forget();
+                        ui.ctx().request_repaint();
+                    }
+                }
+                x = cell.left() - 2.0;
+            }
+            // The `-` sits just left of where the numbers stopped, whatever they were.
+            let prev = egui::Rect::from_center_size(
+                egui::pos2(x - 10.0, middle),
+                egui::Vec2::splat(22.0),
+            );
+            for (rect, step, enabled) in [
+                (prev, -1_i64, self.page > 0),
+                (next, 1, (self.page as u64 + 1) < pages.max(1)),
+            ] {
+                let ink = if enabled {
+                    self.theme.BASE
+                } else {
+                    self.theme.SECONDARY
+                };
+                // The reference's pager buttons carry a chevron, not an ASCII angle bracket, and the
+                // glyph is sized like the rest of its icon buttons.
+                crate::icons::draw(
+                    ui.painter(),
+                    if step < 0 { crate::icons::Glyph::ChevronLeft } else { crate::icons::Glyph::ChevronRight },
+                    Rect::from_center_size(rect.center(), egui::Vec2::splat(16.0)),
+                    ink,
+                );
+                if enabled
+                    && ui
+                        .interact(rect, egui::Id::new(("page-step", tag, step)), egui::Sense::click())
+                        .clicked()
+                {
+                    self.page = (self.page as i64 + step).max(0) as u32;
+                    self.results.forget();
+                    ui.ctx().request_repaint();
+                }
+            }
+        }
+    }
+    }
+
     fn press_install(&mut self, card: &Card) {
         if self.install.busy() {
             self.toast = Some(
@@ -2553,103 +2657,7 @@ impl Shell {
         // -- the numbers with an ellipsis and the last page -- is not drawn; what is here pages,
         // which is the part a reader needs. Laid out from the right edge so the parts cannot run
         // into each other whatever the numbers say.
-        if let Some(range) = self.result_range() {
-            let pages = self.result_pages();
-            let middle = row.center().y;
-            let right = row.right();
-            // An empty search says so where the strip would be; there are no pages to turn.
-            if range == "No results" {
-                ui.painter().text(
-                    egui::pos2(right, middle),
-                    Align2::RIGHT_CENTER,
-                    range,
-                    crate::fonts::body(12.0),
-                    self.theme.SECONDARY,
-                );
-            } else {
-                let next = egui::Rect::from_center_size(
-                    egui::pos2(right - 12.0, middle),
-                    egui::Vec2::splat(22.0),
-                );
-                let mut x = next.left() - 6.0;
-                for item in pager_items(self.page + 1, pages).into_iter().rev() {
-                    let label = match item {
-                        Some(number) => number.to_string(),
-                        None => "…".to_owned(),
-                    };
-                    let ink = if item == Some(u64::from(self.page) + 1) {
-                        self.theme.BUTTON_TEXT_SELECTED
-                    } else {
-                        self.theme.SECONDARY
-                    };
-                    let galley = ui.painter().layout_no_wrap(
-                        label.clone(),
-                        crate::fonts::body(16.0),
-                        ink,
-                    );
-                    let width = if item.is_some() { PAGER_CELL } else { galley.size().x + 8.0 };
-                    // A 36x36 cell at radius 18 with a 16-point numeral: the reference's
-                    // current-page disc measures 924..959 by 182..217, and this used to be a
-                    // 22-tall plate with 12-point text.
-                    let cell = egui::Rect::from_center_size(
-                        egui::pos2(x - width / 2.0, middle),
-                        egui::vec2(width, PAGER_CELL),
-                    );
-                    if item == Some(u64::from(self.page) + 1) {
-                        ui.painter().rect_filled(cell, 18, self.theme.BUTTON_BG_SELECTED);
-                    }
-                    ui.painter().galley(
-                        egui::pos2(cell.center().x - galley.size().x / 2.0, middle - galley.size().y / 2.0),
-                        galley,
-                        ink,
-                    );
-                    if let Some(number) = item {
-                        if number != u64::from(self.page) + 1
-                            && ui
-                                .interact(cell, egui::Id::new(("page", number)), egui::Sense::click())
-                                .clicked()
-                        {
-                            self.page = (number - 1) as u32;
-                            self.results.forget();
-                            ui.ctx().request_repaint();
-                        }
-                    }
-                    x = cell.left() - 2.0;
-                }
-                // The `-` sits just left of where the numbers stopped, whatever they were.
-                let prev = egui::Rect::from_center_size(
-                    egui::pos2(x - 10.0, middle),
-                    egui::Vec2::splat(22.0),
-                );
-                for (rect, step, enabled) in [
-                    (prev, -1_i64, self.page > 0),
-                    (next, 1, (self.page as u64 + 1) < pages.max(1)),
-                ] {
-                    let ink = if enabled {
-                        self.theme.BASE
-                    } else {
-                        self.theme.SECONDARY
-                    };
-                    // The reference's pager buttons carry a chevron, not an ASCII angle bracket, and the
-                    // glyph is sized like the rest of its icon buttons.
-                    crate::icons::draw(
-                        ui.painter(),
-                        if step < 0 { crate::icons::Glyph::ChevronLeft } else { crate::icons::Glyph::ChevronRight },
-                        Rect::from_center_size(rect.center(), egui::Vec2::splat(16.0)),
-                        ink,
-                    );
-                    if enabled
-                        && ui
-                            .interact(rect, egui::Id::new(("page-step", step)), egui::Sense::click())
-                            .clicked()
-                    {
-                        self.page = (self.page as i64 + step).max(0) as u32;
-                        self.results.forget();
-                        ui.ctx().request_repaint();
-                    }
-                }
-            }
-        }
+        self.draw_pager(ui, row.right(), row.center().y, "top");
 
         // The list, via fastframe's scrolling: 120 points per notch rather than egui's 40.
         let list = Rect::from_min_max(
@@ -2774,6 +2782,9 @@ impl Shell {
                     self.open_card = opened_card.take();
                 }
             });
+        // The reference draws a second pager under the results, so a reader at the last card can turn
+        // the page without scrolling back to the top.
+        self.draw_pager(ui, list.right(), list.bottom() - 20.0, "bottom");
         // The open popover, last, so it covers the list rather than the other way round. Its
         // items are interacted here too: an item registered before the cards would lose the
         // click to whichever card overlaps it.
