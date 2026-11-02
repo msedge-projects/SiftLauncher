@@ -111,17 +111,19 @@ impl Shell {
     /// the create dialog spent ten rounds learning that.
     pub fn draw_picker(&mut self, ctx: &egui::Context, screen: egui::Rect, ui: &mut egui::Ui) {
         let Some(picker) = self.picker.clone() else {
+            // No picker: forget when the last one opened, so the next one gets its own guard.
+            self.picker_opened = 0.0;
             return;
         };
         let (project, title, join_address) = match &picker.kind {
             PickerKind::Install { project, title } => (project.clone(), title.clone(), None),
             PickerKind::Join { address } => (String::new(), String::new(), Some(address.clone())),
         };
-        if picker.opened <= 0.0 {
-            self.picker_opened = ctx.input(|input| input.time);
-        }
         let now = ctx.input(|input| input.time);
-        let settled = now > picker.opened + 0.15;
+        if self.picker_opened <= 0.0 {
+            self.picker_opened = now;
+        }
+        let settled = now > self.picker_opened + 0.15;
         let pointer = ctx.pointer_interact_pos();
         let clicked = ctx.input(|input| input.pointer.any_click());
 
@@ -158,6 +160,13 @@ impl Shell {
             theme.SECONDARY,
         );
 
+        // Two instances can carry the same display name -- installing a pack twice gives
+        // "Fabulously Optimized" and "Fabulously Optimized_1" -- and the folder id is the only thing
+        // that tells them apart, so it appears only when a name repeats.
+        let mut name_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        for entry in &entries {
+            *name_counts.entry(entry.name.clone()).or_default() += 1;
+        }
         let mut y = plate.top() + 78.0;
         for entry in &entries {
             let row = egui::Rect::from_min_size(
@@ -170,7 +179,15 @@ impl Shell {
             painter.text(
                 egui::pos2(row.left() + 12.0, row.top() + 8.0),
                 egui::Align2::LEFT_TOP,
-                &entry.name,
+                {
+                    if name_counts.get(&entry.name).copied().unwrap_or(0) > 1 {
+                        // The id is what the folder is called and what the launcher itself made
+                        // unique, so it is the honest label when a name repeats.
+                        entry.id.clone()
+                    } else {
+                        entry.name.clone()
+                    }
+                },
                 crate::fonts::semibold(13.0),
                 theme.BASE,
             );
@@ -877,7 +894,7 @@ impl Shell {
                 // The page says which server; the picker asks which instance should join it.
                 self.picker = Some(Picker {
                     kind: PickerKind::Join { address },
-                    opened: 0.0,
+                    opened: ui.ctx().input(|input| input.time),
                 });
             }
             false
@@ -1290,6 +1307,11 @@ impl Shell {
     /// The keyboard's route to the rail: `Ctrl+1` through `Ctrl+5` select a page in the reference's
     /// order. The navigation is the same one a press makes, so a shortcut cannot reach a page the
     /// rail does not offer.
+    /// Switch the rail, the one field both a press and a shortcut write.
+    fn go_to(&mut self, rail: Rail) {
+        self.rail = rail;
+    }
+
     fn rail_shortcut(&mut self, ctx: &egui::Context) {
         // consume_shortcut rather than key_pressed plus a modifier read: the probe showed the modifier
         // cleared on the frame the digit arrives, so a hand-rolled check misses every press.
@@ -1303,7 +1325,12 @@ impl Shell {
             };
             let shortcut = egui::KeyboardShortcut::new(egui::Modifiers::COMMAND, key);
             if ctx.input_mut(|input| input.consume_shortcut(&shortcut)) && self.rail != *rail {
-                self.rail = *rail;
+                // The same navigation a rail press makes: without closing the open page the
+                // shortcut changed a field the frame never read, and nothing happened.
+                self.go_to(*rail);
+                self.open_project = None;
+                self.open_instance = None;
+                self.open_card = None;
                 ctx.request_repaint();
             }
         }
@@ -1333,7 +1360,7 @@ impl Shell {
                 hovered = Some(destination);
             }
             if response.clicked() {
-                self.rail = destination;
+                self.go_to(destination);
                 // The rail is the way out of a project or an instance page, so a rail press
                 // closes both.
                 self.open_project = None;

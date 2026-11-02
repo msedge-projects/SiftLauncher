@@ -1437,10 +1437,55 @@ pub fn draw(
                 painter.text(
                     hint.left_top(),
                     Align2::LEFT_TOP,
-                    "Join from an instance: open it, then use the field on Content.",
+                    "Join launches the chosen instance and connects on load.",
                     fonts::body(11.0),
                     theme.SECONDARY,
                 );
+                // Join sits to the left of Copy IP. The earlier attempts at this button were pressed at
+                // coordinates the panel no longer used -- it moved when the page's inset was fixed -- which
+                // is why a working interact looked dead.
+                let join_button = Rect::from_min_size(
+                    egui::pos2(join.left() - 104.0, join.top()),
+                    egui::vec2(92.0, join.height()),
+                );
+                if std::env::var_os("SIFT_JOIN_PROBE3").is_some() {
+                    eprintln!("join_button={join_button:?} copy={join:?}");
+                }
+                painter.rect_filled(join_button, 6.0, theme.RAISED_BG);
+                painter.text(
+                    join_button.center(),
+                    egui::Align2::CENTER_CENTER,
+                    "Join",
+                    fonts::semibold(12.0),
+                    theme.BRAND,
+                );
+                // An Area on the foreground order, not `ui.interact`: the panel is drawn over the server
+                // cards, and a card under the panel claims the press before the button is asked. Copy IP
+                // only looked like it worked because when it was first tried no card reached that far down.
+                let mut join_pressed = false;
+                egui::Area::new(egui::Id::new("server-join-area"))
+                    .order(egui::Order::Foreground)
+                    .fixed_pos(egui::pos2(0.0, 0.0))
+                    .show(ui.ctx(), |area| {
+                        let response =
+                            area.interact(join_button, egui::Id::new("server-join"), Sense::click());
+                        if std::env::var_os("SIFT_JOIN_PROBE3").is_some() {
+                            eprintln!(
+                                "join hover={} clicked={} ptr={:?} rect={join_button:?}",
+                                response.hovered(),
+                                response.clicked(),
+                                ui.ctx().pointer_interact_pos()
+                            );
+                        }
+                        join_pressed = response.clicked();
+                    });
+                if join_pressed {
+                    pressed_join = Some(server.address.clone());
+                    if std::env::var_os("SIFT_JOIN_PROBE3").is_some() {
+                        eprintln!("JOIN PRESSED {}", server.address);
+                    }
+                    ui.ctx().request_repaint();
+                }
                 painter.rect_filled(join, 6.0, theme.BUTTON_BG_SELECTED);
                 painter.text(
                     join.center(),
