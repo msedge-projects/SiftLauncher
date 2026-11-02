@@ -466,6 +466,8 @@ pub struct State {
     pressed: Option<Press>,
     /// Whether the header's menu is open.
     menu: bool,
+    /// When it opened, so the press that opened it cannot dismiss it on the same frame.
+    menu_opened: f64,
 }
 
 impl Default for State {
@@ -478,6 +480,7 @@ impl Default for State {
             loaders: Vec::new(),
             pressed: None,
             menu: false,
+            menu_opened: 0.0,
         }
     }
 }
@@ -895,6 +898,9 @@ fn header(
         .clicked()
     {
         state.menu = !state.menu;
+        // The same press that opens the menu is also "a press anywhere else" on this frame, which
+        // closed it before it drew. The frame clock is the guard.
+        state.menu_opened = ui.input(|input| input.time);
         ui.ctx().request_repaint();
     }
     icons::draw(
@@ -986,7 +992,8 @@ fn header_menu(
     let (pointer, clicked) = ui.input(|input| {
         (input.pointer.interact_pos(), input.pointer.primary_clicked())
     });
-    if clicked && !pointer.is_some_and(|at| plate.contains(at)) {
+    let settled = ui.input(|input| input.time) > state.menu_opened + 0.15;
+    if settled && clicked && !pointer.is_some_and(|at| plate.contains(at)) {
         state.menu = false;
     }
 
