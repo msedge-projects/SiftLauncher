@@ -102,10 +102,14 @@ impl eframe::App for App {
                 // widget. Placed after the panel returned, the dialog's field received input
                 // and drew nothing -- egui culled it against a clip the panel had already set.
                 if shell.picker.is_some() {
-            ctx.request_repaint();
-        }
-        if shell.create_open {
+                    ctx.request_repaint();
+                }
+                if shell.create_open {
                     shell.draw_create(&ctx, screen, ui);
+                }
+                if shell.edit.is_some() {
+                    shell.draw_edit(&ctx, screen, ui);
+                    ctx.request_repaint();
                 }
                 if shell.picker.is_some() {
                     shell.draw_picker(&ctx, screen, ui);

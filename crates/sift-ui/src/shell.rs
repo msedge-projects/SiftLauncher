@@ -101,7 +101,7 @@ impl Rail {
 pub enum EditPress {
     /// No press, or a press on the plate itself, which belongs to the field.
     Nothing,
-    /// Write the field's name to 'instance.cfg' and close.
+    /// Write the field's name to `instance.cfg` and close.
     Save,
     /// Close and write nothing: the Cancel button, or a press outside the plate.
     Cancel,
@@ -110,8 +110,8 @@ pub enum EditPress {
 /// Read one frame's press against the dialog's three rects.
 ///
 /// **The press that opened the dialog is not a press on the dialog.** The library row that sent
-/// 'Action::Edit' and the plate occupy the same screen, so the frame the dialog appears on is
-/// spent: 'settled' is false there, and every branch waits for it. That is not a cosmetic guard --
+/// `Action::Edit` and the plate occupy the same screen, so the frame the dialog appears on is
+/// spent: `settled` is false there, and every branch waits for it. That is not a cosmetic guard --
 /// without it the opening press landed on whichever button happened to be under the pointer, and a
 /// press on Save renamed the instance to the name the field had been refilled with.
 ///
@@ -141,7 +141,7 @@ pub fn edit_press(
     }
 }
 
-/// The name a rename writes: the field's text without its edges, or 'None' when nothing is left.
+/// The name a rename writes: the field's text without its edges, or `None` when nothing is left.
 ///
 /// Whitespace is trimmed because a name of spaces is a row with no label -- the same silent
 /// nothing this dialog exists to avoid.
@@ -175,6 +175,11 @@ impl Shell {
         let now = ctx.input(|input| input.time);
         if self.edit_opened <= 0.0 {
             self.edit_opened = now;
+            // The dialog says which instance it opened for, so a drive can tell a press that landed
+            // on the menu row from one that landed on the row underneath it.
+            if std::env::var_os("SIFT_EDIT_PROBE").is_some() {
+                eprintln!("edit open id={id:?} text={text:?}");
+            }
         }
         let settled = now > self.edit_opened + 0.15;
         if settled && now - self.edit_opened < 0.25 {
@@ -184,11 +189,11 @@ impl Shell {
         let theme = self.theme.clone();
         painter.rect_filled(screen, 0.0, egui::Color32::from_black_alpha(160));
         // **The press belongs to the dialog while it is up.** The page drew first in this frame, and a
-        // library row answers a press with 'Action::Edit' over the very rect the Save button covers.
+        // library row answers a press with `Action::Edit` over the very rect the Save button covers.
         // Without this, a press on Save re-opened the dialog on the row underneath: the field was
-        // refilled from disk (the typed name gone) and 'edit_opened' was reset, so the press never
-        // counted -- the app's own log said 'act Edit Instance 2 copy' on the frame of the Save press,
-        // and 'settled=false' with it. egui gives an overlapping press to the widget registered last,
+        // refilled from disk (the typed name gone) and `edit_opened` was reset, so the press never
+        // counted -- the app's own log said `act Edit Instance 2 copy` on the frame of the Save press,
+        // and `settled=false` with it. egui gives an overlapping press to the widget registered last,
         // and this one is registered after every row, so the rows see nothing.
         ui.interact(screen, egui::Id::new("edit-dialog-blocker"), Sense::click());
 
@@ -276,7 +281,7 @@ impl Shell {
         let clicked = ctx.input(|input| input.pointer.any_click());
         let press = edit_press(settled, clicked, pointer, plate, save, cancel);
         // Rule 1 of the drive: the rects come from the program, never off a capture. Off unless
-        // 'SIFT_EDIT_PROBE' is set, and it prints what the press was read as.
+        // `SIFT_EDIT_PROBE` is set, and it prints what the press was read as.
         if std::env::var_os("SIFT_EDIT_PROBE").is_some() && clicked {
             eprintln!(
                 "edit press={press:?} ptr={pointer:?} save={save:?} plate={plate:?} settled={settled}"
@@ -839,6 +844,8 @@ pub struct Shell {
     open_card: Option<Card>,
     /// The instance being renamed, and the text in the field. `None` when the dialog is closed.
     pub edit: Option<(String, String)>,
+    /// Text to put on the clipboard on the next frame, for actions that have no `Context` of their own.
+    clipboard: Option<String>,
     /// When the rename dialog opened, so the press that opened it cannot dismiss it.
     edit_opened: f64,
     /// The open project's tab.
@@ -925,6 +932,7 @@ impl Default for Shell {
             open_project: None,
             open_card: None,
             edit: None,
+            clipboard: None,
             edit_opened: 0.0,
             project_state: crate::pages::project::State::default(),
             search: crate::widgets::search::Search::default(),
@@ -991,6 +999,9 @@ impl Shell {
     /// to decide whether to ask for another frame.
     pub fn ui(&mut self, ui: &mut Ui) -> bool {
         let ctx = ui.ctx().clone();
+        if let Some(text) = self.clipboard.take() {
+            ctx.copy_text(text);
+        }
         // First thing in the frame, before any scroll area reads the input.
         self.scrolling.apply(&ctx);
         // Take the launch worker's latest word before any of the window reads it.
@@ -1939,8 +1950,11 @@ impl Shell {
         match std::process::Command::new(opener).arg(&path).spawn() {
             Ok(_) => self.toast = Some(format!("Opened {}.", path.display())),
             Err(error) => {
+                // An image with no file manager cannot open a folder, and that is not the reader's
+                // problem -- the path on the clipboard is the next thing they can act on.
+                self.clipboard = Some(path.display().to_string());
                 self.toast = Some(format!(
-                    "Could not open {} with {opener}: {error}",
+                    "No file manager here ({error}). Copied {} instead.",
                     path.display()
                 ));
             }
@@ -2375,11 +2389,11 @@ impl Shell {
         const SORTS: [(&str, &str); 5] = [
             ("Relevance", "relevance"),
             ("Downloads", "downloads"),
-            ("Follows", "follows"),
-            ("Newest", "newest"),
-            ("Updated", "updated"),
+            ("Followers", "follows"),
+            ("Date published", "newest"),
+            ("Date updated", "updated"),
         ];
-        const SIZES: [u32; 4] = [10, 20, 50, 100];
+        const SIZES: [u32; 4] = [5, 15, 25, 50];
         let select_w = 150.0;
         let mut select_rects = [Rect::NOTHING; 2];
         for index in 0..2 {
@@ -3438,7 +3452,7 @@ mod edit_tests {
         Rect::from_min_size(pos2(x, y), Vec2::new(width, height))
     }
 
-    /// The dialog's own numbers: the plate and its two buttons, built the way 'draw_edit' builds
+    /// The dialog's own numbers: the plate and its two buttons, built the way `draw_edit` builds
     /// them, on the 1440x900 window the drives run at.
     fn dialog() -> (Rect, Rect, Rect) {
         let plate = Rect::from_center_size(pos2(720.0, 450.0), egui::vec2(520.0, 200.0));
@@ -3454,9 +3468,9 @@ mod edit_tests {
 
     /// The press that opened the dialog is not a press on it.
     ///
-    /// This is the bug the drive printed: the library row that sends 'Action::Edit' sits under the
-    /// plate, so the opening press arrived at the dialog's own rects ('act Edit Instance 2 copy' on
-    /// the frame of the Save press, 'settled=false'). Nothing counts until the dialog has settled.
+    /// This is the bug the drive printed: the library row that sends `Action::Edit` sits under the
+    /// plate, so the opening press arrived at the dialog's own rects (`act Edit Instance 2 copy` on
+    /// the frame of the Save press, `settled=false`). Nothing counts until the dialog has settled.
     #[test]
     fn the_press_that_opened_the_dialog_is_not_a_press_on_it() {
         let (plate, save, cancel) = dialog();
