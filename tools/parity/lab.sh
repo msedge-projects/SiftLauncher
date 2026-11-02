@@ -14,7 +14,11 @@
 #   tools/parity/lab.sh ours               build SiftUi, then (re)launch it
 #   tools/parity/lab.sh shoot NAME         capture the screen to .scratch/cap/NAME.png
 #   tools/parity/lab.sh both NAME          ref on screen, shoot, ours on screen, shoot
-#   tools/parity/lab.sh click X Y          click at a screen coordinate
+#   tools/parity/lab.sh click X Y          click at a SCREEN coordinate
+#
+# Screen coordinates, not content ones: on a framed X server the window's frame adds 22 points, so
+# content 827 is screen 849. The app's own probe prints the pointer it received -- trust that number,
+# not a reading of the capture, and not a remembered offset.
 #   tools/parity/lab.sh move X Y           move the pointer
 #   tools/parity/lab.sh key KEYS...        xdotool key (e.g. Return, Escape, ctrl+c)
 #   tools/parity/lab.sh type TEXT...       type a literal string

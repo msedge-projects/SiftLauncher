@@ -1467,23 +1467,12 @@ pub fn draw(
                     .order(egui::Order::Foreground)
                     .fixed_pos(egui::pos2(0.0, 0.0))
                     .show(ui.ctx(), |area| {
-                        let response =
-                            area.interact(join_button, egui::Id::new("server-join"), Sense::click());
-                        if std::env::var_os("SIFT_JOIN_PROBE3").is_some() {
-                            eprintln!(
-                                "join hover={} clicked={} ptr={:?} rect={join_button:?}",
-                                response.hovered(),
-                                response.clicked(),
-                                ui.ctx().pointer_interact_pos()
-                            );
-                        }
-                        join_pressed = response.clicked();
+                        join_pressed = area
+                            .interact(join_button, egui::Id::new("server-join"), Sense::click())
+                            .clicked();
                     });
                 if join_pressed {
                     pressed_join = Some(server.address.clone());
-                    if std::env::var_os("SIFT_JOIN_PROBE3").is_some() {
-                        eprintln!("JOIN PRESSED {}", server.address);
-                    }
                     ui.ctx().request_repaint();
                 }
                 painter.rect_filled(join, 6.0, theme.BUTTON_BG_SELECTED);
