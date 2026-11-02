@@ -4680,3 +4680,31 @@ the highlight to the second row (the fill at screen y 280 read `#34363c` where t
 fourth rows read `#27292e`), `Return` opened the rename dialog for that instance (the whole screen
 went to the modal's scrim, rms 32.6 against the menu), and `Escape` closed it, leaving the page
 back within 8 RMS of where it started.
+
+# The reference's Servers page is gated, and that changes what "parity" can mean here (2026-11-02)
+
+Launching the reference itself (`tools/parity/lab.sh ref`) and pressing its Servers icon does **not** show a
+server list. It shows a modal:
+
+> **Modrinth App update required**
+> You need to update to use Modrinth Hosting through the Modrinth App
+> [ Download to update ]
+
+with the Rinthbot illustration behind it (`.scratch/cap/ref-servers.png`, captured live on `:99` from the
+0.22.0 AppImage).
+
+**So the Servers page's rows were never comparable against a live reference**: the newest client this lab can
+run is refused by the hosting service, and everything this build draws there -- the six servers, the sections,
+the detail panel, the Join button -- comes from reading the page's source and from the service's own data
+shapes, not from a capture of the running reference.
+
+Three consequences, recorded rather than smoothed over:
+
+1. **A state we do not have**: "hosting requires an update". It is reachable only when the service answers that
+   way; inventing it as a permanent screen would be as wrong as inventing a server list.
+2. **The Rinthbot illustration is absent** from this tree (no artwork), as the Settings empty state already
+   records.
+3. **The rows for the Servers page are re-labelled**: they are OPEN-WITH-CAUSE ("the reference refuses this page
+   for this client") instead of DONE-by-comparison. The parts that *are* verifiable -- Join end to end
+   (`--quickPlayMultiplayer purpleprison.net:25565` on the java command line), Copy IP through `xclip`, the
+   New server dialog -- are driven and proved, and stay DONE.
