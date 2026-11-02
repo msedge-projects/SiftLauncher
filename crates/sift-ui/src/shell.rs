@@ -1356,6 +1356,9 @@ impl Shell {
                 Vec2::splat(g::RAIL_BUTTON),
             );
             let response = ui.interact(button, egui::Id::new(("rail", index)), Sense::click());
+            if std::env::var_os("SIFT_RAIL_PROBE").is_some() {
+                eprintln!("rail {index} {:?} {button:?}", destination);
+            }
             if response.hovered() {
                 hovered = Some(destination);
             }
@@ -1566,10 +1569,32 @@ impl Shell {
                 self.open_instance_page(&id);
             }
             Action::Duplicate(id) => {
-                self.toast = Some(format!(
-                    "Duplicating {} is not wired yet: nothing copies an instance's folder.",
-                    self.instance_name(&id)
-                ));
+                // The reference copies the instance and leaves the reader in the library with both
+                // (\`use-library.ts\`, the duplicate action). The copy keeps the original untouched.
+                let root = crate::data::instances_dir();
+                let existing: Vec<String> = crate::data::load()
+                    .0
+                    .iter()
+                    .map(|entry| entry.id.clone())
+                    .collect();
+                let name = self.instance_name(&id);
+                let target = crate::duplicate::unique_id(&id, &existing);
+                let copied = crate::duplicate::copy_tree(&root.join(&id), &root.join(&target))
+                    .and_then(|files| {
+                        crate::duplicate::rename_copy(&root.join(&target), &target)?;
+                        Ok(files)
+                    });
+                match copied {
+                    Ok(files) => {
+                        // The library is a cache the shell holds; a copy that is not read back is a
+                        // file on disk the reader cannot see.
+                        self.instances = crate::data::load().0;
+                        self.toast = Some(format!("Duplicated {name} as {target}, {files} files."));
+                    }
+                    Err(error) => {
+                        self.toast = Some(format!("Could not duplicate {name}: {error}"));
+                    }
+                }
             }
             Action::OpenFolder(id) => self.open_instance_folder(&id),
             Action::Delete(id) => self.delete_instance(&id),

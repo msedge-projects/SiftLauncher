@@ -21,6 +21,7 @@
 /// travels inside it rather than beside it.
 mod motion;
 mod drop;
+mod duplicate;
 mod account;
 mod brand;
 mod data;
