@@ -845,6 +845,9 @@ pub struct Shell {
     /// The instance Discover is installing into, set by an instance's "Add mods" press. While it is
     /// set, an Install skips the picker: the reader already said where the mods go.
     install_target: Option<String>,
+    /// The target instance's loader and game version, so its browse asks only for what it can run.
+    install_loader: Option<String>,
+    install_version: Option<String>,
     /// The instance being renamed, and the text in the field. `None` when the dialog is closed.
     pub edit: Option<(String, String)>,
     /// Text to put on the clipboard on the next frame, for actions that have no `Context` of their own.
@@ -935,6 +938,8 @@ impl Default for Shell {
             open_project: None,
             open_card: None,
             install_target: None,
+            install_loader: None,
+            install_version: None,
             edit: None,
             clipboard: None,
             edit_opened: 0.0,
@@ -1080,11 +1085,16 @@ impl Shell {
                     }
                     crate::pages::instance::InstanceAction::BrowseMods => {
                         // Discover is this build's browse view, so the button takes the reader there with
-                        // this instance remembered as the target.
+                        // this instance remembered as the target -- and with its loader and version, so the
+                        // browse asks only for mods it can actually run.
                         self.go_to(Rail::Discover);
                         self.open_instance = None;
+                        let entry = self.instances.iter().find(|entry| entry.id == id).cloned();
+                        self.install_loader = entry.as_ref().map(|entry| entry.loader.clone());
+                        self.install_version = entry.as_ref().map(|entry| entry.version.clone());
                         self.install_target = Some(id.clone());
                         self.toast = Some(format!("Installing into {}.", self.instance_name(&id)));
+                        self.results.forget();
                     }
                 }
             }
@@ -1590,6 +1600,11 @@ impl Shell {
             if ctx.input_mut(|input| input.consume_shortcut(&shortcut)) && self.rail != *rail {
                 // The same navigation a rail press makes: without closing the open page the
                 // shortcut changed a field the frame never read, and nothing happened.
+                if *rail != Rail::Discover {
+                    self.install_target = None;
+                    self.install_loader = None;
+                    self.install_version = None;
+                }
                 self.go_to(*rail);
                 self.open_project = None;
                 self.open_instance = None;
@@ -1626,6 +1641,11 @@ impl Shell {
                 hovered = Some(destination);
             }
             if response.clicked() {
+                if destination != Rail::Discover {
+                    self.install_target = None;
+                    self.install_loader = None;
+                    self.install_version = None;
+                }
                 self.go_to(destination);
                 // The rail is the way out of a project or an instance page, so a rail press
                 // closes both.
@@ -2400,7 +2420,25 @@ impl Shell {
                 self.asked = question;
                 self.page = 0;
             }
-            let facets: Vec<String> = self.facet.iter().map(|name| name.clone()).collect();
+            // A category press is one group; an instance's browse adds its loader and version as two
+            // more, which Modrinth reads as "and".
+            let mut facets: Vec<String> = self.facet.iter().map(|name| name.clone()).collect();
+            if self.install_target.is_some() {
+                if let Some(loader) = &self.install_loader {
+                    let key = match loader.to_ascii_lowercase().as_str() {
+                        "neo" => "neoforge".to_owned(),
+                        other => other.to_owned(),
+                    };
+                    if key != "vanilla" {
+                        facets.push(format!("categories:{key}"));
+                    }
+                }
+                if let Some(version) = &self.install_version {
+                    if !version.is_empty() {
+                        facets.push(format!("versions:{version}"));
+                    }
+                }
+            }
             self.results.request(
                 &query,
                 self.project_type,
