@@ -46,3 +46,20 @@ screenshot page's grid, sorting and search; the skins page's saved/default cards
 page's five tabs including file rename.
 
 323+ commits, 249 tests green, a heartbeat measuring the screen every four minutes in the lab container.
+
+## Screens measured this pass (2026-11-02, late)
+
+| screen | differing pixels | state |
+|---|---:|---|
+| Home, empty | 31 171 | same state both sides |
+| Discover | 132 014 | same state both sides |
+| Skins | 185 090 | **not the same state**: the reference's capture has no saved skins and no search row |
+| Settings | 151 997 | **not the same state**: its rail shows fourteen tabs where this build's scrolls, and its body has "Advanced rendering" and "System window frame" where this build's has the theme cards alone |
+| Screenshots, Instance, Project | not measured | no fresh same-state capture on file |
+
+The Settings comparison found one real number worth keeping: the reference's plate is ~900 points wide and this
+build's is 928 (`DIALOG_WIDTH`), both centred, both 673 tall -- so the frame is right and the difference is in the
+rail's height and the body's blocks, not the plate.
+
+What the last pass changed and kept: the result card's icon is inset seven points inside its tile, where two filled
+it edge to edge (Discover 134 450 -> 132 014).
