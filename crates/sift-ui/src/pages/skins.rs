@@ -493,6 +493,11 @@ pub struct State {
     /// Full-body views of the saved files, composed once and kept: the reference shows a character,
     /// not a face, and composing it every frame would decode a PNG on the UI thread each time.
     body_textures: std::collections::HashMap<PathBuf, egui::TextureHandle>,
+    /// The decoded atlas of each saved file, kept for the 3D preview: the renderer samples texels, which a
+    /// GPU texture cannot give it back.
+    atlases: std::collections::HashMap<PathBuf, Vec<u8>>,
+    /// How far the reader has dragged the preview round, in radians.
+    pub yaw: f32,
     /// The skins found in the launcher's `skins/` folder, in the order the reader sees them.
     pub files: Vec<SavedSkin>,
     /// Whether the folder has been read at least once. An empty list is re-read on later
@@ -530,6 +535,8 @@ impl Default for State {
             selected: SKINS[0].name,
             selected_file: None,
             body_textures: std::collections::HashMap::new(),
+            atlases: std::collections::HashMap::new(),
+            yaw: 0.0,
             files: Vec::new(),
             scanned: false,
             textures: Vec::new(),
@@ -1632,6 +1639,15 @@ fn draw_preview(
     painter.rect_filled(bar, PREVIEW_RADIUS, theme.SUPER_RAISED_BG);
 
     let plate = Rect::from_min_max(rect.min, egui::pos2(rect.right(), bar.top()));
+    // Dragging the plate turns the model, which is the reference's own gesture ("Drag to rotate").
+    let drag = ui.interact(plate, egui::Id::new("skin-preview-drag"), Sense::drag());
+    if drag.dragged() {
+        state.yaw = crate::skins3d::yaw_after(state.yaw, drag.drag_delta().x);
+        ui.ctx().request_repaint();
+    }
+    if drag.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);
+    }
     let chosen_file = state
         .selected_file
         .as_ref()
@@ -1651,7 +1667,22 @@ fn draw_preview(
             plate.center() - egui::vec2(0.0, 40.0),
             egui::vec2(side, side * VIEW_H as f32 / VIEW_W as f32),
         );
-        if let Some(texture) = &file_texture {
+        // A 3D model when the file can be read, so the preview turns with the pointer the way the
+        // reference's does; the composed texture is the fallback for a file that will not decode.
+        let atlas = atlas_of(&mut state.atlases, &skin.path);
+        if let Some(atlas) = atlas {
+            // The character is 32 texels tall and the plate has room for about three quarters of it.
+            // Sized from the column, which is what the reader sees: the character fills about half of it.
+            let scale = rect.height() / 70.0;
+            let centre = egui::pos2(plate.center().x, plate.center().y - 24.0);
+            for texel in crate::skins3d::render(atlas, centre, scale, state.yaw) {
+                painter.add(egui::Shape::convex_polygon(
+                    texel.points.to_vec(),
+                    texel.color,
+                    egui::Stroke::NONE,
+                ));
+            }
+        } else if let Some(texture) = &file_texture {
             painter.image(
                 texture.id(),
                 face,
@@ -1697,7 +1728,24 @@ fn draw_preview(
             plate.center() - egui::vec2(0.0, 32.0),
             egui::vec2(width, width * VIEW_H as f32 / VIEW_W as f32),
         );
-        if let Some(texture) = skin_texture(ui.ctx(), state, chosen.name) {
+        // The catalogue's own skins are drawn by the same renderer, so the preview turns whatever is
+        // selected -- the reference's preview is a model, not a picture.
+        // ART is parallel to SKINS, so the sample's own atlas is found by position.
+        let sample_atlas = SKINS
+            .iter()
+            .position(|skin| skin.name == chosen.name)
+            .and_then(|index| ART.get(index))
+            .map(|art| art.atlas());
+        if let Some(atlas) = sample_atlas {
+            let scale = rect.height() / 70.0;
+            for texel in crate::skins3d::render(&atlas, glyph.center(), scale, state.yaw) {
+                painter.add(egui::Shape::convex_polygon(
+                    texel.points.to_vec(),
+                    texel.color,
+                    egui::Stroke::NONE,
+                ));
+            }
+        } else if let Some(texture) = skin_texture(ui.ctx(), state, chosen.name) {
             painter.image(
                 texture.id(),
                 glyph,
@@ -1799,6 +1847,28 @@ fn body_texture(
     );
     cache.insert(path.to_path_buf(), texture.clone());
     Some(texture)
+}
+
+/// A saved skin's 64x64 RGBA atlas, decoded once and kept.
+fn atlas_of<'a>(
+    cache: &'a mut std::collections::HashMap<PathBuf, Vec<u8>>,
+    path: &std::path::Path,
+) -> Option<&'a [u8]> {
+    if !cache.contains_key(path) {
+        let bytes = std::fs::read(path).ok()?;
+        let image = image::load_from_memory(&bytes).ok()?.to_rgba8();
+        let (width, height) = image.dimensions();
+        let mut atlas = vec![0_u8; ATLAS * ATLAS * 4];
+        for y in 0..height.min(ATLAS as u32) {
+            for x in 0..width.min(ATLAS as u32) {
+                let pixel = image.get_pixel(x, y).0;
+                let index = ((y as usize * ATLAS + x as usize) * 4) as usize;
+                atlas[index..index + 4].copy_from_slice(&pixel);
+            }
+        }
+        cache.insert(path.to_path_buf(), atlas);
+    }
+    cache.get(path).map(Vec::as_slice)
 }
 
 fn card_face_rect(rect: Rect, has_author: bool) -> Rect {

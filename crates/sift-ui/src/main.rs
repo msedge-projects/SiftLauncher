@@ -39,6 +39,7 @@ mod search;
 mod shell;
 /// The skins on this machine, and the folder they live in.
 mod skins;
+mod skins3d;
 /// The reference's palette, geometry, type and motion as egui values.
 mod theme;
 mod widgets;
