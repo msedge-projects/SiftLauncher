@@ -40,6 +40,10 @@ pub struct Hit {
     /// The project's display categories (`client`, `optimization`, ...), which the API sends in
     /// the same array as the loaders and the reference draws ahead of them.
     pub categories: Vec<String>,
+    /// Whether the project runs on a client: `required`, `optional` or `unsupported`.
+    pub client_side: String,
+    /// When the project last changed, as the API spells it.
+    pub updated: String,
 }
 
 /// The search's state.
@@ -226,11 +230,19 @@ fn hit(source: sift_net::modrinth::ModrinthSearchHit) -> Hit {
     Hit {
         id: source.project_ref().to_owned(),
         title: source.title,
-        author: source.author,
+        // The organization when there is one: the reference's card says "by Fabulously Optimized", not "by
+        // robotkoer", and the API sends both.
+        author: if source.organization.is_empty() {
+            source.author
+        } else {
+            source.organization
+        },
         summary: source.description,
         icon: source.icon_url,
         downloads: abbreviate(source.downloads),
         followers: thousands(source.follows),
+        client_side: source.client_side,
+        updated: source.date_modified,
         categories: source
             .categories
             .iter()

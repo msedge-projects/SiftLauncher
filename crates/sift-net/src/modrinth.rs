@@ -332,6 +332,16 @@ pub struct ModrinthSearchHit {
     /// Author username.
     #[serde(default)]
     pub author: String,
+    /// The publishing organization's name, when the project belongs to one. The reference's card shows this in
+    /// place of the username -- "by Fabulously Optimized" where the API's `author` says "robotkoer".
+    #[serde(default, deserialize_with = "null_as_empty")]
+    pub organization: String,
+    /// `required`, `optional` or `unsupported`: the reference draws a "Client" chip for the first two.
+    #[serde(default)]
+    pub client_side: String,
+    /// When the project last changed, which is the "3 days ago" line on a card.
+    #[serde(default)]
+    pub date_modified: String,
     /// Total download count.
     #[serde(default)]
     pub downloads: u64,

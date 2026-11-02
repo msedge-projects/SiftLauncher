@@ -2753,21 +2753,29 @@ impl Shell {
                             summary: hit.summary.clone(),
                             // The categories then the loaders, which is the order the
                             // reference draws a search card's tags in.
-                            tags: hit
-                                .categories
+                            // The reference's card leads with a "Client" chip when the project runs on one, then
+                            // the display categories, then the loaders.
+                            tags: std::iter::once((
+                                "Client".to_owned(),
+                                crate::icons::Glyph::Monitor,
+                            ))
+                            .filter(|_| matches!(hit.client_side.as_str(), "required" | "optional"))
+                            .chain(
+                                hit.categories
                                 .iter()
-                                .map(|category| (category.clone(), category_glyph(category)))
-                                .chain(
-                                    hit.loaders
-                                        .iter()
-                                        .map(|loader| (loader.clone(), Glyph::Box)),
-                                )
-                                .collect(),
+                                .map(|category| (category.clone(), category_glyph(category))),
+                            )
+                            .chain(
+                                hit.loaders
+                                    .iter()
+                                    .map(|loader| (loader.clone(), Glyph::Box)),
+                            )
+                            .collect(),
                             downloads: hit.downloads.clone(),
                             followers: hit.followers.clone(),
-                            // The search API has no "updated" field, and the row is omitted
-                            // rather than drawn empty.
-                            updated: String::new(),
+                            // The reference's third line is how long ago the project changed, from the hit's
+                            // own `date_modified`.
+                            updated: relative_age(&hit.updated),
                             icon: hit.icon.clone(),
                         })
                         .collect(),
@@ -3266,6 +3274,63 @@ fn load_categories(project_type: &str) -> Vec<String> {
         .filter(|tag| tag.project_type == project_type)
         .map(|tag| tag.name)
         .collect()
+}
+
+/// How long ago a project changed, in the reference's own words: "Yesterday", "3 days ago", "2 months ago".
+///
+/// The hit carries an RFC 3339 timestamp; the card shows the distance from now. A stamp that will not parse is
+/// drawn as nothing rather than as "just now", which would be a claim the API did not make.
+fn relative_age(stamp: &str) -> String {
+    let Ok(when) = time_from_rfc3339(stamp) else {
+        return String::new();
+    };
+    let seconds = now_unix().saturating_sub(when);
+    match seconds / 86_400 {
+        0 => "Today".to_owned(),
+        1 => "Yesterday".to_owned(),
+        days if days < 30 => format!("{days} days ago"),
+        days if days < 60 => "1 month ago".to_owned(),
+        days if days < 365 => format!("{} months ago", days / 30),
+        days if days < 730 => "1 year ago".to_owned(),
+        days => format!("{} years ago", days / 365),
+    }
+}
+
+/// Seconds since the unix epoch, from the system clock.
+fn now_unix() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+/// An RFC 3339 timestamp as seconds since the unix epoch. The API sends `2026-10-30T12:00:00.000000Z`.
+fn time_from_rfc3339(stamp: &str) -> Result<u64, ()> {
+    let bytes = stamp.as_bytes();
+    if bytes.len() < 20 {
+        return Err(());
+    }
+    let number = |from: usize, len: usize| -> Result<u64, ()> {
+        std::str::from_utf8(&bytes[from..from + len])
+            .ok()
+            .and_then(|text| text.parse::<u64>().ok())
+            .ok_or(())
+    };
+    let year = number(0, 4)?;
+    let month = number(5, 2)?;
+    let day = number(8, 2)?;
+    let hour = number(11, 2)?;
+    let minute = number(14, 2)?;
+    let second = number(17, 2)?;
+    // Days from the civil date, by Howard Hinnant's algorithm: no crate, no table.
+    let year = if month <= 2 { year - 1 } else { year };
+    let era = year / 400;
+    let yoe = year - era * 400;
+    let mp = if month > 2 { month - 3 } else { month + 9 };
+    let doy = (153 * mp + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    Ok(days * 86_400 + hour * 3_600 + minute * 60 + second)
 }
 
 /// The page numbers a strip shows: the first, the last, the page in hand and one either side of
