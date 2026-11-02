@@ -702,23 +702,28 @@ pub fn draw(
     // for its other link (`ButtonLink type="colored" color="brand"`, `App.vue:2540`), and
     // the ink is legible in both schemes. If a capture shows the reference's plain purple
     // link there (`text-purple`, `App.vue:2558`), this is the one fill to change.
+    // Measured up from the banner rather than down from the card: the row is the card's last line and the
+    // banner is what sits under it, so the row's position is whatever leaves the banner's 20-point gap
+    // intact. Taking it from the card put it under the banner, and it vanished.
     let link = Rect::from_min_size(
-        egui::pos2(column.left(), card + rows.link),
+        egui::pos2(column.left(), plan.banner - SECTION_GAP - LINK_H),
         egui::vec2(column.width(), LINK_H),
     );
     let link_hovered = ui
         .interact(link, egui::Id::new("panel-upgrade"), Sense::hover())
         .hovered();
-    let link_fill = if link_hovered {
-        theme.hovered(theme.BRAND)
+    // No fill: the reference's row is a violet text link on the card's own ground, not a button. Sampled from
+    // its render -- the glyphs are #c78aff (199,138,255), the ink spans x 1195..1388 on a column of 1157..1424,
+    // so it is centred, 17 points tall and has no plate behind it. This build drew a brand-filled button there.
+    let link_ink = if link_hovered {
+        egui::Color32::from_rgb(222, 190, 255)
     } else {
-        theme.BRAND
+        egui::Color32::from_rgb(199, 138, 255)
     };
-    painter.rect_filled(link, ROW_RADIUS, link_fill);
     let label = painter.layout_no_wrap(
         UPGRADE.to_owned(),
         fonts::semibold(LINK_SIZE),
-        theme.ACCENT_CONTRAST,
+        link_ink,
     );
     // Sparkle and label together, centred: the sheet centres this row's contents, and a
     // pair laid out from the left would leave the icon hanging outside the text's measure.
@@ -726,12 +731,13 @@ pub fn draw(
     let x = link.center().x - content / 2.0;
     icons::draw(
         painter,
-        Glyph::Sparkles,
+        // The reference's mark on this row is an up-arrow rising out of a tray, not a sparkle.
+        Glyph::Upload,
         Rect::from_center_size(
             egui::pos2(x + SPARKLE / 2.0, link.center().y),
             Vec2::splat(SPARKLE),
         ),
-        theme.ACCENT_CONTRAST,
+        link_ink,
     );
     painter.galley(
         egui::pos2(
@@ -739,7 +745,7 @@ pub fn draw(
             link.center().y - label.size().y / 2.0,
         ),
         label,
-        theme.ACCENT_CONTRAST,
+        link_ink,
     );
 
     }
@@ -747,10 +753,9 @@ pub fn draw(
     // ---- The hosting banner --------------------------------------------------
     // The banner is flush with the sidebar's foot in the reference -- its card ends where the window does --
     // so its top is whichever is higher: the plan's slot, or the foot less its own height.
-    let banner_top = plan.banner.min(rect.bottom() - BANNER_H);
     let banner = Rect::from_min_size(
-        egui::pos2(column.left(), banner_top),
-        egui::vec2(column.width(), BANNER_H),
+        egui::pos2(column.left(), plan.banner),
+        egui::vec2(column.width(), plan.banner_height),
     );
     // The reference's banner is not a grey card: its ground runs from near-black green at the top to a
     // deeper green at the foot (sampled from its own render: #010101 at y 660, #001208 at 760, #002712 at
@@ -951,6 +956,10 @@ struct Plan {
     news_rows: NewsRows,
     /// The top of the hosting banner's plate.
     banner: f32,
+    /// The banner's height in this column: its own, or less when the panel is too short for it. The banner
+    /// yields rather than covering the card above it -- when it clamped its top instead, it drew over the
+    /// news card's upgrade row and that row vanished.
+    banner_height: f32,
 }
 
 /// The panel's plan, given the height the news copy took.
@@ -966,7 +975,8 @@ fn plan_with_copy(panel: Rect, copy_height: f32) -> Plan {
     // The banner is flush with the sidebar's foot -- the reference's card ends where its window does -- so a
     // plan that would push it past the edge pulls it up instead. The whole panel fits because of this line:
     // the test that said "the hosting banner ends inside the window" is what asked for it.
-    let banner = (card + rows.height + SECTION_GAP).min(panel.bottom() - BANNER_H);
+    let banner = card + rows.height + SECTION_GAP;
+    let banner_height = BANNER_H.min(panel.bottom() - banner).max(120.0);
     Plan {
         column,
         getting_started,
@@ -975,6 +985,7 @@ fn plan_with_copy(panel: Rect, copy_height: f32) -> Plan {
         card,
         news_rows: rows,
         banner,
+        banner_height,
     }
 }
 
@@ -1071,10 +1082,10 @@ mod tests {
         // The banner keeps its 20-point gap unless the column runs out of room first, in which case it is
         // pulled up to sit flush with the foot; both are the reference's rule, and the second is what the
         // 260-point banner forces in a 900-point window.
-        let gap = plan.banner - (plan.card + plan.news_rows.height);
-        assert!(
-            gap == SECTION_GAP || plan.banner == panel_rect().bottom() - BANNER_H,
-            "the banner sits {gap} below the card"
+        assert_eq!(
+            plan.banner - (plan.card + plan.news_rows.height),
+            SECTION_GAP,
+            "the banner sits 20 below the card, and yields height rather than the gap"
         );
         assert!(plan.card > plan.news, "the card sits below its own heading");
     }
@@ -1114,7 +1125,7 @@ mod tests {
         let panel = panel_rect();
         assert_eq!(panel.bottom(), g::WINDOW.1, "the panel ends at the window's edge");
         let plan = plan_with_copy(panel, COPY_H);
-        let bottom = plan.banner + BANNER_H;
+        let bottom = plan.banner + plan.banner_height;
         assert!(bottom <= g::WINDOW.1, "the hosting banner ends inside the window");
         assert!(
             bottom > g::WINDOW.1 / 2.0,
