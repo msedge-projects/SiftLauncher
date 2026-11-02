@@ -767,6 +767,73 @@ fn files_tab(
         y += ROW_H;
     }
     for (name, is_dir, size) in entries.iter().take(24) {
+        // Rename: a pencil on a file row opens an inline field over it. Enter commits through
+        // `rename_entry` (four tests), Escape gives up, and the field is a real `TextEdit` in a
+        // foreground area -- the two things that had to be learned the hard way: a hand-rolled key loop
+        // loses its characters to whatever widget holds focus, and an area's child rect is relative to
+        // the area's own origin.
+        if !*is_dir {
+            let pencil = Rect::from_center_size(
+                egui::pos2(inner.right() - 44.0, y + ROW_H / 2.0),
+                egui::vec2(18.0, 18.0),
+            );
+            painter.text(
+                pencil.center(),
+                Align2::CENTER_CENTER,
+                "…",
+                fonts::body(12.0),
+                theme.SECONDARY,
+            );
+            if ui
+                .interact(pencil, egui::Id::new(("file-rename", name.as_str())), Sense::click())
+                .clicked()
+            {
+                *renaming = Some((name.clone(), String::new()));
+                ui.ctx().memory_mut(|memory| memory.stop_text_input());
+                ui.ctx()
+                    .memory_mut(|memory| memory.request_focus(egui::Id::new("file-rename-text")));
+                ui.ctx().request_repaint();
+            }
+            if renaming.as_ref().is_some_and(|(target, _)| target == name) {
+                let field = Rect::from_min_size(
+                    egui::pos2(inner.left() + 24.0, y),
+                    egui::vec2(inner.width() - 80.0, ROW_H),
+                );
+                ui.painter().rect_filled(field, 4.0, theme.RAISED_BG);
+                let mut text = renaming.as_ref().map(|(_, text)| text.clone()).unwrap_or_default();
+                let mut commit = false;
+                let mut give_up = false;
+                egui::Area::new(egui::Id::new("file-rename-area"))
+                    .order(egui::Order::Foreground)
+                    .fixed_pos(field.min)
+                    .show(ui.ctx(), |area| {
+                        let local = Rect::from_min_size(egui::pos2(0.0, 0.0), field.size()).shrink(2.0);
+                        let response = area.put(
+                            local,
+                            egui::TextEdit::singleline(&mut text)
+                                .id(egui::Id::new("file-rename-text"))
+                                .desired_width(field.width() - 8.0)
+                                .font(fonts::body(12.0)),
+                        );
+                        if response.lost_focus() {
+                            commit = true;
+                        }
+                    });
+                if let Some((_, stored)) = renaming.as_mut() {
+                    stored.clone_from(&text);
+                }
+                if ui.input(|input| input.key_pressed(egui::Key::Escape)) {
+                    give_up = true;
+                }
+                if commit || give_up {
+                    if commit && !text.trim().is_empty() && text.trim() != name {
+                        let _ = rename_entry(dir, name, text.trim());
+                    }
+                    *renaming = None;
+                    ui.ctx().request_repaint();
+                }
+            }
+        }
         icons::draw(
             painter,
             if *is_dir { Glyph::Folder } else { Glyph::File },

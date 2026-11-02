@@ -408,11 +408,120 @@ impl MenuItem {
 }
 
 /// The row menu's state: which row's popover is open, if any.
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Menu {
     /// The id of the instance whose kebab popover is open. One at a time: two open menus on
     /// one page would each swallow the other's presses.
     pub open_for: Option<String>,
+    /// The row the keyboard is on, if any. Set by the arrow keys, `Home`, `End` and the
+    /// type-ahead, and the row `Enter` activates -- the reference's menu is reachable without a
+    /// pointer (`button-menu.ts:102-131`).
+    pub highlight: Option<usize>,
+    /// The type-ahead's buffer: the letters typed since the last 500 ms reset
+    /// (`button-menu.ts:29`).
+    pub typed: String,
+    /// When that buffer was last added to, on the frame's own clock.
+    pub typed_at: f64,
+}
+
+impl Menu {
+    /// Open the menu on `id`, with the keyboard where a menu opens: on nothing, so the first
+    /// arrow key starts at the top rather than resuming whatever the last menu highlighted.
+    pub fn open(&mut self, id: &str) {
+        self.open_for = Some(id.to_owned());
+        self.highlight = None;
+        self.typed.clear();
+        self.typed_at = 0.0;
+    }
+
+    /// Close the menu and forget its keyboard state.
+    pub fn close(&mut self) {
+        self.open_for = None;
+        self.highlight = None;
+        self.typed.clear();
+        self.typed_at = 0.0;
+    }
+}
+
+/// One key the open menu understands, mapped off the frame's events by [`menu_press`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MenuKey {
+    /// `ArrowDown`: the next row, wrapping.
+    Down,
+    /// `ArrowUp`: the previous row, wrapping.
+    Up,
+    /// `Home`: the first row.
+    Home,
+    /// `End`: the last row.
+    End,
+    /// `Escape`: close.
+    Escape,
+    /// `Tab`: close, because a menu is not a tab stop (`button-menu.ts:29`).
+    Tab,
+    /// `Enter`: activate the highlighted row.
+    Enter,
+    /// A printable character: the type-ahead.
+    Char(char),
+}
+
+/// The menu's keyboard, as a rule rather than as a branch inside the painter.
+///
+/// `button-menu.ts:102-131` moves focus with ArrowUp/ArrowDown (both wrapping), `Home` and
+/// `End`; :29 closes on `Tab`; :149-177 is the type-ahead, a single-character buffer with a
+/// 500 ms reset that jumps to the first row whose label starts with it. Returns the row to
+/// activate, which only `Enter` can: everything else moves focus or closes the menu.
+pub fn menu_press(key: MenuKey, menu: &mut Menu, now: f64) -> Option<MenuItem> {
+    /// The reference's type-ahead reset (`button-menu.ts:29`): 500 ms, in the frame clock's
+    /// seconds.
+    const TYPEAHEAD_RESET: f64 = 0.5;
+    let last = MenuItem::ALL.len() - 1;
+    match key {
+        MenuKey::Down => {
+            menu.highlight = Some(match menu.highlight {
+                Some(row) if row < last => row + 1,
+                // A closed menu opens on its first row; the last row wraps to the first.
+                _ => 0,
+            });
+            menu.typed.clear();
+        }
+        MenuKey::Up => {
+            menu.highlight = Some(match menu.highlight {
+                Some(0) | None => last,
+                Some(row) => row - 1,
+            });
+            menu.typed.clear();
+        }
+        MenuKey::Home => {
+            menu.highlight = Some(0);
+            menu.typed.clear();
+        }
+        MenuKey::End => {
+            menu.highlight = Some(last);
+            menu.typed.clear();
+        }
+        MenuKey::Escape | MenuKey::Tab => menu.close(),
+        MenuKey::Enter => {
+            if let Some(row) = menu.highlight {
+                return MenuItem::ALL.get(row).copied();
+            }
+        }
+        MenuKey::Char(typed) => {
+            // The buffer is what was typed inside the last half second; a letter typed after
+            // that starts a new search rather than extending the old one.
+            if now - menu.typed_at > TYPEAHEAD_RESET {
+                menu.typed.clear();
+            }
+            menu.typed_at = now;
+            menu.typed.extend(typed.to_lowercase());
+            if let Some(row) = MenuItem::ALL
+                .iter()
+                .position(|item| item.label().to_lowercase().starts_with(&menu.typed))
+            {
+                menu.highlight = Some(row);
+            }
+        }
+    }
+    None
 }
 
 /// What the page remembers between frames.
@@ -458,7 +567,7 @@ impl State {
         self.scanned = ids;
         // A row that appeared or vanished cannot keep a popover open: the menu names an
         // instance by id, and an id that is gone would leave a panel anchored to nothing.
-        self.menu.open_for = None;
+        self.menu.close();
         self.worlds = read_worlds(instances);
     }
 }
@@ -967,7 +1076,7 @@ fn list(
             .interact(rect, egui::Id::new("home-menu-dismiss"), Sense::click())
             .clicked()
     {
-        menu.open_for = None;
+        menu.close();
     }
 
     let width = rect.width();
@@ -1010,7 +1119,7 @@ fn list(
         // one verb there is what let a press on Save reopen the dialog it meant to save.
         let card_response = ui.interact(card, egui::Id::new(("card", &instance.id)), Sense::click());
         if card_response.clicked() && matches!(action, Action::None) {
-            menu.open_for = None;
+            menu.close();
             action = Action::Open(instance.id.clone());
         }
 
@@ -1032,7 +1141,7 @@ fn list(
         {
             // A launch press closes whatever menu was open: leaving a panel over the list
             // while the game starts would be the last thing between the reader and the row.
-            menu.open_for = None;
+            menu.close();
             action = Action::Play(instance.id.clone());
         }
 
@@ -1063,11 +1172,11 @@ fn list(
         if kebab_response.clicked() {
             // A second press on the same kebab closes its own popover, which is what the
             // reference's trigger does (`FloatingPanel.vue:184-190`).
-            menu.open_for = if is_open {
-                None
+            if is_open {
+                menu.close();
             } else {
-                Some(instance.id.clone())
-            };
+                menu.open(&instance.id);
+            }
         }
         if menu.open_for.as_deref() == Some(instance.id.as_str()) {
             anchored = Some((instance.id.clone(), kebab));
@@ -1128,7 +1237,7 @@ fn list(
                 {
                     // A world row's press reports back to the shell, which launches that one
                     // world. Any press on the page closes the popover, this one included.
-                    menu.open_for = None;
+                    menu.close();
                     action = Action::OpenWorld {
                         instance: id.clone(),
                         // The folder, not the label: quick-play names a world by the folder
@@ -1147,8 +1256,8 @@ fn list(
     // instead of the card's pill underneath it.
     let mut pressed: Option<(String, MenuItem)> = None;
     if let Some((id, kebab)) = anchored {
-        if let Some(item) = menu_popover(ui, theme, &id, kebab, rect) {
-            menu.open_for = None;
+        if let Some(item) = menu_popover(ui, theme, &id, kebab, rect, menu) {
+            menu.close();
             pressed = Some((id, item));
         }
     }
@@ -1188,9 +1297,55 @@ fn list(
 /// `rounded-[14px] bg-surface-3 ring-1 ring-surface-5` (`button-menu.ts:21`) around a
 /// `p-2` column of `min-h-10` rows (`ButtonMenuPanel.vue:70`, `button-menu.ts:15`). The
 /// delete row is the reference's red one (`tone: 'red'`, `use-library.ts:1371`).
-fn menu_popover(ui: &mut Ui, theme: &Theme, id: &str, anchor: Rect, bounds: Rect) -> Option<MenuItem> {
+fn menu_popover(
+    ui: &mut Ui,
+    theme: &Theme,
+    id: &str,
+    anchor: Rect,
+    bounds: Rect,
+    menu: &mut Menu,
+) -> Option<MenuItem> {
+    // The keyboard, read off the frame's own events and in their order: arrows, Home, End, Tab,
+    // Escape, Enter and the type-ahead, which are the reference's (`button-menu.ts:102-131, 29,
+    // 149-177`). A menu that can only be driven by a pointer leaves its rows unreachable from
+    // the keyboard the kebab that opened it was pressed with.
+    let now = ui.input(|input| input.time);
+    let mut keys: Vec<MenuKey> = Vec::new();
+    for event in ui.input(|input| input.events.clone()) {
+        match event {
+            egui::Event::Key { key, pressed: true, repeat: false, .. } => match key {
+                egui::Key::ArrowDown => keys.push(MenuKey::Down),
+                egui::Key::ArrowUp => keys.push(MenuKey::Up),
+                egui::Key::Home => keys.push(MenuKey::Home),
+                egui::Key::End => keys.push(MenuKey::End),
+                egui::Key::Escape => keys.push(MenuKey::Escape),
+                egui::Key::Tab => keys.push(MenuKey::Tab),
+                egui::Key::Enter => keys.push(MenuKey::Enter),
+                _ => {}
+            },
+            // A printable character is the type-ahead, one character at a time.
+            egui::Event::Text(text) => {
+                if let Some(typed) = text.chars().next() {
+                    keys.push(MenuKey::Char(typed));
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut chosen = None;
+    for key in keys {
+        if let Some(item) = menu_press(key, menu, now) {
+            chosen = Some(item);
+        }
+        // Escape and Tab close it: the row list must stop drawing this frame, not the next.
+        if menu.open_for.is_none() {
+            return chosen;
+        }
+    }
+
     let painter = ui.painter();
 
+    let painter = ui.painter();
     // The panel's width is its widest row: `w-fit`, with the floor in `MENU_MIN_WIDTH`.
     let mut width = MENU_MIN_WIDTH;
     for item in MenuItem::ALL {
@@ -1252,7 +1407,9 @@ fn menu_popover(ui: &mut Ui, theme: &Theme, id: &str, anchor: Rect, bounds: Rect
             egui::Id::new(("row-menu-item", id, index)),
             Sense::click(),
         );
-        if response.hovered() {
+        // The pointer and the keyboard share one highlight: `hover:bg-surface-4` and
+        // `focus-visible`'s fill are the same token (`button-menu.ts:17-18`).
+        if response.hovered() || menu.highlight == Some(index) {
             painter.rect_filled(row, MENU_ROW_RADIUS, theme.BUTTON_BG);
         }
         // `text-contrast` on every row but the destructive one (`button-menu.ts:15`).
@@ -1287,7 +1444,11 @@ fn menu_popover(ui: &mut Ui, theme: &Theme, id: &str, anchor: Rect, bounds: Rect
             pressed = Some(item);
         }
     }
-    pressed
+    // `Enter` on a highlighted row is the same press a click makes.
+    if pressed.is_some() {
+        menu.close();
+    }
+    pressed.or(chosen)
 }
 
 /// Draw the confirmation the menu's `Delete` opens, and say what its press meant.
@@ -1960,6 +2121,90 @@ mod tests {
             Action::None,
             "a held key is one press, not a stream of instances"
         );
+    }
+
+    /// **The menu is reachable from the keyboard.** The reference moves focus with
+    /// ArrowUp/ArrowDown (wrapping), `Home` and `End`, activates with `Enter`, closes on
+    /// `Escape` and `Tab`, and jumps by type-ahead with a 500 ms reset
+    /// (`button-menu.ts:102-131, 29, 149-177`). Each rule is one call here, so a row that went
+    /// unreachable again would fail this rather than a drive.
+    #[test]
+    fn the_menu_moves_and_activates_from_the_keyboard() {
+        let mut menu = Menu::default();
+        menu.open("Parity Test");
+
+        // Down from a fresh menu starts at the top, and the last row wraps to the first.
+        assert_eq!(menu.highlight, None, "a menu opens with no row focused");
+        menu_press(MenuKey::Down, &mut menu, 0.0);
+        assert_eq!(menu.highlight, Some(0));
+        for _ in 0..MenuItem::ALL.len() {
+            menu_press(MenuKey::Down, &mut menu, 0.0);
+        }
+        assert_eq!(menu.highlight, Some(0), "Down wraps past the last row");
+        menu_press(MenuKey::Up, &mut menu, 0.0);
+        assert_eq!(
+            menu.highlight,
+            Some(MenuItem::ALL.len() - 1),
+            "Up wraps back to the last row"
+        );
+        menu_press(MenuKey::Home, &mut menu, 0.0);
+        assert_eq!(menu.highlight, Some(0));
+        menu_press(MenuKey::End, &mut menu, 0.0);
+        assert_eq!(menu.highlight, Some(MenuItem::ALL.len() - 1));
+
+        // Enter is the only key that reports a row.
+        menu_press(MenuKey::Home, &mut menu, 0.0);
+        menu_press(MenuKey::Down, &mut menu, 0.0);
+        assert_eq!(
+            menu_press(MenuKey::Enter, &mut menu, 0.0),
+            Some(MenuItem::ALL[1]),
+            "Enter activates the focused row"
+        );
+        let mut fresh = Menu::default();
+        fresh.open("Parity Test");
+        assert_eq!(
+            menu_press(MenuKey::Enter, &mut fresh, 0.0),
+            None,
+            "Enter with nothing focused activates nothing"
+        );
+
+        // Escape and Tab close.
+        for key in [MenuKey::Escape, MenuKey::Tab] {
+            let mut open = Menu::default();
+            open.open("Parity Test");
+            menu_press(key, &mut open, 0.0);
+            assert_eq!(open.open_for, None, "{key:?} closes the menu");
+            assert_eq!(open.highlight, None, "{key:?} forgets the keyboard too");
+        }
+    }
+
+    /// The type-ahead is a one-letter buffer with a 500 ms reset: "d" lands on the first label
+    /// that starts with it, "de" extends it inside the window, and a letter after the window
+    /// starts a new search instead of joining the old one.
+    #[test]
+    fn the_type_ahead_jumps_to_a_label_and_resets_after_half_a_second() {
+        let mut menu = Menu::default();
+        menu.open("Parity Test");
+        menu_press(MenuKey::Char('d'), &mut menu, 10.0);
+        assert_eq!(
+            menu.highlight,
+            Some(2),
+            "'d' lands on Duplicate instance, the first label that starts with it"
+        );
+        menu_press(MenuKey::Char('e'), &mut menu, 10.2);
+        assert_eq!(
+            menu.highlight,
+            Some(4),
+            "'de' extends the buffer inside the window, and Delete is what starts with it"
+        );
+        assert_eq!(menu.typed, "de");
+        menu_press(MenuKey::Char('e'), &mut menu, 11.0);
+        assert_eq!(
+            menu.highlight,
+            Some(1),
+            "a letter 800 ms later starts a new buffer, and 'e' is Edit"
+        );
+        assert_eq!(menu.typed, "e");
     }
 
     /// Whether `action` names the instance it was pressed on. Written as a match over every

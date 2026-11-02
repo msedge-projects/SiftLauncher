@@ -1238,13 +1238,24 @@ pub fn draw(
     // A press on the brand plate opens the dialog. Read from the pointer rather than registered
     // with egui, for the reason the panel's rows are: a full-column interaction registered later
     // in the frame would take the press away.
+    // The pointer's latest position, not its interact position: nothing interactive sits under the
+    // button at this point in the frame, so the interact position is None and the press never counted.
     let asked_to_add = ui.input(|input| {
         input
             .pointer
-            .interact_pos()
+            .latest_pos()
             .is_some_and(|pointer| new_server.contains(pointer))
             && input.pointer.primary_clicked()
     });
+    if std::env::var_os("SIFT_NEWSERVER_PROBE").is_some()
+        && ui.input(|input| input.pointer.any_click())
+    {
+        eprintln!(
+            "newserver click latest={:?} interact={:?} rect={new_server:?} asked={asked_to_add}",
+            ui.input(|input| input.pointer.latest_pos()),
+            ui.input(|input| input.pointer.interact_pos())
+        );
+    }
     if asked_to_add && state.dialog.is_none() {
         state.dialog = Some(Draft::default());
     }
