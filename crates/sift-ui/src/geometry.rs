@@ -119,6 +119,9 @@ pub const TAB_STRIP: f32 = 36.0;
 /// A result card's height.
 /// Measured from the reference's Discover: its first card's frame runs y 117..262 -- 145 points -- where
 /// this build's ran 112..254.
+/// The card's height. The reference's first card's Install ring starts at 247 with this build's at 246, so the
+/// top is right; its pitch is 154 against this build's 157, and a 142-point card measured *worse* (141 077
+/// against 139 591), so the three points are inside the card's own layout and not in this constant.
 pub const CARD: f32 = 145.0;
 
 /// The gap between two result cards.
