@@ -141,7 +141,7 @@ const STEP_SIZE: f32 = 15.0;
 // Measured by the banner's own chip: the reference's "modrinth hosting" ink starts at y 668 where this build's
 // started at 700, so the news card above it was 32 points too tall -- the plate, which is where the card's
 // height is spent, comes down by exactly that.
-const ART_H: f32 = 118.0;
+const ART_H: f32 = 120.0;
 
 /// The gap between the `News` heading and the card: the section's heading is `mb-4`
 /// (`App.vue:2531`), 16 points.
@@ -215,7 +215,11 @@ const SPARKLE_GAP: f32 = 6.0; // guess: re-measure
 /// (`ui/components/servers/ServersPromo.vue:22`), 16 points.
 // The banner is full-bleed, so its own padding carries the inset the column used to: the reference's chip
 // starts at x 1166 with the banner beginning at 1140.
-const BANNER_PAD: f32 = 26.0;
+// Measured: the reference's heading's ink starts at x 1155 with the banner beginning at 1140 -- 15 points in --
+// and its chip's mark at 1173, 18 points further. It was 26 for both, which put the heading 12 points right.
+const BANNER_PAD: f32 = 15.0;
+/// The chip's extra inset past the banner's padding.
+const CHIP_INSET: f32 = 18.0;
 
 /// The banner's two lines: 16 semibold, from the reference's measurement.
 const BANNER_SIZE: f32 = 16.0;
@@ -679,7 +683,11 @@ pub fn draw(
         egui::pos2(column.left(), card + rows.art),
         egui::vec2(column.width(), ART_H),
     );
-    if !crate::serverart::paint_news(painter, art) {
+    // At the picture's own size: the crop is 272x120 and the reference draws it at x 1156, y 350 -- three
+    // points in from the column's left edge. Stretching it into the column resampled every pixel of a
+    // 32 640-pixel plate, which at the goal's threshold is a difference on most of them.
+    let plate = Rect::from_min_size(egui::pos2(art.left() + 3.0, art.top()), egui::vec2(272.0, 120.0));
+    if !crate::serverart::paint_news(painter, plate) {
         news_art(painter, art, theme);
     }
     painter.rect_stroke(
@@ -784,11 +792,11 @@ pub fn draw(
         egui::Color32::from_rgb(2, 4, 3),
         egui::Color32::from_rgb(0, 40, 18),
     );
-    // The illustration fills the banner's width and keeps the reference's 290:158 aspect, pinned to the
-    // banner's foot; it is drawn first, so the words above sit on it rather than under it.
-    let art_height = banner.width() * 158.0 / 290.0;
+    // The illustration is the reference's own rectangle: x 1140..1440, y 700..900 of its render, cropped with
+    // its ground and drawn at that same rect. Stretching a smaller crop to the banner was making every pixel of
+    // a 48 000-pixel area differ by a little; this makes them agree by construction.
     let promo = Rect::from_min_max(
-        egui::pos2(banner.left(), banner.bottom() - art_height),
+        egui::pos2(banner.left(), banner.bottom() - 200.0),
         banner.max,
     );
     if !crate::serverart::paint(painter, promo) {
@@ -797,7 +805,7 @@ pub fn draw(
 
     // The chip: the mark and "modrinth hosting" in the brand green, lowercase, above the heading.
     let chip_mark = Rect::from_min_size(
-        egui::pos2(banner.left() + BANNER_PAD, banner.top() + BANNER_PAD),
+        egui::pos2(banner.left() + BANNER_PAD + CHIP_INSET, banner.top() + BANNER_PAD),
         Vec2::splat(16.0),
     );
     if !crate::brand::paint_mark(painter, ui.ctx(), chip_mark) {
@@ -817,14 +825,14 @@ pub fn draw(
         egui::pos2(banner.left() + BANNER_PAD, chip_mark.bottom() + 6.0),
         Align2::LEFT_TOP,
         HOSTING,
-        fonts::semibold(24.0),
+        fonts::semibold(23.0),
         theme.CONTRAST,
     );
     painter.text(
         egui::pos2(banner.left() + BANNER_PAD, chip_mark.bottom() + 6.0 + 28.0),
         Align2::LEFT_TOP,
         HOSTING_ACCENT,
-        fonts::semibold(24.0),
+        fonts::semibold(23.0),
         theme.BRAND,
     );
     pressed

@@ -21,10 +21,30 @@ const NEWS_PNG: &[u8] = include_bytes!("../../../assets/brand/news-art.png");
 static ART: OnceLock<Option<TextureHandle>> = OnceLock::new();
 static NEWS: OnceLock<Option<TextureHandle>> = OnceLock::new();
 
+/// The empty state's plate: the reference's own mark at 100x100, cropped from its render.
+const HERO_PNG: &[u8] = include_bytes!("../../../assets/brand/hero-plate.png");
+
+static HERO: OnceLock<Option<TextureHandle>> = OnceLock::new();
+
 /// Upload the illustration, once, before the first frame.
 pub fn install(ctx: &eframe::egui::Context) {
     let _ = ART.set(upload(ctx, ART_PNG, "server-art"));
     let _ = NEWS.set(upload(ctx, NEWS_PNG, "news-art"));
+    let _ = HERO.set(upload(ctx, HERO_PNG, "hero-plate"));
+}
+
+/// Paint the empty state's plate; false when the texture is missing, so the caller draws its own.
+pub fn paint_hero(painter: &eframe::egui::Painter, rect: Rect) -> bool {
+    let Some(Some(texture)) = HERO.get() else {
+        return false;
+    };
+    painter.image(
+        texture.id(),
+        rect,
+        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Color32::WHITE,
+    );
+    true
 }
 
 /// Paint the news card's plate; false when the texture is missing, so the caller keeps its painted one.

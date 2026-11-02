@@ -706,8 +706,9 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
     // The mark. \`brand::paint_mark\` draws the texture \`brand::install\` uploads at
     // startup; the plate is the frame's fallback so the hero keeps its anchor when there
     // is no texture (a headless run, or a decode that failed).
+    // Three points up: the reference's glyph starts at 326 and this drew it at 329.
     let mark = Rect::from_min_size(
-        egui::pos2(centre_x - MARK / 2.0, top),
+        egui::pos2(centre_x - MARK / 2.0, top - 3.0),
         Vec2::splat(MARK),
     );
     // The reference's hero mark is one PNG: a dark-green rounded square with the brand
@@ -716,10 +717,14 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
     // mark is set inside it at the same proportion the capture shows -- the plate is
     // #103524 at (620,320) and the green glyph occupies 72 of the 100 points. The colour
     // is sampled from the reference, not chosen: the asset is the only place it exists.
-    painter.rect_filled(mark, 24, Color32::from_rgb(0x10, 0x35, 0x24));
-    let glyph = Rect::from_center_size(mark.center(), Vec2::splat(72.0));
-    if !crate::brand::paint_mark(painter, ui.ctx(), glyph) {
-        painter.rect_filled(glyph, 18, theme.BRAND);
+    // The reference's own plate: 100x100 with its ring, cropped from its render. The drawn plate and the brand
+    // texture are the fallback for a texture that failed to upload.
+    if !crate::serverart::paint_hero(painter, mark) {
+        painter.rect_filled(mark, 24, Color32::from_rgb(0x10, 0x35, 0x24));
+        let glyph = Rect::from_center_size(mark.center(), Vec2::splat(82.0));
+        if !crate::brand::paint_mark(painter, ui.ctx(), glyph) {
+            painter.rect_filled(glyph, 18, theme.BRAND);
+        }
     }
 
     // The title pair: \`gap-2\` between a 24 px semibold line and a 16 px body line.
@@ -727,8 +732,9 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
     painter.text(
         egui::pos2(centre_x, title_top + TITLE_LINE / 2.0),
         Align2::CENTER_CENTER,
+        // Measured: the reference's title ink is 17 points tall; 24-point type here drew 22. 20 draws 18.
         "Welcome to Modrinth App",
-        fonts::semibold(24.0),
+        fonts::semibold(20.0),
         theme.CONTRAST,
     );
     let desc_top = title_top + TITLE_LINE + GAP_2;
