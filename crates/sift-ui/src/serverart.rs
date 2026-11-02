@@ -31,12 +31,33 @@ const BRAND_PNG: &[u8] = include_bytes!("../../../assets/brand/titlebar-brand.pn
 
 static BRAND: OnceLock<Option<TextureHandle>> = OnceLock::new();
 
+/// The screenshots page's empty-state illustration: two photo frames, cropped from the reference's render at
+/// 228x98 (488,380 to 716,478 of it).
+const SHOTS_PNG: &[u8] = include_bytes!("../../../assets/brand/shots-empty.png");
+
+static SHOTS_EMPTY: OnceLock<Option<TextureHandle>> = OnceLock::new();
+
 /// Upload the illustration, once, before the first frame.
 pub fn install(ctx: &eframe::egui::Context) {
     let _ = ART.set(upload(ctx, ART_PNG, "server-art"));
     let _ = NEWS.set(upload(ctx, NEWS_PNG, "news-art"));
     let _ = HERO.set(upload(ctx, HERO_PNG, "hero-plate"));
     let _ = BRAND.set(upload(ctx, BRAND_PNG, "titlebar-brand"));
+    let _ = SHOTS_EMPTY.set(upload(ctx, SHOTS_PNG, "shots-empty"));
+}
+
+/// Paint the screenshots empty state's illustration; false when the texture is missing.
+pub fn paint_shots_empty(painter: &eframe::egui::Painter, rect: Rect) -> bool {
+    let Some(Some(texture)) = SHOTS_EMPTY.get() else {
+        return false;
+    };
+    painter.image(
+        texture.id(),
+        rect,
+        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Color32::WHITE,
+    );
+    true
 }
 
 /// Paint the title bar's mark and wordmark; false when the texture is missing.

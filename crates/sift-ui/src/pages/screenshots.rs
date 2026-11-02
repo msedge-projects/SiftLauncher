@@ -2963,17 +2963,23 @@ fn empty_state(
     let top = rect.center().y - total / 2.0;
     let centre_x = rect.center().x;
 
-    // The illustration's box (h-[200px] w-auto, EmptyState.vue:4) with the icon set's stand-in
-    // at its centre: this build carries no NoImagesIllustration asset.
-    icons::draw(
-        painter,
-        glyph,
-        Rect::from_center_size(
-            egui::pos2(centre_x, top + ILLUSTRATION_HEIGHT / 2.0),
-            Vec2::splat(ILLUSTRATION_GLYPH),
-        ),
-        theme.SECONDARY,
+    // The reference's own illustration, at its own 228x98, centred in the box the source gives it
+    // (`h-[200px] w-auto`); the icon set's glyph is the fallback for a texture that failed to upload.
+    let art = Rect::from_center_size(
+        egui::pos2(centre_x, top + ILLUSTRATION_HEIGHT / 2.0),
+        egui::vec2(228.0, 98.0),
     );
+    if !crate::serverart::paint_shots_empty(painter, art) {
+        icons::draw(
+            painter,
+            glyph,
+            Rect::from_center_size(
+                egui::pos2(centre_x, top + ILLUSTRATION_HEIGHT / 2.0),
+                Vec2::splat(ILLUSTRATION_GLYPH),
+            ),
+            theme.SECONDARY,
+        );
+    }
 
     let heading_y = top + ILLUSTRATION_HEIGHT + HEADING_LINE / 2.0;
     painter.text(
