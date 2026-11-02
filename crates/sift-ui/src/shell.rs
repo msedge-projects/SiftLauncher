@@ -913,6 +913,8 @@ pub struct Shell {
     hide_installed: bool,
     /// The worker's answer, until it is taken.
     categories_rx: Option<std::sync::mpsc::Receiver<Vec<String>>>,
+    /// How many times the category list has been asked for: three, then it stays as it is.
+    categories_tries: u32,
     /// The chosen category as a facet group, e.g. `["categories:adventure"]`; `None` is no
     /// filter at all.
     facet: Option<String>,
@@ -993,6 +995,7 @@ impl Default for Shell {
             categories_expanded: false,
             hide_installed: false,
             categories_rx: None,
+            categories_tries: 0,
             project_type: "modpack",
             sort_index: "relevance",
             page_size: 20,
@@ -2540,8 +2543,12 @@ impl Shell {
         }
         // The category list, asked for once for the kind in hand: it is a fixed list per project
         // type, so a second question would be the same answer bought twice.
-        if !self.categories_asked {
+        // Asked up to three times, not once: the first ask happens on the page's first frame, which can be before
+        // the network is ready, and a single empty answer left the panel showing News for ever where the
+        // reference shows its Category list.
+        if !self.categories_asked && self.categories_tries < 3 {
             self.categories_asked = true;
+            self.categories_tries += 1;
             let (sender, receiver) = std::sync::mpsc::channel();
             self.categories_rx = Some(receiver);
             let kind = self.project_type.to_owned();
@@ -2555,6 +2562,10 @@ impl Shell {
             if let Ok(list) = receiver.try_recv() {
                 self.categories = list;
                 self.categories_rx = None;
+                // An empty answer is retried on the next frame; a real one is final.
+                if self.categories.is_empty() {
+                    self.categories_asked = false;
+                }
                 // The panel drew before this answer arrived, and an idle window schedules no
                 // frame of its own -- without this the list waits for a stray press.
                 ui.ctx().request_repaint();

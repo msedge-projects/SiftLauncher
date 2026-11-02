@@ -64,14 +64,17 @@ const RULE: f32 = crate::theme::STROKE_WIDTH;
 /// The Discover panel's own heading, where the other pages say `News`.
 const CATEGORY: &str = "Category";
 /// The link under the list, from `app.browse.see-more` and `app.browse.see-less`.
-const SEE_MORE: &str = "See more";
+const SEE_MORE: &str = "See more categories";
 /// The switch above the list, from `app.browse.hide-installed`.
 const HIDE_INSTALLED: &str = "Hide already installed";
 const SEE_LESS: &str = "See less";
 
 /// One category row's height, and how many the panel lists before a `See more` would go.
-const CATEGORY_ROW: f32 = 26.0;
-const CATEGORY_ROWS: usize = 4;
+// Measured from the reference's Discover panel: its category rows sit at y 229, 275, 322 -- a 46-point pitch with
+// a 16-point glyph and 16-point text, where this drew 26-point rows of 13-point text.
+const CATEGORY_ROW: f32 = 46.0;
+// The reference lists eight before its own scroll takes over; there is no "See more" row in its capture.
+const CATEGORY_ROWS: usize = 8;
 
 /// The API's category ids are lowercase; a reader sees them capitalised.
 fn capitalised(name: &str) -> String {
@@ -284,7 +287,7 @@ pub enum Step {
     CreateInstance,
     /// `Sign in to Minecraft`.
     Minecraft,
-    /// `Sign in to Sift`.
+    /// `Sign in to Modrinth`.
     Modrinth,
 }
 
@@ -629,11 +632,21 @@ pub fn draw(
             } else {
                 theme.BASE
             };
+            // The row is a mark and a name, as the reference's is: a bare list of words is not the same control.
+            icons::draw(
+                &painter,
+                category_glyph(&capitalised(name)),
+                Rect::from_center_size(
+                    egui::pos2(row.left() + 12.0, row.center().y),
+                    Vec2::splat(16.0),
+                ),
+                ink,
+            );
             painter.text(
-                egui::pos2(row.left() + 4.0, row.center().y),
+                egui::pos2(row.left() + 30.0, row.center().y),
                 Align2::LEFT_CENTER,
                 capitalised(name),
-                fonts::body(13.0),
+                fonts::body(STEP_SIZE),
                 ink,
             );
         }
@@ -836,6 +849,25 @@ pub fn draw(
         theme.BRAND,
     );
     pressed
+}
+
+/// The mark a category row carries, by the name the API gives it.
+///
+/// The reference's rows each have their own glyph -- a compass for Adventure, a bar chart for Challenging, swords
+/// for Combat -- and a row of bare words reads as a different list. An unknown name gets a dot rather than
+/// nothing, so a new category still looks like a category.
+fn category_glyph(name: &str) -> crate::icons::Glyph {
+    match name {
+        "Adventure" => crate::icons::Glyph::Compass,
+        "Challenging" => crate::icons::Glyph::ChartColumnBig,
+        "Combat" => crate::icons::Glyph::ShieldAlert,
+        "Kitchen sink" => crate::icons::Glyph::Box,
+        "Lightweight" => crate::icons::Glyph::Gauge,
+        "Magic" => crate::icons::Glyph::Sparkles,
+        "Multiplayer" => crate::icons::Glyph::CircleUser,
+        "Optimization" => crate::icons::Glyph::Gauge,
+        _ => crate::icons::Glyph::Circle,
+    }
 }
 
 /// The panel's content column: the panel less [`PAD`] on each side.
