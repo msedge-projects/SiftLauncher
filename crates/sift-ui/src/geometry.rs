@@ -122,10 +122,14 @@ pub const TAB_STRIP: f32 = 36.0;
 /// The card's height. The reference's first card's Install ring starts at 247 with this build's at 246, so the
 /// top is right; its pitch is 154 against this build's 157, and a 142-point card measured *worse* (141 077
 /// against 139 591), so the three points are inside the card's own layout and not in this constant.
-pub const CARD: f32 = 145.0;
+/// Measured from the card frames themselves (the page ground against the card's fill at x 600): the reference's
+/// run 230..371, 384..525, 538..679 -- 141 tall on a 154 pitch -- where this build's ran 144 tall on 160.
+pub const CARD: f32 = 141.0;
 
 /// The gap between two result cards.
-pub const CARD_GAP: f32 = 12.0;
+/// The gap the layout adds between cards, on top of egui's own item spacing: 141 + 9 + 4 gives the reference's
+/// 154-point pitch between card frames (230, 384, 538, 692 in its capture).
+pub const CARD_GAP: f32 = 10.0;
 
 /// Where the first tab's label starts, inside the tab strip.
 pub const FIRST_TAB_LABEL: f32 = 196.0;
