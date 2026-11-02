@@ -4673,3 +4673,10 @@ The rules are in one function (`menu_press`) so both tests call them without a p
 `the_menu_moves_and_activates_from_the_keyboard` and
 `the_type_ahead_jumps_to_a_label_and_resets_after_half_a_second`. `cargo test --release`:
 236 passed, 0 failed.
+
+**Driven too** (`.scratch/logs/home-keyboard.log`, `drive-menu-keys.png`, `drive-menu-enter.png`,
+`drive-menu-esc.png`): the kebab at screen (1095, 190) opened the panel, two `Down` presses moved
+the highlight to the second row (the fill at screen y 280 read `#34363c` where the first, third and
+fourth rows read `#27292e`), `Return` opened the rename dialog for that instance (the whole screen
+went to the modal's scrim, rms 32.6 against the menu), and `Escape` closed it, leaving the page
+back within 8 RMS of where it started.
