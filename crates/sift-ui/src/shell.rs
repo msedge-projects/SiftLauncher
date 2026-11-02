@@ -2367,7 +2367,15 @@ impl Shell {
         // The field is a widget with state now: focus, a caret that blinks and a clear button.
         // Its return value is frame debt -- true while it is focused, because the caret is
         // the one thing in this window that moves without being asked to.
-        let mut typing = self.search.ui(ui, field, &self.theme);
+        let placeholder = match self.project_type {
+            "mod" => "Search mods...",
+            "resourcepack" => "Search resource packs...",
+            "datapack" => "Search data packs...",
+            "shader" => "Search shaders...",
+            "plugin" => "Search servers...",
+            _ => "Search modpacks...",
+        };
+        let mut typing = self.search.ui_placeholder(ui, field, &self.theme, placeholder);
         // The field's text drives the network search: a changed query starts one, and a
         // reply already in flight is collected here. Both are cheap when nothing changed.
         // A press on the search field closes any open popover, the way a click outside one

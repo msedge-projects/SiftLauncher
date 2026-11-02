@@ -72,6 +72,18 @@ impl Search {
     /// must request a repaint: the caret's blink is a function of time, so nothing else in
     /// the frame will ask for the next one.
     pub fn ui(&mut self, ui: &mut egui::Ui, rect: Rect, theme: &Theme) -> bool {
+        self.ui_placeholder(ui, rect, theme, PLACEHOLDER)
+    }
+
+    /// The same field with a caller's placeholder: the reference names the tab's content
+    /// ("Search modpacks...", "Search mods..."), and one string for every tab was the audit's row 70.
+    pub fn ui_placeholder(
+        &mut self,
+        ui: &mut egui::Ui,
+        rect: Rect,
+        theme: &Theme,
+        placeholder: &str,
+    ) -> bool {
         // `click_and_drag` rather than `click`: a field is a place to put a caret, and a
         // press that turns into a drag across the plate should still take the keyboard
         // rather than be abandoned into the list underneath.
@@ -237,7 +249,7 @@ impl Search {
         ));
 
         let (contents, ink) = if self.text.is_empty() {
-            (PLACEHOLDER, theme.SECONDARY)
+            (placeholder, theme.SECONDARY)
         } else {
             (self.text.as_str(), theme.BASE)
         };
