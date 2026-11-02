@@ -745,8 +745,11 @@ pub fn draw(
     }
 
     // ---- The hosting banner --------------------------------------------------
+    // The banner is flush with the sidebar's foot in the reference -- its card ends where the window does --
+    // so its top is whichever is higher: the plan's slot, or the foot less its own height.
+    let banner_top = plan.banner.min(rect.bottom() - BANNER_H);
     let banner = Rect::from_min_size(
-        egui::pos2(column.left(), plan.banner),
+        egui::pos2(column.left(), banner_top),
         egui::vec2(column.width(), BANNER_H),
     );
     // The reference's banner is not a grey card: its ground runs from near-black green at the top to a
@@ -960,7 +963,10 @@ fn plan_with_copy(panel: Rect, copy_height: f32) -> Plan {
     let news = steps_first + stack_height(STEPS.len()) + SECTION_GAP;
     let card = news + HEADING_LINE + NEWS_HEADING_TO_CARD;
     let rows = news_rows(copy_height);
-    let banner = card + rows.height + SECTION_GAP;
+    // The banner is flush with the sidebar's foot -- the reference's card ends where its window does -- so a
+    // plan that would push it past the edge pulls it up instead. The whole panel fits because of this line:
+    // the test that said "the hosting banner ends inside the window" is what asked for it.
+    let banner = (card + rows.height + SECTION_GAP).min(panel.bottom() - BANNER_H);
     Plan {
         column,
         getting_started,
@@ -1062,7 +1068,14 @@ mod tests {
         let plan = plan_with_copy(panel_rect(), COPY_H);
         let steps_bottom = plan.steps_first + stack_height(STEPS.len());
         assert_eq!(plan.news - steps_bottom, SECTION_GAP);
-        assert_eq!(plan.banner - (plan.card + plan.news_rows.height), SECTION_GAP);
+        // The banner keeps its 20-point gap unless the column runs out of room first, in which case it is
+        // pulled up to sit flush with the foot; both are the reference's rule, and the second is what the
+        // 260-point banner forces in a 900-point window.
+        let gap = plan.banner - (plan.card + plan.news_rows.height);
+        assert!(
+            gap == SECTION_GAP || plan.banner == panel_rect().bottom() - BANNER_H,
+            "the banner sits {gap} below the card"
+        );
         assert!(plan.card > plan.news, "the card sits below its own heading");
     }
 
