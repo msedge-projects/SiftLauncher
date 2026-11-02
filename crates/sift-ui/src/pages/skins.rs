@@ -490,6 +490,9 @@ pub struct State {
     /// A path rather than a name: two folders can hold files with the same stem, and the
     /// selection has to survive the grid being filtered by the query.
     pub selected_file: Option<PathBuf>,
+    /// Full-body views of the saved files, composed once and kept: the reference shows a character,
+    /// not a face, and composing it every frame would decode a PNG on the UI thread each time.
+    body_textures: std::collections::HashMap<PathBuf, egui::TextureHandle>,
     /// The skins found in the launcher's `skins/` folder, in the order the reader sees them.
     pub files: Vec<SavedSkin>,
     /// Whether the folder has been read at least once. An empty list is re-read on later
@@ -526,6 +529,7 @@ impl Default for State {
             query_focused: false,
             selected: SKINS[0].name,
             selected_file: None,
+            body_textures: std::collections::HashMap::new(),
             files: Vec::new(),
             scanned: false,
             textures: Vec::new(),
@@ -801,15 +805,17 @@ pub fn draw(
     // never takes there. egui 0.36 calls the window's content rectangle
     // `Context::content_rect`.
     let grid = grid_layout_in(grid_rect.width(), ui.ctx().content_rect().width());
-    let query = state.query();
+    // Owned: `state.query()` borrows the page's own state, and the texture cache below needs it mutably.
+    let query: Option<String> = state.query().map(str::to_owned);
     // **Saved files win the Saved grid.** The eight `SKINS` rows are sample data so a
     // capture taken on a machine with no skins still shows a grid. The moment the folder has
     // a PNG, the real saved skins take the section and the samples stay where they belong,
     // in the Default skins strip under it. The model tab filters the samples only: a file
     // does not record its arm style (see `visible_saved`).
     let using_files = !state.files.is_empty();
-    let visible_files = visible_saved(&state.files, query);
-    let samples = visible_skins(state.model, query);
+    // Owned, so the texture cache below can be filled while this list is alive.
+    let visible_files: Vec<SavedSkin> = visible_saved(&state.files, query.as_deref());
+    let samples = visible_skins(state.model, query.as_deref());
     let visible_count = if using_files {
         visible_files.len()
     } else {
@@ -819,10 +825,15 @@ pub fn draw(
     // The saved skins' 64x64 atlases, through the icon cache: decoded once and sampled
     // nearest, because a skin is pixel art (see `Images::get_file_nearest`). A file that
     // will not decode is `None` and keeps the glyph its card has always drawn.
-    let saved_textures: Vec<Option<egui::TextureHandle>> = visible_files
-        .iter()
-        .map(|skin| images.get_file_nearest(ui.ctx(), &skin.path))
-        .collect();
+    // Built before the grid's closure, which borrows `state` read-only: composing a body needs a
+    // mutable borrow for its cache.
+    let saved_textures: Vec<Option<egui::TextureHandle>> = {
+        let mut textures = Vec::with_capacity(visible_files.len());
+        for skin in visible_files.iter() {
+            textures.push(body_texture(ui.ctx(), &mut state.body_textures, &skin.path));
+        }
+        textures
+    };
 
     let probing = std::env::var_os("SIFT_SKINS_PROBE").is_some();
     if probing {
@@ -835,7 +846,7 @@ pub fn draw(
     // Where the next section starts: the saved grid, its rows, and the gap below it.
     let mut below_grid = grid_rect.top();
 
-    match empty_state(query, visible_count) {
+    match empty_state(query.as_deref(), visible_count) {
         // The source's own state for "nothing saved": the Saved-skins grid's first tile is
         // the add dropzone (`VirtualSkinSectionList.vue:426-443`), drawn where the first
         // card would be. There is no prose because the reference has none.
@@ -1628,18 +1639,25 @@ fn draw_preview(
         .cloned();
     let file_texture = chosen_file
         .as_ref()
-        .and_then(|skin| images.get_file_nearest(ui.ctx(), &skin.path));
+        .and_then(|skin| body_texture(ui.ctx(), &mut state.body_textures, &skin.path));
 
     // The big face sits above the name, centred in the part of the plate the account bar and
     // the edit button leave. The view branch below keeps the sample skins' full elevation.
     if let Some(skin) = &chosen_file {
-        let side = (plate.width() * 0.58).min(200.0);
+        // The character's own proportions: sixteen texels across, thirty-two down, as the sample
+        // skins and the reference's preview both draw it.
+        let side = (plate.width() * 0.34).min(120.0);
         let face = Rect::from_center_size(
             plate.center() - egui::vec2(0.0, 40.0),
-            Vec2::splat(side),
+            egui::vec2(side, side * VIEW_H as f32 / VIEW_W as f32),
         );
         if let Some(texture) = &file_texture {
-            draw_face(painter, face, texture);
+            painter.image(
+                texture.id(),
+                face,
+                Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                egui::Color32::WHITE,
+            );
         } else {
             icons::draw(
                 painter,
@@ -1750,6 +1768,39 @@ fn draw_preview(
 }
 
 /// The plate a card leaves for its picture: below the top padding, above the name line.
+/// The full-body view of a saved skin, composed from its own atlas and cached.
+///
+/// A skin file is 64x64; `compose_front` cuts the six front faces out of it and lays them out as a
+/// 16x32 character, which is what the reference's preview and its cards show.
+fn body_texture(
+    ctx: &egui::Context,
+    cache: &mut std::collections::HashMap<PathBuf, egui::TextureHandle>,
+    path: &std::path::Path,
+) -> Option<egui::TextureHandle> {
+    if let Some(texture) = cache.get(path) {
+        return Some(texture.clone());
+    }
+    let bytes = std::fs::read(path).ok()?;
+    let image = image::load_from_memory(&bytes).ok()?.to_rgba8();
+    let (width, height) = image.dimensions();
+    let mut atlas = vec![0_u8; ATLAS * ATLAS * 4];
+    for y in 0..height.min(ATLAS as u32) {
+        for x in 0..width.min(ATLAS as u32) {
+            let pixel = image.get_pixel(x, y).0;
+            let index = ((y as usize * ATLAS + x as usize) * 4) as usize;
+            atlas[index..index + 4].copy_from_slice(&pixel);
+        }
+    }
+    let view = compose_front(&atlas);
+    let texture = ctx.load_texture(
+        format!("skin-body-{}", path.display()),
+        view,
+        egui::TextureOptions::NEAREST,
+    );
+    cache.insert(path.to_path_buf(), texture.clone());
+    Some(texture)
+}
+
 fn card_face_rect(rect: Rect, has_author: bool) -> Rect {
     let tag_top = rect.bottom() - CARD_PADDING - TAG_HEIGHT;
     let name_top = if has_author {
@@ -1836,7 +1887,9 @@ fn draw_saved_card(
         Model::Classic,
         selected,
         hovered,
-        texture.map_or(CardFace::None, CardFace::Atlas),
+        // A saved file is composed into the same 16x32 front elevation the sample skins use, so its
+        // card draws the character rather than a face.
+        texture.map_or(CardFace::None, CardFace::View),
     );
 }
 
