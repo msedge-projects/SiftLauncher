@@ -216,7 +216,7 @@ const BANNER_LINE: f32 = 20.0;
 /// The reference draws the big Modrinth mark bleeding off the plate's corner
 /// (`ui/components/servers/ServersPromo.vue:24-29`); this launcher paints nothing into the
 /// space yet, and the reservation is what keeps the two lines where the capture puts them.
-const BANNER_ART: f32 = 64.0; // guess: re-measure
+const BANNER_ART: f32 = 64.0; // the news card's art plate; the hosting banner sizes its own.
 
 /// The banner's call to action: `ButtonLink` with `View plans` and an arrow
 /// (`ui/components/servers/ServersPromo.vue:41`).
@@ -225,7 +225,10 @@ const BANNER_CTA_HEIGHT: f32 = 32.0;
 const BANNER_CTA_PAD: f32 = 14.0;
 
 /// The banner's height: its padding, its two lines, and the art's room.
-const BANNER_H: f32 = BANNER_PAD * 2.0 + BANNER_LINE * 2.0 + BANNER_ART;
+/// The hosting banner's height. Measured from the reference's render: its card runs from y 640 to the
+/// sidebar's foot at 900 -- 260 points -- with the chip at the top, two lines of heading under it, and the
+/// illustration filling the rest.
+const BANNER_H: f32 = 260.0;
 
 // ---------------------------------------------------------------------------
 // Radii
@@ -329,7 +332,7 @@ const UPGRADE: &str = "Upgrade to Modrinth+";
 const HOSTING: &str = "Get your next server";
 
 /// The hosting banner's second line, which the reference highlights in the accent.
-const HOSTING_ACCENT: &str = "on Sift.";
+const HOSTING_ACCENT: &str = "on Modrinth.";
 
 /// Draw the panel into `rect`: its ground and left rule, `Getting started`, the `News`
 /// card, then the hosting banner.
@@ -746,62 +749,56 @@ pub fn draw(
         egui::pos2(column.left(), plan.banner),
         egui::vec2(column.width(), BANNER_H),
     );
-    painter.rect_filled(banner, CARD_RADIUS, theme.RAISED_BG);
-    painter.text(
-        egui::pos2(banner.left() + BANNER_PAD, banner.top() + BANNER_PAD),
-        Align2::LEFT_TOP,
-        HOSTING,
-        fonts::semibold(BANNER_SIZE),
-        theme.CONTRAST,
+    // The reference's banner is not a grey card: its ground runs from near-black green at the top to a
+    // deeper green at the foot (sampled from its own render: #010101 at y 660, #001208 at 760, #002712 at
+    // 895), and the illustration continues that ground rather than sitting on a plate.
+    crate::shell::vertical_gradient(
+        painter,
+        banner,
+        egui::Color32::from_rgb(2, 4, 3),
+        egui::Color32::from_rgb(0, 40, 18),
     );
-    // The accent is `--color-brand`, which is how the promo highlights its second line
-    // (`text-brand` on "your friends?", `ui/components/servers/ServersPromo.vue:33`).
-    // `ACCENT_CONTRAST` is the foreground of that colour -- black in the dark scheme -- so
-    // it is the wrong token for text on the panel's own ground.
+    // The illustration fills the banner's width and keeps the reference's 290:158 aspect, pinned to the
+    // banner's foot; it is drawn first, so the words above sit on it rather than under it.
+    let art_height = banner.width() * 158.0 / 290.0;
+    let promo = Rect::from_min_max(
+        egui::pos2(banner.left(), banner.bottom() - art_height),
+        banner.max,
+    );
+    if !crate::serverart::paint(painter, promo) {
+        hosting_art(painter, promo, theme);
+    }
+
+    // The chip: the mark and "modrinth hosting" in the brand green, lowercase, above the heading.
+    let chip_mark = Rect::from_min_size(
+        egui::pos2(banner.left() + BANNER_PAD, banner.top() + BANNER_PAD),
+        Vec2::splat(16.0),
+    );
+    if !crate::brand::paint_mark(painter, ui.ctx(), chip_mark) {
+        painter.circle_filled(chip_mark.center(), 8.0, theme.BRAND);
+    }
     painter.text(
-        egui::pos2(
-            banner.left() + BANNER_PAD,
-            banner.top() + BANNER_PAD + BANNER_LINE,
-        ),
-        Align2::LEFT_TOP,
-        HOSTING_ACCENT,
-        fonts::semibold(BANNER_SIZE),
+        egui::pos2(chip_mark.right() + 6.0, chip_mark.center().y),
+        Align2::LEFT_CENTER,
+        "modrinth hosting",
+        fonts::semibold(13.0),
         theme.BRAND,
     );
-    // The art, in the room the banner keeps for it ([`BANNER_ART`]): drawn rather than loaded,
-    // because the reference's promo is its own illustration and this build does not carry that
-    // texture. The rect belongs to the banner -- `art` above is the news card's.
-    let promo = Rect::from_min_size(
-        egui::pos2(
-            banner.left() + BANNER_PAD,
-            banner.bottom() - BANNER_PAD - BANNER_ART,
-        ),
-        egui::vec2(banner.width() - 2.0 * BANNER_PAD, BANNER_ART),
+    // The heading, two lines: white, then the accent line in the brand green.
+    painter.text(
+        egui::pos2(banner.left() + BANNER_PAD, chip_mark.bottom() + 10.0),
+        Align2::LEFT_TOP,
+        HOSTING,
+        fonts::semibold(20.0),
+        theme.CONTRAST,
     );
-    hosting_art(painter, promo, theme);
-    // The call to action, where the reference puts it: at the banner's foot, past the copy.
-    let cta_label = painter.layout_no_wrap(
-        BANNER_CTA.to_owned(),
-        fonts::semibold(13.0),
-        theme.ACCENT_CONTRAST,
+    painter.text(
+        egui::pos2(banner.left() + BANNER_PAD, chip_mark.bottom() + 10.0 + 24.0),
+        Align2::LEFT_TOP,
+        HOSTING_ACCENT,
+        fonts::semibold(20.0),
+        theme.BRAND,
     );
-    let cta = Rect::from_min_size(
-        egui::pos2(
-            banner.right() - BANNER_PAD - (cta_label.size().x + 2.0 * BANNER_CTA_PAD),
-            banner.bottom() - BANNER_PAD - BANNER_CTA_HEIGHT,
-        ),
-        egui::vec2(cta_label.size().x + 2.0 * BANNER_CTA_PAD, BANNER_CTA_HEIGHT),
-    );
-    painter.rect_filled(cta, cta.height() / 2.0, theme.BRAND);
-    painter.galley(
-        egui::pos2(
-            cta.left() + BANNER_CTA_PAD,
-            cta.center().y - cta_label.size().y / 2.0,
-        ),
-        cta_label,
-        theme.ACCENT_CONTRAST,
-    );
-
     pressed
 }
 

@@ -28,6 +28,7 @@ mod duplicate;
 mod groups;
 mod account;
 mod brand;
+mod serverart;
 mod data;
 mod fonts;
 mod frame_log;
@@ -76,6 +77,7 @@ fn main() -> eframe::Result<()> {
             // paint is the product's logo rather than the plate that stands in for it. Both
             // calls are process-wide setup and neither depends on the other.
             brand::install(&cc.egui_ctx);
+            serverart::install(&cc.egui_ctx);
             cc.egui_ctx.set_visuals(shell.theme.colors());
             // The reference's transitions, measured from its own source rather than guessed:
             // `duration-200` appears 36 times in `apps/app-frontend/src`, `duration-150` 12, `duration-300` 8,
