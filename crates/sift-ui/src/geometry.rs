@@ -117,7 +117,9 @@ pub const SEARCH_ROW: f32 = 40.0;
 pub const TAB_STRIP: f32 = 36.0;
 
 /// A result card's height.
-pub const CARD: f32 = 142.0;
+/// Measured from the reference's Discover: its first card's frame runs y 117..262 -- 145 points -- where
+/// this build's ran 112..254.
+pub const CARD: f32 = 145.0;
 
 /// The gap between two result cards.
 pub const CARD_GAP: f32 = 12.0;

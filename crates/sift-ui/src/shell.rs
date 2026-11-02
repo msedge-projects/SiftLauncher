@@ -2706,6 +2706,8 @@ impl Shell {
         self.draw_pager(ui, row.right(), row.center().y, "top");
 
         // The list, via fastframe's scrolling: 120 points per notch rather than egui's 40.
+        // The reference's first card starts at y 117: 12 above the row is what puts it there once the card is
+        // the reference's 145 tall.
         let list = Rect::from_min_max(
             egui::pos2(content.left(), row.bottom() + 12.0),
             content.max,
