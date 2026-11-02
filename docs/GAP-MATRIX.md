@@ -4780,3 +4780,16 @@ Two differences the scan does show, both recorded rather than fixed:
   sign out of, and an inert sign-out would be the invented control this file keeps banning.
 - the reference's settings gear sits at 815; this build's is near the foot of the rail. A 30-point difference with
   nothing between them to compare against -- worth one measurement pass, not a guess.
+
+### Second correction, same pass: the footer matches too
+
+The line above says the reference's gear sits 30 points higher. It does not. This build places its footer pair at
+`rail.bottom() - RAIL_PAD - RAIL_BUTTON - (1 - index) * RAIL_PITCH`, which for a 900-point window is centre 816
+and 868 -- against the reference's measured 815 and 867. **Both are already right.**
+
+The one real difference is the glyph: the reference's lower button is a **sign out** (it is signed in with a demo
+account), and this build's is a **sign in**. Each is correct for its own state.
+
+That is two claims retracted in one session for the same reason: I read a number off a capture instead of
+measuring it. The rule this file has carried since the sixth invented control -- print it or scan it, never read it
+-- applies to chrome as much as to buttons.
