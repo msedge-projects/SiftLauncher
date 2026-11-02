@@ -4820,3 +4820,22 @@ control.
 So the page keeps its old, honest toast, and the store waits with `#[allow(dead_code)]` and a comment saying why.
 The next person to build the dialog should start from the library's rename dialog, which has been driven and works,
 and should print the button's rect with the probe before pressing it.
+
+## The first whole-screen A/B, and what it found (2026-11-02, late)
+
+Both clients on the same X server at 1440x900, both on Home, blended 50/50 and differenced
+(`.scratch/cap/ab-ref-home.png`, `ours-undec4.png`):
+
+| | differing pixels (threshold 40) |
+|---|---:|
+| before removing the window decoration | 131 533 |
+| after | 87 409 |
+
+The first map was the useful one: **every element was doubled about 22 points apart in one direction**, rail
+icons, headings, rows, sidebar and all. That is not a layout disagreement, it is a frame disagreement -- the
+reference is undecorated and draws its own 48-point title bar, and this build drew the same bar under a window
+manager's decoration. With `with_decorations(false)` the rail's thirteen bands match the reference's to the pixel.
+
+What the remaining 87 409 pixels are, by eye from the same composite: the right sidebar's rows sit a few points
+off, so their text ghosts; the "Get your next server" card differs; and text weight is not identical everywhere.
+Those are the next three measurements, in that order.
