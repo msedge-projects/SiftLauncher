@@ -63,3 +63,19 @@ rail's height and the body's blocks, not the plate.
 
 What the last pass changed and kept: the result card's icon is inset seven points inside its tile, where two filled
 it edge to edge (Discover 134 450 -> 132 014).
+
+## Same-state measurements now on file (2026-11-02, final pass of this session)
+
+| screen | differing pixels | same state? |
+|---|---:|---|
+| Home, empty | 31 171 | yes |
+| Discover | 101 881 | yes |
+| Screenshots, empty | **25 600** | yes -- the reference's own illustration is embedded at its own 228x98 |
+| Screenshots, populated | 543 663 | **no** -- the reference has no screenshots in this lab, this build has four test shots |
+| Skins, empty | 192 697 | **no** -- the reference capture shows no search row and an eight-card default grid where this build draws one row |
+| Settings | 151 997 | **no** -- its body has blocks this build does not have in that state |
+| Servers | not comparable | the reference refuses its own page |
+
+The Screenshots comparison is the useful one of this pass: matched state, matched illustration, and its content slab is
+**4 935** -- the lowest any content column has reached -- which shows what a fair comparison looks like when the
+state matches and the artwork is the reference's own.
