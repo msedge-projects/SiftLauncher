@@ -4804,3 +4804,19 @@ a per-face shade, and the preview plate is a drag target that turns it (`.scratc
 **What it is not**, so the row is not over-claimed: no perspective, no overlay layers (hat/jacket), no animation,
 and the reference's model has all three. It is a body that turns, which is the interaction the reference's page
 advertises ("Drag to rotate") and this build could not do before.
+
+## Screenshot groups: the store is in, the dialog is not (2026-11-02, late)
+
+`crates/sift-ui/src/groups.rs` is a tested store -- groups by id and name, a shot-to-group map, a slugged unique
+id, a JSON file beside the launcher's other state, seven tests including a file round-trip.
+
+**The dialog that would use it is reverted**, and this is why rather than a shrug: the New group press opened it
+(capture r339), the name field took typed text (r340), and Escape closed it -- but **no press inside the dialog
+ever registered**, on the page's own ui or on a foreground `egui::Area`. Two presses that should have hit Create
+missed by 2 and 13 points (measured afterwards), and the third landed inside the button and still did nothing. That
+last part is unexplained, and an unexplained press is exactly what this file has banned since the sixth invented
+control.
+
+So the page keeps its old, honest toast, and the store waits with `#[allow(dead_code)]` and a comment saying why.
+The next person to build the dialog should start from the library's rename dialog, which has been driven and works,
+and should print the button's rect with the probe before pressing it.

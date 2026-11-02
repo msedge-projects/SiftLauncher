@@ -22,6 +22,10 @@
 mod motion;
 mod drop;
 mod duplicate;
+// The screenshot-groups store. The page does not call it yet: its dialog could not be driven in this
+// environment, and an unverified control is worse than a missing one.
+#[allow(dead_code)]
+mod groups;
 mod account;
 mod brand;
 mod data;
