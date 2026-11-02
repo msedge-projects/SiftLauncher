@@ -3124,7 +3124,9 @@ fn card(
     // the clock at 336..353, both ending at x 1098, in 14-point text -- they used to be one
     // 11-point line on the tag row, which is where the tags belong and the stats do not.
     let mut counts_right = rect.right() - 16.0;
-    let counts_y = rect.top() + 62.0;
+    // Measured from the reference's own card: the counts' ink runs 306..320 and the update line's 336..353 inside
+    // a card that starts at 230, so their centres are 83 and 114 below its top, not 62 and 92.
+    let counts_y = rect.top() + 83.0;
     // Drawn right to left, so the followers are laid down first and the downloads end up to
     // their left -- which is the order the reference reads: "19.66M  heart 5,028".
     for (glyph, value) in [
@@ -3161,7 +3163,7 @@ fn card(
             crate::fonts::body(14.0),
             theme.SECONDARY,
         );
-        let y = rect.top() + 92.0;
+        let y = rect.top() + 114.0;
         painter.galley(
             egui::pos2(rect.right() - 16.0 - label.size().x, y - label.size().y / 2.0),
             label.clone(),
