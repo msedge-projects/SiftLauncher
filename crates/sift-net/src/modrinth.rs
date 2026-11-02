@@ -339,6 +339,9 @@ pub struct ModrinthSearchHit {
     /// `required`, `optional` or `unsupported`: the reference draws a "Client" chip for the first two.
     #[serde(default)]
     pub client_side: String,
+    /// The same three values for the other side. Both together are one chip, "Client and server".
+    #[serde(default)]
+    pub server_side: String,
     /// When the project last changed, which is the "3 days ago" line on a card.
     #[serde(default)]
     pub date_modified: String,

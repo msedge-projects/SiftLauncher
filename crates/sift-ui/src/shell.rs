@@ -2755,20 +2755,27 @@ impl Shell {
                             // reference draws a search card's tags in.
                             // The reference's card leads with a "Client" chip when the project runs on one, then
                             // the display categories, then the loaders.
+                            // One chip for the environment, worded as the reference words it: a project that
+                            // runs on both sides says so, and the two sides are never two chips.
                             tags: std::iter::once((
-                                "Client".to_owned(),
+                                match (
+                                    matches!(hit.client_side.as_str(), "required" | "optional"),
+                                    matches!(hit.server_side.as_str(), "required" | "optional"),
+                                ) {
+                                    (true, true) => "Client and server",
+                                    (true, false) => "Client",
+                                    (false, true) => "Server",
+                                    (false, false) => "",
+                                }
+                                .to_owned(),
                                 crate::icons::Glyph::Monitor,
                             ))
-                            .filter(|_| matches!(hit.client_side.as_str(), "required" | "optional"))
+                            .filter(|(label, _)| !label.is_empty())
                             .chain(
-                                hit.categories
+                                hit.all_categories
                                 .iter()
-                                .map(|category| (category.clone(), category_glyph(category))),
-                            )
-                            .chain(
-                                hit.loaders
-                                    .iter()
-                                    .map(|loader| (loader.clone(), Glyph::Box)),
+                                .map(|category| (category.clone(), category_glyph(category)))
+                                .collect::<Vec<_>>(),
                             )
                             .collect(),
                             downloads: hit.downloads.clone(),
@@ -3023,7 +3030,10 @@ fn card(
                 + 30.0
         })
         .collect();
-    let fitted = tags_that_fit(&widths, 6.0, tag_limit);
+    // Four chips and an overflow count, which is what the reference draws: its Zombie Invasion card has six tags
+    // and shows "Client and server", "Challenging", "Combat", "Forge", "+1". Fitting by width alone showed five
+    // and no count.
+    let fitted = tags_that_fit(&widths, 6.0, tag_limit).min(4);
     for (index, tag) in result.tags.iter().enumerate() {
         if index >= fitted {
             break;
@@ -3289,10 +3299,10 @@ fn relative_age(stamp: &str) -> String {
         0 => "Today".to_owned(),
         1 => "Yesterday".to_owned(),
         days if days < 30 => format!("{days} days ago"),
-        days if days < 60 => "1 month ago".to_owned(),
-        days if days < 365 => format!("{} months ago", days / 30),
+        // Rounded, not truncated: 325 days is eleven months to a reader, and the reference says so.
+        days if days < 365 => format!("{} months ago", ((days + 15) / 30).max(1)),
         days if days < 730 => "1 year ago".to_owned(),
-        days => format!("{} years ago", days / 365),
+        days => format!("{} years ago", ((days + 182) / 365).max(1)),
     }
 }
 

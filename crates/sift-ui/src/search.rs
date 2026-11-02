@@ -40,8 +40,14 @@ pub struct Hit {
     /// The project's display categories (`client`, `optimization`, ...), which the API sends in
     /// the same array as the loaders and the reference draws ahead of them.
     pub categories: Vec<String>,
+    /// Every category the API sent, in its own order and with the loaders still in the list. The reference's
+    /// chip row reads straight off this, which is why its fourth chip on a Forge modpack is "Forge" and not the
+    /// last category: the API's list is alphabetical over both.
+    pub all_categories: Vec<String>,
     /// Whether the project runs on a client: `required`, `optional` or `unsupported`.
     pub client_side: String,
+    /// The same for the server side; both together are one chip, "Client and server".
+    pub server_side: String,
     /// When the project last changed, as the API spells it.
     pub updated: String,
 }
@@ -241,7 +247,22 @@ fn hit(source: sift_net::modrinth::ModrinthSearchHit) -> Hit {
         icon: source.icon_url,
         downloads: abbreviate(source.downloads),
         followers: thousands(source.follows),
+        // Capitalised the same way `categories` is: the API's ids are lowercase and hyphenated, and a chip
+        // that reads "challenging" is not the reference's chip.
+        all_categories: source
+            .categories
+            .iter()
+            .map(|category| {
+                let spaced = category.replace('-', " ");
+                let mut letters = spaced.chars();
+                match letters.next() {
+                    Some(first) => first.to_uppercase().collect::<String>() + letters.as_str(),
+                    None => String::new(),
+                }
+            })
+            .collect(),
         client_side: source.client_side,
+        server_side: source.server_side,
         updated: source.date_modified,
         categories: source
             .categories
