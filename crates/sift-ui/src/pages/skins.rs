@@ -823,11 +823,10 @@ pub fn draw(
     // Owned, so the texture cache below can be filled while this list is alive.
     let visible_files: Vec<SavedSkin> = visible_saved(&state.files, query.as_deref());
     let samples = visible_skins(state.model, query.as_deref());
-    let visible_count = if using_files {
-        visible_files.len()
-    } else {
-        samples.len()
-    };
+    // **Only files count as saved.** The eight catalogue skins are sample data for the Default strip, and
+    // counting them here made the Saved grid list "Overgrown", "Copper Pattina" and the rest as if the reader had
+    // saved them -- the reference, with nothing saved, shows one thing in that section: the add dropzone.
+    let visible_count = visible_files.len();
 
     // The saved skins' 64x64 atlases, through the icon cache: decoded once and sampled
     // nearest, because a skin is pixel art (see `Images::get_file_nearest`). A file that
