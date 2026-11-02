@@ -96,6 +96,60 @@ impl Rail {
 /// The loader and game version live one level deeper, behind `Custom setup` -- that is the row
 /// this launcher's single-press Vanilla instance replaced, and it is why a Fabric instance cannot
 /// exist yet.
+/// What a press on the rename dialog asks for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditPress {
+    /// No press, or a press on the plate itself, which belongs to the field.
+    Nothing,
+    /// Write the field's name to 'instance.cfg' and close.
+    Save,
+    /// Close and write nothing: the Cancel button, or a press outside the plate.
+    Cancel,
+}
+
+/// Read one frame's press against the dialog's three rects.
+///
+/// **The press that opened the dialog is not a press on the dialog.** The library row that sent
+/// 'Action::Edit' and the plate occupy the same screen, so the frame the dialog appears on is
+/// spent: 'settled' is false there, and every branch waits for it. That is not a cosmetic guard --
+/// without it the opening press landed on whichever button happened to be under the pointer, and a
+/// press on Save renamed the instance to the name the field had been refilled with.
+///
+/// A press outside the plate dismisses, the way the reference's modals close on a click outside
+/// them; a press *on* the plate does nothing, so a click on the field cannot throw away a
+/// half-typed name.
+pub fn edit_press(
+    settled: bool,
+    clicked: bool,
+    pointer: Option<egui::Pos2>,
+    plate: egui::Rect,
+    save: egui::Rect,
+    cancel: egui::Rect,
+) -> EditPress {
+    if !settled || !clicked {
+        return EditPress::Nothing;
+    }
+    let Some(point) = pointer else {
+        return EditPress::Nothing;
+    };
+    if save.contains(point) {
+        EditPress::Save
+    } else if cancel.contains(point) || !plate.contains(point) {
+        EditPress::Cancel
+    } else {
+        EditPress::Nothing
+    }
+}
+
+/// The name a rename writes: the field's text without its edges, or 'None' when nothing is left.
+///
+/// Whitespace is trimmed because a name of spaces is a row with no label -- the same silent
+/// nothing this dialog exists to avoid.
+pub fn edit_name(raw: &str) -> Option<&str> {
+    let name = raw.trim();
+    (!name.is_empty()).then_some(name)
+}
+
 impl Shell {
     /// The reference's create dialog (`.scratch/cap/ref-create4.png`): a 576x350 plate with a
     /// title and a close button, a project search under "Already know what you want to play?",
@@ -123,21 +177,20 @@ impl Shell {
             self.edit_opened = now;
         }
         let settled = now > self.edit_opened + 0.15;
-        // TRACE
-        if std::env::var_os("SIFT_EDIT_TRACE").is_some() {
-            let p = ctx.input(|input| input.pointer.latest_pos());
-            let c = ctx.input(|input| input.pointer.any_click());
-            eprintln!(
-                "edit frame t={now:.3} opened={:.3} settled={settled} clicked={c} ptr={p:?}",
-                self.edit_opened
-            );
-        }
         if settled && now - self.edit_opened < 0.25 {
             ctx.memory_mut(|memory| memory.request_focus(egui::Id::new("edit-instance-text")));
         }
         let painter = ui.painter().clone();
         let theme = self.theme.clone();
         painter.rect_filled(screen, 0.0, egui::Color32::from_black_alpha(160));
+        // **The press belongs to the dialog while it is up.** The page drew first in this frame, and a
+        // library row answers a press with 'Action::Edit' over the very rect the Save button covers.
+        // Without this, a press on Save re-opened the dialog on the row underneath: the field was
+        // refilled from disk (the typed name gone) and 'edit_opened' was reset, so the press never
+        // counted -- the app's own log said 'act Edit Instance 2 copy' on the frame of the Save press,
+        // and 'settled=false' with it. egui gives an overlapping press to the widget registered last,
+        // and this one is registered after every row, so the rows see nothing.
+        ui.interact(screen, egui::Id::new("edit-dialog-blocker"), Sense::click());
 
         let plate = egui::Rect::from_center_size(screen.center(), egui::vec2(520.0, 200.0));
         painter.rect_filled(plate, 12, theme.SURFACE_4);
@@ -221,20 +274,28 @@ impl Shell {
 
         let pointer = ctx.input(|input| input.pointer.latest_pos());
         let clicked = ctx.input(|input| input.pointer.any_click());
+        let press = edit_press(settled, clicked, pointer, plate, save, cancel);
+        // Rule 1 of the drive: the rects come from the program, never off a capture. Off unless
+        // 'SIFT_EDIT_PROBE' is set, and it prints what the press was read as.
         if std::env::var_os("SIFT_EDIT_PROBE").is_some() && clicked {
-            eprintln!("edit click ptr={pointer:?} save={save:?} settled={settled}");
+            eprintln!(
+                "edit press={press:?} ptr={pointer:?} save={save:?} plate={plate:?} settled={settled}"
+            );
         }
-        if clicked {
-            if pointer.is_some_and(|point| save.contains(point)) {
+        match press {
+            EditPress::Save => {
                 let root = crate::data::instances_dir();
-                let name = self.edit.as_ref().map(|(_, text)| text.trim().to_owned()).unwrap_or_default();
-                let outcome = if name.is_empty() {
-                    Err("an instance needs a name".to_owned())
-                } else {
-                    crate::duplicate::rename_copy(&root.join(&id), &name).map_err(|error| error.to_string())
+                let typed = self.edit.as_ref().map(|(_, text)| text.clone()).unwrap_or_default();
+                let outcome = match edit_name(&typed) {
+                    None => Err("an instance needs a name".to_owned()),
+                    Some(name) => crate::duplicate::rename_copy(&root.join(&id), name)
+                        .map(|()| name.to_owned())
+                        .map_err(|error| error.to_string()),
                 };
                 match outcome {
-                    Ok(()) => {
+                    Ok(name) => {
+                        // The library is a cache the shell holds: a rename that is not read back is a
+                        // row that still carries the old name over a file that has the new one.
                         self.instances = crate::data::load().0;
                         self.toast = Some(format!("Renamed to {name}."));
                     }
@@ -242,15 +303,14 @@ impl Shell {
                 }
                 self.edit = None;
                 ctx.request_repaint();
-            } else if pointer.is_some_and(|point| cancel.contains(point))
-                || (settled && !pointer.is_some_and(|point| plate.contains(point)))
-            {
+            }
+            EditPress::Cancel => {
                 self.edit = None;
                 ctx.request_repaint();
             }
+            EditPress::Nothing => {}
         }
     }
-
     pub fn draw_picker(&mut self, ctx: &egui::Context, screen: egui::Rect, ui: &mut egui::Ui) {
         let Some(picker) = self.picker.clone() else {
             // No picker: forget when the last one opened, so the next one gets its own guard.
@@ -684,6 +744,18 @@ pub enum PickerKind {
 pub struct Picker {
     pub kind: PickerKind,
     pub opened: f64,
+}
+
+/// The instance that already carries a project, if one does.
+///
+/// Every install records the project's id in the instance's own settings, so "already installed" is a fact
+/// on disk rather than a guess from the name -- two packs can be called the same thing and one can be
+/// renamed.
+fn installed_for<'a>(project: &str, entries: &'a [crate::data::Entry]) -> Option<&'a str> {
+    entries
+        .iter()
+        .find(|entry| entry.project.as_deref() == Some(project))
+        .map(|entry| entry.id.as_str())
 }
 
 /// The label a picker row shows for one instance.
@@ -1727,10 +1799,13 @@ impl Shell {
                     self.game.start(&id);
                 }
             }
+            Action::Open(id) => {
+                // The row's own press: the instance's page, which the reference opens from the card
+                // (`InstanceItem.vue`). The menu's `Edit` is the rename dialog and nothing else, so a
+                // press meant for the page cannot land in the middle of a name.
+                self.open_instance_page(&id);
+            }
             Action::Edit(id) => {
-                if std::env::var_os("SIFT_EDIT_TRACE").is_some() {
-                    eprintln!("act Edit {id}");
-                }
                 // The reference's edit action renames the instance, and the name is the only thing the
                 // modal changes that this build can carry out.
                 let name = self.instance_name(&id);
@@ -2569,14 +2644,28 @@ impl Shell {
                     let result = &results[index];
                     // The button's word comes from the install, not from the card: a card
                     // cannot know whether its own project is the one being installed.
-                    let label = self.install.label(&result.id);
-                    match card(ui, &self.theme, index, result, &mut self.icons, label) {
+                    let installed = installed_for(&result.id, &self.instances);
+                    // A project already in the library says so, and its button takes the reader to the
+                    // instance rather than starting a second copy of the same pack.
+                    let label = if installed.is_some() {
+                        "Installed"
+                    } else {
+                        self.install.label(&result.id)
+                    };
+                    let pressed = card(ui, &self.theme, index, result, &mut self.icons, label);
+                    match pressed {
                         Press::None => {}
                         Press::Card => {
                             opened = true;
                             opened_card = Some(result.clone());
                         }
-                        Press::Install => self.press_install(result),
+                        Press::Install => match installed {
+                            Some(id) => {
+                                let id = id.to_owned();
+                                self.open_instance_page(&id);
+                            }
+                            None => self.press_install(result),
+                        },
                     }
                 }
                 if opened {
@@ -3337,5 +3426,135 @@ mod picker_label_tests {
     #[test]
     fn an_unknown_name_falls_back_to_the_name() {
         assert_eq!(picker_label("A", "A", &HashMap::new()), "A");
+    }
+}
+
+#[cfg(test)]
+mod edit_tests {
+    use super::{edit_name, edit_press, EditPress};
+    use egui::{pos2, Rect, Vec2};
+
+    fn rect(x: f32, y: f32, width: f32, height: f32) -> Rect {
+        Rect::from_min_size(pos2(x, y), Vec2::new(width, height))
+    }
+
+    /// The dialog's own numbers: the plate and its two buttons, built the way 'draw_edit' builds
+    /// them, on the 1440x900 window the drives run at.
+    fn dialog() -> (Rect, Rect, Rect) {
+        let plate = Rect::from_center_size(pos2(720.0, 450.0), egui::vec2(520.0, 200.0));
+        let save = rect(
+            plate.right() - 24.0 - 100.0,
+            plate.bottom() - 24.0 - 36.0,
+            100.0,
+            36.0,
+        );
+        let cancel = rect(save.left() - 108.0, save.top(), 100.0, 36.0);
+        (plate, save, cancel)
+    }
+
+    /// The press that opened the dialog is not a press on it.
+    ///
+    /// This is the bug the drive printed: the library row that sends 'Action::Edit' sits under the
+    /// plate, so the opening press arrived at the dialog's own rects ('act Edit Instance 2 copy' on
+    /// the frame of the Save press, 'settled=false'). Nothing counts until the dialog has settled.
+    #[test]
+    fn the_press_that_opened_the_dialog_is_not_a_press_on_it() {
+        let (plate, save, cancel) = dialog();
+        for point in [save.center(), cancel.center(), plate.center()] {
+            assert_eq!(
+                edit_press(false, true, Some(point), plate, save, cancel),
+                EditPress::Nothing,
+                "a press at {point:?} counted on the frame the dialog opened"
+            );
+        }
+    }
+
+    #[test]
+    fn a_settled_press_on_save_saves() {
+        let (plate, save, cancel) = dialog();
+        assert_eq!(
+            edit_press(true, true, Some(save.center()), plate, save, cancel),
+            EditPress::Save
+        );
+        // The corner is inside: the rects are inclusive, which is what the drive's click relies on.
+        assert_eq!(
+            edit_press(true, true, Some(save.min), plate, save, cancel),
+            EditPress::Save
+        );
+    }
+
+    #[test]
+    fn a_settled_press_on_cancel_closes_without_saving() {
+        let (plate, save, cancel) = dialog();
+        assert_eq!(
+            edit_press(true, true, Some(cancel.center()), plate, save, cancel),
+            EditPress::Cancel
+        );
+    }
+
+    /// A press on the plate is a press on the field, and must not throw away a half-typed name; a
+    /// press outside it dismisses, the way the reference's modals close on an outside click.
+    #[test]
+    fn a_press_on_the_plate_does_nothing_and_one_beside_it_dismisses() {
+        let (plate, save, cancel) = dialog();
+        assert_eq!(
+            edit_press(true, true, Some(plate.center()), plate, save, cancel),
+            EditPress::Nothing
+        );
+        assert_eq!(
+            edit_press(true, true, Some(pos2(plate.left() - 1.0, plate.center().y)), plate, save, cancel),
+            EditPress::Cancel
+        );
+        // A frame with no press is not a press, wherever the pointer is parked.
+        assert_eq!(
+            edit_press(true, false, Some(save.center()), plate, save, cancel),
+            EditPress::Nothing
+        );
+        assert_eq!(edit_press(true, true, None, plate, save, cancel), EditPress::Nothing);
+    }
+
+    /// What a rename writes: the field without its edges, and nothing at all when nothing is left.
+    #[test]
+    fn a_name_is_trimmed_and_an_empty_one_is_refused() {
+        assert_eq!(edit_name("  Renamed Pack  "), Some("Renamed Pack"));
+        assert_eq!(edit_name("Instance 2 copy"), Some("Instance 2 copy"));
+        assert_eq!(edit_name(""), None);
+        assert_eq!(edit_name("   "), None);
+        assert_eq!(edit_name("\t\n "), None);
+    }
+}
+
+#[cfg(test)]
+mod installed_tests {
+    use super::installed_for;
+    use crate::data::Entry;
+
+    fn entry(id: &str, project: Option<&str>) -> Entry {
+        Entry {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            loader: "Fabric".to_owned(),
+            version: "26.3".to_owned(),
+            last_played: 0,
+            project: project.map(str::to_owned),
+        }
+    }
+
+    #[test]
+    fn an_instance_carrying_the_project_is_found() {
+        let entries = vec![entry("Instance 2", None), entry("Fabulously Optimized", Some("1KVo5zza"))];
+        assert_eq!(installed_for("1KVo5zza", &entries), Some("Fabulously Optimized"));
+    }
+
+    #[test]
+    fn a_project_nothing_carries_is_not_found() {
+        let entries = vec![entry("Instance 2", None)];
+        assert_eq!(installed_for("1KVo5zza", &entries), None);
+    }
+
+    #[test]
+    fn a_project_is_matched_by_id_not_by_name() {
+        let entries = vec![entry("1KVo5zza", None)];
+        assert_eq!(installed_for("1KVo5zza", &entries), None);
     }
 }
