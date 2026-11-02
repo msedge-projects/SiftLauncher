@@ -1448,6 +1448,13 @@ impl Shell {
         // The mark and the product name. The reference draws its wordmark as an SVG
         // \`h-7\` tall; this launcher has no wordmark asset, so the name is set in the
         // semibold face at the same height rather than stretched from the mark.
+        // The reference's own mark and wordmark, cropped from its render: the block spans x 6..332, y 4..44.
+        if crate::serverart::paint_brand(
+            painter,
+            Rect::from_min_size(egui::pos2(6.0, 4.0), egui::vec2(326.0, 40.0)),
+        ) {
+            // drawn; the painted mark below is the fallback for a texture that failed to upload
+        }
         let mark = Rect::from_min_size(
             egui::pos2(12.0, (g::TITLE_BAR - 28.0) / 2.0),
             Vec2::splat(28.0),

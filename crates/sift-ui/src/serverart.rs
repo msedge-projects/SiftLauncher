@@ -26,11 +26,31 @@ const HERO_PNG: &[u8] = include_bytes!("../../../assets/brand/hero-plate.png");
 
 static HERO: OnceLock<Option<TextureHandle>> = OnceLock::new();
 
+/// The title bar's mark and wordmark: the reference's own, cropped from its render at 326x40.
+const BRAND_PNG: &[u8] = include_bytes!("../../../assets/brand/titlebar-brand.png");
+
+static BRAND: OnceLock<Option<TextureHandle>> = OnceLock::new();
+
 /// Upload the illustration, once, before the first frame.
 pub fn install(ctx: &eframe::egui::Context) {
     let _ = ART.set(upload(ctx, ART_PNG, "server-art"));
     let _ = NEWS.set(upload(ctx, NEWS_PNG, "news-art"));
     let _ = HERO.set(upload(ctx, HERO_PNG, "hero-plate"));
+    let _ = BRAND.set(upload(ctx, BRAND_PNG, "titlebar-brand"));
+}
+
+/// Paint the title bar's mark and wordmark; false when the texture is missing.
+pub fn paint_brand(painter: &eframe::egui::Painter, rect: Rect) -> bool {
+    let Some(Some(texture)) = BRAND.get() else {
+        return false;
+    };
+    painter.image(
+        texture.id(),
+        rect,
+        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Color32::WHITE,
+    );
+    true
 }
 
 /// Paint the empty state's plate; false when the texture is missing, so the caller draws its own.

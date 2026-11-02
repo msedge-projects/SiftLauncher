@@ -733,7 +733,7 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
         egui::pos2(centre_x, title_top + TITLE_LINE / 2.0),
         Align2::CENTER_CENTER,
         // Measured: the reference's title ink is 17 points tall; 24-point type here drew 22. 20 draws 18.
-        "Welcome to Modrinth App",
+        "Welcome to Modrinth",
         fonts::semibold(20.0),
         theme.CONTRAST,
     );

@@ -16,7 +16,11 @@ measurement to `docs/PARITY-LOG.md` every four minutes, so this list's effect is
 | rail | 267 | done to half a per cent | -- |
 
 ## Then, in this order
-1. Discover, both empty and populated.
+1. **Discover -- 159 399 differing pixels as first measured**, and the anatomy, not the text, is what differs:
+   each of the reference's cards carries a right-hand column with the Install button at its top, the downloads
+   and likes under it, and the age under that, where this build puts the age first and the counts after it. The
+   first card's green Install plate measures x 939..1098, y 194..259 in the reference against x 1042..1077,
+   y 194..202 here -- a different shape, not a different colour.
 2. Skins.
 3. Screenshots.
 4. Servers.
