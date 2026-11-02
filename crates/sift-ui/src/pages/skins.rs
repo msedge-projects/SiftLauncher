@@ -883,8 +883,10 @@ pub fn draw(
             // The default skins ride in the same column, under the cards, as the reference's one
             // scrolling list does: in the page's fixed strip below the scroll they had no room.
             let defaults_top_local = grid_height + SECTION_GAP;
-            let default_card = (grid.card_width * 0.66).max(64.0);
-            let content_height = defaults_top_local + HEADING_LINE + default_card;
+            // The reference's default skins are portrait cards, not the small squares this drew: its
+            // capture shows four of them at roughly 200 by 240 with a full-body character in each.
+            let default_card = (grid.card_width * 0.92).max(110.0);
+            let content_height = defaults_top_local + HEADING_LINE + default_card * 1.2;
             // Directly under the cards when they fit, and at the reserved strip when they
             // do not: the heading follows the content, not the space reserved for it.
             below_grid = grid_rect.top() + content_height.min(grid_rect.height()) + SECTION_GAP;
@@ -980,11 +982,11 @@ pub fn draw(
                                 area.left() + index as f32 * (default_card + GRID_GAP),
                                 heading + HEADING_LINE,
                             ),
-                            egui::vec2(default_card, default_card),
+                            egui::vec2(default_card, default_card * 1.2),
                         );
                         painter.rect_filled(tile, 12, theme.RAISED_BG);
                         if let Some(texture) = art_texture(ui.ctx(), state, index) {
-                            let height = default_card - 16.0;
+                            let height = default_card * 1.2 - 20.0;
                             painter.image(
                                 texture.id(),
                                 Rect::from_center_size(
