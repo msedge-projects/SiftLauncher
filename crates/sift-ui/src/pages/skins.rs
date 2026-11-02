@@ -883,10 +883,11 @@ pub fn draw(
             // The default skins ride in the same column, under the cards, as the reference's one
             // scrolling list does: in the page's fixed strip below the scroll they had no room.
             let defaults_top_local = grid_height + SECTION_GAP;
-            // The reference's default skins are portrait cards, not the small squares this drew: its
-            // capture shows four of them at roughly 200 by 240 with a full-body character in each.
-            let default_card = (grid.card_width * 0.92).max(110.0);
-            let content_height = defaults_top_local + HEADING_LINE + default_card * 1.2;
+            // Measured from the reference's own capture: its default-skin cards are 170 wide on a 13-point gap,
+            // four to a row (x 407, 589, 771, 954) and two rows deep, where this build drew one row of
+            // column-width cards.
+            let default_card = 170.0;
+            let content_height = defaults_top_local + HEADING_LINE + 2.0 * (default_card * 1.2 + GRID_GAP);
             // Directly under the cards when they fit, and at the reserved strip when they
             // do not: the heading follows the content, not the space reserved for it.
             below_grid = grid_rect.top() + content_height.min(grid_rect.height()) + SECTION_GAP;
@@ -977,10 +978,13 @@ pub fn draw(
                         theme.CONTRAST,
                     );
                     for index in 0..ART.len() {
+                        // Four to a row, wrapping: the reference's grid is 4 x 2 for its eight defaults.
+                        let column = index % 4;
+                        let row = index / 4;
                         let tile = Rect::from_min_size(
                             egui::pos2(
-                                area.left() + index as f32 * (default_card + GRID_GAP),
-                                heading + HEADING_LINE,
+                                area.left() + column as f32 * (default_card + 13.0),
+                                heading + HEADING_LINE + row as f32 * (default_card * 1.2 + 13.0),
                             ),
                             egui::vec2(default_card, default_card * 1.2),
                         );
@@ -1039,6 +1043,12 @@ fn heading_and_toolbar(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State
         theme.CONTRAST,
     );
 
+    // The reference's own capture, with no saved skins, has **no controls in the header at all** -- no search
+    // field, no Wide/Slim tabs, no "+ Add skin": the only way to add one is the card inside "Saved skins". Its
+    // toolbar appears once there is something to search or filter, so this draws it on the same condition.
+    if state.files.is_empty() {
+        return heading_at.y + HEADING_LINE;
+    }
     let row = Rect::from_min_size(
         egui::pos2(
             rect.left() + PAGE_PADDING,
