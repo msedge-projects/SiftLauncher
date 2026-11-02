@@ -210,6 +210,8 @@ pub struct State {
     pub join_focused: bool,
     /// Set by the Join press and taken by `draw`, which returns it as an action.
     pub join_request: Option<String>,
+    /// Set by the Add mods press and taken by `draw`, which returns it as an action.
+    pub browse: bool,
 }
 
 /// Draw the page's content column.
@@ -221,6 +223,8 @@ pub enum InstanceAction {
     LaunchWorld(String),
     /// Launch and connect to this address.
     JoinServer(String),
+    /// Open Discover with this instance as the install target.
+    BrowseMods,
 }
 
 pub fn draw(
@@ -356,6 +360,9 @@ pub fn draw(
     // read, so one press is one launch.
     if let Some(address) = state.join_request.take() {
         return Some(InstanceAction::JoinServer(address));
+    }
+    if std::mem::take(&mut state.browse) {
+        return Some(InstanceAction::BrowseMods);
     }
     None
 }
@@ -509,12 +516,32 @@ fn content_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance, stat
         })
         .unwrap_or_default();
     mods.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+    // The button is drawn before the list so an empty instance still offers it: a Content tab whose
+    // only advice is "install one from Discover" leaves the reader to find Discover themselves.
+    let painter = ui.painter();
+    let inner = card.shrink(PAD);
+    let add = Rect::from_min_size(
+        egui::pos2(inner.right() - 116.0, inner.top()),
+        egui::vec2(116.0, 32.0),
+    );
+    painter.rect_filled(add, 6.0, theme.BUTTON_BG_SELECTED);
+    painter.text(
+        add.center(),
+        Align2::CENTER_CENTER,
+        "Add mods",
+        fonts::semibold(12.0),
+        theme.BUTTON_TEXT_SELECTED,
+    );
+    if ui
+        .interact(add, egui::Id::new("instance-add-mods"), Sense::click())
+        .clicked()
+    {
+        state.browse = true;
+    }
     if mods.is_empty() {
         stub(ui, card, theme, Tab::Content, "No mods in this instance yet. Install one from Discover.");
         return;
     }
-    let painter = ui.painter();
-    let inner = card.shrink(PAD);
 
     // Join a server from this instance: the field and its button, above the mods. This page's presses
     // work, which is why the control lives here rather than on the Servers page.

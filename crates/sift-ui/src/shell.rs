@@ -842,6 +842,9 @@ pub struct Shell {
     /// own -- so the install it asks for is the card's, and the card is the only thing that knows which
     /// project the reader was looking at.
     open_card: Option<Card>,
+    /// The instance Discover is installing into, set by an instance's "Add mods" press. While it is
+    /// set, an Install skips the picker: the reader already said where the mods go.
+    install_target: Option<String>,
     /// The instance being renamed, and the text in the field. `None` when the dialog is closed.
     pub edit: Option<(String, String)>,
     /// Text to put on the clipboard on the next frame, for actions that have no `Context` of their own.
@@ -931,6 +934,7 @@ impl Default for Shell {
             home: crate::pages::home::State::default(),
             open_project: None,
             open_card: None,
+            install_target: None,
             edit: None,
             clipboard: None,
             edit_opened: 0.0,
@@ -1073,6 +1077,14 @@ impl Shell {
                     }
                     crate::pages::instance::InstanceAction::JoinServer(address) => {
                         self.game.start_server(&id, &address)
+                    }
+                    crate::pages::instance::InstanceAction::BrowseMods => {
+                        // Discover is this build's browse view, so the button takes the reader there with
+                        // this instance remembered as the target.
+                        self.go_to(Rail::Discover);
+                        self.open_instance = None;
+                        self.install_target = Some(id.clone());
+                        self.toast = Some(format!("Installing into {}.", self.instance_name(&id)));
                     }
                 }
             }
@@ -1883,7 +1895,15 @@ impl Shell {
             // reader wants the project's name rather than the archive's file stem.
             // Two or more instances means the reader has to say where a mod goes. A pack needs no
             // such answer -- it brings its own instance -- so the picker's last row is that path.
-            if needs_picker(self.project_type == "mod", crate::data::load().0.len()) {
+            // An instance's "Add mods" press already answered the picker's question, so the mod goes
+            // there without asking again -- as long as the instance is still on disk.
+            let target = self
+                .install_target
+                .clone()
+                .filter(|id| self.instances.iter().any(|entry| &entry.id == id));
+            if let Some(id) = target {
+                self.install.start_in(&card.id, &card.title, Some(id));
+            } else if needs_picker(self.project_type == "mod", crate::data::load().0.len()) {
                 self.picker = Some(Picker {
                     kind: PickerKind::Install {
                         project: card.id.clone(),
