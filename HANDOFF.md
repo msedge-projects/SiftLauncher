@@ -1,42 +1,41 @@
-# Handoff — 2026-11-02
+# Handoff — 2026-11-02, evening
 
-## Where the tree stands
-d39f207 Take a dropped PNG as a new skin, so the tile's promise is true
-- sift-ui: ok. 211 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
-- library crates: sift-core 230 tests, sift-net 307, sift-game 153, sift-loader 33 (from the coverage slice)
-- Nothing pushed: no credentials in this environment. `master` is 245+ commits ahead of `origin/master`.
+## The tree
+- HEAD: see `git log -1`. **286 commits** since 8140954. Nothing pushed (no credentials).
+- `cargo test --release` in `/scratch/crates/sift-ui`: **236 passed, 0 failed**.
+- Library crates: sift-core 230, sift-net 307, sift-game 153, sift-loader 33.
 
-## What landed since the last handoff
-- **Server join, end to end.** Instance Content tab carries an address field and a Join button; `Game::start_server` writes
-  `JoinServerOnLaunch` + its address into the instance for exactly one launch and clears them after; the engine turns them
-  into `--quickPlayMultiplayer`. Proven by the java command line: `--quickPlayMultiplayer mc.hypixel.net:25565`.
-- **Skins render from disk.** `skins/<name>.png` under the platform data root; head front (8,8,8,8) and overlay
-  (40,8,8,8) drawn on cards and in the preview column; dropped PNGs are copied in and rescanned.
-- **Project page rebuilt** (owner: subagent): header, tabs, Compatibility sidebar.
-- **Screenshots page**: selection, viewer with caption and arrows, groups, filters.
-- **Settings**: driven against the reference, six fixes.
-- **Ctrl+1..5** reach the rail's pages.
-- **Dead Library page deleted** (975 lines behind a `pub mod` nothing called).
+## Proved today, by driving rather than reading
+| feature | proof |
+|---|---|
+| Join from the Servers page | picker -> Instance 2 -> java carried `--quickPlayMultiplayer purpleprison.net:25565` |
+| Duplicate instance | "Instance 2 copy" on disk (27 files), its cfg renamed, a new Library row, toast |
+| Rename an instance | `name=Renamed Pack` in the instance's cfg, the row re-sorted |
+| "Installed" state | a project already in the library says so on its card and its page |
+| New server dialog | press opens the modal with Name/Address, Cancel and "+ New server" |
+| Ctrl+1..5 | reaches the rail's pages and leaves an open instance page |
+| Discover | "Discover content" label, six page sizes, chevrons, the reference's sort labels |
+| Skins | saved files now draw the composed 16x32 character, not a head |
+| File rename | inline TextEdit over the row, committed through rename_entry |
 
-## Lab technique that saved this session
-1. **Launch with `docker exec -d`.** `... & ` inside `docker exec bash -lc` leaves a zombie and no window.
-2. **`pkill -f java` before driving anything.** A launched Minecraft shows a modal "No supported graphics backend"
-   window that steals every click; six "the button does nothing" conclusions were this.
-3. **`consume_shortcut`, not `key_pressed` + modifier.** The modifier flag is already cleared on the frame the digit arrives.
-4. **Commit your own paths immediately.** `git add -A` swept two other agents' work into commits; a `git checkout` of a
-   path also wiped an uncommitted edit. Use explicit paths, commit within the same minute.
-5. **Print the widget rect.** Fifteen presses have failed on aim; none on logic.
+## Two retractions, both recorded in place
+1. **The Servers page**: the *reference itself* answers "Modrinth App update required", so this build's server list
+   was never comparable against a running reference. Its rows are OPEN-WITH-CAUSE; Join, Copy IP and the New
+   server dialog stay DONE because they were driven.
+2. **"The reference has no Screenshots page"**: wrong. It does; my presses had hit the divider and the "+".
+   Corrected with a measured table of rail positions.
 
-## Open, with causes recorded
-- Servers page has no Join button (five mechanisms failed there; the guidance line points at the instance page).
-- Files rename: tested core (`rename_entry`, four tests) with no control; the row control is parked.
-- Skins: no 3D model, no per-card Edit/Delete, Apply/Reset need the service.
-- 466 OPEN rows in `docs/GAP-MATRIX.md`; see its "How to read this file".
+## The lab, as it now behaves
+- `screen = content + 22` on :99; `tools/parity/lab.sh click` takes **screen** coordinates.
+- Launch: `docker exec -d sift-lab bash -lc 'cd /scratch/crates/sift-ui && setsid nohup env DISPLAY=:99 ./target/release/SiftUi >/dev/null 2>&1 </dev/null &'`
+- `pkill -9 -f target/release/SiftUi` and `pkill -f java` before every drive; a Minecraft window steals every click.
+- The reference runs with `tools/parity/lab.sh ref` (it takes the whole display, so swap, don't share).
+- Keys reach the app only when a window manager is running; :99 has none, so typing works through egui's own focus
+  but xdotool key needs the pointer over the window.
 
-6. **A window manager changes everything.** On :96/:98 with openbox started *before* the app, keys reach it and a
-   1,22 frame offset applies to every aim. On :99 with no WM, clicks work and keys do not -- which is why typing
-   appeared to work in one field and not another.
-7. **Never `git add -A` in this tree.** It has swept three agents' work into unrelated commits; use explicit paths
-   and commit within the minute.
-8. **`cargo test --release --no-run` before claiming a build.** A refactor that moved data from borrowed to owned left
-   nine call sites broken in the test target only, and the binary kept building.
+## What is left, in the order I would take it
+1. **The rail's geometry** has never been probed against the reference: our icons start at content y 48 and the
+   reference's start lower. Measure both with a pixel scan and correct.
+2. **Skins' 3D preview** — the reference rotates a model; this build draws a flat elevation.
+3. The 466 OPEN rows in `docs/GAP-MATRIX.md`, most of them measurement work per page.
+4. The project page's Follow/Save/Report rows need an account service this build has no client for.
