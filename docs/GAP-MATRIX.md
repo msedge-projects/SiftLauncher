@@ -4757,3 +4757,26 @@ The correct order, measured by pressing each band:
 
 **So this build's five destinations match the reference's five.** The lesson is the one this file keeps
 learning: a press that lands on nothing is evidence about *my aim* first and about the product second.
+
+## The rail's geometry, measured on both (same day, later)
+
+A pixel scan of the running reference's rail column (`x 6..60`, brightness > 240) gives its icon bands, and the
+app's own probe prints this build's button rects:
+
+| destination | reference centre | this build centre |
+|---|---:|---:|
+| Home (▶) | 71 | 72 |
+| Discover | 123 | 124 |
+| Skins | 175 | 176 |
+| Screenshots | 227 | 228 |
+| Servers | 279 | 280 |
+
+**Pitch 52, first centre 71 -- the same.** The handoff's "our icons start at content y 48 and the reference's start
+lower" was reading the button's *top edge* as its centre; the rail already matches, and nothing needs changing.
+
+Two differences the scan does show, both recorded rather than fixed:
+
+- the reference carries a **sign-out** button at the bottom of the rail (centre 867). This build has no account to
+  sign out of, and an inert sign-out would be the invented control this file keeps banning.
+- the reference's settings gear sits at 815; this build's is near the foot of the rail. A 30-point difference with
+  nothing between them to compare against -- worth one measurement pass, not a guess.
