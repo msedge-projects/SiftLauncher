@@ -155,7 +155,9 @@ const TITLE_LINE: f32 = 18.0;
 
 /// The gap between the title and the copy: the card's inner stack is `gap-2`
 /// (`ui/components/content/NewsArticleCard.vue:30`), 8 points.
-const TITLE_TO_COPY: f32 = 8.0;
+// Measured: the reference's title ink starts at 518 and its copy's at 549 -- 31 points -- where this build had
+// 26. Four more points here and the copy lands on the reference's line.
+const TITLE_TO_COPY: f32 = 12.0;
 
 /// The copy's size: 12 points, from the reference's measurement.
 const COPY_SIZE: f32 = 14.0;
@@ -178,10 +180,13 @@ const COPY_TO_DATE: f32 = 8.0;
 const DATE_SIZE: f32 = 14.0; // guess: re-measure
 
 /// The date's line box.
-const DATE_LINE: f32 = 16.0; // guess: re-measure
+// Measured from the reference's own rows rather than assumed: the date's ink spans 12 points and the link's
+// centre sits 15.5 below the date's, so the date's line box plus the gap between the two rows comes to 9.5.
+// It was 16 + 12 = 28, which put the link 20 points too low -- visible in a side-by-side as a loose row.
+const DATE_LINE: f32 = 9.5;
 
 /// The gap between the date and the upgrade row.
-const DATE_TO_LINK: f32 = 12.0; // guess: re-measure
+const DATE_TO_LINK: f32 = 0.0; // measured with DATE_LINE: the two together are the reference's 9.5
 
 /// The upgrade row's height.
 const LINK_H: f32 = 32.0; // guess: re-measure
