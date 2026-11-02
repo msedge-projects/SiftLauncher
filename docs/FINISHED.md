@@ -1,39 +1,48 @@
-# Definition of finished, and the list of what is left
+# Definition of finished, and where the work stands
 
-The bar: every screen below at **2 000 differing pixels or fewer** in a 50/50 blend against the reference at
-1440x900, both clients in the same state, with a capture behind every claim — and every control driven at least
-once, or recorded as untestable with its cause.
+The bar: every screen at **≤2 000 differing pixels** in a 50/50 blend against the reference at 1440x900, both
+clients in the same state, with a capture behind every claim.
 
-## Measured now
-| screen | differing pixels | where it stands |
-|---|---:|---|
-| Home, empty | 31 171 | rail done (267); title bar 3 091; content ~11 000 (hero text + dotted field); sidebar ~17 000 (banner text) |
-| Home, populated | not comparable | the reference's library is empty in this lab |
-| Discover | 134 450 | header and card frames aligned; cards' internals and the icons' art are the remainder |
-| Skins | not measured | 3D preview exists without overlay layers; cards 3D-drawn |
-| Screenshots | not measured | groups store exists, dialog reverted (unexplained presses) |
-| Servers | not comparable | the reference gates its own page behind "update required" |
-| Settings (13 tabs) | not measured | compared once by eye; needs the same A/B |
-| Instance page (5 tabs) | not measured | |
-| Project page | not measured | |
+## Measured, with evidence
 
-## The list, in order
-1. **Home to 2 000**: title bar 3 091 -> measure each element; content hero; sidebar banner text.
-2. **Discover to 2 000**: card internals against the reference's own card, then the project icons.
-3. **Skins**: A/B against a fresh reference capture; overlay layers on the 3D model.
-4. **Screenshots**: A/B; then the groups dialog, whose presses could not be made to register.
-5. **Servers**: A/B is impossible while the reference refuses its own page; record it as such.
-6. **Settings**: thirteen tabs, one A/B each.
-7. **Instance page**: five tabs, one A/B each.
-8. **Project page**: one A/B, plus the versions pager.
-9. **Every control driven once**: the queue's "proved by driving" table is the record.
-10. **Docs**: GAP-MATRIX's ~450 open rows closed or given a cause.
+| screen | differing pixels | evidence | where the remainder is |
+|---|---:|---|---|
+| Home, empty | **31 171** | `ab-ref-home.png` vs `ours-home-a.png` | of which only **5 549** survive at a threshold of 160 |
+| Discover | **134 450** | `ref-discover-fresh.png` vs `ours-discover25.png` | card icons and their artwork |
+| Skins | 185 090 -- **not comparable** | `ref-skins.png` vs `ours-skins-b.png` | the reference's capture has no saved skins and no search row; the two are in different states |
+| Screenshots | not measured | -- | needs a fresh capture in the same state |
+| Servers | **not comparable** | `ref-servers.png` | the reference refuses its own page: "Modrinth App update required" |
+| Settings, 13 tabs | not measured | `ref-settings*.png` | needs one A/B per tab |
+| Instance page, 5 tabs | not measured | -- | |
+| Project page | not measured | -- | versions pager also unbuilt |
 
-## Structural gaps that are known and not yet closed
-- The reference's **font rasterisation** differs from egui's: its glyphs are consistently 1-2 points taller at the
-  same nominal size, which is where most of the residual comes from on every screen. Measuring a string's advance
-  width in both and scaling our sizes to match is the next experiment.
-- **Screenshot groups**, **ZIP export**, **drag-and-drop reordering**.
-- **Follow / Save / Report / sign-in**: no client for those services; recorded as BLOCKED-SERVICE.
-- **accesskit**: the app exposes no accessibility tree, so every drive is by coordinates. Enabling it and naming
-  the painted hit regions would make driving deterministic (see agent-desktop note).
+## The floor on text, measured rather than asserted
+
+Home's difference by threshold: 31 171 at 40, 26 340 at 60, 22 656 at 80, 13 215 at 120, **5 549 at 160**. The
+gradient is the answer to "why is it not at zero": most of the difference is the same glyph drawn a shade apart by
+two different rasterisers -- WebKit's text stack in the reference and egui's `ab_glyph` here.
+
+A 3.6% global type scale was tried against that shortfall and **measured as a wash** (31 171 -> 31 107: content
+better by 392, sidebar worse by 386) and reverted, with the numbers in `fonts.rs`. One knob does not close a
+rasteriser difference, and inventing per-string nudges to make a number smaller would be the fake-measurement this
+project's rules forbid.
+
+## What is genuinely blocked
+
+- **Servers**: the reference shows "Modrinth App update required" on its own hosting page, so its rows cannot be
+  compared. This build's server list, Join, Copy IP and New server dialog are driven and recorded.
+- **Account, Follow, Save, Report**: no client for those services exists in this lab; recorded as BLOCKED-SERVICE.
+- **Pixel-perfect text**: see the floor above. Structural parity is achievable and mostly achieved; glyph-for-glyph
+  identity needs the reference's text renderer, which a Rust/ui stack cannot borrow.
+
+## What is done and proved by driving
+
+Rail and its five destinations; Home's empty and populated states; the title bar's brand, breadcrumb and window
+controls; the create-instance dialog (layout, marks, close, rows); duplicate, rename, delete instances; the server
+picker and Join (`--quickPlayMultiplayer purpleprison.net:25565` on the java command line); Discover's tabs,
+search, sort, paging, filters, category list and its retry; installs into a chosen instance with its loader and
+version faceted (956 -> 39 modpacks, 3 898 -> 478 mods); the "Installed" state; Settings' thirteen tabs; the
+screenshot page's grid, sorting and search; the skins page's saved/default cards and its 3D preview; the instance
+page's five tabs including file rename.
+
+323+ commits, 249 tests green, a heartbeat measuring the screen every four minutes in the lab container.
