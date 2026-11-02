@@ -454,7 +454,9 @@ impl Shell {
         // what located it. Plate and field must share a layer, and the field must come second.
         let painter = ui.painter().clone();
         painter.rect_filled(screen, 0.0, egui::Color32::from_black_alpha(120));
-        let plate = egui::Rect::from_center_size(screen.center(), egui::vec2(576.0, 350.0));
+        // The reference's plate for this step measures 400 by 576 at 1440x900; it was 350, and the four
+        // rows ran out of the bottom of it.
+        let plate = egui::Rect::from_center_size(screen.center(), egui::vec2(576.0, 404.0));
         // A modal has to be dismissable: the reference closes on Escape and on a click outside
         // the plate. Without this the dialog is a trap, which is what the capture showed --
         // every row and the close mark drawn, none of them answering.
@@ -490,14 +492,16 @@ impl Shell {
         // The close mark is a drawn glyph. It used to be the character "✕", and the bundled fonts have
         // none of it -- the capture showed a "?" in the corner of the dialog, which is what a missing
         // glyph looks like.
+        let close_disc = egui::Rect::from_center_size(
+            egui::pos2(plate.right() - 28.0, plate.top() + 26.0),
+            egui::Vec2::splat(28.0),
+        );
+        painter.circle_filled(close_disc.center(), 14.0, theme.BUTTON_BG);
         crate::icons::draw(
             &painter,
             crate::icons::Glyph::X,
-            egui::Rect::from_center_size(
-                egui::pos2(plate.right() - 28.0, plate.top() + 26.0),
-                egui::Vec2::splat(16.0),
-            ),
-            theme.SECONDARY,
+            egui::Rect::from_center_size(close_disc.center(), egui::Vec2::splat(14.0)),
+            theme.BASE,
         );
         painter.hline(
             left..=right,
@@ -666,9 +670,10 @@ impl Shell {
             return;
         }
         for (index, (title, description, _)) in INSTANCE_TYPES.iter().enumerate() {
+            // 56 tall on a 64-point pitch: the reference's four rows fill 256 points between them.
             let row = egui::Rect::from_min_size(
-                egui::pos2(left, plate.top() + 166.0 + index as f32 * 42.0),
-                egui::vec2(right - left, 38.0),
+                egui::pos2(left, plate.top() + 166.0 + index as f32 * 64.0),
+                egui::vec2(right - left, 56.0),
             );
             if settled && clicked && pointer.is_some_and(|point| row.contains(point)) {
                 self.create_choice = Some(index);
@@ -697,26 +702,38 @@ impl Shell {
             crate::icons::draw(
                 &painter,
                 mark,
-                egui::Rect::from_min_size(
-                    egui::pos2(row.left() + 14.0, row.center().y - 10.0),
-                    egui::Vec2::splat(20.0),
+                egui::Rect::from_center_size(
+                    egui::pos2(row.left() + 25.0, row.center().y),
+                    egui::Vec2::splat(22.0),
                 ),
                 theme.BASE,
             );
             painter.text(
-                egui::pos2(row.left() + 44.0, row.top() + 7.0),
+                egui::pos2(row.left() + 52.0, row.center().y - 16.0),
                 egui::Align2::LEFT_TOP,
                 *title,
                 crate::fonts::semibold(13.0),
                 theme.CONTRAST,
             );
             painter.text(
-                egui::pos2(row.left() + 44.0, row.top() + 22.0),
+                egui::pos2(row.left() + 52.0, row.center().y + 2.0),
                 egui::Align2::LEFT_TOP,
                 *description,
                 crate::fonts::body(11.0),
                 theme.SECONDARY,
             );
+            // The second row leads somewhere, and the reference marks it with a chevron.
+            if index == 1 {
+                crate::icons::draw(
+                    &painter,
+                    crate::icons::Glyph::ChevronRight,
+                    egui::Rect::from_center_size(
+                        egui::pos2(row.right() - 18.0, row.center().y),
+                        egui::Vec2::splat(16.0),
+                    ),
+                    theme.SECONDARY,
+                );
+            }
         }
     }
 }
