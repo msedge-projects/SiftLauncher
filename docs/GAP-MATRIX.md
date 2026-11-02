@@ -4853,3 +4853,18 @@ both fixed the wrap is **identical line for line**:
 What is still loose, and by how much, from the same crops: the link sits ~38 points under the date where the
 reference has 12, because `DATE_LINE` is a 16-point line box around 14-point type and the date's own ink is 15
 tall. The next measurement here is the date row's real line box, not another guess of 16.
+
+### The same A/B, after the frame, the copy and the rows (2026-11-02, last measurement)
+
+| whole screen | differing pixels (threshold 40) |
+|---|---:|
+| first run, decorated window | 131 533 |
+| after removing the decoration | 87 409 |
+| after the copy, the rows and the banner | **73 584** |
+
+By region now: rail **267** of 54 528 (0.5% -- the rail is done), title bar 3 344, content 35 371, sidebar 34 602
+(down from 48 427).
+
+What the remaining content difference is, from the blend: the instance rows and the hero align, so it is glyph
+antialiasing plus the "Create new instance" label that sits at a different height in the empty state. The sidebar's
+residue is the banner's heading, which still sits ~20 points lower here than in the reference.
