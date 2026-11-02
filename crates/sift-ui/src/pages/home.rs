@@ -17,9 +17,10 @@
 //! [`MenuItem::label`] for the key behind each one. The menu's `Play` is the same
 //! [`Action::Play`] the row's pill sends, so it launches for real -- what the reference's own
 //! context menu does (`InstanceItem.vue:203-217`) -- and the shell answers a second press
-//! while a launch is out with a toast. `Edit` and `Duplicate` are painted but not wired, and
-//! they answer through the shell with a toast naming what is missing: a press that silently
-//! does nothing reads as a broken button.
+//! while a launch is out with a toast. `Edit`, `Duplicate`, `Open folder` and `Delete` report
+//! their own verbs to the shell. **`Delete` asks first**: the press opens the reference's
+//! confirmation (`ConfirmDeleteInstanceModal.vue`), and `Action::Delete` -- the verb that
+//! removes a folder -- leaves this page only when that dialog's own button answers.
 //!
 //! **The worlds under the list.** The reference's `Jump in` section
 //! (`app.home.jump-back-in.title`, `RecentWorldsList.vue:47`) lists recently played worlds
@@ -90,11 +91,131 @@ const MENU_ROW_RADIUS: u8 = 10;
 /// panels (`FloatingPanel.vue:22`).
 const MENU_DISTANCE: f32 = 8.0;
 
+// ---------------------------------------------------------------------------
+// The list: one row's targets
+// ---------------------------------------------------------------------------
+
+/// Where the first row's card starts, down from the page's top edge: the heading line is 24
+/// at 24 and the row starts below it -- the number the shell's Home capture was aimed with.
+const ROW_TOP: f32 = 72.0;
+
+/// The step between two rows: a 96-point card and a 12-point gap.
+const ROW_HEIGHT: f32 = 96.0;
+const ROW_STEP: f32 = 108.0;
+
+/// How far the play pill's centre sits in from the card's right edge, and how big it is.
+/// The reference's card shows the pill in a `size-12` slot 6 points off the tile's corner
+/// (`instance-card-view.vue:66-71`); on this row it is the same 40-point circle.
+const PLAY_INSET: f32 = 60.0;
+const PLAY_SIZE: f32 = 40.0;
+
+/// The three targets on one row: the card, its play pill and its kebab.
+///
+/// A function rather than the same three expressions spelled twice: the probe below and the
+/// tests aim at exactly the rects the drawing registers, which is the only way a printed
+/// number and a press can be the same number.
+fn row_targets(rect: Rect, index: usize) -> (Rect, Rect, Rect) {
+    let card = Rect::from_min_size(
+        egui::pos2(rect.left(), rect.top() + ROW_TOP + index as f32 * ROW_STEP),
+        egui::vec2(rect.width(), ROW_HEIGHT),
+    );
+    let play = Rect::from_center_size(
+        egui::pos2(card.right() - PLAY_INSET, card.center().y),
+        Vec2::splat(PLAY_SIZE),
+    );
+    let kebab = Rect::from_center_size(
+        egui::pos2(play.right() + ROW_ACTION_GAP + KEBAB_SIZE / 2.0, card.center().y),
+        Vec2::splat(KEBAB_SIZE),
+    );
+    (card, play, kebab)
+}
+
 /// The narrowest the panel gets before its widest label widens it. The reference's panel is
 /// `w-fit` (`ButtonMenuPanel.vue`'s class list), so this floor exists only so a short menu
 /// does not look like a tooltip -- re-measure against the capture.
 // guess: re-measure
 const MENU_MIN_WIDTH: f32 = 168.0;
+
+// ---------------------------------------------------------------------------
+// The delete confirmation: geometry, type and copy
+//
+// The reference never deletes on the menu's press. `use-library.ts:1373-1376` stores the id
+// and calls `confirmDeleteModal.value?.show()`, so the destructive half of the action is a
+// second, deliberate press. The dialog is `ConfirmDeleteInstanceModal`
+// (`apps/app-frontend/src/components/ui/modal/ConfirmDeleteInstanceModal.vue`): a
+// `max-width: 500px` `NewModal` with `fade="danger"`, a critical `Admonition`, the instance
+// it names, and `Cancel` beside a red `Delete instance`.
+//
+// Its anatomy is `NewModal`'s (`packages/ui/src/components/modal/NewModal.vue`): a
+// `bg-bg-raised rounded-2xl border border-solid border-surface-5` body (:38), a `p-6` header
+// with a `text-2xl font-semibold text-contrast` title (:44-46) over a 1 px `surface-5` rule,
+// a `p-6` content column (:118) and a `p-4` action row (:130). The two buttons are the design
+// system's `md` (`ButtonFrame.vue:31`).
+// ---------------------------------------------------------------------------
+
+/// The plate's width: `max-width="500px"` on the reference's dialog
+/// (`ConfirmDeleteInstanceModal.vue:2`).
+const CONFIRM_WIDTH: f32 = 500.0;
+
+/// The plate's corner radius: `rounded-2xl`, 1rem (`NewModal.vue:38`).
+const CONFIRM_RADIUS: u8 = 16;
+
+/// The header's, the content column's and the action row's padding: `p-6` twice and `p-4`
+/// (`NewModal.vue:45, 118, 130`).
+const CONFIRM_PAD: f32 = 24.0;
+const CONFIRM_ACTIONS_PAD: f32 = 16.0;
+
+/// The header's title: `text-2xl font-semibold` -- 24 on a 32-point line (`NewModal.vue:44`).
+const CONFIRM_TITLE_SIZE: f32 = 24.0;
+const CONFIRM_TITLE_LINE: f32 = 32.0;
+
+/// The close button: `IconButton` at `md`, a 36-point square with a 20-point glyph
+/// (`IconButton.vue`, `ButtonFrame.vue:31`).
+const CONFIRM_CLOSE: f32 = 36.0;
+
+/// The admonition: `grid grid-cols-[1.5rem_minmax(0,1fr)_auto] rounded-2xl border p-4` with a
+/// 24-point severity glyph and `gap-x-2`, its header `text-lg font-semibold leading-6` and
+/// its body `leading-tight` (`Admonition.vue:2-47`).
+const ADMONITION_PAD: f32 = 16.0;
+const ADMONITION_ICON: f32 = 24.0;
+const ADMONITION_GAP: f32 = 8.0;
+const ADMONITION_HEADER_SIZE: f32 = 18.0;
+const ADMONITION_HEADER_LINE: f32 = 24.0;
+const ADMONITION_BODY: f32 = 16.0;
+const ADMONITION_BODY_LINE: f32 = 20.0;
+
+/// The instance card under the admonition: `flex items-center gap-2.5 rounded-[20px] p-3` with
+/// a `40px` avatar, the name `font-semibold`, the loader `text-sm font-medium text-secondary`
+/// (`ConfirmDeleteInstanceModal.vue:22-40`).
+const CARD_PAD: f32 = 12.0;
+const CARD_RADIUS: u8 = 20;
+const CARD_AVATAR: f32 = 40.0;
+const CARD_GAP: f32 = 10.0;
+const LABEL_SIZE: f32 = 16.0;
+const LABEL_LINE: f32 = 24.0;
+const LOADER_SIZE: f32 = 14.0;
+const LOADER_LINE: f32 = 20.0;
+
+/// A button at the design system's `md`: `h-9 rounded-xl px-2.5 gap-1.5 text-base font-semibold
+/// [&>svg]:size-5` (`ButtonFrame.vue:31`).
+const ACTION_HEIGHT: f32 = 36.0;
+const ACTION_RADIUS: u8 = 12;
+const ACTION_PAD: f32 = 10.0;
+const ACTION_GAP: f32 = 6.0;
+const ACTION_ICON: f32 = 20.0;
+const ACTION_TEXT: f32 = 16.0;
+const ACTION_GAP_BETWEEN: f32 = 8.0;
+
+/// The dialog's copy, verbatim from `ConfirmDeleteInstanceModal.vue`'s `defineMessages`
+/// (:138-175); the key is beside each string so a drifting word can be traced to the reference.
+/// The one-instance branch of each plural is the one this page can reach.
+const CONFIRM_TITLE: &str = "Delete instance"; // app.instance.confirm-delete.header (:140-143)
+const CONFIRM_ADMONITION_HEADER: &str = "This action cannot be undone"; // :146-152
+const CONFIRM_ADMONITION_BODY: &str =
+    "All data for your instance will be permanently deleted, including your worlds, configs, and all installed content."; // :153-157
+const CONFIRM_INSTANCES_LABEL: &str = "Instance"; // app.instance.confirm-delete.instances-label, one (:164-168)
+const CONFIRM_CANCEL: &str = "Cancel"; // commonMessages.cancelButton (`common-messages.ts:51-54`)
+const CONFIRM_DELETE: &str = "Delete instance"; // app.instance.confirm-delete.delete-button (:169-172)
 
 // ---------------------------------------------------------------------------
 // The worlds section: geometry and type
@@ -171,7 +292,11 @@ pub enum Action {
     Import,
     /// Play this instance, by its id: the row's pill, or the menu's `Play`.
     Play(String),
-    /// The menu's `Edit`: the instance's own settings page.
+    /// The row's own press: open the instance's page (`InstanceItem.vue`). A different verb
+    /// from the menu's `Edit` on purpose -- a card press that re-opened the rename dialog was
+    /// how the dialog used to be thrown away mid-typing.
+    Open(String),
+    /// The menu's `Edit`: the instance's own name, in the shell's rename dialog.
     Edit(String),
     /// The menu's `Duplicate instance`: copy the instance's folder.
     Duplicate(String),
@@ -301,6 +426,10 @@ pub struct State {
     /// The instance ids `worlds` was read for. A create or a delete changes this list, and
     /// that change is what triggers the re-read.
     scanned: Vec<String>,
+    /// The instance the row menu asked to delete, waiting on the confirmation the reference
+    /// puts between the press and the disk (`ConfirmDeleteInstanceModal.vue`). `Action::Delete`
+    /// leaves this page only when the dialog's own button answers -- see [`resolve_confirm`].
+    pub confirm_delete: Option<String>,
     /// The library's search text. The reference's library toolbar carries a field in the
     /// heading row, so the filter lives here rather than on a page of its own.
     pub query: String,
@@ -332,6 +461,54 @@ impl State {
         self.menu.open_for = None;
         self.worlds = read_worlds(instances);
     }
+}
+
+/// What a press on one of the row menu's rows means.
+///
+/// Every row but `Delete` is the verb it names. `Delete` is destructive and the reference
+/// asks first (`use-library.ts:1373-1376`), so its press only opens the confirmation: the
+/// action that can remove a folder is emitted from [`resolve_confirm`], on the dialog's own
+/// button. A function rather than three inline lines because this is the rule a test can
+/// call without a pointer.
+pub fn press_menu_row(row: MenuItem, id: &str, state: &mut State) -> Action {
+    match row {
+        MenuItem::Delete => {
+            state.confirm_delete = Some(id.to_owned());
+            Action::None
+        }
+        verb => verb.action(id),
+    }
+}
+
+/// What the confirmation's answer means.
+///
+/// Both answers close the dialog, and only [`ConfirmChoice::Delete`] returns
+/// [`Action::Delete`] -- `Ask` is the dialog still standing there, which is why it is the
+/// default and why nothing else can reach the shell's delete.
+pub fn resolve_confirm(choice: ConfirmChoice, id: &str, state: &mut State) -> Action {
+    match choice {
+        ConfirmChoice::Ask => Action::None,
+        ConfirmChoice::Cancel => {
+            state.confirm_delete = None;
+            Action::None
+        }
+        ConfirmChoice::Delete => {
+            state.confirm_delete = None;
+            Action::Delete(id.to_owned())
+        }
+    }
+}
+
+/// What the confirmation's press meant, or that it is still waiting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ConfirmChoice {
+    /// Still open: nothing has been answered.
+    #[default]
+    Ask,
+    /// `Cancel`, the close button, Escape, or a press on the backdrop.
+    Cancel,
+    /// `Delete instance`: the one press allowed to remove a folder.
+    Delete,
 }
 
 /// Draw the page into `rect`, and say what was pressed.
@@ -579,12 +756,31 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
 
     // The two presses. \`N\` is the reference's own shortcut for the same action, and it is
     // read here rather than in the shell because the page is what advertises it.
+    // The guards are the reference's own (`WelcomeScreen.vue:50-68`): it ignores
+    // `event.repeat`, ignores the key when a modifier is held, and ignores it while a text
+    // field has the keyboard. egui's `key_pressed` counts a key-repeat as a press and has no
+    // notion of "this keystroke belongs to a dialog", so both are tested here: unfiltered,
+    // `Ctrl+N` made a second instance and every "n" typed into the create dialog made one too.
+    let quick_key = ui.input(|input| {
+        !input.modifiers.any()
+            && input.events.iter().any(|event| {
+                matches!(
+                    event,
+                    egui::Event::Key {
+                        key: egui::Key::N,
+                        pressed: true,
+                        repeat: false,
+                        ..
+                    }
+                )
+            })
+    }) && ui.ctx().memory(|memory| memory.focused().is_none());
     let _ = icons_cache;
     let mut action = Action::None;
     if ui
         .interact(create, egui::Id::new("home-create"), Sense::click())
         .clicked()
-        || ui.input(|i| i.key_pressed(egui::Key::N))
+        || quick_key
     {
         action = Action::Create;
     }
@@ -692,6 +888,14 @@ fn list(
     {
         state.query_focused = true;
     }
+    // A press anywhere else takes the keyboard back. The reference's input is a real field and
+    // loses focus when the reader clicks out of it; this field used to keep every later
+    // keystroke on the page, so a press on a card and then a letter still filtered the list.
+    if state.query_focused && ui.input(|input| input.pointer.any_pressed())
+        && !ui.rect_contains_pointer(field)
+    {
+        state.query_focused = false;
+    }
     if state.query_focused {
         for event in ui.input(|input| input.events.clone()) {
             match event {
@@ -721,7 +925,39 @@ fn list(
         })
         .collect();
 
+    // Rule 1 of the drive: the rect comes from the program, never off a capture. Off unless
+    // `SIFT_HOME_PROBE` is set, and it prints the numbers a press is aimed with.
+    if std::env::var_os("SIFT_HOME_PROBE").is_some() {
+        eprintln!("home page={rect:?} rows={}", shown.len().min(ROWS_SHOWN));
+        for (index, instance) in shown.iter().take(ROWS_SHOWN).enumerate() {
+            let (card, play, kebab) = row_targets(rect, index);
+            eprintln!(
+                "home row={index} id={:?} card={card:?} play={play:?} kebab={kebab:?}",
+                instance.id
+            );
+        }
+    }
+
+    // A dialog that was already open when this frame began owns every press in it. `egui::Modal`
+    // makes the widgets under the plate inert from the frame after it is drawn, so this covers
+    // the one frame it is drawn on.
+    let modal_was_open = state.confirm_delete.is_some();
+
     let mut action = Action::None;
+
+    // `app.library.search.no-results.title` -- "No instances match your search."
+    // (`apps/app-frontend/src/components/ui/library/index.vue:31-34, 272-277`), `text-base
+    // text-primary`, standing where the first row would: an empty page under a query must
+    // say so rather than read as a library with nothing in it.
+    if shown.is_empty() {
+        painter.text(
+            egui::pos2(rect.left(), rect.top() + ROW_TOP),
+            Align2::LEFT_TOP,
+            "No instances match your search.",
+            fonts::body(16.0),
+            theme.CONTRAST,
+        );
+    }
 
     // An outside press closes the popover, the way the reference's panels close on a click
     // outside them (`FloatingPanel.vue:192-198`). Registered first, so every kebab, pill and
@@ -734,16 +970,14 @@ fn list(
         menu.open_for = None;
     }
 
-    let mut y = rect.top() + 72.0;
     let width = rect.width();
     // The open row's kebab, kept so the popover can be drawn after every row: a panel drawn
     // in its row's turn would be painted under the card below it.
     let mut anchored: Option<(String, Rect)> = None;
-    for instance in shown.iter().copied().take(ROWS_SHOWN) {
-        let card = Rect::from_min_size(
-            egui::pos2(rect.left(), y),
-            egui::vec2(width, 96.0),
-        );
+    let rows = shown.len().min(ROWS_SHOWN);
+    for (index, instance) in shown.iter().copied().take(ROWS_SHOWN).enumerate() {
+        // The card, its pill and its kebab from the one function the probe and the tests read.
+        let (card, play, kebab) = row_targets(rect, index);
         painter.rect_filled(card, 12, theme.RAISED_BG);
         let tile = Rect::from_min_size(card.min + egui::vec2(16.0, 16.0), Vec2::splat(64.0));
         painter.rect_filled(tile, 12, theme.BUTTON_BG);
@@ -770,20 +1004,17 @@ fn list(
         );
 
         // The card's own press opens the instance's page, which the reference does from the same
-        // place (`InstanceItem.vue`). This was the missing press: `Action::Edit` already opened
-        // the page and nothing ever emitted it. Registered before the play pill and the kebab so
-        // those two, being later, win the press inside their own rects.
+        // place (`InstanceItem.vue`). Registered before the play pill and the kebab so those two,
+        // being later, win the press inside their own rects. It reports `Action::Open`, not
+        // `Action::Edit`: the card and the menu row are both over the dialog's plate, and sharing
+        // one verb there is what let a press on Save reopen the dialog it meant to save.
         let card_response = ui.interact(card, egui::Id::new(("card", &instance.id)), Sense::click());
         if card_response.clicked() && matches!(action, Action::None) {
             menu.open_for = None;
-            action = Action::Edit(instance.id.clone());
+            action = Action::Open(instance.id.clone());
         }
 
         // The play button, right-aligned: the reference's green pill on every instance card.
-        let play = Rect::from_center_size(
-            egui::pos2(card.right() - 60.0, card.center().y),
-            Vec2::splat(40.0),
-        );
         painter.rect_filled(play, 8, theme.BUTTON_BG_SELECTED);
         icons::draw(
             painter,
@@ -808,13 +1039,6 @@ fn list(
         // The kebab, beside the pill and inside the same right-hand group
         // (`InstanceItem.vue:283-314`). `EllipsisVertical` is the icon set's
         // `ellipsis-vertical.svg`, the three dots the reference's `MoreVerticalIcon` draws.
-        let kebab = Rect::from_center_size(
-            egui::pos2(
-                play.right() + ROW_ACTION_GAP + KEBAB_SIZE / 2.0,
-                card.center().y,
-            ),
-            Vec2::splat(KEBAB_SIZE),
-        );
         let is_open = menu.open_for.as_deref() == Some(instance.id.as_str());
         let kebab_response = ui.interact(
             kebab,
@@ -848,8 +1072,10 @@ fn list(
         if menu.open_for.as_deref() == Some(instance.id.as_str()) {
             anchored = Some((instance.id.clone(), kebab));
         }
-        y += 108.0;
     }
+    // Where the rows stopped: the last card's own bottom plus the 12-point row gap, which is
+    // where the worlds section starts.
+    let mut y = rect.top() + ROW_TOP + rows as f32 * ROW_STEP;
 
     // The worlds, under the rows: the reference's `Jump in` section. The heading is only
     // drawn when something is under it -- a section heading over nothing is what a fresh
@@ -919,12 +1145,36 @@ fn list(
     // The popover last, so it lies over every row it covers. egui resolves an overlapping
     // press to the widget registered last, which is what makes a menu row take the click
     // instead of the card's pill underneath it.
+    let mut pressed: Option<(String, MenuItem)> = None;
     if let Some((id, kebab)) = anchored {
         if let Some(item) = menu_popover(ui, theme, &id, kebab, rect) {
             menu.open_for = None;
-            if matches!(action, Action::None) {
-                action = item.action(&id);
-            }
+            pressed = Some((id, item));
+        }
+    }
+    // `menu` and `worlds` are done with: everything below writes `state`, and a dialog's answer
+    // is the only press allowed after this point.
+    if let Some((id, item)) = pressed {
+        if matches!(action, Action::None) {
+            action = press_menu_row(item, &id, state);
+        }
+    }
+
+    if modal_was_open {
+        action = Action::None;
+    }
+    // The confirmation, last of all: it paints over the chrome on its own layer, and it owns
+    // the only press on this page that can take a folder with it.
+    if let Some(id) = state.confirm_delete.clone() {
+        let entry = instances.iter().find(|entry| entry.id == id);
+        let choice = confirm_dialog(ui, theme, entry);
+        if choice != ConfirmChoice::Ask {
+            action = resolve_confirm(choice, &id, state);
+            // The dialog is gone: one frame so the page underneath is not left half-covered.
+            ui.ctx().request_repaint();
+        } else {
+            // The rows under the plate must not act on the press that opened it.
+            action = Action::None;
         }
     }
 
@@ -979,6 +1229,15 @@ fn menu_popover(ui: &mut Ui, theme: &Theme, id: &str, anchor: Rect, bounds: Rect
         egui::StrokeKind::Inside,
     );
 
+    if std::env::var_os("SIFT_HOME_PROBE").is_some()
+        && ui.input(|input| input.pointer.any_click())
+    {
+        eprintln!(
+            "home click ptr={:?} panel={panel:?} rows={:?}",
+            ui.input(|input| input.pointer.interact_pos()),
+            MENU_ITEM_HEIGHT
+        );
+    }
     let mut pressed = None;
     for (index, item) in MenuItem::ALL.into_iter().enumerate() {
         let row = Rect::from_min_size(
@@ -1029,6 +1288,323 @@ fn menu_popover(ui: &mut Ui, theme: &Theme, id: &str, anchor: Rect, bounds: Rect
         }
     }
     pressed
+}
+
+/// Draw the confirmation the menu's `Delete` opens, and say what its press meant.
+///
+/// **Through `egui::Modal`**, not on the page's own painter. A modal puts its plate on a
+/// foreground layer and makes every widget below it inert for as long as it is up; the page's
+/// rows are registered with `ui.interact` on the panel layer, and a dialog painted there
+/// would lose its presses to them -- the same reason the shell draws its edit dialog.
+fn confirm_dialog(ui: &Ui, theme: &Theme, entry: Option<&Entry>) -> ConfirmChoice {
+    let ctx = ui.ctx().clone();
+    let body_ink = theme.CONTRAST.gamma_multiply(0.85);
+    let mut choice = ConfirmChoice::Ask;
+
+    // The one variable-height line, wrapped to the admonition's own measure: everything else
+    // is a line box from the sheet, so the plate's height can be known before it is drawn.
+    let wrap = CONFIRM_WIDTH
+        - CONFIRM_PAD * 2.0
+        - ADMONITION_PAD * 2.0
+        - ADMONITION_ICON
+        - ADMONITION_GAP;
+    let body = ui.painter().layout(
+        CONFIRM_ADMONITION_BODY.to_owned(),
+        fonts::body(ADMONITION_BODY),
+        body_ink,
+        wrap,
+    );
+    let admonition_h = ADMONITION_PAD * 2.0
+        + (ADMONITION_HEADER_LINE + ADMONITION_GAP + body.size().y).max(ADMONITION_ICON);
+    let card_h =
+        CARD_PAD * 2.0 + CARD_AVATAR.max(LABEL_LINE + 6.0 + LOADER_LINE);
+    let header_h = CONFIRM_PAD * 2.0 + CONFIRM_TITLE_LINE;
+    let content_h = CONFIRM_PAD * 2.0 + admonition_h + 24.0 + LABEL_LINE + 8.0 + card_h;
+    let actions_h = CONFIRM_ACTIONS_PAD * 2.0 + ACTION_HEIGHT;
+    let plate_h = header_h + content_h + actions_h;
+
+    let modal = egui::Modal::new(egui::Id::new("home-confirm-delete"))
+        .frame(egui::Frame::NONE)
+        // `fade="danger"`: a red-tinted scrim over the page (`NewModal.vue:695-697`).
+        .backdrop_color(egui::Color32::from_rgba_unmultiplied(49, 10, 15, 220))
+        .show(&ctx, |ui| {
+            let painter = ui.painter().clone();
+            let (plate, _) = ui.allocate_exact_size(
+                egui::vec2(CONFIRM_WIDTH, plate_h),
+                Sense::hover(),
+            );
+            // `bg-bg-raised rounded-2xl border border-solid border-surface-5` (`NewModal.vue:38`).
+            painter.rect_filled(plate, CONFIRM_RADIUS, theme.RAISED_BG);
+            painter.rect_stroke(
+                plate,
+                CONFIRM_RADIUS,
+                Stroke::new(1.0, theme.SURFACE_5),
+                egui::StrokeKind::Inside,
+            );
+
+            // The header: the title at 24 on its own 32-point line, and the close button on
+            // the right of the same row (`NewModal.vue:42-58`).
+            let header_mid = plate.top() + CONFIRM_PAD + CONFIRM_TITLE_LINE / 2.0;
+            painter.text(
+                egui::pos2(plate.left() + CONFIRM_PAD, header_mid),
+                Align2::LEFT_CENTER,
+                CONFIRM_TITLE,
+                fonts::semibold(CONFIRM_TITLE_SIZE),
+                theme.CONTRAST,
+            );
+            let close = Rect::from_center_size(
+                egui::pos2(
+                    plate.right() - CONFIRM_PAD - CONFIRM_CLOSE / 2.0,
+                    header_mid,
+                ),
+                Vec2::splat(CONFIRM_CLOSE),
+            );
+            let close_response =
+                ui.interact(close, egui::Id::new("home-confirm-close"), Sense::click());
+            if close_response.hovered() {
+                painter.rect_filled(close, 8, theme.BUTTON_BG);
+            }
+            icons::draw(
+                &painter,
+                Glyph::X,
+                Rect::from_center_size(close.center(), Vec2::splat(ACTION_ICON)),
+                theme.BASE,
+            );
+            // The rule under the header, `border-b-[1px] border-surface-5` (`NewModal.vue:45`).
+            painter.hline(
+                (plate.left() + CONFIRM_RADIUS as f32)..=(plate.right() - CONFIRM_RADIUS as f32),
+                plate.top() + header_h + 0.5,
+                Stroke::new(1.0, theme.SURFACE_5),
+            );
+
+            // The critical admonition: `border-brand-red bg-red-bg` behind a 24-point
+            // severity glyph (`Admonition.vue:172-190`; `variables.scss:117`).
+            let admonition = Rect::from_min_size(
+                egui::pos2(
+                    plate.left() + CONFIRM_PAD,
+                    plate.top() + header_h + CONFIRM_PAD,
+                ),
+                egui::vec2(CONFIRM_WIDTH - CONFIRM_PAD * 2.0, admonition_h),
+            );
+            painter.rect_filled(admonition, CONFIRM_RADIUS, theme.RED.gamma_multiply(0.10));
+            painter.rect_stroke(
+                admonition,
+                CONFIRM_RADIUS,
+                Stroke::new(1.0, theme.RED),
+                egui::StrokeKind::Inside,
+            );
+            icons::draw(
+                &painter,
+                Glyph::CircleAlert,
+                Rect::from_min_size(
+                    egui::pos2(
+                        admonition.left() + ADMONITION_PAD,
+                        admonition.top() + ADMONITION_PAD,
+                    ),
+                    Vec2::splat(ADMONITION_ICON),
+                ),
+                theme.RED,
+            );
+            let text_x = admonition.left() + ADMONITION_PAD + ADMONITION_ICON + ADMONITION_GAP;
+            painter.text(
+                egui::pos2(text_x, admonition.top() + ADMONITION_PAD),
+                Align2::LEFT_TOP,
+                CONFIRM_ADMONITION_HEADER,
+                fonts::semibold(ADMONITION_HEADER_SIZE),
+                theme.CONTRAST,
+            );
+            painter.galley(
+                egui::pos2(
+                    text_x,
+                    admonition.top() + ADMONITION_PAD + ADMONITION_HEADER_LINE + ADMONITION_GAP,
+                ),
+                body,
+                body_ink,
+            );
+
+            // The instance it names: `Instance` over a card carrying the instance's own name
+            // and loader (`ConfirmDeleteInstanceModal.vue:12-42`).
+            let label_y = admonition.bottom() + 24.0;
+            painter.text(
+                egui::pos2(plate.left() + CONFIRM_PAD, label_y),
+                Align2::LEFT_TOP,
+                CONFIRM_INSTANCES_LABEL,
+                fonts::semibold(LABEL_SIZE),
+                theme.CONTRAST,
+            );
+            let card = Rect::from_min_size(
+                egui::pos2(plate.left() + CONFIRM_PAD, label_y + LABEL_LINE + 8.0),
+                egui::vec2(CONFIRM_WIDTH - CONFIRM_PAD * 2.0, card_h),
+            );
+            // `rounded-[20px] border border-transparent bg-surface-2 p-3`
+            // (`ConfirmDeleteInstanceModal.vue:29-32`).
+            painter.rect_filled(card, CARD_RADIUS, theme.SURFACE_2);
+            let avatar = Rect::from_min_size(
+                egui::pos2(card.left() + CARD_PAD, card.center().y - CARD_AVATAR / 2.0),
+                Vec2::splat(CARD_AVATAR),
+            );
+            painter.rect_filled(avatar, 12, theme.BUTTON_BG);
+            let name_x = avatar.right() + CARD_GAP;
+            let (name, loader) = match entry {
+                Some(entry) => (
+                    entry.name.as_str(),
+                    if entry.version.is_empty() {
+                        entry.loader.clone()
+                    } else {
+                        format!("{} {}", entry.loader, entry.version)
+                    },
+                ),
+                // The row can only be gone if the list was re-read between the press and this
+                // frame; naming the id is still a true answer to "delete what?".
+                None => ("this instance", String::new()),
+            };
+            let text_top = card.center().y - (LABEL_LINE + 6.0 + LOADER_LINE) / 2.0;
+            painter.text(
+                egui::pos2(name_x, text_top),
+                Align2::LEFT_TOP,
+                name,
+                fonts::semibold(LABEL_SIZE),
+                theme.CONTRAST,
+            );
+            painter.text(
+                egui::pos2(name_x, text_top + LABEL_LINE + 6.0),
+                Align2::LEFT_TOP,
+                loader,
+                fonts::body(LOADER_SIZE),
+                theme.SECONDARY,
+            );
+
+            // The action row: `Cancel` beside a red `Delete instance`, right-aligned
+            // (`ConfirmDeleteInstanceModal.vue:72-86`, `NewModal.vue:130`).
+            let (cancel, delete) = action_buttons(&painter, plate, theme);
+            if std::env::var_os("SIFT_HOME_PROBE").is_some() {
+                eprintln!("home confirm plate={plate:?} cancel={cancel:?} delete={delete:?}");
+            }
+            for (rect, label, glyph, filled) in [
+                (cancel, CONFIRM_CANCEL, Glyph::X, false),
+                (delete, CONFIRM_DELETE, Glyph::Trash, true),
+            ] {
+                let response = ui.interact(
+                    rect,
+                    egui::Id::new(("home-confirm-action", label)),
+                    Sense::click(),
+                );
+                let hovered = response.hovered();
+                if filled {
+                    painter.rect_filled(rect, ACTION_RADIUS, theme.RED);
+                    // `--hover-brightness: 1.25` in dark (`variables.scss:407`).
+                    if hovered {
+                        painter.rect_filled(rect, ACTION_RADIUS, brighten(theme.RED, 1.25));
+                    }
+                } else if hovered {
+                    painter.rect_filled(rect, ACTION_RADIUS, theme.BUTTON_BG);
+                }
+                // `outlined`: `box-shadow: 0 0 0 1px var(--surface-5)` (`ButtonFrame.vue:166`).
+                if !filled {
+                    painter.rect_stroke(
+                        rect,
+                        ACTION_RADIUS,
+                        Stroke::new(1.0, theme.SURFACE_5),
+                        egui::StrokeKind::Inside,
+                    );
+                }
+                let ink = if filled {
+                    theme.ACCENT_CONTRAST
+                } else {
+                    theme.CONTRAST
+                };
+                let galley = painter.layout_no_wrap(
+                    label.to_owned(),
+                    fonts::semibold(ACTION_TEXT),
+                    ink,
+                );
+                let content_w =
+                    ACTION_ICON + ACTION_GAP + galley.size().x;
+                let x = rect.center().x - content_w / 2.0;
+                icons::draw(
+                    &painter,
+                    glyph,
+                    Rect::from_min_size(
+                        egui::pos2(x, rect.center().y - ACTION_ICON / 2.0),
+                        Vec2::splat(ACTION_ICON),
+                    ),
+                    ink,
+                );
+                painter.galley(
+                    egui::pos2(x + ACTION_ICON + ACTION_GAP, rect.center().y - galley.size().y / 2.0),
+                    galley,
+                    ink,
+                );
+                if response.clicked() {
+                    choice = if filled {
+                        ConfirmChoice::Delete
+                    } else {
+                        ConfirmChoice::Cancel
+                    };
+                }
+            }
+
+            if close_response.clicked() {
+                choice = ConfirmChoice::Cancel;
+            }
+        });
+
+    if std::env::var_os("SIFT_HOME_PROBE").is_some() {
+        eprintln!(
+            "home confirm ptr={:?} choice={choice:?}",
+            ctx.input(|input| input.pointer.interact_pos())
+        );
+    }
+
+    // Click-outside and Escape close it, which is what `NewModal`'s `closeOnClickOutside` and
+    // `closeOnEsc` do (:18-19, :26-35).
+    if modal.backdrop_response.clicked() && choice == ConfirmChoice::Ask {
+        choice = ConfirmChoice::Cancel;
+    }
+    if choice == ConfirmChoice::Ask && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+        choice = ConfirmChoice::Cancel;
+    }
+    choice
+}
+
+/// The confirmation's two action buttons, laid out from their own labels.
+///
+/// Both are `md` buttons (`ButtonFrame.vue:31`): `px-2.5 gap-1.5` around a 20-point glyph and
+/// a 16-point semibold label, `gap-2` apart, inset `p-4` from the plate's bottom-right.
+fn action_buttons(painter: &egui::Painter, plate: Rect, theme: &Theme) -> (Rect, Rect) {
+    let width = |label: &str| {
+        painter
+            .layout_no_wrap(
+                label.to_owned(),
+                fonts::semibold(ACTION_TEXT),
+                theme.CONTRAST,
+            )
+            .size()
+            .x
+            + ACTION_PAD * 2.0
+            + ACTION_ICON
+            + ACTION_GAP
+    };
+    let cancel_w = width(CONFIRM_CANCEL);
+    let delete_w = width(CONFIRM_DELETE);
+    let bottom = plate.bottom() - CONFIRM_ACTIONS_PAD;
+    let delete = Rect::from_min_size(
+        egui::pos2(plate.right() - CONFIRM_ACTIONS_PAD - delete_w, bottom - ACTION_HEIGHT),
+        egui::vec2(delete_w, ACTION_HEIGHT),
+    );
+    let cancel = Rect::from_min_size(
+        egui::pos2(delete.left() - ACTION_GAP_BETWEEN - cancel_w, delete.top()),
+        egui::vec2(cancel_w, ACTION_HEIGHT),
+    );
+    (cancel, delete)
+}
+
+/// A colour's channels scaled towards white: the reference's `brightness(1.25)` on hover
+/// (`ButtonFrame.vue:20`). Clamped, because a channel past 255 is a different bug than a
+/// bright button.
+fn brighten(colour: Color32, factor: f32) -> Color32 {
+    let scale = |channel: u8| ((channel as f32 * factor).min(255.0)) as u8;
+    Color32::from_rgb(scale(colour.r()), scale(colour.g()), scale(colour.b()))
 }
 
 /// The `saves/` folder names of every drawn instance, in the order the rows are drawn.
@@ -1216,11 +1792,182 @@ mod tests {
         }
     }
 
+    /// **The destructive row asks first.** The menu's `Delete` must not be able to reach
+    /// `Action::Delete` on its own press: the reference stores the id and shows a confirmation
+    /// (`use-library.ts:1373-1376`), and a launcher that removed a folder on one click would be
+    /// one slip away from a data loss no toast can undo.
+    #[test]
+    fn the_delete_row_asks_before_anything_leaves_the_disk() {
+        let mut state = State::default();
+        let action = press_menu_row(MenuItem::Delete, "Instance 2", &mut state);
+        assert_eq!(action, Action::None, "the menu's Delete only opens the question");
+        assert_eq!(
+            state.confirm_delete.as_deref(),
+            Some("Instance 2"),
+            "the question is about the row that was pressed"
+        );
+    }
+
+    /// The dialog's `Delete instance` is the one press that returns the verb, and it clears the
+    /// question as it does; every other row still reports its own verb without asking.
+    #[test]
+    fn the_confirmation_is_the_only_way_to_the_delete_action() {
+        let mut state = State::default();
+        state.confirm_delete = Some("Playful".to_owned());
+        assert_eq!(
+            resolve_confirm(ConfirmChoice::Delete, "Playful", &mut state),
+            Action::Delete("Playful".to_owned()),
+            "the dialog's own button is what removes the folder"
+        );
+        assert_eq!(state.confirm_delete, None, "and the question is answered");
+
+        state.confirm_delete = Some("Playful".to_owned());
+        assert_eq!(
+            resolve_confirm(ConfirmChoice::Cancel, "Playful", &mut state),
+            Action::None,
+            "Cancel removes nothing"
+        );
+        assert_eq!(state.confirm_delete, None, "Cancel answers the question too");
+
+        state.confirm_delete = Some("Playful".to_owned());
+        assert_eq!(
+            resolve_confirm(ConfirmChoice::Ask, "Playful", &mut state),
+            Action::None
+        );
+        assert_eq!(
+            state.confirm_delete.as_deref(),
+            Some("Playful"),
+            "a dialog that is still standing has answered nothing"
+        );
+
+        for verb in [MenuItem::Play, MenuItem::Edit, MenuItem::Duplicate, MenuItem::OpenFolder] {
+            let mut state = State::default();
+            assert_eq!(
+                press_menu_row(verb, "Playful", &mut state),
+                verb.action("Playful"),
+                "{} is not destructive and does not ask",
+                verb.label()
+            );
+            assert_eq!(state.confirm_delete, None, "{} opens no dialog", verb.label());
+        }
+    }
+
+    /// The dialog's copy is the reference's own, each beside the key it came from: a rebranded
+    /// or reworded string is a parity bug no compiler sees. Read from
+    /// `ConfirmDeleteInstanceModal.vue:138-175` and `common-messages.ts:51-54`.
+    #[test]
+    fn the_confirmation_says_what_the_reference_says() {
+        let expected = [
+            ("Delete instance", "app.instance.confirm-delete.header"),
+            (
+                "This action cannot be undone",
+                "app.instance.confirm-delete.admonition-header",
+            ),
+            (
+                // The body's own line, wrapped into one string.
+                "All data for your instance will be permanently deleted, including your worlds, configs, and all installed content.",
+                "app.instance.confirm-delete.admonition-body",
+            ),
+            ("Instance", "app.instance.confirm-delete.instances-label"),
+            ("Cancel", "button.cancel"),
+            ("Delete instance", "app.instance.confirm-delete.delete-button"),
+        ];
+        let ours = [
+            CONFIRM_TITLE,
+            CONFIRM_ADMONITION_HEADER,
+            CONFIRM_ADMONITION_BODY,
+            CONFIRM_INSTANCES_LABEL,
+            CONFIRM_CANCEL,
+            CONFIRM_DELETE,
+        ];
+        assert_eq!(ours.len(), expected.len());
+        for (ours, (reference, key)) in ours.into_iter().zip(expected) {
+            assert_eq!(ours, reference, "{key} drifted from the reference's string");
+        }
+    }
+
+    /// The row's three targets are inside each other the way a press needs them to be: the pill
+    /// and the kebab sit on the card, the kebab clear of the pill, and two rows never overlap.
+    /// The numbers are the ones the probe prints, so an aimed press and the drawing agree.
+    #[test]
+    fn a_rows_targets_are_on_the_card_and_clear_of_each_other() {
+        let page = Rect::from_min_size(
+            egui::pos2(88.0, 48.0),
+            egui::vec2(1027.0, 828.0),
+        );
+        let (card, play, kebab) = row_targets(page, 0);
+        assert_eq!(card.top(), 48.0 + ROW_TOP);
+        assert_eq!(card.height(), ROW_HEIGHT);
+        assert!(card.contains_rect(play), "the pill is on the card");
+        assert!(card.contains_rect(kebab), "the kebab is on the card");
+        assert!(
+            play.right() < kebab.left(),
+            "the two right-hand targets must not overlap: {play:?} {kebab:?}"
+        );
+        let (next, _, _) = row_targets(page, 1);
+        assert!(
+            card.bottom() < next.top(),
+            "one row's card must not cover the next"
+        );
+    }
+
+    /// **The quick-create key is the reference's, guards and all.** `WelcomeScreen.vue:50-68`
+    /// fires on an unmodified, non-repeat `n` and nothing else; this draws the hero with one
+    /// synthetic key event and reads what the page reported, so a shortcut that grew a modifier
+    /// or a repeat has to fail here rather than in a session where the reader lost a folder.
+    #[test]
+    fn the_quick_create_key_ignores_modifiers_repeats_and_a_held_keyboard() {
+        let ctx = egui::Context::default();
+        fonts::install(&ctx);
+        let theme = crate::theme::dark();
+        let page = Rect::from_min_size(egui::pos2(88.0, 48.0), egui::vec2(1027.0, 828.0));
+        let mut images = Images::default();
+        let mut hero_action = |modifiers: egui::Modifiers, repeat: bool| {
+            let mut action = Action::None;
+            let input = egui::RawInput {
+                events: vec![egui::Event::Key {
+                    key: egui::Key::N,
+                    physical_key: None,
+                    pressed: true,
+                    repeat,
+                    modifiers,
+                }],
+                screen_rect: Some(Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(1440.0, 900.0),
+                )),
+                ..Default::default()
+            };
+            let _ = ctx.run_ui(input, |ui| {
+                egui::CentralPanel::default().show(ui, |ui| {
+                    action = hero(ui, page, &theme, &mut images);
+                });
+            });
+            action
+        };
+        assert_eq!(
+            hero_action(egui::Modifiers::NONE, false),
+            Action::Create,
+            "a plain n is the reference's shortcut"
+        );
+        assert_eq!(
+            hero_action(egui::Modifiers::CTRL, false),
+            Action::None,
+            "Ctrl+N belongs to the window manager, not the page"
+        );
+        assert_eq!(
+            hero_action(egui::Modifiers::NONE, true),
+            Action::None,
+            "a held key is one press, not a stream of instances"
+        );
+    }
+
     /// Whether `action` names the instance it was pressed on. Written as a match over every
     /// variant so a new `Action` cannot be added without this test saying so.
     fn names(action: &Action, id: &str) -> bool {
         match action {
             Action::Play(ours)
+            | Action::Open(ours)
             | Action::Edit(ours)
             | Action::Duplicate(ours)
             | Action::OpenFolder(ours)
