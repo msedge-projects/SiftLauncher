@@ -466,6 +466,8 @@ pub struct State {
     pressed: Option<Press>,
     /// Whether the header's menu is open.
     menu: bool,
+    /// Whether the library already carries this project, as the last draw found it.
+    installed: bool,
     /// When it opened, so the press that opened it cannot dismiss it on the same frame.
     menu_opened: f64,
 }
@@ -480,6 +482,7 @@ impl Default for State {
             loaders: Vec::new(),
             pressed: None,
             menu: false,
+            installed: false,
             menu_opened: 0.0,
         }
     }
@@ -671,8 +674,10 @@ pub fn draw(
     images: &mut Images,
     state: &mut State,
     project: &Project,
+    installed: bool,
 ) -> bool {
     ui.painter().rect_filled(rect, 0, theme.BG);
+    state.installed = installed;
     if rect.width() <= 2.0 * PAGE_PADDING || rect.height() <= 2.0 * PAGE_PADDING {
         return false;
     }
@@ -885,7 +890,15 @@ fn header(
 
     // The install button and the kebab menu. Both are drawn at the reference's size; the work
     // behind them is the shell's, so a press is recorded for it to take rather than dropped.
-    primary_button(painter, install, theme, "Install", Glyph::Download);
+    // A project the library already carries says so, and its button leads to the instance instead of
+    // starting a second copy of the same pack.
+    primary_button(
+        painter,
+        install,
+        theme,
+        if state.installed { "Installed" } else { "Install" },
+        if state.installed { Glyph::Folder } else { Glyph::Download },
+    );
     if ui
         .interact(install, egui::Id::new("project-install"), Sense::click())
         .clicked()

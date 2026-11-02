@@ -212,15 +212,15 @@ impl Search {
             painter,
             Glyph::Search,
             Rect::from_center_size(
-                egui::pos2(rect.left() + 18.0, rect.center().y),
-                Vec2::splat(12.0),
+                egui::pos2(rect.left() + 22.0, rect.center().y),
+                Vec2::splat(20.0),
             ),
             theme.SECONDARY,
         );
 
         // The text's own left inset: 34 is where the reference's placeholder starts, which
         // is 18 for the glyph's centre, 6 for its radius, and a 10-point gap.
-        let text_left = rect.left() + 34.0;
+        let text_left = rect.left() + 44.0;
         let text_right = if clear_shown {
             // The clear button's target plus a gap, so a long query does not run under the
             // X that would delete it.

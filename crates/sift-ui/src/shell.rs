@@ -1086,6 +1086,10 @@ impl Shell {
             match open {
                 Some(project) => {
                     let theme = self.theme;
+                    let installed = self
+                        .open_card
+                        .as_ref()
+                        .is_some_and(|card| installed_for(&card.id, &self.instances).is_some());
                     let result = crate::pages::project::draw(
                         ui,
                         rect,
@@ -1093,6 +1097,7 @@ impl Shell {
                         &mut self.icons,
                         &mut self.project_state,
                         &project,
+                        installed,
                     );
                     // The page records a header press and the shell acts on it: this is the seam every
                     // page uses, because a page cannot reach the installer.
@@ -2393,7 +2398,7 @@ impl Shell {
             ("Date published", "newest"),
             ("Date updated", "updated"),
         ];
-        const SIZES: [u32; 4] = [5, 15, 25, 50];
+        const SIZES: [u32; 6] = [5, 10, 15, 20, 50, 100];
         let select_w = 150.0;
         let mut select_rects = [Rect::NOTHING; 2];
         for index in 0..2 {
@@ -2550,11 +2555,12 @@ impl Shell {
                     } else {
                         self.theme.SECONDARY
                     };
-                    ui.painter().text(
-                        rect.center(),
-                        Align2::CENTER_CENTER,
-                        if step < 0 { "<" } else { ">" },
-                        crate::fonts::body(13.0),
+                    // The reference's pager buttons carry a chevron, not an ASCII angle bracket, and the
+                    // glyph is sized like the rest of its icon buttons.
+                    crate::icons::draw(
+                        ui.painter(),
+                        if step < 0 { crate::icons::Glyph::ChevronLeft } else { crate::icons::Glyph::ChevronRight },
+                        Rect::from_center_size(rect.center(), egui::Vec2::splat(16.0)),
                         ink,
                     );
                     if enabled
