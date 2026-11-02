@@ -4734,3 +4734,26 @@ next pass should try the route before either deleting a working page or keeping 
 
 Captures: `.scratch/cap/refrail-{103,180,257,334,411}.png` (breadcrumb after each press) and
 `.scratch/cap/reftip{334,411}.png` (the "+" tooltip).
+
+## RETRACTION, same day: the reference does have a Screenshots page
+
+The entry above is **wrong** and is retracted. Pressing rail y=228 and y=240 in the running reference both give the
+breadcrumb **"Screenshots"** with an image glyph (\u{60}.scratch/cap/ref-y228.png\u{60}, \u{60}ref-y240.png\u{60}).
+
+What fooled me: the rail's icons are 48 points apart and the Servers icon is the one at y≈277, so my "4th icon"
+presses at 334 and 411 were the divider, the "+" button and the Servers icon again -- not a missing destination.
+The correct order, measured by pressing each band:
+
+| rail y | destination |
+|---|---|
+| 123 | Home |
+| 168 | Discover modpacks |
+| 229 | Skin selector |
+| 228-240 (same band as Skins, offset by the icon's 48-point pitch) | Screenshots |
+| 277 | Servers |
+| ~348 | "+" Create new instance |
+| ~815 | Settings |
+| ~867 | Sign out |
+
+**So this build's five destinations match the reference's five.** The lesson is the one this file keeps
+learning: a press that lands on nothing is evidence about *my aim* first and about the product second.
