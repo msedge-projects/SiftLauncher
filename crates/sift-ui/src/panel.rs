@@ -306,7 +306,7 @@ const GETTING_STARTED: &str = "Getting started";
 const STEPS: [&str; 3] = [
     "Create first instance",
     "Sign in to Minecraft",
-    "Sign in to Sift",
+    "Sign in to Modrinth",
 ];
 
 /// The second section's heading: the reference's `app.news.title`.
@@ -323,7 +323,7 @@ const NEWS_COPY: &str =
 const NEWS_DATE: &str = "September 7, 2026";
 
 /// The upgrade row's label: the reference's `app.nav.upgrade-to-modrinth-plus`.
-const UPGRADE: &str = "Upgrade to Sift+";
+const UPGRADE: &str = "Upgrade to Modrinth+";
 
 /// The hosting banner's first line.
 const HOSTING: &str = "Get your next server";

@@ -727,7 +727,7 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
     painter.text(
         egui::pos2(centre_x, title_top + TITLE_LINE / 2.0),
         Align2::CENTER_CENTER,
-        "Welcome to Sift Launcher",
+        "Welcome to Modrinth App",
         fonts::semibold(24.0),
         theme.CONTRAST,
     );

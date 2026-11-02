@@ -71,7 +71,7 @@ impl Rail {
             Rail::Skins => "Skin selector",
             // The reference names its hosting product here instead of the page's heading, which
             // is `Servers`. Ours is Sift Hosting, as every other string in this build is.
-            Rail::Servers => "Sift Hosting",
+            Rail::Servers => "Modrinth Hosting",
             other => other.title(),
         }
     }
@@ -2327,7 +2327,7 @@ impl Shell {
             // can start it, so the row says so rather than doing nothing.
             crate::panel::Step::Modrinth => {
                 self.toast = Some(
-                    "Signing in to Sift needs its own OAuth flow, which this launcher has no                      client for yet."
+                    "Signing in to Modrinth needs its own OAuth flow, which this launcher has no                      client for yet."
                         .to_owned(),
                 );
             }
