@@ -72,6 +72,13 @@ fn main() -> eframe::Result<()> {
             // calls are process-wide setup and neither depends on the other.
             brand::install(&cc.egui_ctx);
             cc.egui_ctx.set_visuals(shell.theme.colors());
+            // The reference's transitions, measured from its own source rather than guessed:
+            // `duration-200` appears 36 times in `apps/app-frontend/src`, `duration-150` 12, `duration-300` 8,
+            // `duration-250` twice and `duration-100` once. 200 ms is the duration the app is built on, and
+            // egui's default is 83 ms -- fast enough that a hover or a selected pill snaps rather than eases.
+            cc.egui_ctx.all_styles_mut(|style| {
+                style.animation_time = 0.2;
+            });
             Ok(Box::new(App {
                 shell,
                 log: frame_log::FrameLog::default(),
