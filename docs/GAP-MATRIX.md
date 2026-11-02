@@ -4793,3 +4793,14 @@ account), and this build's is a **sign in**. Each is correct for its own state.
 That is two claims retracted in one session for the same reason: I read a number off a capture instead of
 measuring it. The rule this file has carried since the sixth invented control -- print it or scan it, never read it
 -- applies to chrome as much as to buttons.
+
+## Skins: the 3D preview exists now (2026-11-02)
+
+The row "no 3D model/rotation/camera" is closed to the extent a software rasteriser can close it:
+`crates/sift-ui/src/skins3d.rs` draws the six boxes of a skin texel by texel with an orthographic projection and
+a per-face shade, and the preview plate is a drag target that turns it (`.scratch/cap/r295a.png` front,
+`r295b.png` turned). Six tests.
+
+**What it is not**, so the row is not over-claimed: no perspective, no overlay layers (hat/jacket), no animation,
+and the reference's model has all three. It is a body that turns, which is the interaction the reference's page
+advertises ("Drag to rotate") and this build could not do before.
