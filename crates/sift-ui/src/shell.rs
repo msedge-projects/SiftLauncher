@@ -109,6 +109,148 @@ impl Shell {
     /// Painted on `ui.painter()` with the rows placed by `ui.interact` on the same layer, which is
     /// the arrangement that works -- a plate on a foreground layer covers the widgets behind it, and
     /// the create dialog spent ten rounds learning that.
+    /// The library menu's `Edit`: the instance's own name, in a field, with Save and Cancel.
+    ///
+    /// Drawn by the shell rather than the page for the reason the picker is: a page cannot reach the
+    /// instance's files, and a dialog drawn under a page's rows loses its presses to them.
+    pub fn draw_edit(&mut self, ctx: &egui::Context, screen: egui::Rect, ui: &mut egui::Ui) {
+        let Some((id, text)) = self.edit.clone() else {
+            self.edit_opened = 0.0;
+            return;
+        };
+        let now = ctx.input(|input| input.time);
+        if self.edit_opened <= 0.0 {
+            self.edit_opened = now;
+        }
+        let settled = now > self.edit_opened + 0.15;
+        // TRACE
+        if std::env::var_os("SIFT_EDIT_TRACE").is_some() {
+            let p = ctx.input(|input| input.pointer.latest_pos());
+            let c = ctx.input(|input| input.pointer.any_click());
+            eprintln!(
+                "edit frame t={now:.3} opened={:.3} settled={settled} clicked={c} ptr={p:?}",
+                self.edit_opened
+            );
+        }
+        if settled && now - self.edit_opened < 0.25 {
+            ctx.memory_mut(|memory| memory.request_focus(egui::Id::new("edit-instance-text")));
+        }
+        let painter = ui.painter().clone();
+        let theme = self.theme.clone();
+        painter.rect_filled(screen, 0.0, egui::Color32::from_black_alpha(160));
+
+        let plate = egui::Rect::from_center_size(screen.center(), egui::vec2(520.0, 200.0));
+        painter.rect_filled(plate, 12, theme.SURFACE_4);
+        painter.text(
+            egui::pos2(plate.left() + 24.0, plate.top() + 22.0),
+            egui::Align2::LEFT_TOP,
+            "Edit instance",
+            crate::fonts::heading(18.0),
+            theme.CONTRAST,
+        );
+        let field = egui::Rect::from_min_size(
+            egui::pos2(plate.left() + 24.0, plate.top() + 60.0),
+            egui::vec2(plate.width() - 48.0, 36.0),
+        );
+        // Typing is read from the frame's own events, and any other widget's hold on the keyboard is
+        // released first: a search field left focused swallows every character the dialog is waiting for,
+        // which is why the first two attempts typed into nothing.
+        if settled && now - self.edit_opened < 0.2 {
+            ctx.memory_mut(|memory| memory.stop_text_input());
+        }
+        for event in ctx.input(|input| input.events.clone()) {
+            match event {
+                egui::Event::Text(typed) => {
+                    if let Some((_, text)) = self.edit.as_mut() {
+                        text.push_str(&typed);
+                    }
+                    ctx.request_repaint();
+                }
+                egui::Event::Key { key: egui::Key::Backspace, pressed: true, .. } => {
+                    if let Some((_, text)) = self.edit.as_mut() {
+                        text.pop();
+                    }
+                    ctx.request_repaint();
+                }
+                egui::Event::Key { key: egui::Key::Escape, pressed: true, .. } => {
+                    self.edit = None;
+                    ctx.request_repaint();
+                }
+                _ => {}
+            }
+        }
+
+        painter.rect_filled(field, 8, theme.RAISED_BG);
+        painter.rect_stroke(
+            field,
+            8,
+            egui::Stroke::new(1.0, theme.SURFACE_5),
+            egui::StrokeKind::Inside,
+        );
+        painter.text(
+            egui::pos2(field.left() + 10.0, field.center().y),
+            egui::Align2::LEFT_CENTER,
+            self.edit.as_ref().map(|(_, text)| text.as_str()).unwrap_or(""),
+            crate::fonts::body(13.0),
+            theme.BASE,
+        );
+        let save = egui::Rect::from_min_size(
+            egui::pos2(plate.right() - 24.0 - 100.0, plate.bottom() - 24.0 - 36.0),
+            egui::vec2(100.0, 36.0),
+        );
+        painter.rect_filled(save, 8, theme.BUTTON_BG_SELECTED);
+        painter.text(
+            save.center(),
+            egui::Align2::CENTER_CENTER,
+            "Save",
+            crate::fonts::semibold(13.0),
+            theme.BUTTON_TEXT_SELECTED,
+        );
+        let cancel = egui::Rect::from_min_size(
+            egui::pos2(save.left() - 108.0, save.top()),
+            egui::vec2(100.0, 36.0),
+        );
+        painter.rect_filled(cancel, 8, theme.RAISED_BG);
+        painter.text(
+            cancel.center(),
+            egui::Align2::CENTER_CENTER,
+            "Cancel",
+            crate::fonts::semibold(13.0),
+            theme.BASE,
+        );
+
+        let pointer = ctx.input(|input| input.pointer.latest_pos());
+        let clicked = ctx.input(|input| input.pointer.any_click());
+        if std::env::var_os("SIFT_EDIT_PROBE").is_some() && clicked {
+            eprintln!("edit click ptr={pointer:?} save={save:?} settled={settled}");
+        }
+        if clicked {
+            if pointer.is_some_and(|point| save.contains(point)) {
+                let root = crate::data::instances_dir();
+                let name = self.edit.as_ref().map(|(_, text)| text.trim().to_owned()).unwrap_or_default();
+                let outcome = if name.is_empty() {
+                    Err("an instance needs a name".to_owned())
+                } else {
+                    crate::duplicate::rename_copy(&root.join(&id), &name).map_err(|error| error.to_string())
+                };
+                match outcome {
+                    Ok(()) => {
+                        self.instances = crate::data::load().0;
+                        self.toast = Some(format!("Renamed to {name}."));
+                    }
+                    Err(error) => self.toast = Some(format!("Could not rename: {error}")),
+                }
+                self.edit = None;
+                ctx.request_repaint();
+            } else if pointer.is_some_and(|point| cancel.contains(point))
+                || (settled && !pointer.is_some_and(|point| plate.contains(point)))
+            {
+                self.edit = None;
+                ctx.request_repaint();
+            }
+        }
+    }
+
     pub fn draw_picker(&mut self, ctx: &egui::Context, screen: egui::Rect, ui: &mut egui::Ui) {
         let Some(picker) = self.picker.clone() else {
             // No picker: forget when the last one opened, so the next one gets its own guard.
@@ -123,8 +265,14 @@ impl Shell {
         if self.picker_opened <= 0.0 {
             self.picker_opened = now;
         }
+        // Escape closes it, as the reference closes its modals.
+        if ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+            self.picker = None;
+            ctx.request_repaint();
+            return;
+        }
         let settled = now > self.picker_opened + 0.15;
-        let pointer = ctx.pointer_interact_pos();
+        let pointer = ctx.input(|input| input.pointer.latest_pos());
         let clicked = ctx.input(|input| input.pointer.any_click());
 
         let painter = ui.painter().clone();
@@ -179,15 +327,7 @@ impl Shell {
             painter.text(
                 egui::pos2(row.left() + 12.0, row.top() + 8.0),
                 egui::Align2::LEFT_TOP,
-                {
-                    if name_counts.get(&entry.name).copied().unwrap_or(0) > 1 {
-                        // The id is what the folder is called and what the launcher itself made
-                        // unique, so it is the honest label when a name repeats.
-                        entry.id.clone()
-                    } else {
-                        entry.name.clone()
-                    }
-                },
+                picker_label(&entry.name, &entry.id, &name_counts),
                 crate::fonts::semibold(13.0),
                 theme.BASE,
             );
@@ -546,6 +686,23 @@ pub struct Picker {
     pub opened: f64,
 }
 
+/// The label a picker row shows for one instance.
+///
+/// Two instances can share a display name -- installing a pack twice gives "Fabulously Optimized" and
+/// "Fabulously Optimized_1" -- and the folder id is the only thing that tells them apart, so it is what a
+/// repeated name shows instead.
+fn picker_label(
+    name: &str,
+    id: &str,
+    counts: &std::collections::HashMap<String, usize>,
+) -> String {
+    if counts.get(name).copied().unwrap_or(0) > 1 {
+        id.to_owned()
+    } else {
+        name.to_owned()
+    }
+}
+
 /// Whether an install press has to ask where the mod goes.
 ///
 /// A mod needs an existing instance, so two or more of them is a question only the reader can answer. A
@@ -608,6 +765,10 @@ pub struct Shell {
     /// own -- so the install it asks for is the card's, and the card is the only thing that knows which
     /// project the reader was looking at.
     open_card: Option<Card>,
+    /// The instance being renamed, and the text in the field. `None` when the dialog is closed.
+    pub edit: Option<(String, String)>,
+    /// When the rename dialog opened, so the press that opened it cannot dismiss it.
+    edit_opened: f64,
     /// The open project's tab.
     project_state: crate::pages::project::State,
     /// The Discover search field: its text, its focus and its blink phase.
@@ -691,6 +852,8 @@ impl Default for Shell {
             home: crate::pages::home::State::default(),
             open_project: None,
             open_card: None,
+            edit: None,
+            edit_opened: 0.0,
             project_state: crate::pages::project::State::default(),
             search: crate::widgets::search::Search::default(),
             results: crate::search::Search::default(),
@@ -1565,8 +1728,14 @@ impl Shell {
                 }
             }
             Action::Edit(id) => {
-                // The reference opens the instance's own page (`pages/instance/layout.vue:182`).
-                self.open_instance_page(&id);
+                if std::env::var_os("SIFT_EDIT_TRACE").is_some() {
+                    eprintln!("act Edit {id}");
+                }
+                // The reference's edit action renames the instance, and the name is the only thing the
+                // modal changes that this build can carry out.
+                let name = self.instance_name(&id);
+                self.edit = Some((id.clone(), name));
+                self.edit_opened = 0.0;
             }
             Action::Duplicate(id) => {
                 // The reference copies the instance and leaves the reader in the library with both
@@ -3134,5 +3303,39 @@ mod picker_tests {
     fn a_pack_never_asks() {
         assert!(!needs_picker(false, 0));
         assert!(!needs_picker(false, 5));
+    }
+}
+
+#[cfg(test)]
+mod picker_label_tests {
+    use super::picker_label;
+    use std::collections::HashMap;
+
+    fn counts(names: &[&str]) -> HashMap<String, usize> {
+        let mut map = HashMap::new();
+        for name in names {
+            *map.entry((*name).to_owned()).or_default() += 1;
+        }
+        map
+    }
+
+    #[test]
+    fn a_unique_name_is_itself() {
+        let map = counts(&["Instance 2", "Sodium Plus"]);
+        assert_eq!(picker_label("Instance 2", "Instance 2", &map), "Instance 2");
+    }
+
+    #[test]
+    fn a_repeated_name_shows_the_folder_id() {
+        let map = counts(&["Fabulously Optimized", "Fabulously Optimized"]);
+        assert_eq!(
+            picker_label("Fabulously Optimized", "Fabulously Optimized_1", &map),
+            "Fabulously Optimized_1"
+        );
+    }
+
+    #[test]
+    fn an_unknown_name_falls_back_to_the_name() {
+        assert_eq!(picker_label("A", "A", &HashMap::new()), "A");
     }
 }
