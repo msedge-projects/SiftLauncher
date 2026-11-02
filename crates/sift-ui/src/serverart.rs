@@ -14,22 +14,42 @@ use eframe::egui::{Color32, Rect, TextureHandle};
 
 const ART_PNG: &[u8] = include_bytes!("../../../assets/brand/server-art.png");
 
+/// The news card's illustration: the green plate with its sliders and link, cropped from the same render
+/// (1156,350 to 1428,470 -- the plate's own edges, no text in it).
+const NEWS_PNG: &[u8] = include_bytes!("../../../assets/brand/news-art.png");
+
 static ART: OnceLock<Option<TextureHandle>> = OnceLock::new();
+static NEWS: OnceLock<Option<TextureHandle>> = OnceLock::new();
 
 /// Upload the illustration, once, before the first frame.
 pub fn install(ctx: &eframe::egui::Context) {
-    let _ = ART.set(upload(ctx));
+    let _ = ART.set(upload(ctx, ART_PNG, "server-art"));
+    let _ = NEWS.set(upload(ctx, NEWS_PNG, "news-art"));
 }
 
-fn upload(ctx: &eframe::egui::Context) -> Option<TextureHandle> {
-    let image = image::load_from_memory(ART_PNG).ok()?.to_rgba8();
+/// Paint the news card's plate; false when the texture is missing, so the caller keeps its painted one.
+pub fn paint_news(painter: &eframe::egui::Painter, rect: Rect) -> bool {
+    let Some(Some(texture)) = NEWS.get() else {
+        return false;
+    };
+    painter.image(
+        texture.id(),
+        rect,
+        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Color32::WHITE,
+    );
+    true
+}
+
+fn upload(ctx: &eframe::egui::Context, bytes: &[u8], name: &str) -> Option<TextureHandle> {
+    let image = image::load_from_memory(bytes).ok()?.to_rgba8();
     let size = [image.width() as usize, image.height() as usize];
     let pixels = image
         .pixels()
         .map(|pixel| Color32::from_rgba_unmultiplied(pixel.0[0], pixel.0[1], pixel.0[2], pixel.0[3]))
         .collect();
     Some(ctx.load_texture(
-        "server-art",
+        name,
         eframe::egui::ColorImage::new(size, pixels),
         eframe::egui::TextureOptions::LINEAR,
     ))

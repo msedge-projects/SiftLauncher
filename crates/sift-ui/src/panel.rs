@@ -33,10 +33,11 @@ use crate::theme::Theme;
 
 /// The inset between the panel's edges and its content column, on both sides.
 ///
-/// 24 points from the reference's measurement: the panel is 340 wide
-/// (`geometry::PANEL`) and its content is 292, which is why every row and card below
-/// spans [`column`] and none of them spells out a width of its own.
-const PAD: f32 = 16.0;
+/// Measured from the reference's own render: its "Getting started" card spans x 1153..1428 while the
+/// sidebar begins at 1140 and the window ends at 1440, so the padding is 13 on the left and 12 on the right.
+/// It was 16, which made every card 7 points narrow -- 3 too far in on the left and 4 on the right, which is
+/// exactly the smear a blend shows along both edges.
+const PAD: f32 = 13.0;
 
 /// The first heading's inset from the panel's top edge.
 // Measured, not guessed: the checklist's card starts 17 points under the surface's top
@@ -128,14 +129,19 @@ const RING: f32 = 24.0;
 const RING_GAP: f32 = 8.0;
 
 /// A row's label: 13-point body text, from the reference's measurement.
-const STEP_SIZE: f32 = 16.0;
+// Measured from the reference's rows: its labels' ink is 16 points tall where 16-point type here draws 19, so
+// the reference sets them at 14. Every glyph of every row was doubling in the blend because of this one number.
+const STEP_SIZE: f32 = 15.0;
 
 // ---------------------------------------------------------------------------
 // The news card
 // ---------------------------------------------------------------------------
 
 /// The art plate's height: 128 points, from the reference's measurement.
-const ART_H: f32 = 150.0; // guess: re-measure
+// Measured by the banner's own chip: the reference's "modrinth hosting" ink starts at y 668 where this build's
+// started at 700, so the news card above it was 32 points too tall -- the plate, which is where the card's
+// height is spent, comes down by exactly that.
+const ART_H: f32 = 118.0;
 
 /// The gap between the `News` heading and the card: the section's heading is `mb-4`
 /// (`App.vue:2531`), 16 points.
@@ -207,7 +213,9 @@ const SPARKLE_GAP: f32 = 6.0; // guess: re-measure
 
 /// The hosting banner's padding: the promo card's `p-4`
 /// (`ui/components/servers/ServersPromo.vue:22`), 16 points.
-const BANNER_PAD: f32 = 16.0;
+// The banner is full-bleed, so its own padding carries the inset the column used to: the reference's chip
+// starts at x 1166 with the banner beginning at 1140.
+const BANNER_PAD: f32 = 26.0;
 
 /// The banner's two lines: 16 semibold, from the reference's measurement.
 const BANNER_SIZE: f32 = 16.0;
@@ -671,7 +679,9 @@ pub fn draw(
         egui::pos2(column.left(), card + rows.art),
         egui::vec2(column.width(), ART_H),
     );
-    news_art(painter, art, theme);
+    if !crate::serverart::paint_news(painter, art) {
+        news_art(painter, art, theme);
+    }
     painter.rect_stroke(
         art,
         CARD_RADIUS,
@@ -758,9 +768,12 @@ pub fn draw(
     // ---- The hosting banner --------------------------------------------------
     // The banner is flush with the sidebar's foot in the reference -- its card ends where the window does --
     // so its top is whichever is higher: the plan's slot, or the foot less its own height.
+    // Full-bleed: the reference's banner reaches both edges of the sidebar and its foot. Sampled from its
+    // render, x 1436 is its dark green at y 800 and 890 -- 20 and 14 points outside this build's inset column
+    // -- which is why the whole bottom-right corner differed.
     let banner = Rect::from_min_size(
-        egui::pos2(column.left(), plan.banner),
-        egui::vec2(column.width(), plan.banner_height),
+        egui::pos2(rect.left(), plan.banner),
+        egui::vec2(rect.width(), plan.banner_height.max(rect.bottom() - plan.banner)),
     );
     // The reference's banner is not a grey card: its ground runs from near-black green at the top to a
     // deeper green at the foot (sampled from its own render: #010101 at y 660, #001208 at 760, #002712 at
@@ -798,18 +811,20 @@ pub fn draw(
         theme.BRAND,
     );
     // The heading, two lines: white, then the accent line in the brand green.
+    // Measured: the reference's chip ink ends at 677 and its heading's at 689, and the heading's own ink is 23
+    // points tall. 6 points of gap and 24-point type reproduce both.
     painter.text(
-        egui::pos2(banner.left() + BANNER_PAD, chip_mark.bottom() + 10.0),
+        egui::pos2(banner.left() + BANNER_PAD, chip_mark.bottom() + 6.0),
         Align2::LEFT_TOP,
         HOSTING,
-        fonts::semibold(20.0),
+        fonts::semibold(24.0),
         theme.CONTRAST,
     );
     painter.text(
-        egui::pos2(banner.left() + BANNER_PAD, chip_mark.bottom() + 10.0 + 24.0),
+        egui::pos2(banner.left() + BANNER_PAD, chip_mark.bottom() + 6.0 + 28.0),
         Align2::LEFT_TOP,
         HOSTING_ACCENT,
-        fonts::semibold(20.0),
+        fonts::semibold(24.0),
         theme.BRAND,
     );
     pressed
