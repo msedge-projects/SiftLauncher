@@ -76,7 +76,7 @@ const MENU_ITEM_GAP: f32 = 8.0;
 /// (`ButtonMenuItem.vue:20`); 16 keeps the label's leading edge where the smaller glyphs of
 /// this shell already sit -- re-measure before trusting the two points.
 // guess: re-measure
-const MENU_ITEM_GLYPH: f32 = 16.0;
+const MENU_ITEM_GLYPH: f32 = 20.0;
 
 /// The panel's inset around its rows: `p-2` (`ButtonMenuPanel.vue:70`), 8 points.
 const MENU_PANEL_PADDING: f32 = 8.0;
@@ -246,15 +246,15 @@ const WORLD_SECTION_GAP: f32 = 24.0;
 /// The worlds heading's size: one step above the row text, the same step the reference uses
 /// for a section header inside a card.
 // guess: re-measure
-const WORLD_HEADING_SIZE: f32 = 16.0;
+const WORLD_HEADING_SIZE: f32 = 24.0;
 
 /// The worlds heading's line box, which is what the rows start below.
 // guess: re-measure
-const WORLD_HEADING_LINE: f32 = 24.0;
+const WORLD_HEADING_LINE: f32 = 32.0;
 
 /// A world row's height.
 // guess: re-measure
-const WORLD_ROW_HEIGHT: f32 = 32.0;
+const WORLD_ROW_HEIGHT: f32 = 80.0;
 
 /// The gap between two world rows.
 // guess: re-measure
