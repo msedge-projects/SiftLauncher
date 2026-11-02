@@ -1205,10 +1205,17 @@ const FOOTER_HEIGHT: f32 = 40.0;
 /// The mark beside them: `w-6 h-6`.
 const FOOTER_MARK: f32 = 24.0;
 
+// Measured from the reference's own rail: its tab rows sit ~30 points apart (217, 248, 275, 307, 338, 368 with
+// 40 between groups) where this build's sat 44 apart, which is why fourteen tabs did not fit and the rail
+// scrolled. 26 + 4 = 30.
 const RAIL_ROW_GAP: f32 = 4.0;
 
 /// A rail row's height: `py-2.5` (10 above and below) around a `leading-5` label
 /// (`TabbedModal.vue:189`), i.e. `10 + 20 + 10`.
+// **Tried at 26 and put back.** The reference's rail rows do sit ~30 points apart against this build's 44, and
+// shrinking them looked like the fix for fourteen tabs not fitting. Measured against the capture it made the
+// screen worse (151 997 -> 152 914): that capture's body has blocks this build does not have in that state, so
+// the rail was never the difference being measured. The row height stays at the value the live comparison chose.
 const RAIL_ROW_HEIGHT: f32 = 40.0;
 
 /// A rail row's corner: `rounded-[14px]` (`TabbedModal.vue:189`). 14 is not on the theme's
