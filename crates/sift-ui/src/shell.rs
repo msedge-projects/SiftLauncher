@@ -487,11 +487,16 @@ impl Shell {
             crate::fonts::semibold(18.0),
             theme.CONTRAST,
         );
-        painter.text(
-            egui::pos2(right, plate.top() + 18.0),
-            egui::Align2::RIGHT_TOP,
-            "✕",
-            crate::fonts::body(16.0),
+        // The close mark is a drawn glyph. It used to be the character "✕", and the bundled fonts have
+        // none of it -- the capture showed a "?" in the corner of the dialog, which is what a missing
+        // glyph looks like.
+        crate::icons::draw(
+            &painter,
+            crate::icons::Glyph::X,
+            egui::Rect::from_center_size(
+                egui::pos2(plate.right() - 28.0, plate.top() + 26.0),
+                egui::Vec2::splat(16.0),
+            ),
             theme.SECONDARY,
         );
         painter.hline(
@@ -681,15 +686,32 @@ impl Shell {
                     egui::StrokeKind::Inside,
                 );
             }
+            // The reference gives each row its own mark, left of the words: a face for a custom setup, a
+            // compass for a project, an upload arrow, and a package for an import.
+            let mark = match index {
+                0 => crate::icons::Glyph::User,
+                1 => crate::icons::Glyph::Compass,
+                2 => crate::icons::Glyph::Upload,
+                _ => crate::icons::Glyph::Package,
+            };
+            crate::icons::draw(
+                &painter,
+                mark,
+                egui::Rect::from_min_size(
+                    egui::pos2(row.left() + 14.0, row.center().y - 10.0),
+                    egui::Vec2::splat(20.0),
+                ),
+                theme.BASE,
+            );
             painter.text(
-                egui::pos2(row.left() + 14.0, row.top() + 7.0),
+                egui::pos2(row.left() + 44.0, row.top() + 7.0),
                 egui::Align2::LEFT_TOP,
                 *title,
                 crate::fonts::semibold(13.0),
                 theme.CONTRAST,
             );
             painter.text(
-                egui::pos2(row.left() + 14.0, row.top() + 22.0),
+                egui::pos2(row.left() + 44.0, row.top() + 22.0),
                 egui::Align2::LEFT_TOP,
                 *description,
                 crate::fonts::body(11.0),
