@@ -4839,3 +4839,17 @@ manager's decoration. With `with_decorations(false)` the rail's thirteen bands m
 What the remaining 87 409 pixels are, by eye from the same composite: the right sidebar's rows sit a few points
 off, so their text ghosts; the "Get your next server" card differs; and text weight is not identical everywhere.
 Those are the next three measurements, in that order.
+
+## The news card, measured against the reference's own rows (2026-11-02, last pass)
+
+The card's copy was the wrong sentence as well as the wrong length: this build said "across all your instances"
+where the reference says "across your instances", and asked for two lines where the reference wraps three. With
+both fixed the wrap is **identical line for line**:
+
+    Keep game options, servers, resource
+    packs, and more the same across your
+    instances.
+
+What is still loose, and by how much, from the same crops: the link sits ~38 points under the date where the
+reference has 12, because `DATE_LINE` is a 16-point line box around 14-point type and the date's own ink is 15
+tall. The next measurement here is the date row's real line box, not another guess of 16.

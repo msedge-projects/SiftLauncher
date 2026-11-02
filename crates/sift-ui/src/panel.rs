@@ -162,7 +162,7 @@ const COPY_SIZE: f32 = 14.0;
 
 /// How many lines the copy takes in the reference: the article's summary wraps twice at
 /// the panel's inner width, which is why the card reserves room for two.
-const COPY_LINES: usize = 2;
+const COPY_LINES: usize = 3;
 
 /// One line of the copy's box.
 const COPY_LINE: f32 = 16.0; // guess: re-measure
@@ -318,9 +318,10 @@ const NEWS: &str = "News";
 /// The lead article's title.
 const NEWS_TITLE: &str = "Sync settings across instances";
 
-/// The lead article's summary, which is the two lines of copy the card is measured for.
+/// The lead article's summary, worded as the reference words it -- "across your instances", not "across all
+/// your instances" -- and wrapped by the card's own width into the three lines its capture shows.
 const NEWS_COPY: &str =
-    "Keep game options, servers, resource packs, and more the same across all your instances.";
+    "Keep game options, servers, resource packs, and more the same across your instances.";
 
 /// The lead article's date, in the reference's own `dateStyle: 'long'` spelling.
 const NEWS_DATE: &str = "September 7, 2026";
@@ -702,11 +703,10 @@ pub fn draw(
     // for its other link (`ButtonLink type="colored" color="brand"`, `App.vue:2540`), and
     // the ink is legible in both schemes. If a capture shows the reference's plain purple
     // link there (`text-purple`, `App.vue:2558`), this is the one fill to change.
-    // Measured up from the banner rather than down from the card: the row is the card's last line and the
-    // banner is what sits under it, so the row's position is whatever leaves the banner's 20-point gap
-    // intact. Taking it from the card put it under the banner, and it vanished.
+    // The card's own last row: the reference puts it 12 points under the date. It is safe to measure from the
+    // card again because the banner now yields height instead of covering what is above it.
     let link = Rect::from_min_size(
-        egui::pos2(column.left(), plan.banner - SECTION_GAP - LINK_H),
+        egui::pos2(column.left(), card + rows.link),
         egui::vec2(column.width(), LINK_H),
     );
     let link_hovered = ui
@@ -731,8 +731,8 @@ pub fn draw(
     let x = link.center().x - content / 2.0;
     icons::draw(
         painter,
-        // The reference's mark on this row is an up-arrow rising out of a tray, not a sparkle.
-        Glyph::Upload,
+        // The reference's mark on this row is an up-arrow rising out of a line, not a sparkle.
+        Glyph::ArrowUpFromLine,
         Rect::from_center_size(
             egui::pos2(x + SPARKLE / 2.0, link.center().y),
             Vec2::splat(SPARKLE),
