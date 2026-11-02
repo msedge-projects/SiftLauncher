@@ -1076,8 +1076,10 @@ mod tests {
     fn the_rows_stay_inside_the_panel() {
         let panel = panel_rect();
         let column = column(panel);
-        assert_eq!(column.width(), g::PANEL - 2.0 * PAD, "the capture's card is 268 wide");
-        assert_eq!(column.width(), 268.0, "1157..1424 inside a 1140..1440 sidebar");
+        assert_eq!(column.width(), g::PANEL - 2.0 * PAD, "the column is the panel less its padding");
+        // Measured again from the reference: its card spans 1153..1428 inside a 1140..1440 sidebar, so the
+        // column is 274 wide with 13 points of padding on the left and 12 on the right.
+        assert_eq!(column.width(), 274.0, "1153..1428 inside a 1140..1440 sidebar");
         assert_eq!(column.left() - panel.left(), PAD);
         assert_eq!(column.right(), panel.right() - PAD);
         for top in step_tops() {
