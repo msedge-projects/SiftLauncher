@@ -55,7 +55,12 @@ fn main() -> eframe::Result<()> {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([geometry::WINDOW.0, geometry::WINDOW.1])
             .with_min_inner_size([960.0, 540.0])
-            .with_title("Sift Launcher"),
+            .with_title("Sift Launcher")
+            // The window draws its own title bar -- mark, breadcrumb, update pill, minimise, maximise and
+            // close -- so the window manager's decorations are a second bar above it. The reference has
+            // none: measured on the same X server, its rail's first icon sits at 71 and ours at 93, and
+            // the 22-point difference is exactly the decoration this removes.
+            .with_decorations(false),
         ..Default::default()
     };
     eframe::run_native(
