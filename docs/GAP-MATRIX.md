@@ -4708,3 +4708,29 @@ Three consequences, recorded rather than smoothed over:
    for this client") instead of DONE-by-comparison. The parts that *are* verifiable -- Join end to end
    (`--quickPlayMultiplayer purpleprison.net:25565` on the java command line), Copy IP through `xclip`, the
    New server dialog -- are driven and proved, and stay DONE.
+
+# The reference's rail has four destinations; this build has five (2026-11-02)
+
+Pressing every icon in the running reference's rail and reading the breadcrumb each time:
+
+| rail position (screen y) | reference |
+|---|---|
+| ~103 | Discover modpacks |
+| ~180 | Skin selector |
+| ~257 | Servers (which answers "Modrinth App update required") |
+| ~334 | **not a page**: the "+" button, tooltip "Create new instance" |
+| bottom | the settings gear |
+
+So the reference's rail is **brand/Home, Discover, Skins, Servers, "+"**. **It has no Screenshots destination.**
+
+This build's rail is Home, Discover, Skins, **Screenshots**, Servers -- one destination the reference does not
+have. That is exactly the failure this document is hardest on: a whole invented screen, with rows in this file
+that describe it as if it were parity work.
+
+**Not deleted in this pass, deliberately**: the page is 2 000 lines and the reference *does* have a screenshots
+view inside an instance's page (our instance page has the same tab). Two readings are possible -- the standalone
+page is invented, or it exists behind a route this rail does not show (`#/screenshots` was not tried) -- and the
+next pass should try the route before either deleting a working page or keeping an invented one.
+
+Captures: `.scratch/cap/refrail-{103,180,257,334,411}.png` (breadcrumb after each press) and
+`.scratch/cap/reftip{334,411}.png` (the "+" tooltip).
