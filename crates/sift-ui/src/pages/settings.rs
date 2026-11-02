@@ -4545,6 +4545,16 @@ fn draw_body(
                     // The selected card carries **no** ring: the capture's dark card is edged
                     // in the same #2e3036 as the two beside it, and the choice is shown by the
                     // radio alone.
+                    // The chosen card carries a tick badge at its top-left, which the reference's
+                    // capture shows on "Dark" (ref-tab-appearance.png) beside the radio below.
+                    if chosen {
+                        let badge = Rect::from_center_size(
+                            pos2(card.left() + 10.0, card.top() + 10.0),
+                            vec2(20.0, 20.0),
+                        );
+                        body.circle_filled(badge.center(), 10.0, theme.SURFACE_4);
+                        crate::icons::draw(&body, crate::icons::Glyph::CheckCircle, badge, theme.BRAND);
+                    }
                     body.rect_filled(card, THEME_CARD_RADIUS, theme.SURFACE_4);
                     body.rect_stroke(
                         card,
