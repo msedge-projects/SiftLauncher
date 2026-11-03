@@ -456,7 +456,9 @@ impl Shell {
         painter.rect_filled(screen, 0.0, egui::Color32::from_black_alpha(120));
         // The reference's plate for this step measures 400 by 576 at 1440x900; it was 350, and the four
         // rows ran out of the bottom of it.
-        let plate = egui::Rect::from_center_size(screen.center(), egui::vec2(576.0, 404.0));
+        // The reference's plate, measured off its own capture: x 360..920, y 65..733 -- 560 by 668. This was
+        // 576 by 404, which is why the fourth type card hung out of the bottom of the dialog.
+        let plate = egui::Rect::from_center_size(screen.center(), egui::vec2(560.0, 668.0));
         // A modal has to be dismissable: the reference closes on Escape and on a click outside
         // the plate. Without this the dialog is a trap, which is what the capture showed --
         // every row and the close mark drawn, none of them answering.
@@ -482,8 +484,14 @@ impl Shell {
         );
         let left = plate.left() + 16.0;
         let right = plate.right() - 16.0;
+        // The header's rule, which the reference draws across the plate under its title.
+        painter.hline(
+            plate.x_range(),
+            plate.top() + 62.0,
+            egui::Stroke::new(1.0, theme.SURFACE_5),
+        );
         painter.text(
-            egui::pos2(left, plate.top() + 18.0),
+            egui::pos2(left, plate.top() + 30.0),
             egui::Align2::LEFT_TOP,
             "Create instance",
             crate::fonts::semibold(18.0),
@@ -647,33 +655,56 @@ impl Shell {
             return;
         }
         painter.text(
-            egui::pos2(left, plate.top() + 62.0),
+            egui::pos2(left, plate.top() + 80.0),
             egui::Align2::LEFT_TOP,
             "Already know what you want to play?",
             crate::fonts::semibold(14.0),
             theme.CONTRAST,
         );
         let search = egui::Rect::from_min_size(
-            egui::pos2(left, plate.top() + 84.0),
-            egui::vec2(right - left, 28.0),
+            egui::pos2(left, plate.top() + 104.0),
+            egui::vec2(right - left, 40.0),
         );
-        painter.rect_filled(search, 8.0, theme.BUTTON_BG);
+        painter.rect_filled(search, 10.0, theme.BUTTON_BG);
+        // The magnifier the reference puts inside the field's left edge.
+        crate::icons::draw(
+            &painter,
+            crate::icons::Glyph::Search,
+            egui::Rect::from_center_size(
+                egui::pos2(search.left() + 22.0, search.center().y),
+                egui::Vec2::splat(16.0),
+            ),
+            theme.SECONDARY,
+        );
         painter.text(
-            egui::pos2(search.left() + 10.0, search.center().y),
+            egui::pos2(search.left() + 38.0, search.center().y),
             egui::Align2::LEFT_CENTER,
             "Search mods, modpacks, and more...",
             crate::fonts::body(13.0),
             theme.SECONDARY,
         );
+        // "or" sits between two rules that run out to the plate's edges, as the reference draws it.
+        let or_y = plate.top() + 164.0;
+        let or_width = 18.0;
+        painter.hline(
+            left..=(plate.center().x - or_width),
+            or_y,
+            egui::Stroke::new(1.0, theme.SURFACE_5),
+        );
+        painter.hline(
+            (plate.center().x + or_width)..=right,
+            or_y,
+            egui::Stroke::new(1.0, theme.SURFACE_5),
+        );
         painter.text(
-            egui::pos2(plate.center().x, plate.top() + 120.0),
+            egui::pos2(plate.center().x, or_y - 7.0),
             egui::Align2::CENTER_TOP,
             "or",
             crate::fonts::body(12.0),
             theme.SECONDARY,
         );
         painter.text(
-            egui::pos2(left, plate.top() + 142.0),
+            egui::pos2(left, plate.top() + 186.0),
             egui::Align2::LEFT_TOP,
             "Choose instance type",
             crate::fonts::semibold(14.0),
@@ -689,10 +720,12 @@ impl Shell {
             return;
         }
         for (index, (title, description, _)) in INSTANCE_TYPES.iter().enumerate() {
-            // 56 tall on a 64-point pitch: the reference's four rows fill 256 points between them.
+            // **86 tall on a 98-point pitch**, measured off the reference's own dialog: its cards run
+            // 333..419, 431..517, 529..615, 627..713 -- the 56-point rows this drew were half their height and
+            // left the descriptions on one line where the reference wraps them onto two.
             let row = egui::Rect::from_min_size(
-                egui::pos2(left, plate.top() + 166.0 + index as f32 * 64.0),
-                egui::vec2(right - left, 56.0),
+                egui::pos2(left, plate.top() + 212.0 + index as f32 * 98.0),
+                egui::vec2(right - left, 86.0),
             );
             if settled && clicked && pointer.is_some_and(|point| row.contains(point)) {
                 self.create_choice = Some(index);
@@ -701,7 +734,15 @@ impl Shell {
                 }
                 ctx.request_repaint();
             }
-            painter.rect_filled(row, 10.0, theme.SURFACE_4);
+            // **Outlined, not filled.** The reference's cards are a hairline over the plate's own ground with only
+            // the faintest lift; a SURFACE_4 fill read as a stack of buttons.
+            painter.rect_filled(row, 12.0, theme.RAISED_BG);
+            painter.rect_stroke(
+                row,
+                12.0,
+                egui::Stroke::new(1.0, theme.SURFACE_5),
+                egui::StrokeKind::Inside,
+            );
             if self.create_choice == Some(index) {
                 painter.rect_stroke(
                     row,
@@ -718,41 +759,38 @@ impl Shell {
                 2 => crate::icons::Glyph::Upload,
                 _ => crate::icons::Glyph::Package,
             };
+            // The mark sits in a **circled plate** at the card's left, as the reference draws it -- a bare glyph
+            // on the card's own ground is what this drew, and it is not the same object.
+            let mark_centre = egui::pos2(row.left() + 38.0, row.center().y);
+            painter.circle_stroke(
+                mark_centre,
+                22.0,
+                egui::Stroke::new(1.0, theme.SURFACE_5),
+            );
             crate::icons::draw(
                 &painter,
                 mark,
-                egui::Rect::from_center_size(
-                    egui::pos2(row.left() + 25.0, row.center().y),
-                    egui::Vec2::splat(22.0),
-                ),
+                egui::Rect::from_center_size(mark_centre, egui::Vec2::splat(22.0)),
                 theme.BASE,
             );
+            // The words start right of the circle, the title on the card's own line and the description under it.
+            let words = row.left() + 76.0;
             painter.text(
-                egui::pos2(row.left() + 52.0, row.center().y - 16.0),
+                egui::pos2(words, row.top() + 20.0),
                 egui::Align2::LEFT_TOP,
                 *title,
-                crate::fonts::semibold(13.0),
+                crate::fonts::semibold(14.0),
                 theme.CONTRAST,
             );
             painter.text(
-                egui::pos2(row.left() + 52.0, row.center().y + 2.0),
+                egui::pos2(words, row.top() + 42.0),
                 egui::Align2::LEFT_TOP,
                 *description,
-                crate::fonts::body(11.0),
+                crate::fonts::body(12.0),
                 theme.SECONDARY,
             );
-            // The second row leads somewhere, and the reference marks it with a chevron.
-            if index == 1 {
-                crate::icons::draw(
-                    &painter,
-                    crate::icons::Glyph::ChevronRight,
-                    egui::Rect::from_center_size(
-                        egui::pos2(row.right() - 18.0, row.center().y),
-                        egui::Vec2::splat(16.0),
-                    ),
-                    theme.SECONDARY,
-                );
-            }
+            // No chevron: the reference's cards carry none, and one drawn here was a mark the reference does not
+            // have on a card that opens the same kind of step as its neighbours.
         }
     }
 }
