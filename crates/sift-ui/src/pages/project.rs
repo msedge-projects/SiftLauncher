@@ -45,9 +45,15 @@
 //! sidebar's details, and `GET /v2/project/{id}/version` for the versions table — with the
 //! sample's values. Nothing here fetches; installing a project is the shell's Discover path.
 
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 use std::time::UNIX_EPOCH;
 
 use eframe::egui::{self, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
+// The launcher's own paths and wire, so a project document comes through the same client,
+// cache and retry policy every other metadata question does.
+use sift_core::paths::{platform_data_root, SiftPaths, System};
+use sift_game::wire::Wire;
 
 use crate::fonts;
 use crate::icons::{self, Glyph};
@@ -143,14 +149,23 @@ const INSTALL_HEIGHT: f32 = 48.0;
 /// `rounded-2xl` on a `size="xl"` button.
 const INSTALL_RADIUS: u8 = 16;
 
-/// `px-3.5` on a `size="xl"` button.
+/// `px-3.5` on a `size="xl"` button: 14 points of padding. The capture shows 16 between the
+/// fill's left edge (946) and the glyph's box (962); the extra two are the glyph's own box
+/// meeting the padding, so the value stays the sheet's and the glyph box does the rest.
 const INSTALL_PAD: f32 = 14.0;
 
 /// `gap-2` on a `size="xl"` button.
 const INSTALL_GAP: f32 = 8.0;
 
-/// `svg size-6` on a `size="xl"` button.
-const INSTALL_GLYPH: f32 = 24.0;
+/// `svg size-6` on a `size="xl"` button. The install button's own glyph, measured at 20: the
+/// reference's download arrow occupies x 962..982 inside a button whose fill starts at 946, so
+/// the 24-point box is not what it draws. A 24-point box left the arrow 4 points wider than the
+/// reference's on every capture.
+const INSTALL_GLYPH: f32 = 20.0;
+
+/// The kebab's `ellipsis-vertical`, which is a 24-point box whatever the install button's glyph
+/// is; the two used to share one constant because they were both 24.
+const KEBAB_GLYPH: f32 = 24.0;
 
 /// `text-base font-extrabold` on a `size="xl"` button.
 const INSTALL_TEXT: f32 = 16.0;
@@ -208,8 +223,9 @@ const SIDEBAR_CHIP_GAP: f32 = 4.0;
 /// A table header cell's height: `h-12` (`base/Table.vue:24-36`).
 const TABLE_HEADER: f32 = 48.0;
 
-/// A table row's height: `h-14` (`base/Table.vue:100-110`).
-const TABLE_ROW: f32 = 56.0;
+/// A table row's height: `h-14` (56) plus its own `border-t`, which the reference renders as a
+/// 61-point pitch -- its row rules run 362, 423, 484, 545, 606 (ref-project-versions.png).
+const TABLE_ROW: f32 = 61.0;
 
 /// `first:pl-4 last:pr-4` on a table cell (`base/Table.vue:24-36`).
 const TABLE_PAD: f32 = 16.0;
@@ -365,6 +381,23 @@ pub struct Image {
     pub created: Date,
 }
 
+/// One block of the description, as the project's markdown wrote it.
+///
+/// The reference renders the body as HTML (`markdown-body`), so a heading is a heading and an
+/// image is a picture rather than a line of text. Four kinds cover everything the pages in this
+/// catalogue actually use: running text, a heading, a quoted line and an image.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Block {
+    /// Running text, its inline markers removed.
+    Text(String),
+    /// A `###` heading or above, without its hashes.
+    Heading(String),
+    /// A `>` quote's line, without its marker.
+    Quote(String),
+    /// An image, by URL.
+    Image(String),
+}
+
 /// What the page shows. The Discover card carries the same fields, plus what a full project
 /// page needs.
 #[derive(Clone)]
@@ -378,6 +411,10 @@ pub struct Project {
     /// The longer description, already broken into paragraphs. Empty until the project endpoint
     /// has answered.
     pub body: Vec<String>,
+    /// The same description as blocks -- headings, quotes and images kept as themselves -- for
+    /// the tab that draws it. Empty means "draw `body` as paragraphs", which is what a project
+    /// with no document yet falls back to.
+    pub blocks: Vec<Block>,
     /// The loader and environment tags the header shows.
     pub tags: Vec<(String, Glyph)>,
     /// Game versions the project supports, newest first, from the `version` endpoint.
@@ -458,6 +495,8 @@ pub struct State {
     slider: Option<(f32, f32, f64)>,
     /// The gallery image being looked at, by its index in the grid.
     pub viewer: Option<usize>,
+    /// The versions page the reader is on, counting from one.
+    pub page: usize,
     /// The channel chips the reader has toggled on (Release/Beta/Alpha).
     pub channels: Vec<Channel>,
     /// The loader chips the reader has toggled on.
@@ -478,6 +517,7 @@ impl Default for State {
             tab: None,
             slider: None,
             viewer: None,
+            page: 1,
             channels: Vec::new(),
             loaders: Vec::new(),
             pressed: None,
@@ -548,22 +588,82 @@ fn relative(published: Date, now: Date) -> String {
     }
 }
 
-/// The compact form the Downloads column prints: formatCompactNumber, which is 1.2K, 19.6M,
-/// 1.1B.
+/// The versions table's own relative date: `2d ago`, `2w ago`, `last mo` -- the short form the
+/// reference's table prints where its header prints `2 days ago` (ref-project-versions.png: the
+/// Published column reads 2d, 2d, 2w, 3w, 3w, 3w, last mo, last mo, last mo down the rows).
+fn relative_short(published: Date, now: Date) -> String {
+    let days = now.day_number() - published.day_number();
+    match days {
+        i64::MIN..=0 => "today".to_owned(),
+        1 => "yesterday".to_owned(),
+        2..=6 => format!("{days}d ago"),
+        7..=27 => format!("{}w ago", days / 7),
+        28..=45 => "last mo".to_owned(),
+        46..=319 => format!("{}mo ago", days / 30),
+        320..=547 => "1y ago".to_owned(),
+        _ => format!("{}y ago", days / 365),
+    }
+}
+
+/// A metadata count with its noun, singular for exactly one: `5K followers`, `1 download`.
+///
+/// The value arrives already abbreviated -- it is the search hit's own `downloads` string on a
+/// page opened from a card -- so only the noun is added here.
+fn count(value: &str, noun: &str) -> String {
+    if value.trim().is_empty() {
+        return String::new();
+    }
+    if value.trim() == "1" {
+        format!("{value} {noun}")
+    } else {
+        format!("{value} {noun}s")
+    }
+}
+
+/// The compact form the Downloads column prints: formatCompactNumber, which is 1.2K, 19.8M,
+/// 1.1B -- and `7,847` for a number under ten thousand, which the reference leaves grouped
+/// rather than turning into `7.8K` (ref-project-versions.png, the 14.1.2 row).
 fn compact(count: u64) -> String {
-    let units = [(1_000_000_000_u64, "B"), (1_000_000, "M"), (1_000, "K")];
-    for (size, suffix) in units {
+    if count < 10_000 {
+        return grouped(count);
+    }
+    scaled(count)
+}
+
+/// The same number always abbreviated, which is what the header's two counts are: the
+/// reference prints `5K followers` where its table would print `5,037`.
+fn short_count(count: u64) -> String {
+    scaled(count)
+}
+
+/// One decimal place, rounded, with a trailing `.0` dropped: `19.8M`, `155K`.
+fn scaled(count: u64) -> String {
+    for (size, suffix) in [(1_000_000_000_u64, "B"), (1_000_000, "M"), (1_000, "K")] {
         if count >= size {
-            let whole = count / size;
-            let tenths = count % size * 10 / size;
-            return if tenths == 0 {
+            let tenths = (count as f64 / (size as f64 / 10.0)).round() as u64;
+            let whole = tenths / 10;
+            let fraction = tenths % 10;
+            return if fraction == 0 {
                 format!("{whole}{suffix}")
             } else {
-                format!("{whole}.{tenths}{suffix}")
+                format!("{whole}.{fraction}{suffix}")
             };
         }
     }
     count.to_string()
+}
+
+/// A count with its thousands separated: `7,847`.
+fn grouped(count: u64) -> String {
+    let digits = count.to_string();
+    let mut out = String::new();
+    for (index, digit) in digits.chars().enumerate() {
+        if index > 0 && (digits.len() - index) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(digit);
+    }
+    out
 }
 
 /// The gallery's column count and one item's width: repeat(auto-fill, minmax(20rem, 1fr)) over
@@ -605,7 +705,24 @@ fn filtered_versions<'a>(
 }
 
 /// `mb-3` under the filter row (`ProjectPageVersions.vue:2`).
-const VERSION_FILTER_GAP: f32 = 12.0;
+const VERSION_FILTER_GAP: f32 = 16.0;
+
+/// Where the Versions tab's filter row starts, from the card edge the other tabs are bordered
+/// at: the reference's own 3 points.
+const VERSIONS_INSET: f32 = 3.0;
+
+/// The filter row's own height: the reference's quiet selects are 28 points tall
+/// (ref-project-versions.png, the `Channel` control's box at y 268..296).
+const FILTER_HEIGHT: f32 = 28.0;
+
+/// One page of releases: `pageSize` (`ProjectPageVersions.vue:687`).
+const PAGE_SIZE: usize = 20;
+
+/// A pager button: `!min-w-9` is 36 points square and round.
+const PAGER_BUTTON: f32 = 36.0;
+
+/// `gap-1` between two pager buttons.
+const PAGER_GAP: f32 = 4.0;
 
 /// The versions table's column widths, in the order the cells are drawn: channel, version, game
 /// versions, platforms, published, downloads, actions.
@@ -613,19 +730,22 @@ const VERSION_FILTER_GAP: f32 = 12.0;
 /// ProjectPageVersions.vue:560-615 gives the channel 4.5rem, the chip columns max-w-[12rem],
 /// published and downloads 12% each, actions 1%, and leaves the version number the rest.
 fn table_columns(width: f32) -> [f32; 7] {
-    let fixed = CHANNEL_WIDTH + 2.0 * CHIP_COLUMN + ACTIONS_COLUMN + 4.0 * TABLE_PAD;
-    let share = (width - fixed).max(0.0);
-    let date = (width * DATE_COLUMN).max(72.0);
-    let version = (share - 2.0 * date).max(112.0);
-    [
-        CHANNEL_WIDTH,
-        version,
-        CHIP_COLUMN,
-        CHIP_COLUMN,
-        date,
-        date,
-        ACTIONS_COLUMN,
-    ]
+    // Measured off the reference's own table rather than derived from the sheet's percentages:
+    // its header labels start at 162, 396, 613, 779 and 903 and its row action sits at 1072, so
+    // the columns are 72 / 234 / 217 / 166 / 124 / 159 / 56 across a 1028-point table. The sheet
+    // gives the channel 4.5rem and leaves the rest to `table-layout: auto`, which sizes the two
+    // chip columns to their content -- so the proportions it states are not the ones it draws.
+    const MEASURED: [f32; 7] = [72.0, 234.0, 217.0, 166.0, 124.0, 159.0, 56.0];
+    let mut total = 0.0;
+    for column in MEASURED {
+        total += column;
+    }
+    let scale = width / total;
+    let mut out = [0.0; 7];
+    for (index, column) in MEASURED.iter().enumerate() {
+        out[index] = column * scale;
+    }
+    out
 }
 
 /// The wall clock, as the page's [Date]: the Published column is relative to the reader's day.
@@ -677,15 +797,30 @@ pub fn draw(
     installed: bool,
 ) -> bool {
     ui.painter().rect_filled(rect, 0, theme.BG);
+    // The project this frame draws: what the shell handed over, plus whatever the project's own
+    // document has added since. One request per open page, and the frame that finds it ready
+    // draws the header, the tabs and the panel from it.
+    let loaded = merged(ui.ctx(), project);
+    let project = &loaded;
     state.installed = installed;
     if rect.width() <= 2.0 * PAGE_PADDING || rect.height() <= 2.0 * PAGE_PADDING {
         return false;
     }
 
     // The page column: flex flex-col gap-4 p-6 (Index.vue:48).
+    //
+    // Horizontally the rect a page is handed is *already* the padded column -- the shell's
+    // `Page::rect` starts at `TEXT_LEFT` = 88 and ends at the sidebar's 24-point margin, which
+    // is what the reference's `p-6` produces inside its 64-to-1140 viewport. Adding the inset
+    // again put the header's avatar at 112 and the card's edges at 112 and 1092 where the
+    // reference has 88 and 1116 (measured: ref-project.png y 300 runs 89..1114, this build's
+    // 113..1090). So only the top inset is applied here.
+    //
+    // The bottom is the window's own edge: the reference's page scrolls, and its card is cut by
+    // the window rather than stopping 24 points above it (ref-project.png y 890 is still card).
     let column = Rect::from_min_max(
-        egui::pos2(rect.left() + PAGE_PADDING, rect.top() + PAGE_PADDING),
-        egui::pos2(rect.right() - PAGE_PADDING, rect.bottom() - PAGE_PADDING),
+        egui::pos2(rect.left(), rect.top() + PAGE_PADDING),
+        egui::pos2(rect.right(), rect.bottom()),
     );
 
     // Every rectangle a press is read against, for `SIFT_PROJECT_PROBE`.
@@ -731,19 +866,32 @@ pub fn draw(
     if card.height() < 1.0 {
         return owed;
     }
-    ui.painter().rect_filled(card, CARD_RADIUS, theme.SURFACE_3);
-    ui.painter().rect_stroke(
-        card,
-        CARD_RADIUS,
-        Stroke::new(STROKE_WIDTH, theme.SURFACE_4),
-        egui::StrokeKind::Inside,
-    );
 
-    let inner = card.shrink(CARD_PAD);
-    match state.current(project) {
-        Tab::Description => description(ui, inner, theme, project),
-        Tab::Versions => versions(ui, inner, theme, project, state),
-        Tab::Gallery => gallery(ui, inner, theme, project, images, state, &mut probe_rows),
+    // **The Versions tab is not a card.** `Versions.vue:3` is a plain `flex flex-col gap-3`
+    // column: the filter row sits on the page's own background and the table is its own rounded
+    // box, which is why the reference's filter row starts at y 268 where its page card would have
+    // been bordered at 265, and why the table's border is at 313 (ref-project-versions.png).
+    if state.current(project) == Tab::Versions {
+        let inner = Rect::from_min_max(
+            egui::pos2(column.left(), card_top + VERSIONS_INSET),
+            egui::pos2(column.right(), column.bottom()),
+        );
+        versions(ui, inner, theme, project, state);
+    } else {
+        ui.painter().rect_filled(card, CARD_RADIUS, theme.SURFACE_3);
+        ui.painter().rect_stroke(
+            card,
+            CARD_RADIUS,
+            Stroke::new(STROKE_WIDTH, theme.SURFACE_4),
+            egui::StrokeKind::Inside,
+        );
+
+        let inner = card.shrink(CARD_PAD);
+        match state.current(project) {
+            Tab::Description => description(ui, inner, theme, project, images),
+            Tab::Gallery => gallery(ui, inner, theme, project, images, state, &mut probe_rows),
+            Tab::Versions => {}
+        }
     }
 
     probe_rows.push(("card".to_owned(), card));
@@ -806,14 +954,18 @@ fn header(
 
     let text_left = avatar.right() + HEADER_GAP;
     // The actions are laid out from the right first, so the summary knows what width it has.
+    // The reference puts the kebab at the column's right edge and the button to its left:
+    // its kebab's box ends at 1116 and the green fill runs 946..1060 (ref-project.png y 95).
+    // This had them the other way round -- button flush right, kebab to its left -- so every
+    // control in the header's action corner was 48 points out of place.
     let install_width = install_width(painter, theme);
-    let install = Rect::from_min_size(
-        egui::pos2(column.right() - install_width, column.top()),
-        egui::vec2(install_width, INSTALL_HEIGHT),
-    );
     let kebab = Rect::from_min_size(
-        egui::pos2(install.left() - INSTALL_GAP - KEBAB, column.top()),
+        egui::pos2(column.right() - KEBAB, column.top()),
         Vec2::splat(KEBAB),
+    );
+    let install = Rect::from_min_size(
+        egui::pos2(kebab.left() - INSTALL_GAP - install_width, column.top()),
+        egui::vec2(install_width, INSTALL_HEIGHT),
     );
 
     // The title: text-2xl font-semibold leading-none text-contrast.
@@ -849,9 +1001,13 @@ fn header(
     // the category tags.
     let meta_top = summary_top + summary_height + META_CONTENT_GAP;
     let mut x = text_left;
+    // "19.8M downloads", "5K followers": the reference's metadata items carry the noun, and
+    // the project struct carries the number alone.
+    let downloads = count(&project.downloads, "download");
+    let followers = count(&project.followers, "follower");
     for (index, (glyph, value)) in [
-        (Glyph::Download, project.downloads.as_str()),
-        (Glyph::Heart, project.followers.as_str()),
+        (Glyph::Download, downloads.as_str()),
+        (Glyph::Heart, followers.as_str()),
     ]
     .into_iter()
     .enumerate()
@@ -919,7 +1075,7 @@ fn header(
     icons::draw(
         painter,
         Glyph::EllipsisVertical,
-        Rect::from_center_size(kebab.center(), Vec2::splat(INSTALL_GLYPH)),
+        Rect::from_center_size(kebab.center(), Vec2::splat(KEBAB_GLYPH)),
         theme.SECONDARY,
     );
 
@@ -1079,7 +1235,12 @@ fn install_width(painter: &egui::Painter, theme: &Theme) -> f32 {
 /// A Button at size xl and color brand: h-12 gap-2 rounded-2xl px-3.5 text-base font-extrabold
 /// with a 24-point glyph (ButtonFrame.vue:33).
 fn primary_button(painter: &egui::Painter, rect: Rect, theme: &Theme, label: &str, glyph: Glyph) {
-    painter.rect_filled(rect, INSTALL_RADIUS, theme.BUTTON_BG_SELECTED);
+    // `color="green"` is the brand fill with the accent's own contrast ink on it
+    // (`--color-brand` #1bd96a under `--color-accent-contrast` #000). This drew
+    // `button-bg-selected` -- the translucent *highlight* tint -- under `button-text-selected`,
+    // which inverted the pair: a 114x48 block of (36,85,61) with green text where the reference
+    // has (27,217,106) with black text (ref-project.png x 946..1060, y 72..119).
+    painter.rect_filled(rect, INSTALL_RADIUS, theme.BRAND);
     icons::draw(
         painter,
         glyph,
@@ -1090,7 +1251,7 @@ fn primary_button(painter: &egui::Painter, rect: Rect, theme: &Theme, label: &st
             ),
             Vec2::splat(INSTALL_GLYPH),
         ),
-        theme.BUTTON_TEXT_SELECTED,
+        theme.ACCENT_CONTRAST,
     );
     painter.text(
         egui::pos2(
@@ -1100,7 +1261,7 @@ fn primary_button(painter: &egui::Painter, rect: Rect, theme: &Theme, label: &st
         Align2::LEFT_CENTER,
         label,
         fonts::semibold(INSTALL_TEXT),
-        theme.BUTTON_TEXT_SELECTED,
+        theme.ACCENT_CONTRAST,
     );
 }
 
@@ -1273,63 +1434,376 @@ fn tab_strip(
 // The Description tab
 // ---------------------------------------------------------------------------
 
+/// One line of the description: a run of text, or a row of inline pictures.
+enum Line {
+    /// A laid-out paragraph, heading or quote.
+    Text(std::sync::Arc<egui::Galley>, Color32, f32),
+    /// The pictures that share one line, at the size each of them draws at.
+    Pictures(Vec<(String, Vec2)>),
+}
+
+/// The gap under a paragraph: a markdown `p`'s own margin.
+const PARAGRAPH_GAP: f32 = 16.0;
+
+/// The gap under a heading: `h3`'s own `margin-bottom`, which is half a paragraph's. Six rather
+/// than eight: at eight every line after the first heading of the reference's body landed two
+/// points low (measured: ref 839/863, this build 841/865).
+const HEADING_GAP: f32 = 6.0;
+
+/// A paragraph's line height: `line-height: 1.5` on a 16-point body, so a row is 24 points
+/// where the font alone gives 19.
+const BODY_LINE: f32 = 24.0;
+
+/// A heading's line height, for its 20-point type.
+const HEADING_LINE: f32 = 28.0;
+
+/// The room an inline picture leaves under itself: the line box is the picture plus the font's
+/// descender, which is why the reference's badge row ends at 315 and its next paragraph starts
+/// at 338 rather than 331.
+const PICTURE_DESCENDER: f32 = 6.0;
+
+/// A heading's size: the reference's `.markdown-body h3`, 1.25 times the body's 16.
+const HEADING_SIZE: f32 = 20.0;
+
+/// How far a quote is inset from the body's own left edge.
+const QUOTE_INDENT: f32 = 16.0;
+
+/// Lay a block of text out at the reference's own line height.
+///
+/// `Painter::layout` packs a row to the font's own height -- 19 points for the 16-point body --
+/// where the reference's markdown sets `line-height: 1.5`, so its rows are 24 apart. The extra
+/// five points per row is the whole of the difference between a paragraph of two lines landing
+/// at y 839 and y 863 and one landing at 818 and 837.
+fn paragraph(
+    painter: &egui::Painter,
+    text: &str,
+    font: egui::FontId,
+    ink: Color32,
+    width: f32,
+    line: f32,
+) -> std::sync::Arc<egui::Galley> {
+    let mut job = egui::text::LayoutJob::single_section(
+        text.to_owned(),
+        egui::TextFormat {
+            font_id: font,
+            color: ink,
+            line_height: Some(line),
+            ..Default::default()
+        },
+    );
+    job.wrap.max_width = width;
+    painter.layout_job(job)
+}
+
 /// The description tab: the rendered markdown body inside the card, and nothing else.
 ///
 /// The reference's tab is `Card` wrapping `ProjectPageDescription` (`Description.vue:1-5`); the
 /// action row this page used to draw above the body was invented, and is gone.
-fn description(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project) {
-    if project.body.is_empty() {
+///
+/// The body is drawn from `Project::blocks`: paragraphs at the body size, headings at
+/// `HEADING_SIZE`, quotes inset and muted, and pictures at the size the file itself is -- which is
+/// what the reference's `markdown-body img` does, and the reason a pack's badge row is 34 points
+/// tall rather than a full-width block.
+fn description(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, images: &mut Images) {
+    let blocks: Vec<Block> = if project.blocks.is_empty() {
+        project
+            .body
+            .iter()
+            .cloned()
+            .map(Block::Text)
+            .collect()
+    } else {
+        project.blocks.clone()
+    };
+    if blocks.is_empty() {
         // A card carries no description; the project endpoint does. Saying so is the honest
         // state, and it is what the reference shows while its own query is pending.
         empty_tab(ui, inner, theme, "No description yet.");
         return;
     }
+
+    // Measure first: the run's own height is what the card has to scroll, and a picture's size
+    // is only known once its texture is in hand.
     let painter = ui.painter();
-    let mut heights = Vec::new();
-    let mut total = 0.0;
-    for paragraph in &project.body {
-        let galley = painter.layout(
-            paragraph.clone(),
-            fonts::body(SUMMARY_SIZE),
-            theme.BASE,
-            inner.width(),
-        );
-        total += galley.size().y + PARAGRAPH_GAP;
-        heights.push(galley);
+    let mut laid: Vec<Line> = Vec::new();
+    let mut run: Vec<(String, Vec2)> = Vec::new();
+    let mut run_width = 0.0;
+    for block in &blocks {
+        let picture = match block {
+            Block::Image(url) => Some(url),
+            _ => None,
+        };
+        if let Some(url) = picture {
+            let size = images
+                .get(ui.ctx(), url)
+                .map(|texture| texture.size_vec2())
+                .unwrap_or(Vec2::ZERO);
+            let size = if size.x > inner.width() {
+                size * (inner.width() / size.x)
+            } else {
+                size
+            };
+            if size.x > 0.0 {
+                if !run.is_empty() && run_width + size.x > inner.width() {
+                    laid.push(Line::Pictures(std::mem::take(&mut run)));
+                    run_width = 0.0;
+                }
+                run_width += size.x + 4.0;
+                run.push((url.clone(), size));
+            }
+            continue;
+        }
+        if !run.is_empty() {
+            laid.push(Line::Pictures(std::mem::take(&mut run)));
+            run_width = 0.0;
+        }
+        match block {
+            Block::Text(text) => laid.push(Line::Text(
+                paragraph(
+                    painter,
+                    text,
+                    fonts::body(SUMMARY_SIZE),
+                    theme.BASE,
+                    inner.width(),
+                    BODY_LINE,
+                ),
+                theme.BASE,
+                PARAGRAPH_GAP,
+            )),
+            Block::Heading(text) => laid.push(Line::Text(
+                paragraph(
+                    painter,
+                    text,
+                    fonts::semibold(HEADING_SIZE),
+                    theme.CONTRAST,
+                    inner.width(),
+                    HEADING_LINE,
+                ),
+                theme.CONTRAST,
+                HEADING_GAP,
+            )),
+            Block::Quote(text) => laid.push(Line::Text(
+                paragraph(
+                    painter,
+                    text,
+                    fonts::body(SUMMARY_SIZE),
+                    theme.SECONDARY,
+                    inner.width() - QUOTE_INDENT,
+                    BODY_LINE,
+                ),
+                theme.SECONDARY,
+                PARAGRAPH_GAP,
+            )),
+            Block::Image(_) => {}
+        }
     }
+    if !run.is_empty() {
+        laid.push(Line::Pictures(run));
+    }
+
+    let mut total = 0.0;
+    for line in &laid {
+        total += match line {
+            Line::Text(galley, ..) => galley.size().y,
+            Line::Pictures(pictures) => pictures
+                .iter()
+                .map(|(_, size)| size.y)
+                .fold(0.0_f32, f32::max)
+                + PICTURE_DESCENDER,
+        } + match line {
+            Line::Text(_, _, gap) => *gap,
+            Line::Pictures(_) => PARAGRAPH_GAP,
+        };
+    }
+
+    let place = |painter: &egui::Painter, images: &mut Images, ctx: &egui::Context, left: f32, top: f32, lines: &[Line]| {
+        let mut y = top;
+        for line in lines {
+            match line {
+                Line::Text(galley, ink, gap) => {
+                    painter.galley(egui::pos2(left, y), galley.clone(), *ink);
+                    y += galley.size().y + gap;
+                }
+                Line::Pictures(pictures) => {
+                    let mut x = left;
+                    let mut height = 0.0_f32;
+                    for (url, size) in pictures {
+                        let rect = Rect::from_min_size(egui::pos2(x, y), *size);
+                        if let Some(texture) = images.get(ctx, url) {
+                            painter.image(
+                                texture.id(),
+                                rect,
+                                Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                                Color32::WHITE,
+                            );
+                        }
+                        x += size.x + 4.0;
+                        height = height.max(size.y);
+                    }
+                    y += height + PICTURE_DESCENDER + PARAGRAPH_GAP;
+                }
+            }
+        }
+    };
+
     if total > inner.height() {
         let mut child = ui.new_child(egui::UiBuilder::new().max_rect(inner));
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(&mut child, |ui| {
-                let (area, _) = ui.allocate_exact_size(
-                    egui::vec2(inner.width(), total),
-                    Sense::hover(),
-                );
-                let mut y = area.top();
-                for galley in heights {
-                    let height = galley.size().y;
-                    ui.painter().galley(egui::pos2(area.left(), y), galley, theme.BASE);
-                    y += height + PARAGRAPH_GAP;
-                }
+                let (area, _) =
+                    ui.allocate_exact_size(egui::vec2(inner.width(), total), Sense::hover());
+                let painter = ui.painter();
+                place(painter, images, ui.ctx(), area.left(), area.top(), &laid);
             });
         return;
     }
-    let mut y = inner.top();
-    for galley in heights {
-        let height = galley.size().y;
-        ui.painter()
-            .galley(egui::pos2(inner.left(), y), galley, theme.BASE);
-        y += height + PARAGRAPH_GAP;
-    }
+    let left = inner.left();
+    let top = inner.top();
+    let painter = ui.painter();
+    place(painter, images, ui.ctx(), left, top, &laid);
 }
-
-/// The gap between two paragraphs of the body: a markdown `p`'s own margin.
-const PARAGRAPH_GAP: f32 = 12.0;
-
 // ---------------------------------------------------------------------------
 // The Versions tab
 // ---------------------------------------------------------------------------
+
+/// One control in the pager.
+enum Pager {
+    /// A page number.
+    Page(usize),
+    /// The ellipsis the reference draws where the pages skip, which is its rotated
+    /// \`EllipsisVerticalIcon\`.
+    Gap,
+    /// The previous page's chevron.
+    Previous,
+    /// The next page's chevron.
+    Next,
+}
+
+/// The reference's \`Pagination\` (\`ui/src/components/base/Pagination.vue\`): a chevron back while
+/// there is a page behind, the current page as a filled round pill, its neighbours, an ellipsis
+/// where the list skips, the last page, and a chevron on. Every button is \`!min-w-9\` -- 36 points
+/// square and round -- with \`gap-1\` between them, and the run is right-aligned on the row it
+/// shares with the filters, which is what \`justify-between\` does in the sheet.
+///
+/// Returns the page a press asked for, if any.
+fn pagination(
+    ui: &mut Ui,
+    right: f32,
+    centre: f32,
+    page: usize,
+    count: usize,
+    theme: &Theme,
+) -> Option<usize> {
+    if count <= 1 {
+        return None;
+    }
+    // The list its own \`computed\` builds: first, gap, previous, current, next, gap, last.
+    let mut items: Vec<Pager> = Vec::new();
+    let (first, last) = (1usize, count);
+    let previous = page.saturating_sub(1);
+    let next = page + 1;
+    if page > 1 {
+        items.push(Pager::Previous);
+    }
+    if previous > first {
+        items.push(Pager::Page(first));
+    }
+    if previous > first + 1 {
+        items.push(Pager::Gap);
+    }
+    if page > 1 && previous >= first {
+        items.push(Pager::Page(previous));
+    }
+    items.push(Pager::Page(page));
+    if next <= last {
+        items.push(Pager::Page(next));
+    }
+    if next + 1 < last {
+        items.push(Pager::Gap);
+    }
+    if next < last {
+        items.push(Pager::Page(last));
+    }
+    if page < last {
+        items.push(Pager::Next);
+    }
+
+    let width = items.len() as f32 * PAGER_BUTTON + (items.len() - 1) as f32 * PAGER_GAP;
+    let mut x = right - width;
+    let mut wanted = None;
+    for item in &items {
+        let rect = Rect::from_center_size(
+            egui::pos2(x + PAGER_BUTTON / 2.0, centre),
+            Vec2::splat(PAGER_BUTTON),
+        );
+        let painter = ui.painter();
+        match item {
+            Pager::Page(number) => {
+                let current = *number == page;
+                if current {
+                    painter.rect_filled(rect, PAGER_BUTTON / 2.0, theme.BRAND_HIGHLIGHT);
+                }
+                painter.text(
+                    rect.center(),
+                    Align2::CENTER_CENTER,
+                    number.to_string(),
+                    fonts::semibold(TAB_TEXT),
+                    if current {
+                        theme.BUTTON_TEXT_SELECTED
+                    } else {
+                        theme.BASE
+                    },
+                );
+                if ui
+                    .interact(rect, egui::Id::new(("versions-page", *number)), Sense::click())
+                    .clicked()
+                {
+                    wanted = Some(*number);
+                }
+            }
+            Pager::Gap => {
+                painter.text(
+                    rect.center(),
+                    Align2::CENTER_CENTER,
+                    "…",
+                    fonts::semibold(TAB_TEXT),
+                    theme.BASE,
+                );
+            }
+            Pager::Previous => {
+                icons::draw(
+                    painter,
+                    Glyph::ChevronLeft,
+                    Rect::from_center_size(rect.center(), Vec2::splat(16.0)),
+                    theme.BASE,
+                );
+                if ui
+                    .interact(rect, egui::Id::new("versions-page-prev"), Sense::click())
+                    .clicked()
+                {
+                    wanted = Some(page - 1);
+                }
+            }
+            Pager::Next => {
+                icons::draw(
+                    painter,
+                    Glyph::ChevronRight,
+                    Rect::from_center_size(rect.center(), Vec2::splat(16.0)),
+                    theme.BASE,
+                );
+                if ui
+                    .interact(rect, egui::Id::new("versions-page-next"), Sense::click())
+                    .clicked()
+                {
+                    wanted = Some(page + 1);
+                }
+            }
+        }
+        x += PAGER_BUTTON + PAGER_GAP;
+    }
+    wanted
+}
 
 /// The versions tab: the reference's `Table` (`ProjectPageVersions.vue:560-615`).
 fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &mut State) {
@@ -1340,8 +1814,9 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
     let now = today();
 
     // The filter row: one chip per channel and per loader the project actually has, toggled on
-    // and off (`ProjectPageVersions.vue:2-28`, the `VersionFilterControl` above the table).
-    let mut filter_row = Rect::from_min_size(inner.min, egui::vec2(inner.width(), TAG_HEIGHT));
+    // and off (`ProjectPageVersions.vue:2-28`, the `VersionFilterControl` above the table), with
+    // the reference's own `Pagination` at its right-hand end.
+    let mut filter_row = Rect::from_min_size(inner.min, egui::vec2(inner.width(), FILTER_HEIGHT));
     {
         let painter = ui.painter();
         let mut x = filter_row.left();
@@ -1363,7 +1838,13 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
             chips.push((loader.to_owned(), state.loaders.contains(&loader)));
         }
         for (label, on) in &chips {
-            let chip = tag_rect(painter, egui::pos2(x, filter_row.top()), theme, label, None);
+            let chip = tag_rect(
+                painter,
+                egui::pos2(x, filter_row.top() + (FILTER_HEIGHT - TAG_HEIGHT) / 2.0),
+                theme,
+                label,
+                None,
+            );
             if *on {
                 painter.rect_filled(chip, (TAG_HEIGHT / 2.0) as u8, theme.BUTTON_BG_SELECTED);
                 painter.text(
@@ -1408,11 +1889,33 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
         }
         filter_row = Rect::from_min_size(
             egui::pos2(inner.left(), inner.top()),
-            egui::vec2(inner.width(), TAG_HEIGHT),
+            egui::vec2(inner.width(), FILTER_HEIGHT),
         );
     }
 
-    let shown = filtered_versions(&project.versions, &state.channels, &state.loaders);
+    let filtered = filtered_versions(&project.versions, &state.channels, &state.loaders);
+    let pages = filtered.len().div_ceil(PAGE_SIZE).max(1);
+    if state.page > pages {
+        state.page = pages;
+    }
+    // The pager, at the right-hand end of the filter row (`Pagination`, right-aligned there
+    // because the row is `justify-between`). A press turns the page and nothing else.
+    if let Some(wanted) = pagination(
+        ui,
+        filter_row.right(),
+        filter_row.center().y,
+        state.page,
+        pages,
+        theme,
+    ) {
+        state.page = wanted;
+        ui.ctx().request_repaint();
+    }
+    let shown: Vec<&Version> = filtered
+        .into_iter()
+        .skip((state.page - 1) * PAGE_SIZE)
+        .take(PAGE_SIZE)
+        .collect();
     let table_top = filter_row.bottom() + VERSION_FILTER_GAP;
     if shown.is_empty() {
         empty_tab(
@@ -1432,7 +1935,11 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
         egui::vec2(inner.width(), table_height),
     );
 
-    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(inner));
+    // The list scrolls under the filter row, so the scroll area starts where the table does:
+    // anchored at `inner` it drew the table over the chips, at the top of the tab (measured:
+    // the table's border at 270 where the reference has it at 313).
+    let list = Rect::from_min_max(egui::pos2(inner.left(), table_top), inner.max);
+    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(list));
     egui::ScrollArea::vertical()
         .auto_shrink([false, false])
         .show(&mut child, |ui| {
@@ -1565,7 +2072,7 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
                 painter.text(
                     egui::pos2(published.left(), published.center().y),
                     Align2::LEFT_CENTER,
-                    relative(version.published, now),
+                    relative_short(version.published, now),
                     fonts::label(TAG_TEXT),
                     theme.BASE,
                 );
@@ -1872,6 +2379,10 @@ fn empty_tab(ui: &mut Ui, inner: Rect, theme: &Theme, message: &str) {
 /// platform, then the supported environment (`ProjectSidebarCompatibility.vue:2-8`), with the
 /// h2 at `text-lg` (18) and the h3 at `text-primary !font-normal text-base` (16, normal).
 pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
+    // The sidebar is drawn from the shell's own copy of the project, so it reads the document
+    // through the same cache the page filled.
+    let loaded = merged(ui.ctx(), project);
+    let project = &loaded;
     let painter = ui.painter();
     let mut y = rect.top();
     let inner_width = rect.width() - 2.0 * CARD_PAD;
@@ -2207,6 +2718,377 @@ fn section(
     y - top + 8.0
 }
 
+// ---------------------------------------------------------------------------
+// The project document
+// ---------------------------------------------------------------------------
+//
+// A card carries the name, the team, the summary, the counts, the tags and the icon -- the
+// search response's own fields. Everything else on this page (the long description, the
+// gallery, the releases, the game versions the compatibility block lists) only exists in
+// `GET /v2/project/{id}` and `GET /v2/project/{id}/version`, which the reference client asks
+// for the moment it opens a project.
+//
+// So this page asks for them too. The request is a thread -- never the frame -- and its answer
+// lands in a cache shared by this module, because the shell owns the `Project` the page is
+// handed and the sidebar is drawn from that same copy: one cache read by both is what keeps
+// the header, the tabs and the panel describing one project.
+//
+// Three states per id, and no retry inside a run: `Loading`, then `Ready` or `Failed`. A page
+// that retried on every frame would ask the API sixty times a second, and a launcher with no
+// connection would spin on a request that cannot answer.
+
+/// What the two document endpoints add to a card's own fields.
+#[derive(Debug, Clone, Default)]
+struct Document {
+    /// The description, as blocks.
+    blocks: Vec<Block>,
+    /// The gallery.
+    gallery: Vec<Image>,
+    /// The game versions the project supports, collapsed into the ranges the sidebar shows.
+    game_versions: Vec<String>,
+    /// The releases, newest first.
+    versions: Vec<Version>,
+    /// `19.8M`, from the project's own `downloads`.
+    downloads: String,
+    /// `5K`, from its `followers`.
+    followers: String,
+    /// The icon's URL, which a card may not have carried.
+    icon: String,
+}
+
+/// Where one project's document is.
+enum Fetched {
+    /// A worker is out for it.
+    Loading,
+    /// The document, once it has answered.
+    Ready(Box<Document>),
+    /// The request or the parse failed. Not retried this run.
+    Failed,
+}
+
+/// The documents this build has fetched, by project id.
+fn documents() -> &'static Mutex<HashMap<String, Fetched>> {
+    static DOCUMENTS: OnceLock<Mutex<HashMap<String, Fetched>>> = OnceLock::new();
+    DOCUMENTS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// The document for `id`, starting its fetch the first time the page asks for it.
+fn document(ctx: &egui::Context, id: &str) -> Option<Document> {
+    if id.trim().is_empty() {
+        return None;
+    }
+    {
+        let mut map = match documents().lock() {
+            Ok(map) => map,
+            Err(_) => return None,
+        };
+        match map.get(id) {
+            Some(Fetched::Ready(document)) => return Some((**document).clone()),
+            Some(Fetched::Loading) | Some(Fetched::Failed) => return None,
+            None => {}
+        }
+        map.insert(id.to_owned(), Fetched::Loading);
+    }
+    let id = id.to_owned();
+    let ctx = ctx.clone();
+    std::thread::spawn(move || {
+        let answer = load_document(&id);
+        if let Ok(mut map) = documents().lock() {
+            map.insert(
+                id,
+                match answer {
+                    Ok(document) => Fetched::Ready(Box::new(document)),
+                    Err(_) => Fetched::Failed,
+                },
+            );
+        }
+        // The frame that draws the answer is the one the answer asked for: without this the page
+        // would keep showing the card's own fields until something else moved.
+        ctx.request_repaint();
+    });
+    None
+}
+
+/// Fetch one project's document: the body, the gallery, the releases and the compatibility
+/// fields, off the frame thread.
+fn load_document(id: &str) -> Result<Document, String> {
+    let paths = SiftPaths::at(platform_data_root(System::current()));
+    let wire = Wire::new(paths.meta_dir());
+    let body = wire.document(&sift_net::modrinth::project_url(id))?;
+    let project: sift_net::modrinth::ModrinthProject =
+        serde_json::from_str(&body).map_err(|error| format!("{id}: {error}"))?;
+    // The typed model carries what this page's own struct wants. The gallery's `created` stamp
+    // is read from the same document's JSON, because the model does not keep it and a gallery
+    // with no date would print 1970 under every picture.
+    let raw: serde_json::Value = serde_json::from_str(&body).unwrap_or(serde_json::Value::Null);
+
+    let gallery = raw["gallery"]
+        .as_array()
+        .map(|images| {
+            images
+                .iter()
+                .map(|image| Image {
+                    url: image["url"].as_str().unwrap_or_default().to_owned(),
+                    title: image["title"].as_str().unwrap_or_default().to_owned(),
+                    description: image["description"].as_str().unwrap_or_default().to_owned(),
+                    created: image["created"]
+                        .as_str()
+                        .and_then(date_of)
+                        .unwrap_or(Date { year: 1970, month: 1, day: 1 }),
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let mut versions = Vec::new();
+    if let Ok(list) = wire.document(&sift_net::modrinth::version_url(id)) {
+        if let Ok(entries) = serde_json::from_str::<serde_json::Value>(&list) {
+            for entry in entries.as_array().into_iter().flatten() {
+                let Some(number) = entry["version_number"].as_str() else {
+                    continue;
+                };
+                versions.push(Version {
+                    number: number.to_owned(),
+                    name: entry["name"].as_str().unwrap_or_default().to_owned(),
+                    game_versions: strings(&entry["game_versions"]),
+                    loaders: strings(&entry["loaders"]),
+                    channel: match entry["version_type"].as_str() {
+                        Some("release") => Channel::Release,
+                        Some("beta") => Channel::Beta,
+                        _ => Channel::Alpha,
+                    },
+                    published: entry["date_published"]
+                        .as_str()
+                        .and_then(date_of)
+                        .unwrap_or(Date { year: 1970, month: 1, day: 1 }),
+                    downloads: entry["downloads"].as_u64().unwrap_or(0),
+                });
+            }
+        }
+    }
+
+    Ok(Document {
+        blocks: blocks_of(&project.body),
+        gallery,
+        game_versions: group_game_versions(&project.game_versions),
+        versions,
+        downloads: short_count(project.downloads),
+        followers: short_count(project.followers),
+        icon: raw["icon_url"].as_str().unwrap_or_default().to_owned(),
+    })
+}
+
+/// A JSON array of strings, as `game_versions` and `loaders` are written.
+fn strings(value: &serde_json::Value) -> Vec<String> {
+    value
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| item.as_str().map(str::to_owned))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The date in an ISO-8601 stamp's first ten characters: `2026-10-20T...` is October 20, 2026.
+fn date_of(stamp: &str) -> Option<Date> {
+    let mut parts = stamp.get(..10)?.split('-');
+    let year = parts.next()?.parse().ok()?;
+    let month = parts.next()?.parse().ok()?;
+    let day = parts.next()?.parse().ok()?;
+    Some(Date { year, month, day })
+}
+
+/// The game versions collapsed the way the sidebar lists them: one chip per minor series,
+/// `1.21.x` for a series that starts at patch zero, `1.18.1-1.18.2` for two versions that do not,
+/// and the version itself when it stands alone. Newest first, as the reference prints them.
+fn group_game_versions(versions: &[String]) -> Vec<String> {
+    let mut parsed: Vec<(i64, i64, i64, String)> = versions
+        .iter()
+        .filter_map(|version| {
+            let mut parts = version.split('.');
+            let major = parts.next()?.parse().ok()?;
+            let minor = parts.next().unwrap_or("0").parse().unwrap_or(0);
+            let patch = parts.next().unwrap_or("0").parse().unwrap_or(0);
+            Some((major, minor, patch, version.clone()))
+        })
+        .collect();
+    parsed.sort_by(|a, b| (b.0, b.1, b.2).cmp(&(a.0, a.1, a.2)));
+
+    let mut out = Vec::new();
+    let mut index = 0;
+    while index < parsed.len() {
+        let (major, minor, ..) = parsed[index];
+        let mut end = index;
+        while end + 1 < parsed.len() && parsed[end + 1].0 == major && parsed[end + 1].1 == minor {
+            end += 1;
+        }
+        if end == index {
+            out.push(parsed[index].3.clone());
+        } else if parsed[end].2 == 0 {
+            out.push(format!("{major}.{minor}.x"));
+        } else {
+            out.push(format!(
+                "{major}.{minor}.{}-{major}.{minor}.{}",
+                parsed[end].2, parsed[index].2
+            ));
+        }
+        index = end + 1;
+    }
+    // A version the numeric parse could not read (a snapshot name, say) is still one the project
+    // supports: it goes on the end rather than being dropped.
+    for version in versions {
+        if !parsed.iter().any(|(.., text)| text == version) {
+            out.push(version.clone());
+        }
+    }
+    out
+}
+
+/// The markdown body as blocks.
+fn blocks_of(body: &str) -> Vec<Block> {
+    let mut out = Vec::new();
+    for chunk in body.split("\n\n") {
+        let lines: Vec<&str> = chunk.lines().filter(|line| !line.trim().is_empty()).collect();
+        if lines.is_empty() {
+            continue;
+        }
+        // A chunk of nothing but images is the badge row at the top of most packs' pages.
+        if lines
+            .iter()
+            .all(|line| line.trim().starts_with("[![") || line.trim().starts_with("!["))
+        {
+            for line in &lines {
+                let (urls, _) = split_images(line.trim());
+                out.extend(urls.into_iter().map(Block::Image));
+            }
+            continue;
+        }
+        if lines.iter().all(|line| line.trim_start().starts_with('>')) {
+            for line in &lines {
+                let text = inline_text(line.trim_start().trim_start_matches('>').trim());
+                if !text.is_empty() {
+                    out.push(Block::Quote(text));
+                }
+            }
+            continue;
+        }
+        if lines[0].trim_start().starts_with('#') {
+            let heading = lines[0].trim_start().trim_start_matches('#').trim();
+            out.push(Block::Heading(inline_text(heading)));
+            continue;
+        }
+        let joined = lines
+            .iter()
+            .map(|line| inline_text(line.trim()))
+            .collect::<Vec<_>>()
+            .join(" ");
+        if !joined.trim().is_empty() {
+            out.push(Block::Text(joined));
+        }
+    }
+    out
+}
+
+/// Split a line into the URLs of its images, and what is left of it.
+fn split_images(line: &str) -> (Vec<String>, String) {
+    let mut urls = Vec::new();
+    let mut rest = String::new();
+    let mut index = 0;
+    while index < line.len() {
+        let tail = &line[index..];
+        if let Some(after) = tail.strip_prefix("![") {
+            if let Some(close) = after.find("](") {
+                let start = close + 2;
+                if let Some(end) = after[start..].find(')') {
+                    urls.push(after[start..start + end].to_owned());
+                    index += 2 + start + end + 1;
+                    continue;
+                }
+            }
+        }
+        let ch = tail.chars().next().unwrap_or_default();
+        rest.push(ch);
+        index += ch.len_utf8();
+    }
+    (urls, rest)
+}
+
+/// A line's text with its markdown markers removed: links keep their words, emphasis its
+/// letters, and an image disappears (the blocks above have already taken the ones that are a
+/// line of their own).
+fn inline_text(line: &str) -> String {
+    let (_, mut text) = split_images(line);
+    let mut out = String::new();
+    let mut rest = text.as_str();
+    while let Some(start) = rest.find('[') {
+        out.push_str(&rest[..start]);
+        let after = &rest[start + 1..];
+        match after.find(']') {
+            Some(end) => {
+                out.push_str(&after[..end]);
+                let tail = &after[end + 1..];
+                // Drop the target of the link, whatever shape it takes: `(url)` or `[1]`.
+                let tail = if let Some(stripped) = tail.strip_prefix('(') {
+                    stripped.find(')').map_or(stripped, |at| &stripped[at + 1..])
+                } else if let Some(stripped) = tail.strip_prefix('[') {
+                    stripped.find(']').map_or(stripped, |at| &stripped[at + 1..])
+                } else {
+                    tail
+                };
+                rest = tail;
+            }
+            None => {
+                out.push_str(&rest[start..]);
+                rest = "";
+            }
+        }
+    }
+    out.push_str(rest);
+    text = out;
+    text.replace("**", "")
+        .replace("__", "")
+        .replace('*', "")
+        .replace('`', "")
+        .replace("\\", "")
+        .trim()
+        .to_owned()
+}
+
+/// The page's project with everything its document has added to it.
+///
+/// Cloned rather than mutated: the shell owns the `Project` the page was handed, and a page that
+/// wrote into it would be changing the shell's state from inside a draw.
+fn merged(ctx: &egui::Context, project: &Project) -> Project {
+    let Some(document) = document(ctx, &project.slug) else {
+        return project.clone();
+    };
+    let mut merged = project.clone();
+    if !document.blocks.is_empty() {
+        merged.blocks = document.blocks;
+    }
+    if !document.gallery.is_empty() {
+        merged.gallery = document.gallery;
+    }
+    if !document.game_versions.is_empty() {
+        merged.game_versions = document.game_versions;
+    }
+    if !document.versions.is_empty() {
+        merged.versions = document.versions;
+    }
+    if !document.downloads.is_empty() {
+        merged.downloads = document.downloads;
+    }
+    if !document.followers.is_empty() {
+        merged.followers = document.followers;
+    }
+    if merged.icon.is_empty() {
+        merged.icon = document.icon;
+    }
+    merged
+}
+
 /// The project the Discover list's first card opens, so the page can be captured against the
 /// reference's own first card.
 pub fn sample() -> Project {
@@ -2215,6 +3097,7 @@ pub fn sample() -> Project {
         author: "Fabulously Optimized".to_owned(),
         summary: "Beautiful graphics, speedy performance and familiar features in a simple package. Wilderness Bound beta!"
             .to_owned(),
+        blocks: Vec::new(),
         body: vec![
             "A simple Minecraft modpack focusing on performance and graphics enhancements.".to_owned(),
             "Fabulously Optimized is faster than competing game clients, thanks to modern performance mods like Sodium, Lithium, and others. The bundled mods have been carefully selected to be safe in your worlds and provide noticeable speed benefits on any device."
@@ -2231,8 +3114,10 @@ pub fn sample() -> Project {
             .iter()
             .map(|version| (*version).to_owned())
             .collect(),
-        downloads: "19.6M downloads".to_owned(),
-        followers: "5.0K followers".to_owned(),
+        // The number alone: the header composes "19.6M downloads" from it, the same way it does
+        // for a project opened from a card.
+        downloads: "19.6M".to_owned(),
+        followers: "5.0K".to_owned(),
         icon: "https://cdn.modrinth.com/data/1KVo5zza/d8152911f8fd5d7e9a8c499fe89045af81fe816e_96.webp".to_owned(),
         links: vec![
             "View source".to_owned(),
@@ -2335,6 +3220,7 @@ pub fn from_card(card: &crate::shell::Card) -> Project {
         author: card.author.clone(),
         summary: card.summary.clone(),
         body: Vec::new(),
+        blocks: Vec::new(),
         tags: card.tags.clone(),
         game_versions: Vec::new(),
         downloads: card.downloads.clone(),
@@ -2417,16 +3303,26 @@ mod tests {
     /// sheet's 12rem each, and together they never claim more than the card's width.
     #[test]
     fn the_versions_table_columns_fit_the_card() {
+        // The columns are the reference's own proportions, scaled to whatever width the table is
+        // drawn at: nine tenths of the measured 1028 leaves every column a tenth narrow, and the
+        // sum is the card's width to within a rounding error.
         let columns = table_columns(948.0);
-        assert_eq!(columns[0], CHANNEL_WIDTH);
-        assert_eq!(columns[2], CHIP_COLUMN);
-        assert_eq!(columns[3], CHIP_COLUMN);
         let total: f32 = columns.iter().sum();
         assert!(
-            total <= 948.0,
-            "the columns claim {total} of 948 points, and the table cannot overflow its card"
+            (total - 948.0).abs() < 0.01,
+            "the columns claim {total} of 948 points"
         );
-        assert!(columns[1] > 112.0, "the version column keeps room for its own name");
+        assert!(
+            (columns[0] - CHANNEL_WIDTH * 948.0 / 1028.0).abs() < 0.01,
+            "the channel keeps its measured share: {}",
+            columns[0]
+        );
+        for width in [520.0_f32, 948.0, 1028.0, 1440.0] {
+            let scaled = table_columns(width);
+            let sum: f32 = scaled.iter().sum();
+            assert!((sum - width).abs() < 0.01, "{width}: {sum}");
+            assert!(scaled[1] > 100.0, "the version column keeps room for its name");
+        }
     }
 
     /// The gallery is repeat(auto-fill, minmax(20rem, 1fr)) at gap 1rem: two tracks at 948,
@@ -2475,15 +3371,18 @@ mod tests {
         );
     }
 
-    /// The Downloads column is compact: 999 stays whole, thousands take a K and millions an M,
+    /// The Downloads column: **under ten thousand the number stays grouped**, which is the reference's own rule
+    /// (`formatCompactNumber` leaves the 7,847 of its 14.1.2 row whole), and above that it takes a K, an M or a B
     /// with one decimal only when it is not zero.
     #[test]
     fn the_download_counts_are_compact() {
         assert_eq!(compact(999), "999");
-        assert_eq!(compact(1_000), "1K");
-        assert_eq!(compact(1_234), "1.2K");
+        assert_eq!(compact(1_000), "1,000");
+        assert_eq!(compact(7_847), "7,847");
+        assert_eq!(compact(9_999), "9,999");
+        assert_eq!(compact(10_000), "10K");
         assert_eq!(compact(19_600_000), "19.6M");
-        assert_eq!(compact(2_184_302), "2.1M");
+        assert_eq!(compact(2_184_302), "2.2M", "rounded, not truncated: 2.18M is 2.2M");
         assert_eq!(compact(1_100_000_000), "1.1B");
     }
 
