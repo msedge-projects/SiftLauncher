@@ -4916,3 +4916,31 @@ with the pointer parked away from the window:
 The captures this record's headline numbers rest on were checked the same way and hold: `ab-ref-home.png`,
 `ref-discover-fresh.png`, `ref-screenshots.png` and `ref-skins.png` all differ from this build by tens of thousands
 of pixels, so none of them can be a capture of it.
+
+## The game actually launches (2026-11-04, verified by driving)
+
+Play on the "Parity Test" instance (Vanilla 26.3, the lab's own) spawned the JVM through this build's own launch
+path and Minecraft booted. Its log, `instances/Parity Test/minecraft/logs/latest.log`:
+
+```
+[17:12:06] [Datafixer Bootstrap #0/INFO]: 307 Datafixer optimizations took 499 milliseconds
+[17:12:10] [Render thread/INFO]: Environment: Environment[discoveryUrl=https://discovery.services... name=PROD]
+[17:12:10] [Render thread/INFO]: Setting user: Player
+[17:12:11] [Render thread/INFO]: Backend library: LWJGL version 3.4.3+4
+[17:12:11] [Render thread/INFO]: SDL [SYSTEM]: App name: Minecraft
+[17:12:11] [Render thread/INFO]: SDL [SYSTEM]: App version: 26.3
+[17:12:11] [Render thread/ERROR]: Failed to create backend OpenGL
+com.mojang.renderpearl.api.device.BackendCreationException: Failed to create window for OpenGL context:
+    Couldn't find matching GLX visual
+```
+
+So: the instance's own files resolved, the bundled JRE (`java/java-runtime-epsilon`, OpenJDK 25.0.1) ran, the offline
+account was accepted, 479 MB of assets were read, and Minecraft's own window was created before its renderer failed.
+
+**Why it stops there**: this lab container has `libGL.so.1` and `libGLX_mesa.so.0` but **no DRI drivers** -- no
+`swrast_dri.so`, no llvmpipe -- so there is no matching GLX visual for LWJGL to bind. That is the environment, not
+the launcher: the failure is inside Minecraft's own renderer, after our command line already worked.
+
+What this proves and what it does not: instance creation, version resolution, the asset index, the java runtime, the
+offline session and the process handling all work. It does **not** prove the game reaches its main menu, which needs
+a GL driver this container does not have.
