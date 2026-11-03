@@ -39,11 +39,23 @@ use crate::theme::Theme;
 /// exactly the smear a blend shows along both edges.
 const PAD: f32 = 13.0;
 
-/// The first heading's inset from the panel's top edge.
-// Measured, not guessed: the checklist's card starts 17 points under the surface's top
-// edge (y 65 at 1440x900) and its heading's line box starts 17 points into the card, so the
-// heading top is 34 points down.
-const TOP_PAD: f32 = 34.0;
+/// The inset on the panel's right: `px-3` (12) and no border, because the sidebar's own 1px rule
+/// is on its left edge only. The reference's card spans x 1153..1427 inside a 1140..1440 sidebar
+/// -- 13 in on the left and 12 on the right -- so the column is 275 wide and not 274.
+const PAD_RIGHT: f32 = 12.0;
+
+/// The inset from the card's edge to what it draws: the accordion's 1px border plus its `p-3` (12).
+///
+/// Every piece of the checklist sits this far inside the card in the reference -- the heading's
+/// ink starts at x 1167 against a card at 1153, the rows' fill at 1166 -- where this build drew
+/// all of them on the card's own edge.
+const HEADING_INSET: f32 = 13.0;
+
+/// Where the first heading is drawn, from the panel's top edge.
+// Measured, not guessed: the checklist's card starts 17 points under the surface's top edge
+// (y 65 at 1440x900) and its heading's ink starts 18 points into the card (y 83), which is
+// where this face puts the ink for a draw one point higher again -- 33.
+const TOP_PAD: f32 = 33.0;
 
 /// The gap between one section's last row and the next section's heading.
 ///
@@ -98,15 +110,21 @@ fn capitalised(name: &str) -> String {
 /// A section heading's size: `Getting started` and `News` are both semibold 16.
 const HEADING_SIZE: f32 = 16.0;
 
+/// The checklist heading's size, kept separate from the section headings' so the two can move
+/// apart. **Tried 17** to close the gap between the reference's 123 points of ink for "Getting
+/// started" and this build's 116: it measured the slab *worse* (2 549 -> 2 559), because the
+/// extra height costs more than the width it wins.
+const CHECKLIST_HEADING_SIZE: f32 = 16.0;
+
 /// A heading's line box. The checklist's title is `font-semibold leading-6`
 /// (`ui/onboarding-checklist/index.vue:99`), and `leading-6` is 24 points.
 const HEADING_LINE: f32 = 24.0;
 
 /// The gap between a heading and the rows under it. The checklist's rows sit inside the
 /// accordion's content, which is padded `p-3` (`ui/onboarding-checklist/index.vue:94`).
-// The capture puts the first row's top edge at y 128, which is 22 below the heading's 24
-// point line box (82 + 24).
-const HEADING_TO_BODY: f32 = 22.0;
+// The capture puts the first row's top edge at y 128, which is 23 below the heading's 24
+// point line box (81 + 24).
+const HEADING_TO_BODY: f32 = 23.0;
 
 /// The disclosure chevron on the `Getting started` heading: `DropdownIcon` at `size-5`
 /// (`ui/components/base/Accordion.vue:36`), 20 points.
@@ -134,26 +152,34 @@ const ROW_PITCH: f32 = ROW_H + ROW_GAP;
 const ROW_PAD: f32 = 16.0;
 
 /// The ring glyph at a row's left: 16 points, from the reference's measurement.
-const RING: f32 = 24.0;
+const RING: f32 = 20.0;
 
 /// The gap between the ring and its label: the sheet's `gap-2`
 /// (`ui/onboarding-checklist/index.vue:105`), 8 points.
 const RING_GAP: f32 = 8.0;
 
-/// A row's label: 13-point body text, from the reference's measurement.
-// Measured from the reference's rows: its labels' ink is 16 points tall where 16-point type here draws 19, so
-// the reference sets them at 14. Every glyph of every row was doubling in the blend because of this one number.
+/// A row's label: `text-base` (16) at `font-medium`, from the reference's own ink -- 157 points for
+/// "Create first instance" against this build's 156 at 16 medium, and 141 at 15 regular.
 const STEP_SIZE: f32 = 16.0;
 
 // ---------------------------------------------------------------------------
 // The news card
 // ---------------------------------------------------------------------------
 
-/// The art plate's height: 128 points, from the reference's measurement.
-// Measured by the banner's own chip: the reference's "modrinth hosting" ink starts at y 668 where this build's
-// started at 700, so the news card above it was 32 points too tall -- the plate, which is where the card's
-// height is spent, comes down by exactly that.
-const ART_H: f32 = 120.0;
+/// The art plate's height: `aspect-video` on the 266-point column is 149.6, which the capture
+/// rounds to a 150-point plate running y 348..498. Measured from the reference's own render:
+/// its title ink starts at 518, where a 120-point plate put this build's at 487.
+const ART_H: f32 = 150.0;
+
+/// The plate's own width: the news section's `p-4` leaves 266 of the 300-point sidebar, and
+/// the card's `w-full` image fills it. Its `aspect-video` then makes the height 266 x 9/16 =
+/// 149.6, which the capture rounds to a 150-point plate at y 348..498.
+const ART_W: f32 = 266.0;
+
+/// The news section's own inset from the column: `p-4` (16) against the checklist's `px-3` (12),
+/// so the news art and every line under it start four points right of the checklist card.
+/// Measured: the reference puts that text at x 1157 against a card at 1153.
+const NEWS_INSET: f32 = 4.0;
 
 /// The gap between the `News` heading and the card: the section's heading is `mb-4`
 /// (`App.vue:2531`), 16 points.
@@ -172,19 +198,19 @@ const NEWS_HEADING_DROP: f32 = 20.0;
 /// reference, and moving this number is not it.
 const ART_TO_TITLE: f32 = 16.0;
 
-/// The title's size: 14 semibold, from the reference's measurement.
-const TITLE_SIZE: f32 = 14.0;
+/// The title's size: `text-base` (16) at the h3's semibold, measured from the reference's own
+/// ink -- 251 points wide and 16 tall where 14 points here drew 210 wide and 15 tall.
+const TITLE_SIZE: f32 = 16.0;
 
 /// The title's line box. The card's `h3` is `leading-tight`
-/// (`ui/components/content/NewsArticleCard.vue:31`), which is 1.25 x 14 = 17.5, rounded up
-/// to the whole point a line box takes.
-const TITLE_LINE: f32 = 18.0;
+/// (`ui/components/content/NewsArticleCard.vue:31`), which is 1.25 x 16 = 20.
+const TITLE_LINE: f32 = 20.0;
 
 /// The gap between the title and the copy: the card's inner stack is `gap-2`
 /// (`ui/components/content/NewsArticleCard.vue:30`), 8 points.
-// Measured: the reference's title ink starts at 518 and its copy's at 549 -- 31 points -- where this build had
-// 26. Four more points here and the copy lands on the reference's line.
-const TITLE_TO_COPY: f32 = 12.0;
+// Measured: the reference's title ink starts at 518 and its copy's at 546 -- 28 points, which is
+// this gap plus the two line boxes' own bearings.
+const TITLE_TO_COPY: f32 = 8.0;
 
 /// The copy's size: 12 points, from the reference's measurement.
 const COPY_SIZE: f32 = 14.0;
@@ -200,33 +226,35 @@ const COPY_LINE: f32 = 16.0; // guess: re-measure
 const COPY_H: f32 = COPY_LINE * COPY_LINES as f32;
 
 /// The gap between the copy and the date: the date is the last child of the same `gap-2`
-/// stack (`ui/components/content/NewsArticleCard.vue:30`), so 8 points.
-const COPY_TO_DATE: f32 = 8.0;
+/// stack (`ui/components/content/NewsArticleCard.vue:30`), so 8 points -- plus the one this
+/// galley is shorter than the reference's three 17.5-point lines, so the date's ink still
+/// lands on 606.
+const COPY_TO_DATE: f32 = 9.0;
 
-/// The date's size: 12 points.
-const DATE_SIZE: f32 = 14.0; // guess: re-measure
+/// The date's size: `text-sm` (14), which the capture confirms -- 127 points of ink against
+/// this build's 124.
+const DATE_SIZE: f32 = 14.0;
 
-/// The date's line box.
-// Measured from the reference's own rows rather than assumed: the date's ink spans 12 points and the link's
-// centre sits 15.5 below the date's, so the date's line box plus the gap between the two rows comes to 9.5.
-// It was 16 + 12 = 28, which put the link 20 points too low -- visible in a side-by-side as a loose row.
-const DATE_LINE: f32 = 9.5;
+/// The date's line box: `text-sm` at the app's normal leading, 21 points. It used to stand in for
+/// the link row's offset as well, at 9.5; the link is pinned to the banner now and this is only
+/// the date's own line, which is what makes the card's height come out at the reference's 275.
+const DATE_LINE: f32 = 21.0;
 
-/// The gap between the date and the upgrade row.
-const DATE_TO_LINK: f32 = 0.0; // measured with DATE_LINE: the two together are the reference's 9.5
+/// The upgrade link's box: `px-4 py-3` with a `text-2xl` (24) icon, so 24 + 12 + 12 = 48.
+/// It is pinned above the banner rather than stacked under the date (`bottom-[250px]`), and
+/// its own ink lands at y 620..635 in the reference's render.
+const LINK_H: f32 = 48.0;
 
-/// The upgrade row's height.
-const LINK_H: f32 = 32.0; // guess: re-measure
+/// The upgrade row's label size: `text-base` at `font-medium`, whose ink spans 169 points in the
+/// reference against this build's 170.
+const LINK_SIZE: f32 = 16.0;
 
-/// The upgrade row's label size.
-const LINK_SIZE: f32 = 13.0; // guess: re-measure
+/// The mark beside the upgrade label: `text-2xl` (24) on the reference's `ArrowBigUpDashIcon`,
+/// whose ink spans 16 of those 24 points at x 1195..1210.
+const SPARKLE: f32 = 24.0;
 
-/// The sparkle beside the upgrade label: 12 points, "small" being all the reference's
-/// measurement says about it.
-const SPARKLE: f32 = 12.0;
-
-/// The gap between the sparkle and the label.
-const SPARKLE_GAP: f32 = 6.0; // guess: re-measure
+/// The gap between the mark and the label: the link is `gap-1` (4).
+const SPARKLE_GAP: f32 = 4.0;
 
 // ---------------------------------------------------------------------------
 // The hosting banner
@@ -236,11 +264,25 @@ const SPARKLE_GAP: f32 = 6.0; // guess: re-measure
 /// (`ui/components/servers/ServersPromo.vue:22`), 16 points.
 // The banner is full-bleed, so its own padding carries the inset the column used to: the reference's chip
 // starts at x 1166 with the banner beginning at 1140.
-// Measured: the reference's heading's ink starts at x 1155 with the banner beginning at 1140 -- 15 points in --
-// and its chip's mark at 1173, 18 points further. It was 26 for both, which put the heading 12 points right.
+// Measured: the reference's heading's ink starts at x 1155 with the banner beginning at 1140 -- 15 points in.
 const BANNER_PAD: f32 = 15.0;
-/// The chip's extra inset past the banner's padding.
-const CHIP_INSET: f32 = 18.0;
+
+/// Where the banner's first heading line is drawn, from the banner's top: its ink sits at y 689
+/// in the reference with the banner at 650, and this build's 23-point face puts its ink three
+/// points into the draw position.
+const HOSTING_TOP: f32 = 31.0;
+/// The pitch between the banner's two heading lines.
+const HOSTING_LINE: f32 = 28.0;
+/// The chip's mark box: the reference's logo ink is 16 points at x 1154..1169. This build paints
+/// it through [`crate::brand::paint_mark`], whose ink is three quarters of its box, so a 20-point
+/// box lands the same 16 points of ink.
+const CHIP_MARK: f32 = 20.0;
+/// Where that box starts, from the banner's left edge.
+const CHIP_LEFT: f32 = 12.0;
+/// The gap between the mark and `modrinth hosting`.
+const CHIP_GAP: f32 = 0.0;
+/// The chip label's size: its ink spans 127 points, which is 16-point medium here.
+const CHIP_SIZE: f32 = 16.0;
 
 /// The banner's two lines: 16 semibold, from the reference's measurement.
 const BANNER_SIZE: f32 = 16.0;
@@ -262,11 +304,10 @@ const BANNER_CTA: &str = "View plans";
 const BANNER_CTA_HEIGHT: f32 = 32.0;
 const BANNER_CTA_PAD: f32 = 14.0;
 
-/// The banner's height: its padding, its two lines, and the art's room.
-/// The hosting banner's height. Measured from the reference's render: its card runs from y 640 to the
-/// sidebar's foot at 900 -- 260 points -- with the chip at the top, two lines of heading under it, and the
-/// illustration filling the rest.
-const BANNER_H: f32 = 260.0;
+/// The banner's height: the promo's own `min-h-[250px]` image, which is what the reference
+/// draws from y 650 to the panel's foot. It used to be 260 and to take whatever height the
+/// column had left, which stretched the illustration by 75 points.
+const BANNER_H: f32 = 250.0;
 
 // ---------------------------------------------------------------------------
 // Radii
@@ -449,13 +490,17 @@ pub fn draw(
     );
     let plan = plan_with_copy(rect, copy.size().y.max(COPY_H));
     let column = plan.column;
+    // The hosting banner is the promo's own 250-point image pinned to the panel's foot, so
+    // everything the reference measures from it -- the upgrade link at `bottom-[250px]`, the
+    // chip, the heading -- is measured from this line and not from the stack above it.
+    let banner_top = rect.bottom() - BANNER_H;
 
     // ---- `Getting started` ---------------------------------------------------
     // The checklist is one card, not a heading with loose rows: the capture puts a rounded
     // #2c3431 panel at x 1157..1424, y 65..275 -- 16 in from the sidebar, 8% white over the
     // gradient -- with the heading 17 points down inside it and the rows 13 points in from
     // its sides.
-    let card_top = plan.getting_started - 17.0;
+    let card_top = plan.getting_started - 16.0;
     let card_bottom = plan.steps_first + 3.0 * ROW_PITCH - ROW_GAP + 13.0;
     let card = Rect::from_min_max(
         egui::pos2(rect.left() + PAD, card_top),
@@ -473,10 +518,10 @@ pub fn draw(
     );
 
     painter.text(
-        egui::pos2(column.left(), plan.getting_started),
+        egui::pos2(card.left() + HEADING_INSET, plan.getting_started),
         Align2::LEFT_TOP,
         GETTING_STARTED,
-        fonts::semibold(HEADING_SIZE),
+        fonts::semibold(CHECKLIST_HEADING_SIZE),
         theme.CONTRAST,
     );
     // The disclosure chevron, on the heading's own line and in its own ink. The checklist's
@@ -490,7 +535,7 @@ pub fn draw(
         Glyph::ChevronUp,
         Rect::from_min_size(
             egui::pos2(
-                column.right() - CHEVRON,
+                card.right() - HEADING_INSET - CHEVRON,
                 plan.getting_started + (HEADING_LINE - CHEVRON) / 2.0,
             ),
             Vec2::splat(CHEVRON),
@@ -508,9 +553,12 @@ pub fn draw(
     });
     let mut pressed = None;
     for (index, step) in STEPS.into_iter().enumerate() {
+        // The rows are inset inside the card, not flush with it: `p-3` inside the accordion's
+        // 1px border puts the first row's fill at x 1166 against a card at 1153, and its right
+        // edge at 1414. Flush rows were the widest thing in this slab that differed.
         let row = Rect::from_min_size(
-            egui::pos2(column.left(), row_top(plan.steps_first, index)),
-            egui::vec2(column.width(), ROW_H),
+            egui::pos2(card.left() + HEADING_INSET, row_top(plan.steps_first, index)),
+            egui::vec2(card.width() - 2.0 * HEADING_INSET, ROW_H),
         );
         // A step brightens under the pointer the way the sheet's does
         // (`hover:brightness-110`, `ui/onboarding-checklist/index.vue:109`), by the
@@ -554,11 +602,13 @@ pub fn draw(
             ),
             theme.BASE,
         );
+        // `font-medium` at `text-base`, one point above the row's own centre: the reference's
+        // label ink runs 138..155 in a row whose fill is 128..166.
         painter.text(
-            egui::pos2(row.left() + ROW_PAD + RING + RING_GAP, row.center().y),
+            egui::pos2(row.left() + ROW_PAD + RING + RING_GAP, row.center().y - 1.0),
             Align2::LEFT_CENTER,
             row_label(Step::ALL[index].clone(), account),
-            fonts::body(STEP_SIZE),
+            fonts::label(STEP_SIZE),
             theme.BASE,
         );
     }
@@ -698,10 +748,10 @@ pub fn draw(
     // The heading alone drops 20 points: the reference's "News" ink sits at 315..326 where this build's sat at
     // 295..306, while the art below it already landed on the reference's own rows (401..447 against 401..447).
     painter.text(
-        egui::pos2(column.left(), plan.news + NEWS_HEADING_DROP),
+        egui::pos2(column.left() + NEWS_INSET, plan.news + NEWS_HEADING_DROP),
         Align2::LEFT_TOP,
         NEWS,
-        fonts::semibold(HEADING_SIZE),
+        fonts::label(HEADING_SIZE),
         theme.CONTRAST,
     );
 
@@ -712,26 +762,32 @@ pub fn draw(
     // its own motif instead (`news_art`), because the feed's image is Modrinth's art rather than
     // ours, and keeps the sheet's `border-button-border` edge
     // (`ui/components/content/NewsArticleCard.vue:28`).
+    // The news section is `p-4` inside the sidebar and the checklist is `px-3`, so its column
+    // starts four points right of the checklist's: the art at x 1157 and the text at 1157,
+    // against the checklist card's 1153.
     let art = Rect::from_min_size(
-        egui::pos2(column.left(), card + rows.art),
-        egui::vec2(column.width(), ART_H),
+        egui::pos2(column.left() + NEWS_INSET, card + rows.art),
+        egui::vec2(ART_W, ART_H),
     );
     // At the picture's own size: the crop is 272x120 and the reference draws it at x 1156, y 350 -- three
     // points in from the column's left edge. Stretching it into the column resampled every pixel of a
     // 32 640-pixel plate, which at the goal's threshold is a difference on most of them.
-    let plate = Rect::from_min_size(egui::pos2(art.left() + 3.0, art.top()), egui::vec2(272.0, 120.0));
+    // The crop is the reference's own 1px border and the picture inside it, so it is drawn at
+    // its own size and position (x 1156, y 349) with no stroke of ours over the top: the
+    // stroke is for the painted fallback, which has no border of its own.
+    let plate = Rect::from_min_size(egui::pos2(art.left() - 1.0, art.top() + 1.0), egui::vec2(272.0, 120.0));
     if !crate::serverart::paint_news(painter, plate) {
         news_art(painter, art, theme);
+        painter.rect_stroke(
+            art,
+            CARD_RADIUS,
+            Stroke::new(RULE, theme.BUTTON_BORDER),
+            egui::StrokeKind::Inside,
+        );
     }
-    painter.rect_stroke(
-        art,
-        CARD_RADIUS,
-        Stroke::new(RULE, theme.BUTTON_BORDER),
-        egui::StrokeKind::Inside,
-    );
 
     painter.text(
-        egui::pos2(column.left(), card + rows.title),
+        egui::pos2(column.left() + NEWS_INSET, card + rows.title),
         Align2::LEFT_TOP,
         NEWS_TITLE,
         fonts::semibold(TITLE_SIZE),
@@ -741,12 +797,12 @@ pub fn draw(
     // it happened to take: the rows below are on the reference's rhythm, and text that
     // pushed them around would move the date on every article that wrapped differently.
     painter.galley(
-        egui::pos2(column.left(), card + rows.copy),
+        egui::pos2(column.left() + NEWS_INSET, card + rows.copy),
         copy,
         theme.BASE,
     );
     painter.text(
-        egui::pos2(column.left(), card + rows.date),
+        egui::pos2(column.left() + NEWS_INSET, card + rows.date),
         Align2::LEFT_TOP,
         NEWS_DATE,
         fonts::body(DATE_SIZE),
@@ -761,9 +817,12 @@ pub fn draw(
     // link there (`text-purple`, `App.vue:2558`), this is the one fill to change.
     // The card's own last row: the reference puts it 12 points under the date. It is safe to measure from the
     // card again because the banner now yields height instead of covering what is above it.
+    // `absolute bottom-[250px] w-full flex justify-center` (`promotion.vue:70`): the link is
+    // pinned above the hosting banner and independent of the card above it, so it is measured
+    // from the banner's line rather than from the date.
     let link = Rect::from_min_size(
-        egui::pos2(column.left(), card + rows.link),
-        egui::vec2(column.width(), LINK_H),
+        egui::pos2(rect.left(), banner_top - LINK_H),
+        egui::vec2(rect.width(), LINK_H),
     );
     let link_hovered = ui
         .interact(link, egui::Id::new("panel-upgrade"), Sense::hover())
@@ -778,7 +837,7 @@ pub fn draw(
     };
     let label = painter.layout_no_wrap(
         UPGRADE.to_owned(),
-        fonts::semibold(LINK_SIZE),
+        fonts::label(LINK_SIZE),
         link_ink,
     );
     // Sparkle and label together, centred: the sheet centres this row's contents, and a
@@ -787,8 +846,8 @@ pub fn draw(
     let x = link.center().x - content / 2.0;
     icons::draw(
         painter,
-        // The reference's mark on this row is an up-arrow rising out of a line, not a sparkle.
-        Glyph::ArrowUpFromLine,
+        // The reference's `ArrowBigUpDashIcon` (`promotion.vue:71`), which this icon set has.
+        Glyph::ArrowBigUpDash,
         Rect::from_center_size(
             egui::pos2(x + SPARKLE / 2.0, link.center().y),
             Vec2::splat(SPARKLE),
@@ -815,10 +874,9 @@ pub fn draw(
     // **At its own height, pinned to the foot.** Stretching the banner from the plan's slot to the panel's bottom
     // made it ~325 points tall where the reference's is ~250, which put its chip 71 points too high (594..607
     // against 665..680) while the illustration underneath it already agreed (713..893 against 715..893).
-    let banner_height = plan.banner_height.clamp(120.0, BANNER_H.max(120.0));
     let banner = Rect::from_min_size(
-        egui::pos2(rect.left(), rect.bottom() - banner_height),
-        egui::vec2(rect.width(), banner_height),
+        egui::pos2(rect.left(), banner_top),
+        egui::vec2(rect.width(), BANNER_H),
     );
     // The reference's banner is not a grey card: its ground runs from near-black green at the top to a
     // deeper green at the foot (sampled from its own render: #010101 at y 660, #001208 at 760, #002712 at
@@ -842,34 +900,34 @@ pub fn draw(
 
     // The chip: the mark and "modrinth hosting" in the brand green, lowercase, above the heading.
     let chip_mark = Rect::from_min_size(
-        egui::pos2(banner.left() + BANNER_PAD + CHIP_INSET, banner.top() + BANNER_PAD),
-        Vec2::splat(16.0),
+        egui::pos2(banner.left() + CHIP_LEFT, banner.top() + BANNER_PAD - 1.0),
+        Vec2::splat(CHIP_MARK),
     );
     if !crate::brand::paint_mark(painter, ui.ctx(), chip_mark) {
         painter.circle_filled(chip_mark.center(), 8.0, theme.BRAND);
     }
     painter.text(
-        egui::pos2(chip_mark.right() + 6.0, chip_mark.center().y),
+        egui::pos2(chip_mark.right() + CHIP_GAP, chip_mark.center().y),
         Align2::LEFT_CENTER,
         "modrinth hosting",
-        fonts::semibold(13.0),
+        fonts::label(CHIP_SIZE),
         theme.BRAND,
     );
     // The heading, two lines: white, then the accent line in the brand green.
     // Measured: the reference's chip ink ends at 677 and its heading's at 689, and the heading's own ink is 23
     // points tall. 6 points of gap and 24-point type reproduce both.
     painter.text(
-        egui::pos2(banner.left() + BANNER_PAD, chip_mark.bottom() + 6.0),
+        egui::pos2(banner.left() + BANNER_PAD, banner.top() + HOSTING_TOP),
         Align2::LEFT_TOP,
         HOSTING,
-        fonts::semibold(23.0),
+        fonts::label(23.0),
         theme.CONTRAST,
     );
     painter.text(
-        egui::pos2(banner.left() + BANNER_PAD, chip_mark.bottom() + 6.0 + 28.0),
+        egui::pos2(banner.left() + BANNER_PAD, banner.top() + HOSTING_TOP + HOSTING_LINE),
         Align2::LEFT_TOP,
         HOSTING_ACCENT,
-        fonts::semibold(23.0),
+        fonts::label(23.0),
         theme.BRAND,
     );
     pressed
@@ -901,7 +959,7 @@ fn category_glyph(name: &str) -> crate::icons::Glyph {
 fn column(panel: Rect) -> Rect {
     Rect::from_min_max(
         egui::pos2(panel.left() + PAD, panel.top()),
-        egui::pos2(panel.right() - PAD, panel.bottom()),
+        egui::pos2(panel.right() - PAD_RIGHT, panel.bottom()),
     )
 }
 
@@ -938,9 +996,8 @@ struct NewsRows {
     copy: f32,
     /// The top of the date's line box.
     date: f32,
-    /// The top of the upgrade row.
-    link: f32,
-    /// The card's height: the bottom edge of the upgrade row.
+    /// The card's height: the bottom edge of the date's line. The upgrade link is not a row
+    /// of this card in the reference -- it is pinned above the hosting banner.
     height: f32,
 }
 
@@ -1005,18 +1062,21 @@ fn hosting_art(painter: &egui::Painter, rect: Rect, theme: &crate::theme::Theme)
 
 /// The card's rows, given the height the copy was given.
 fn news_rows(copy_height: f32) -> NewsRows {
+    // Measured against the reference's own ink: its title starts at 518, its copy at 546 and
+    // its date at 606. From a card at 349 those are draw positions of 516, 540 and 603, because
+    // egui puts a glyph two points into a 16-point line box where the browser puts it four, and
+    // six points into a 14-point one where the browser puts it four -- hence the +1 and the -4
+    // on the two gaps below, which are the only fudge here and are measured, not guessed.
     let art = 0.0;
-    let title = art + ART_H + ART_TO_TITLE;
-    let copy = title + TITLE_LINE + TITLE_TO_COPY;
+    let title = art + ART_H + ART_TO_TITLE + 1.0;
+    let copy = title + TITLE_LINE + TITLE_TO_COPY - 1.0;
     let date = copy + copy_height + COPY_TO_DATE;
-    let link = date + DATE_LINE + DATE_TO_LINK;
     NewsRows {
         art,
         title,
         copy,
         date,
-        link,
-        height: link + LINK_H,
+        height: date + DATE_LINE,
     }
 }
 
@@ -1038,12 +1098,9 @@ struct Plan {
     card: f32,
     /// The card's own rows, from the card's top edge.
     news_rows: NewsRows,
-    /// The top of the hosting banner's plate.
+    /// The top of the hosting banner's plate: its own height up from the panel's foot, which is
+    /// where the reference's promo image sits whatever the column above it did.
     banner: f32,
-    /// The banner's height in this column: its own, or less when the panel is too short for it. The banner
-    /// yields rather than covering the card above it -- when it clamped its top instead, it drew over the
-    /// news card's upgrade row and that row vanished.
-    banner_height: f32,
 }
 
 /// The panel's plan, given the height the news copy took.
@@ -1060,11 +1117,10 @@ fn plan_with_copy(panel: Rect, copy_height: f32) -> Plan {
     let news = steps_first + stack_height(STEPS.len()) + SECTION_GAP;
     let card = news + HEADING_LINE + NEWS_HEADING_TO_CARD;
     let rows = news_rows(copy_height);
-    // The banner is flush with the sidebar's foot -- the reference's card ends where its window does -- so a
-    // plan that would push it past the edge pulls it up instead. The whole panel fits because of this line:
-    // the test that said "the hosting banner ends inside the window" is what asked for it.
-    let banner = card + rows.height + SECTION_GAP;
-    let banner_height = BANNER_H.min(panel.bottom() - banner).max(120.0);
+    // `min-h-[250px]` on the promo's own image, pinned to the foot of the sidebar: the banner
+    // does not move with what is above it (the reference draws it from y 650 whatever the news
+    // list did), so it is measured from the panel's bottom edge and not from the card.
+    let banner = panel.bottom() - BANNER_H;
     Plan {
         column,
         getting_started,
@@ -1073,7 +1129,6 @@ fn plan_with_copy(panel: Rect, copy_height: f32) -> Plan {
         card,
         news_rows: rows,
         banner,
-        banner_height,
     }
 }
 
@@ -1102,8 +1157,7 @@ mod tests {
     use super::*;
     use crate::geometry as g;
 
-    /// TEMPORARY: print the layout widths of the sidebar's strings at candidate sizes so a
-    /// capture's ink widths can be matched without a build-and-photograph cycle per guess.
+    /// Print the layout width of every string the sidebar draws, at the sizes it might be set in.,    ///,    /// A capture gives ink widths and this gives layout widths, and the two together are what,    /// picks a size: "Create first instance" is 157 points of ink in the reference and 155.6 of,    /// layout here at 16 medium, where 15 regular gives 141 -- a decision that otherwise costs a,    /// two-minute build and a screenshot per guess. Run it with `cargo test -- --nocapture`.
     #[test]
     fn type_metrics_probe() {
         let ctx = egui::Context::default();
@@ -1184,17 +1238,26 @@ mod tests {
     fn the_rows_stay_inside_the_panel() {
         let panel = panel_rect();
         let column = column(panel);
-        assert_eq!(column.width(), g::PANEL - 2.0 * PAD, "the column is the panel less its padding");
-        // Measured again from the reference: its card spans 1153..1428 inside a 1140..1440 sidebar, so the
-        // column is 274 wide with 13 points of padding on the left and 12 on the right.
-        assert_eq!(column.width(), 274.0, "1153..1428 inside a 1140..1440 sidebar");
+        assert_eq!(
+            column.width(),
+            g::PANEL - PAD - PAD_RIGHT,
+            "the column is the panel less its two insets"
+        );
+        // Measured from the reference: its card spans 1153..1427 inside a 1140..1440 sidebar, so the
+        // column is 275 wide with 13 points of padding on the left (the 1px sidebar rule and `px-3`)
+        // and 12 on the right.
+        assert_eq!(column.width(), 275.0, "1153..1427 inside a 1140..1440 sidebar");
         assert_eq!(column.left() - panel.left(), PAD);
-        assert_eq!(column.right(), panel.right() - PAD);
+        assert_eq!(column.right(), panel.right() - PAD_RIGHT);
+        // The rows sit inside the card, which is the column, inset by the accordion's border and
+        // `p-3`: 1166..1414 in the reference's render.
+        let card = column;
+        let row_x = card.left() + HEADING_INSET;
+        let row_w = card.width() - 2.0 * HEADING_INSET;
+        assert_eq!(row_x, g::PANEL_LEFT + 26.0, "the row starts at x 1166");
+        assert_eq!(row_w, 249.0, "and is 249 wide");
         for top in step_tops() {
-            let row = Rect::from_min_size(
-                egui::pos2(column.left(), top),
-                egui::vec2(column.width(), ROW_H),
-            );
+            let row = Rect::from_min_size(egui::pos2(row_x, top), egui::vec2(row_w, ROW_H));
             assert!(row.left() >= panel.left(), "the row starts inside the panel");
             assert!(row.right() <= panel.right(), "the row ends inside the panel");
             assert!(row.top() >= panel.top(), "the row starts below the panel's top");
@@ -1206,16 +1269,18 @@ mod tests {
     /// section above it, and the hosting banner 20 below the news card.
     #[test]
     fn a_section_heading_sits_twenty_below_the_section_above_it() {
-        let plan = plan_with_copy(panel_rect(), COPY_H);
+        // 51 is what the reference's own summary wraps to here: three lines at 17 points.
+        let plan = plan_with_copy(panel_rect(), 51.0);
         let steps_bottom = plan.steps_first + stack_height(STEPS.len());
         assert_eq!(plan.news - steps_bottom, SECTION_GAP);
-        // The banner keeps its 20-point gap unless the column runs out of room first, in which case it is
-        // pulled up to sit flush with the foot; both are the reference's rule, and the second is what the
-        // 260-point banner forces in a 900-point window.
+        // The banner is pinned to the foot at its own 250 points, so what is left between the
+        // card's last line and the banner's top is whatever the column had spare -- 26 points at
+        // 1440x900, where the reference's own gap between the date's line and the promo is 26.
+        assert_eq!(plan.banner, g::WINDOW.1 - BANNER_H, "the banner is pinned to the foot");
         assert_eq!(
             plan.banner - (plan.card + plan.news_rows.height),
-            SECTION_GAP,
-            "the banner sits 20 below the card, and yields height rather than the gap"
+            26.0,
+            "and the card ends 26 above it"
         );
         assert!(plan.card > plan.news, "the card sits below its own heading");
     }
@@ -1229,8 +1294,7 @@ mod tests {
         assert!(rows.art < rows.title, "the title is below the art");
         assert!(rows.title < rows.copy, "the copy is below the title");
         assert!(rows.copy < rows.date, "the date is below the copy");
-        assert!(rows.date < rows.link, "the link is below the date");
-        assert_eq!(rows.height, rows.link + LINK_H, "the card ends with the link row");
+        assert_eq!(rows.height, rows.date + DATE_LINE, "the card ends with the date's line");
     }
 
     /// A copy that wrapped to a third line pushes the date and the row below it down by
@@ -1244,7 +1308,6 @@ mod tests {
         assert_eq!(three.art, two.art);
         assert_eq!(three.title, two.title);
         assert_eq!(three.date - two.date, COPY_LINE);
-        assert_eq!(three.link - two.link, COPY_LINE);
     }
 
     /// Everything the panel draws fits between the title bar and the window's bottom edge.
@@ -1255,7 +1318,7 @@ mod tests {
         let panel = panel_rect();
         assert_eq!(panel.bottom(), g::WINDOW.1, "the panel ends at the window's edge");
         let plan = plan_with_copy(panel, COPY_H);
-        let bottom = plan.banner + plan.banner_height;
+        let bottom = plan.banner + BANNER_H;
         assert!(bottom <= g::WINDOW.1, "the hosting banner ends inside the window");
         assert!(
             bottom > g::WINDOW.1 / 2.0,
