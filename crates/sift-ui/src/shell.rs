@@ -2771,12 +2771,7 @@ impl Shell {
                                 crate::icons::Glyph::Monitor,
                             ))
                             .filter(|(label, _)| !label.is_empty())
-                            .chain(
-                                hit.all_categories
-                                .iter()
-                                .map(|category| (category.clone(), category_glyph(category)))
-                                .collect::<Vec<_>>(),
-                            )
+                            .chain(tags_in_display_order(&hit.all_categories))
                             .collect(),
                             downloads: hit.downloads.clone(),
                             followers: hit.followers.clone(),
@@ -2958,46 +2953,55 @@ fn card(
         Stroke::new(1.0, theme.SURFACE_4),
         egui::StrokeKind::Inside,
     );
-    let tile = Rect::from_min_size(rect.min + egui::vec2(16.0, 16.0), Vec2::splat(100.0));
-    painter.rect_filled(tile, 12, theme.BUTTON_BG);
-    // The plate's ring, one point and inside the fill: the reference's tile shows a hairline around its logo, and
-    // without it the icon's edge ran straight into the plate.
-    painter.rect_stroke(
-        tile,
-        12,
-        Stroke::new(1.0, theme.SURFACE_4),
-        egui::StrokeKind::Inside,
-    );
+    // The card is a border-box with a one-point CSS border, so its 16-point padding counts from one
+    // point inside that border: the avatar's 100-point box starts at 17,17 from the card's corner.
+    // The reference's tile measures 105..204 by 247..346 against a card at 88,230 -- 17 in, not 16.
+    let tile = Rect::from_min_size(rect.min + egui::vec2(17.0, 17.0), Vec2::splat(100.0));
+    // `border-radius: calc(16 / 96 * 100px)` on a 100-point avatar is 16.667, not the 12 the plate had.
+    const TILE_RADIUS: f32 = 16.667;
+    painter.rect_filled(tile, TILE_RADIUS, theme.BUTTON_BG);
     // The project's own icon once it has arrived; the plate until then, and for ever if the
-    // fetch failed. Rounded corners are the tile's: a texture drawn into a square rect inside
-    // a rounded plate keeps the plate's corner showing, which is what the reference does.
+    // fetch failed. `object-fit: contain` on a square source in a square box is a full-bleed draw: the
+    // reference's logo disc measures 92 points across and this build's inset one 80, which is the 7-point
+    // shrink plus the source's own transparent margin. The plate's rounded corners still show, because the
+    // source is transparent there.
     if let Some(texture) = icons.get(ui.ctx(), &result.icon) {
-        // Measured at 1:1 off the reference's own card: its tile starts at x 104 and its logo at 110 -- a 6-point
-        // inset inside a plate that carries a 1-point ring. Seven was leaving the logo 12 points in and the ring was
-        // missing entirely, both of which the card's own pixels show.
-        let inner = tile.shrink(5.5);
         painter.image(
             texture.id(),
-            inner,
+            tile,
             Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
             egui::Color32::WHITE,
         );
     }
+    // `outline: 1px solid rgb(255 255 255 / 15%); outline-offset: -1px`: a hairline just inside the tile's
+    // own edge, painted over the logo. The reference shows it as (82,84,89) over the plate against the plate's
+    // (52,54,60), which is a 15% white blend -- not the surface-4 ring this tile used to carry.
+    painter.rect_stroke(
+        tile,
+        TILE_RADIUS,
+        Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 38)),
+        egui::StrokeKind::Inside,
+    );
 
     // The title, the author and the link glyph, on one baseline.
+    // `font-semibold` at `text-xl`: 20 points at weight 600, not the 700 the card used, which ran the title
+    // 12 points wider than the reference's and pushed the author's "by" along with it.
     let title = painter.layout_no_wrap(
         result.title.clone(),
-        crate::fonts::title(20.0),
+        crate::fonts::semibold(20.0),
         theme.CONTRAST,
     );
-    let title_at = egui::pos2(rect.left() + 129.0, rect.top() + 16.0);
+    // The reference's title ink starts at 249 in a card that starts at 230, and its author's at the same row.
+    // Inter in a browser sits two points below the line box's top; this build's rasteriser sits four, so the
+    // box is placed two points higher to land the same ink.
+    let title_at = egui::pos2(rect.left() + 129.0, rect.top() + 15.0);
     painter.galley(title_at, title.clone(), theme.CONTRAST);
     let by = painter.layout_no_wrap(
         format!("by {}", result.author),
         crate::fonts::body(16.0),
         theme.SECONDARY,
     );
-    let by_at = egui::pos2(title_at.x + title.size().x + 10.0, title_at.y + 3.0);
+    let by_at = egui::pos2(title_at.x + title.size().x + 10.0, title_at.y + 2.0);
     painter.galley(by_at, by.clone(), theme.SECONDARY);
     icons::draw(
         painter,
@@ -3015,7 +3019,10 @@ fn card(
     // The summary starts on the title's own left edge (129 in from the card) and runs to the
     // stats column, in 16-point text: it used to start 96 in, which put its first line under
     // the 100-point icon, and be set at 13, which made it smaller than the author line.
-    let summary_width = (rect.width() - 129.0 - 260.0).max(120.0);
+    // The info column is the grid's `1fr` between the 100-point avatar column and the 166-point stats column:
+    // 217..921 in the reference, i.e. 704 points wide -- wide enough for the first line to end on "Wilderness",
+    // which is where the reference breaks it. At 691 this build broke one word earlier and ran a long second line.
+    let summary_width = (rect.width() - 129.0 - 195.0).max(120.0);
     let summary_text = ellipsise(&result.summary, 150);
     let summary = painter.layout(
         summary_text,
@@ -3023,81 +3030,128 @@ fn card(
         theme.SECONDARY,
         summary_width,
     );
-    painter.galley(egui::pos2(rect.left() + 129.0, rect.top() + 48.0), summary, theme.SECONDARY);
+    // Ink at 278 in a card at 230: the line box starts at 275, the grid's 20-point title row and its 8-point gap
+    // below the card's 16-point padding.
+    painter.galley(egui::pos2(rect.left() + 129.0, rect.top() + 45.0), summary, theme.SECONDARY);
 
-    // The tag pills, each with its own glyph, then the stats on the same row. The row stops
-    // where the stats begin and reports what it could not show as a `+N` chip, which is what the
-    // reference draws -- without it the pills ran under the download count.
-    let mut x = rect.left() + 96.0;
-    let tag_limit = rect.right() - TAG_ROW_RESERVE - (rect.left() + 96.0);
+    // The tag pills, then the stats on the same row. The reference's chip is `TagItem`: bg-button-bg,
+    // a one-pixel surface-5 border, px-2 py-1, rounded-full, text-sm, and a 16-point glyph with a
+    // 4-point gap -- and only a *loader* tag (or the environment chip) carries that glyph, which is
+    // why its category pills are text alone. Measured off the reference's own card, its chips are
+    // 26 tall (the 16-point icon sets the height, not the 14-point line) and stand 4 apart.
+    const CHIP_TEXT: f32 = 14.0;
+    const CHIP_ICON: f32 = 16.0;
+    const CHIP_PAD: f32 = 8.0;
+    const CHIP_GAP: f32 = 4.0;
+    const CHIP_HEIGHT: f32 = 26.0;
+    let chip_top = rect.top() + 99.0;
+    let mut x = rect.left() + 129.0;
+    let tag_limit = rect.right() - TAG_ROW_RESERVE - (rect.left() + 129.0);
+    let chip_width = |painter: &egui::Painter, label: &str, icon: bool| -> f32 {
+        painter
+            .layout_no_wrap(label.to_owned(), crate::fonts::body(CHIP_TEXT), theme.SECONDARY)
+            .size()
+            .x
+            + CHIP_PAD * 2.0
+            + 2.0
+            + if icon { CHIP_ICON + CHIP_GAP } else { 0.0 }
+    };
     let widths: Vec<f32> = result
         .tags
         .iter()
-        .map(|tag| {
-            painter
-                .layout_no_wrap(tag.0.clone(), crate::fonts::body(11.0), theme.SECONDARY)
-                .size()
-                .x
-                + 30.0
-        })
+        .enumerate()
+        .map(|(index, tag)| chip_width(painter, &tag.0, tag_icon(index, &tag.0)))
         .collect();
-    // Four chips and an overflow count, which is what the reference draws: its Zombie Invasion card has six tags
-    // and shows "Client and server", "Challenging", "Combat", "Forge", "+1". Fitting by width alone showed five
-    // and no count.
-    let fitted = tags_that_fit(&widths, 6.0, tag_limit).min(4);
+    // Four tags and an overflow count, which is the reference's `max-tags` with a card action present;
+    // its Fabulously Optimized card carries Client, lightweight, multiplayer, optimization, Fabric and no
+    // count, and its six-tag cards carry four tags and "+N".
+    // `max-tags` counts tags, not the environment chip: the reference's Fabulously Optimized card shows
+    // Client plus four tags and no count, where a cap of four showed three tags and "+1".
+    let cap = if result.tags.first().is_some_and(|tag| env_chip(0, &tag.0)) { 5 } else { 4 };
+    let fitted = tags_that_fit(&widths, CHIP_GAP, tag_limit).min(cap);
     for (index, tag) in result.tags.iter().enumerate() {
         if index >= fitted {
             break;
         }
-        let text = painter.layout_no_wrap(tag.0.clone(), crate::fonts::body(11.0), theme.SECONDARY);
-        let pill_width = text.size().x + 30.0;
+        let text = painter.layout_no_wrap(tag.0.clone(), crate::fonts::body(CHIP_TEXT), theme.SECONDARY);
+        let icon = tag_icon(index, &tag.0);
+        let pill_width = chip_width(painter, &tag.0, icon);
         let pill = Rect::from_min_size(
-            egui::pos2(x, rect.top() + 104.0),
-            egui::vec2(pill_width, 24.0),
+            egui::pos2(x, chip_top),
+            egui::vec2(pill_width, CHIP_HEIGHT),
         );
-        painter.rect_filled(pill, 12, theme.BUTTON_BG);
-        icons::draw(
-            painter,
-            tag.1,
-            Rect::from_center_size(
-                egui::pos2(pill.left() + 14.0, pill.center().y),
-                Vec2::splat(11.0),
-            ),
-            theme.SECONDARY,
+        // `rounded-full` on a 26-point chip is a 13-point radius.
+        painter.rect_filled(pill, CHIP_HEIGHT / 2.0, theme.BUTTON_BG);
+        painter.rect_stroke(
+            pill,
+            CHIP_HEIGHT / 2.0,
+            Stroke::new(1.0, theme.SURFACE_5),
+            egui::StrokeKind::Inside,
         );
+        let mut text_left = pill.left() + 1.0 + CHIP_PAD;
+        if icon {
+            icons::draw(
+                painter,
+                tag.1,
+                Rect::from_min_size(
+                    egui::pos2(text_left, pill.center().y - CHIP_ICON / 2.0),
+                    Vec2::splat(CHIP_ICON),
+                ),
+                theme.SECONDARY,
+            );
+            text_left += CHIP_ICON + CHIP_GAP;
+        }
         painter.galley(
-            egui::pos2(pill.left() + 24.0, pill.center().y - text.size().y / 2.0),
+            egui::pos2(text_left, pill.center().y - text.size().y / 2.0),
             text.clone(),
             theme.SECONDARY,
         );
-        x = pill.right() + 6.0;
+        x = pill.right() + CHIP_GAP;
     }
     if fitted < result.tags.len() {
         let rest = result.tags.len() - fitted;
         let chip = painter.layout_no_wrap(
             format!("+{rest}"),
-            crate::fonts::body(11.0),
+            crate::fonts::body(CHIP_TEXT),
             theme.SECONDARY,
         );
         let plate = Rect::from_min_size(
-            egui::pos2(x, rect.top() + 104.0),
-            egui::vec2(chip.size().x + 20.0, 24.0),
+            egui::pos2(x, chip_top),
+            egui::vec2(chip.size().x + 2.0 + CHIP_PAD * 2.0, CHIP_HEIGHT),
         );
-        painter.rect_filled(plate, 12, theme.BUTTON_BG);
+        painter.rect_filled(plate, CHIP_HEIGHT / 2.0, theme.BUTTON_BG);
+        painter.rect_stroke(
+            plate,
+            CHIP_HEIGHT / 2.0,
+            Stroke::new(1.0, theme.SURFACE_5),
+            egui::StrokeKind::Inside,
+        );
         painter.galley(
-            egui::pos2(plate.left() + 10.0, plate.center().y - chip.size().y / 2.0),
+            egui::pos2(plate.left() + 1.0 + CHIP_PAD, plate.center().y - chip.size().y / 2.0),
             chip,
             theme.SECONDARY,
         );
     }
-
     // The stats and the install button, right-aligned: downloads, followers, updated.
     // The reference's Install is an **outlined** brand button -- 94x36, radius 12, a
     // one-pixel `--color-brand` ring, brand lettering, no fill -- with a plus glyph before
     // the word. A filled plate with dark text reads as the pressed state of something else.
+    // `ButtonFrame` at size md, type outlined: h-9 (36), rounded-xl (12), px-2.5 (10), gap-1.5 (6), `size-5`
+    // icon, and 16-point semibold lettering. Its width is the content's, not a number: the reference's button
+    // measures 1005..1099, 94 points for "Install", and a fixed 94 put a longer label's text over the ring.
+    let install_text = painter.layout_no_wrap(
+        install_label.to_owned(),
+        crate::fonts::semibold(16.0),
+        theme.BRAND,
+    );
+    const INSTALL_GLYPH: f32 = 20.0;
+    const INSTALL_GAP: f32 = 6.0;
+    const INSTALL_PAD: f32 = 10.0;
+    let install_width =
+        INSTALL_PAD + INSTALL_GLYPH + INSTALL_GAP + install_text.size().x + INSTALL_PAD;
     let install = Rect::from_min_size(
-        egui::pos2(rect.right() - 16.0 - 94.0, rect.top() + 16.0),
-        egui::vec2(94.0, 36.0),
+        egui::pos2(rect.right() - 17.0 - install_width, rect.top() + 17.0),
+        egui::vec2(install_width, 36.0),
     );
     painter.rect_stroke(
         install,
@@ -3105,34 +3159,30 @@ fn card(
         Stroke::new(1.0, theme.BRAND),
         egui::StrokeKind::Inside,
     );
-    let install_text = painter.layout_no_wrap(
-        install_label.to_owned(),
-        crate::fonts::semibold(14.0),
-        theme.BRAND,
-    );
-    let glyph_w = 16.0;
-    let gap = 6.0;
-    let content_w = glyph_w + gap + install_text.size().x;
-    let start_x = install.center().x - content_w / 2.0;
+    let start_x = install.left() + INSTALL_PAD;
     icons::draw(
         painter,
         Glyph::Plus,
         Rect::from_center_size(
-            egui::pos2(start_x + glyph_w / 2.0, install.center().y),
-            Vec2::splat(glyph_w),
+            egui::pos2(start_x + INSTALL_GLYPH / 2.0, install.center().y),
+            Vec2::splat(INSTALL_GLYPH),
         ),
         theme.BRAND,
     );
     painter.galley(
-        egui::pos2(start_x + glyph_w + gap, install.center().y - install_text.size().y / 2.0),
+        egui::pos2(
+            start_x + INSTALL_GLYPH + INSTALL_GAP,
+            install.center().y - install_text.size().y / 2.0,
+        ),
         install_text,
         theme.BRAND,
     );
+
     // The stats are two right-aligned lines beside the summary: downloads then followers on
     // the first, the update clock on the second. The capture puts the pair at y 306..321 and
     // the clock at 336..353, both ending at x 1098, in 14-point text -- they used to be one
     // 11-point line on the tag row, which is where the tags belong and the stats do not.
-    let mut counts_right = rect.right() - 16.0;
+    let mut counts_right = rect.right() - 17.0;
     // Measured from the reference's own card: the counts' ink runs 306..320 and the update line's 336..353 inside
     // a card that starts at 230, so their centres are 83 and 114 below its top, not 62 and 92.
     let counts_y = rect.top() + 83.0;
@@ -3145,9 +3195,11 @@ fn card(
         if value.is_empty() {
             continue;
         }
+        // `font-medium` at the inherited 16 points, with a 20-point icon: the reference's "19.66M 5,028" line
+        // spans 166 points, which is 20 + 8 + 55 + 12 + 20 + 8 + 43 and nothing else.
         let label = painter.layout_no_wrap(
             value.to_owned(),
-            crate::fonts::body(14.0),
+            crate::fonts::label(16.0),
             theme.SECONDARY,
         );
         painter.galley(
@@ -3155,26 +3207,30 @@ fn card(
             label.clone(),
             theme.SECONDARY,
         );
+        // `flex items-center gap-2` around a `size-5` icon and its number, then `gap-3` between the two pairs.
         icons::draw(
             painter,
             glyph,
             Rect::from_center_size(
-                egui::pos2(counts_right - label.size().x - 12.0, counts_y),
-                Vec2::splat(14.0),
+                egui::pos2(counts_right - label.size().x - 8.0 - 10.0, counts_y),
+                Vec2::splat(20.0),
             ),
             theme.SECONDARY,
         );
-        counts_right -= label.size().x + 12.0 + 14.0 + 16.0;
+        counts_right -= label.size().x + 8.0 + 20.0 + 12.0;
     }
     if !result.updated.is_empty() {
+        // `ProjectCardDate`: the same 16-point line and 20-point icon as the counts, 8 points apart, on the
+        // stats column's second row 12 points below the first.
         let label = painter.layout_no_wrap(
             result.updated.clone(),
-            crate::fonts::body(14.0),
+            crate::fonts::body(16.0),
             theme.SECONDARY,
         );
         let y = rect.top() + 114.0;
+        let right = rect.right() - 17.0;
         painter.galley(
-            egui::pos2(rect.right() - 16.0 - label.size().x, y - label.size().y / 2.0),
+            egui::pos2(right - label.size().x, y - label.size().y / 2.0),
             label.clone(),
             theme.SECONDARY,
         );
@@ -3182,8 +3238,8 @@ fn card(
             painter,
             Glyph::Calendar,
             Rect::from_center_size(
-                egui::pos2(rect.right() - 16.0 - label.size().x - 12.0, y),
-                Vec2::splat(14.0),
+                egui::pos2(right - label.size().x - 8.0 - 10.0, y),
+                Vec2::splat(20.0),
             ),
             theme.SECONDARY,
         );
@@ -3263,6 +3319,51 @@ pub struct Card {
 ///
 /// A tag that does not fit is not shown and everything from it on is counted in the chip, which is
 /// what the reference's `+N` reports.
+/// A card's tags in the order the reference draws them: the categories first, alphabetically, then the
+/// loaders, alphabetically -- `sortTagsForDisplay` in the reference's own utils. The API hands them over with
+/// the loader first ("fabric", then the categories), which put Fabric in the second chip where the reference
+/// puts it last: its Fabulously Optimized card reads lightweight, multiplayer, optimization, Fabric.
+fn tags_in_display_order(tags: &[String]) -> Vec<(String, Glyph)> {
+    let mut seen: Vec<&String> = Vec::new();
+    for tag in tags {
+        if !seen.iter().any(|kept| kept.eq_ignore_ascii_case(tag)) {
+            seen.push(tag);
+        }
+    }
+    let mut categories: Vec<&String> = seen.iter().copied().filter(|tag| !is_loader(tag)).collect();
+    let mut loaders: Vec<&String> = seen.iter().copied().filter(|tag| is_loader(tag)).collect();
+    categories.sort_by_key(|tag| tag.to_lowercase());
+    loaders.sort_by_key(|tag| tag.to_lowercase());
+    categories
+        .into_iter()
+        .chain(loaders)
+        .map(|tag| (tag.clone(), category_glyph(tag)))
+        .collect()
+}
+
+/// Whether a tag is the card's environment chip, which the card builder puts first when the project
+/// runs on either side. Its label is one of three, and no category or loader shares them.
+fn env_chip(index: usize, label: &str) -> bool {
+    index == 0 && matches!(label, "Client" | "Server" | "Client and server")
+}
+
+/// Whether a chip carries its glyph, which is the reference's `hide-non-loader-icon` on a tag pill:
+/// only a loader tag shows one, and the environment chip always does. The reference's Fabulously
+/// Optimized card proves it -- "lightweight", "multiplayer" and "optimization" are text alone while
+/// "Fabric" leads with a 16-point mark.
+fn tag_icon(index: usize, label: &str) -> bool {
+    env_chip(index, label) || is_loader(label)
+}
+
+/// Whether a tag names a mod loader, which the reference's own `getTagMessage(tag, 'loader')` decides and
+/// this build decides from the loader names the catalogue uses.
+fn is_loader(label: &str) -> bool {
+    const LOADERS: [&str; 8] = [
+        "Fabric", "Forge", "NeoForge", "Quilt", "LiteLoader", "Rift", "Modloader", "Risugami's ModLoader",
+    ];
+    LOADERS.iter().any(|loader| loader.eq_ignore_ascii_case(label))
+}
+
 fn tags_that_fit(widths: &[f32], gaps: f32, limit: f32) -> usize {
     let mut x = 0.0;
     for (index, width) in widths.iter().enumerate() {
