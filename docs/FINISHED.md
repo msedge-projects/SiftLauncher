@@ -79,3 +79,32 @@ it edge to edge (Discover 134 450 -> 132 014).
 The Screenshots comparison is the useful one of this pass: matched state, matched illustration, and its content slab is
 **4 935** -- the lowest any content column has reached -- which shows what a fair comparison looks like when the
 state matches and the artwork is the reference's own.
+
+## The four workstreams, their numbers (2026-11-03)
+
+Each drove the real Modrinth App on its own X display, captured it in the same state, and measured.
+
+| screen | before | after | notes |
+|---|---:|---:|---|
+| Settings, Appearance | 72 497 | **35 743** | backdrop was a 9% veil; the reference composites a two-stop gradient |
+| Settings, Features | 75 660 | **36 483** | |
+| Settings, Behavior | 76 573 | **40 582** | |
+| Settings, Profile | 64 351 | **34 381** | |
+| Settings, Social | 65 535 | **35 546** | |
+| Settings, Privacy | 82 729 | **53 862** | |
+| Settings, Java | 59 333 | **30 055** | the best tab |
+| Settings, Window | 58 245 | **31 771** | |
+| Settings, Language | 86 089 | **56 105** | our locale list is a five-entry stub against its shipped bundles: data |
+| Instance, Content | 49 722 | **31 369** | content slab 29 247 -> 10 894 |
+| Instance, Worlds | -- | **9 524** | |
+| Instance, Share | -- | **8 920** | the tab did not exist in this build at all |
+| Instance, Screenshots | -- | **13 117** | |
+| Instance, Logs | -- | **15 235** | |
+| Instance, Files | -- | **31 734** | its Created/Modified columns need birth times this build cannot reproduce |
+| Project, Description | 221 847 | **89 836** | the page never fetched the project before |
+| Project, Versions | -- | **81 983** | pager built and proved on page 2 |
+| Skins | 164 451 | **140 340** | preview column now plate-free, model at 9.34 per texel, hint and outlined button |
+
+Every one of these came with a capture behind it, and each workstream separately reverted at least one change that
+measured worse (a filled quiet button on an empty state, a one-point border overshoot, a pager over an unanchored
+scroll list, a heading gap of 8 against 6).
