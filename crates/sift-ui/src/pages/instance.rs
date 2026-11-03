@@ -316,7 +316,7 @@ pub fn draw(
     state: &mut State,
     instance: &Instance,
 ) -> Option<InstanceAction> {
-    header(ui, rect, theme, instance);
+    header(ui, rect, theme, instance, images);
     let track = tab_strip(ui, rect, theme, state);
     let body = Rect::from_min_max(
         egui::pos2(rect.left(), track.bottom() + BODY_GAP),
@@ -350,7 +350,7 @@ pub fn draw(
 /// carrying the loader and the last-played time, and Play / settings / overflow on the right. The
 /// path line this page used to print is not in the reference; the folder is only ever offered as
 /// \`Copy path\` in the overflow menu, so it is gone.
-fn header(ui: &mut Ui, rect: Rect, theme: &Theme, instance: &Instance) {
+fn header(ui: &mut Ui, rect: Rect, theme: &Theme, instance: &Instance, images: &mut crate::images::Images) {
     let painter = ui.painter().clone();
     let top = rect.top() + HEADER_TOP;
     let avatar = Rect::from_min_size(egui::pos2(rect.left(), top), egui::vec2(AVATAR, AVATAR));
@@ -366,7 +366,23 @@ fn header(ui: &mut Ui, rect: Rect, theme: &Theme, instance: &Instance) {
         egui::Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 38)),
         egui::StrokeKind::Inside,
     );
-    cube(&painter, avatar);
+    // **The instance's own icon when it has one.** The reference's avatar is the pack's artwork; this drew the
+    // cube outline on every instance, so a library of distinct packs looked like a row of identical boxes.
+    let icon = [instance.path.join("icon.png"), instance.path.join("minecraft").join("icon.png")]
+        .into_iter()
+        .find(|candidate| candidate.is_file())
+        .and_then(|path| images.get_file(ui.ctx(), &path));
+    match icon {
+        Some(texture) => {
+            painter.image(
+                texture.id(),
+                avatar.shrink(1.0),
+                Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                egui::Color32::WHITE,
+            );
+        }
+        None => cube(&painter, avatar),
+    }
 
     let text_left = avatar.right() + AVATAR_GAP;
     painter.text(
@@ -593,6 +609,14 @@ fn empty_state(
 ) -> Option<usize> {
     let painter = ui.painter().clone();
     let top = body.top() + EMPTY_TOP;
+    // The reference's own illustration, at its own 93x99, centred above the heading: an open box with a face.
+    // This drew nothing above the words, which is what made the empty state look unfinished next to the
+    // reference's.
+    let art = egui::Rect::from_center_size(
+        egui::pos2(body.center().x, top + EMPTY_HEADING_DY - 62.0),
+        egui::vec2(93.0, 99.0),
+    );
+    crate::serverart::paint_content_empty(&painter, art);
     painter.text(
         egui::pos2(body.center().x, top + EMPTY_HEADING_DY),
         Align2::CENTER_TOP,

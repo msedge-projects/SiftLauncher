@@ -37,6 +37,12 @@ const SHOTS_PNG: &[u8] = include_bytes!("../../../assets/brand/shots-empty.png")
 
 static SHOTS_EMPTY: OnceLock<Option<TextureHandle>> = OnceLock::new();
 
+/// The instance page's "No content installed" illustration: an open box with a face, cropped from the
+/// reference's own render at 93x99 (475,302 to 568,401 of it).
+const CONTENT_PNG: &[u8] = include_bytes!("../../../assets/brand/content-empty.png");
+
+static CONTENT_EMPTY: OnceLock<Option<TextureHandle>> = OnceLock::new();
+
 /// Upload the illustration, once, before the first frame.
 pub fn install(ctx: &eframe::egui::Context) {
     let _ = ART.set(upload(ctx, ART_PNG, "server-art"));
@@ -44,6 +50,21 @@ pub fn install(ctx: &eframe::egui::Context) {
     let _ = HERO.set(upload(ctx, HERO_PNG, "hero-plate"));
     let _ = BRAND.set(upload(ctx, BRAND_PNG, "titlebar-brand"));
     let _ = SHOTS_EMPTY.set(upload(ctx, SHOTS_PNG, "shots-empty"));
+    let _ = CONTENT_EMPTY.set(upload(ctx, CONTENT_PNG, "content-empty"));
+}
+
+/// Paint the instance page's "No content installed" illustration; false when the texture is missing.
+pub fn paint_content_empty(painter: &eframe::egui::Painter, rect: Rect) -> bool {
+    let Some(Some(texture)) = CONTENT_EMPTY.get() else {
+        return false;
+    };
+    painter.image(
+        texture.id(),
+        rect,
+        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Color32::WHITE,
+    );
+    true
 }
 
 /// Paint the screenshots empty state's illustration; false when the texture is missing.
