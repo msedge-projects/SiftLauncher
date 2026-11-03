@@ -877,10 +877,10 @@ const THEME_OLED_LABEL: &str = "OLED";
 // The capture: cards 531..729, 746..944 and 961..1159 -- 198 wide with 17 between them, so
 // three and their gaps fill the pane's 628 usable points exactly. Preview 114 tall, footer 42.
 const THEME_CARD_WIDTH: f32 = 198.0;
-const THEME_CARD_HEIGHT: f32 = 116.0;
+const THEME_CARD_HEIGHT: f32 = 114.0;
 const THEME_CARD_GAP: f32 = 17.0;
 /// The footer strip inside a card: the radio and the label.
-const THEME_FOOTER: f32 = 42.0;
+const THEME_FOOTER: f32 = 43.0;
 #[allow(dead_code)]
 const THEME_CARD_LABEL_HEIGHT: f32 = 20.0;
 /// `rounded-xl` on the preview card.
@@ -924,7 +924,7 @@ const BEHAVIOR_STARTUP_HEADING: &str = "Startup and navigation"; // app.behavior
 const MINIMIZE_APP_LABEL: &str = "Minimize app"; // app.appearance-settings.minimize-launcher.title (:170)
 const MINIMIZE_APP_DESCRIPTION: &str = "Minimize Modrinth App when Minecraft starts."; // app.appearance-settings.minimize-launcher.description (:167)
 const REFOCUS_LABEL: &str = "Refocus app when Minecraft closes"; // app.behavior-settings.refocus-on-game-close.title (:212)
-const REFOCUS_DESCRIPTION: &str = "Bring Sift Launcher to the foreground when Minecraft exits."; // app.behavior-settings.refocus-on-game-close.description (:209)
+const REFOCUS_DESCRIPTION: &str = "Bring Modrinth App to the foreground when Minecraft exits."; // app.behavior-settings.refocus-on-game-close.description (:209)
 const HIDE_SIDEBAR_LABEL: &str = "Hide right sidebar"; // app.appearance-settings.toggle-sidebar.title (:188)
 const HIDE_SIDEBAR_DESCRIPTION: &str = "Hide the right sidebar by default and add a button to show or hide it."; // app.appearance-settings.toggle-sidebar.description (:185)
 const BEHAVIOR_CONTENT_HEADING: &str = "Home and content"; // app.behavior-settings.content.title (:206)
@@ -1012,18 +1012,18 @@ const PROFILE_BIO_DESCRIPTION: &str = "A short description to tell everyone a li
 
 // --- Social (packages/ui/src/layouts/wrapped/settings/AccountSocialSettings.vue) ---
 const SOCIAL_FRIEND_REQUESTS_LABEL: &str = "Friend requests"; // settings.social.friend-requests.title (ui :6452)
-const SOCIAL_FRIEND_REQUESTS_DESCRIPTION: &str = "Control who can send you friend requests on Sift."; // settings.social.friend-requests.description (ui :6449)
+const SOCIAL_FRIEND_REQUESTS_DESCRIPTION: &str = "Control who can send you friend requests on Modrinth."; // settings.social.friend-requests.description (ui :6449)
 const SOCIAL_SHARED_INSTANCES_LABEL: &str = "Shared instance invites"; // settings.social.shared-instance-invites.title (ui :6485)
 const SOCIAL_SHARED_INSTANCES_DESCRIPTION: &str = "Control who can send you invites to shared instances."; // settings.social.shared-instance-invites.description (ui :6482)
 const SOCIAL_HOSTING_LABEL: &str = "Hosting access invites"; // settings.social.hosting-access.title (ui :6458)
-const SOCIAL_HOSTING_DESCRIPTION: &str = "Control who can invite you to manage a Sift Hosting server."; // settings.social.hosting-access.description (ui :6455)
+const SOCIAL_HOSTING_DESCRIPTION: &str = "Control who can invite you to manage a Modrinth Hosting server."; // settings.social.hosting-access.description (ui :6455)
 const SOCIAL_BLOCKED_LABEL: &str = "Blocked users"; // settings.social.blocked-users.title (ui :6431)
 const SOCIAL_BLOCKED_DESCRIPTION: &str = "These are the users you have blocked on Modrinth. They cannot:"; // settings.social.blocked-users.description (ui :6410)
 const SOCIAL_EVERYONE: &str = "Everyone"; // settings.social.interaction-source.everyone (ui :6461), the start for all three settings (AccountSocialSettings.vue:254-256)
 
 // --- Privacy (settings/account/privacy-settings.vue) ---
 const PRIVACY_ADS_HEADING: &str = "Your privacy and how ads support Modrinth"; // app.ads-consent.title (:146)
-const PRIVACY_ADS_INTRO: &str = "Ads make Sift possible and fund creator payouts. Our partners may store or access cookies in the app to personalize ads and measure performance. You can opt out or manage your preferences below."; // app.settings.privacy.ads-consent.intro (:2756)
+const PRIVACY_ADS_INTRO: &str = "Ads make Modrinth possible and fund creator payouts. Our partners may store or access cookies in the app to personalize ads and measure performance. You can opt out or manage your preferences below."; // app.settings.privacy.ads-consent.intro (:2756)
 const PRIVACY_MANAGE_LABEL: &str = "Manage preferences"; // app.ads-consent.manage (:140)
 const TELEMETRY_LABEL: &str = "Telemetry"; // app.settings.privacy.telemetry.title (:2768)
 const TELEMETRY_DESCRIPTION: &str = "Modrinth collects anonymized analytics and usage data to improve our user experience and customize your experience. By disabling this option, you opt out and your data will no longer be collected."; // app.settings.privacy.telemetry.description (:2765)
@@ -1118,13 +1118,13 @@ const MAX_WRITES_VALUE: &str = "1"; // its slider's `:min="1"` (resource-managem
 
 // --- Troubleshooting (settings/system/troubleshooting-settings.vue) ---
 const APP_CACHE_TITLE: &str = "App cache"; // app.settings.resource-management.app-cache.title (:2783)
-const APP_CACHE_DESCRIPTION: &str = "Clear cached data and download it again from Sift. The app may load more slowly until the cache is rebuilt."; // app.settings.resource-management.app-cache.description (:2780)
+const APP_CACHE_DESCRIPTION: &str = "Clear cached data and download it again from Modrinth. The app may load more slowly until the cache is rebuilt."; // app.settings.resource-management.app-cache.description (:2780)
 const CLEAR_CACHE_LABEL: &str = "Clear cache"; // app.settings.troubleshooting.clear-cache (:3161)
 const BACKUPS_TITLE: &str = "App database backups"; // app.settings.resource-management.app-database-backups.title (:2792)
 const BACKUPS_DESCRIPTION: &str = "Backups of important app data are stored here in case you need to recover them later."; // app.settings.resource-management.app-database-backups.description (:2786)
 const BACKUPS_OPEN_LABEL: &str = "Open backups folder"; // app.settings.resource-management.app-database-backups.open-folder (:2789)
 const DEBUG_INFO_TITLE: &str = "Debug info"; // app.settings.resource-management.debug-info.title (:2813)
-const DEBUG_INFO_DESCRIPTION: &str = "Export app logs and diagnostic data to a ZIP file to share with Sift support."; // app.settings.resource-management.debug-info.description (:2807)
+const DEBUG_INFO_DESCRIPTION: &str = "Export app logs and diagnostic data to a ZIP file to share with Modrinth support."; // app.settings.resource-management.debug-info.description (:2807)
 const DEBUG_INFO_EXPORT_LABEL: &str = "Export debug info"; // app.settings.resource-management.debug-info.export (:2810)
 const REPORT_AD_TITLE: &str = "Report an ad"; // app.settings.troubleshooting.report-ad.title (:3182)
 const REPORT_AD_DESCRIPTION: &str = "Seen an inappropriate or offensive ad? Copy its details while it's showing and send them to <support>Modrinth Support</support>. We'll review it and remove it."; // app.settings.troubleshooting.report-ad.description (:3173); the `<support>` span is a link to support.modrinth.com (troubleshooting-settings.vue:299-309)
@@ -1250,6 +1250,17 @@ const CATEGORY_PADDING: f32 = 6.0;
 /// (`TabbedModal.vue:180`).
 const CATEGORY_TOP_GAP: f32 = 12.0;
 
+/// How far into its own box a category label's ink starts: the capture's `DISPLAY` runs
+/// 220..231 inside a box that opens at 216, where this drew it at three points in.
+const CATEGORY_TEXT_DROP: f32 = 1.0;
+
+/// Where the rail's first child starts below the rail's padding: measured, not derived.
+///
+/// The reference's first row plate is 246..285 and ours was 244..284, two points up; the row
+/// heights, the 4-point gaps and the category box were all already right, so the whole column
+/// wanted the same two points rather than a new rhythm.
+const RAIL_TOP_OFFSET: f32 = 2.0;
+
 /// The body's inset: `px-6 pt-6` on the scroll content (`TabbedModal.vue:249`).
 // Measured against the pane's own top edge: the reference's first heading ink sits 117 points
 // below its plate's top, this pane's sat at 113 with a 24-point padding. The four points are the
@@ -1295,7 +1306,12 @@ const ROW_LABEL_SIZE: f32 = 18.0;
 const ROW_DESCRIPTION_SIZE: f32 = 16.0;
 
 /// The gap between a row's label and its description: `mt-1` (`AppearanceSettingRow.vue:29`).
-const ROW_DESCRIPTION_GAP: f32 = 4.0;
+// Measured at 2, not 4: the reference's "Color theme" ink sits at 231..244 and its description
+// at 259..271, and "Sync theme across devices" at 653..665 with its first description line at
+// 673..695 -- 28 and 20 points from ink to ink. Ours read 30 and 22 with a 4-point gap, and the
+// two points accumulated down the whole body (the cards sat at 294 against 291). Every row on
+// all thirteen tabs carries this gap, so it is one constant, not a per-block fudge.
+const ROW_DESCRIPTION_GAP: f32 = 2.0;
 
 /// The gap between two rows: `gap-6` (`features-settings.vue:283`, `layout.vue:101`).
 const ROW_GAP: f32 = 24.0;
@@ -1372,15 +1388,19 @@ const CLOSE_SIZE: f32 = 36.0;
 /// The close button's glyph: `[&>svg]:size-5` (`ButtonFrame.vue:31`).
 const CLOSE_GLYPH: f32 = 20.0;
 
-/// The scrim's alpha. The reference has no `--overlay` token; its scrim is
-/// `.modal-overlay.standard`'s gradient, `rgba(29, 48, 43, 0.52)` to `rgba(14, 21, 26, 0.95)`
-/// (`NewModal.vue:679`). 140/255 is 0.549, the top stop's alpha.
-// The reference's scrim is a `backdrop-filter: blur(5px)` under a very light veil: the
-// capture's page reads #141e1f behind the modal against #16181c at rest -- barely darker, and
-// greener, because a blurred sidebar gradient is showing through. A 55%-black overlay is not
-// that; this is a 9% veil, the closest a flat fill gets without the blur, which is recorded as
-// renderer-risk rather than imitated.
-const SCRIM_ALPHA: u8 = 24;
+/// The backdrop's top stop: `.modal-overlay.standard`'s
+/// `linear-gradient(180deg, rgba(29, 48, 43, 0.52) 0%, rgba(14, 21, 26, 0.95) 100%)`
+/// (`packages/ui/src/components/modal/NewModal.vue`, the overlay's own rule).
+// The pair is composited, not painted: `(29, 48, 43)` at 133/255 and `(14, 21, 26)` at
+// 242/255 over the page, which is exactly what the capture shows -- `ref101-appearance.png`
+// reads (24,34,35) at (600,60) and (16,23,27) at (700,880), and the same gradient over our own
+// #16181c gives (26,36,36) and (16,22,26), inside two levels of both. A 9 % veil of black --
+// what this was -- left the page at 91 %, which is 27 000 differing pixels in the sidebar
+// alone against a reference whose page has been pushed all the way down to a fifth.
+const OVERLAY_TOP: (u8, u8, u8, u8) = (29, 48, 43, 133);
+
+/// The backdrop's bottom stop, `rgba(14, 21, 26, 0.95)`.
+const OVERLAY_BOTTOM: (u8, u8, u8, u8) = (14, 21, 26, 242);
 
 // ---------------------------------------------------------------------------
 // The body's blocks
@@ -2460,7 +2480,17 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
     {
         // A clone, so the body may hold it while also taking `ui` for the fields inside it.
     let painter = ui.painter().clone();
-        painter.rect_filled(screen, 0, Color32::from_black_alpha(SCRIM_ALPHA));
+        crate::shell::vertical_gradient(
+            &painter,
+            screen,
+            Color32::from_rgba_unmultiplied(OVERLAY_TOP.0, OVERLAY_TOP.1, OVERLAY_TOP.2, OVERLAY_TOP.3),
+            Color32::from_rgba_unmultiplied(
+                OVERLAY_BOTTOM.0,
+                OVERLAY_BOTTOM.1,
+                OVERLAY_BOTTOM.2,
+                OVERLAY_BOTTOM.3,
+            ),
+        );
         painter.rect_filled(dialog, PLATE_RADIUS, theme.RAISED_BG);
         // `--surface-5`, not the divider: the capture's plate is edged in #42444a, the same
         // grey as the header's rule and the rail's.
@@ -3013,6 +3043,11 @@ fn rail_needed_height(dev_mode: bool) -> f32 {
 /// Lay the rail out: category headings first, then a 40-point row and a 4-point gap for
 /// every visible tab.
 fn rail_rows(dialog: Rect, scroll: f32, dev_mode: bool) -> Vec<RailRow> {
+    // The capture puts the first category's label ink at 220 and the first row's plate at
+    // 246..285; this drew them at 217 and 244..284 off a 16-point rail padding. Two points of
+    // rail padding and one of label drop are what the two numbers ask for, and they are the
+    // only two: every row below inherits the same shift, which is why one offset settles the
+    // whole column rather than one row at a time.
     let rail = rail_rect(dialog);
     let width = rail.width() - 2.0 * RAIL_PADDING;
     let mut rows: Vec<RailRow> = Vec::new();
@@ -3028,7 +3063,7 @@ fn rail_rows(dialog: Rect, scroll: f32, dev_mode: bool) -> Vec<RailRow> {
     let row_height = RAIL_ROW_HEIGHT;
     let row_gap = RAIL_ROW_GAP;
 
-    let mut y = rail.top() + RAIL_PADDING - scroll;
+    let mut y = rail.top() + RAIL_PADDING + RAIL_TOP_OFFSET - scroll;
     let mut previous: Option<Tab> = None;
     for (index, tab) in visible_tabs(dev_mode).into_iter().enumerate() {
         let starts_category = previous.map_or(true, |last| last.category() != tab.category());
@@ -3152,7 +3187,7 @@ fn draw_rail(
             // group labels are DISPLAY / ACCOUNT / INSTANCE DEFAULTS / SYSTEM in 12-point
             // upper case, so the label is upper-cased here rather than printed in title case.
             clipped.text(
-                pos2(heading.left(), heading.top()),
+                pos2(heading.left(), heading.top() + CATEGORY_TEXT_DROP),
                 Align2::LEFT_TOP,
                 entry.tab.category().to_uppercase(),
                 fonts::semibold(CATEGORY_TEXT_SIZE),
@@ -4818,6 +4853,19 @@ fn draw_body(
             // Handled above.
             Block::Rule => 0.0,
         };
+
+        // A tab whose own markup writes the margin on the row instead of using the house
+        // `gap-6`. `privacy-settings.vue:90` is `mt-8` (32) over the Telemetry row and
+        // `:100` is `mt-4` (16) over the Discord one: the capture puts the ads paragraph's
+        // last ink at 360 and "Telemetry" at 399 (39 apart) and the Discord label 22 under the
+        // Telemetry description, where a flat 24 gave 22 and 29.
+        if let Some(own) = own_row_gap(tab, index) {
+            let trailing = match *block {
+                Block::Note { .. } => NOTE_BELOW,
+                _ => ROW_GAP,
+            };
+            gap = (gap - trailing).max(0.0) + own;
+        }
     }
 
     // The reference's own words for a query that matched nothing (`:77-79`).
@@ -4835,6 +4883,22 @@ fn draw_body(
     // The height the caller needs: how far below the pane's top the last row fell, with the
     // scroll offset added back so the number does not move as the reader scrolls.
     y + scroll - content.top()
+}
+
+/// The space the source's markup puts *under* a block where it overrides the `gap-6` rhythm.
+///
+/// Only `privacy-settings.vue` does: `:90` is `mt-8` and `:100` is `mt-4`, against the
+/// `gap-6` (24) that `features-settings.vue:283` and `layout.vue:101` set for every other
+/// tab. The index is the block's position in the tab's own table, because the margin belongs
+/// to the block above it in this renderer.
+fn own_row_gap(tab: Tab, index: usize) -> Option<f32> {
+    match (tab, index) {
+        // The ads paragraph, above "Telemetry".
+        (Tab::Privacy, 2) => Some(32.0),
+        // "Telemetry", above "Discord Rich Presence".
+        (Tab::Privacy, 3) => Some(16.0),
+        _ => None,
+    }
 }
 
 /// Draw one labelled block -- a heading or a row -- and return its height.
@@ -4874,16 +4938,18 @@ fn draw_labelled(
     y += label_height.max(LINE_BOX);
     if let Some(description) = description {
         y += ROW_DESCRIPTION_GAP;
-        // `--color-base` (#b0bac5), not the dimmer secondary: wave seven measured every row's
-        // description at #96a2b0 against the reference's #b0bac5, which is a whole grey step
-        // across thirteen tabs.
+        // `--color-text-tertiary` (#96a2b0), the reference's own description grey. The note
+        // that stood here had the two steps the wrong way round -- it read the reference as
+        // #b0bac5 and this build as #96a2b0 -- and the capture says the opposite: the premise's
+        // ink peaks at (150,162,176) in `ref101-appearance.png` against (176,186,197) here, a
+        // whole grey step across every description on all thirteen tabs.
         y += text(
             painter,
             left,
             y,
             description,
             fonts::body(ROW_DESCRIPTION_SIZE),
-            theme.BASE,
+            theme.SECONDARY,
             text_width,
         );
     }
