@@ -1096,7 +1096,46 @@ fn list(
         painter.rect_filled(card, 12, theme.RAISED_BG);
         let tile = Rect::from_min_size(card.min + egui::vec2(16.0, 16.0), Vec2::splat(64.0));
         painter.rect_filled(tile, 12, theme.BUTTON_BG);
-        let _ = icons_cache;
+        // **The instance's own icon.** This drew an empty plate and threw the cache away (`let _ = icons_cache`);
+        // Modrinth's library shows each instance's icon, so a row without one is a library that cannot be told
+        // apart at a glance. `icon.png` at the instance's root is the launcher's own convention; the folder's
+        // `minecraft/icon.png` is where a pack that set its own icon from inside the game leaves it.
+        let root = crate::data::instances_dir().join(&instance.id);
+        let icon_path = [root.join("icon.png"), root.join("minecraft").join("icon.png")]
+            .into_iter()
+            .find(|candidate| candidate.is_file());
+        let drawn_icon = icon_path.and_then(|path| icons_cache.get_file(ui.ctx(), &path));
+        match drawn_icon {
+            Some(texture) => {
+                let art = tile.shrink(2.0);
+                painter.image(
+                    texture.id(),
+                    art,
+                    Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                    egui::Color32::WHITE,
+                );
+            }
+            // No icon: the reference's own default avatar, the twelve-segment cube from `Avatar.vue:46`, drawn
+            // scaled into this tile.
+            None => {
+                let scale = tile.width() / 104.0;
+                let origin = tile.min;
+                // The cube is a path, not six independent chords: consecutive points joined trace all eleven
+                // segments of the wireframe. Pairing them two at a time drew a broken glyph.
+                let cube = crate::pages::instance::CUBE;
+                for step in 0..cube.len() - 1 {
+                    let (ax, ay) = cube[step];
+                    let (bx, by) = cube[step + 1];
+                    painter.line_segment(
+                        [
+                            egui::pos2(origin.x + ax * scale, origin.y + ay * scale),
+                            egui::pos2(origin.x + bx * scale, origin.y + by * scale),
+                        ],
+                        egui::Stroke::new(5.0 * scale, egui::Color32::from_rgb(0x9a, 0x9a, 0x9a)),
+                    );
+                }
+            }
+        }
 
         painter.text(
             egui::pos2(card.left() + 96.0, card.top() + 20.0),

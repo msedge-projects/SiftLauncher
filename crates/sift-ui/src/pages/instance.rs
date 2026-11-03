@@ -170,7 +170,7 @@ const CUBE_STROKE: f32 = 5.0;
 const CUBE_INK: (u8, u8, u8) = (0x9a, 0x9a, 0x9a);
 
 /// The reference's cube, point for point (\`Avatar.vue:46\`): a wireframe of twelve segments.
-const CUBE: [(f32, f32); 12] = [
+pub const CUBE: [(f32, f32); 12] = [
     (51.7, 92.5),
     (51.7, 51.7),
     (16.4, 31.3),
