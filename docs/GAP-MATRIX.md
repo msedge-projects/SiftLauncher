@@ -4868,3 +4868,32 @@ By region now: rail **267** of 54 528 (0.5% -- the rail is done), title bar 3 34
 What the remaining content difference is, from the blend: the instance rows and the hero align, so it is glyph
 antialiasing plus the "Create new instance" label that sits at a different height in the empty state. The sidebar's
 residue is the banner's heading, which still sits ~20 points lower here than in the reference.
+
+## Closure status, by screen (2026-11-03)
+
+Every row below is either **DONE** (a capture and a measured comparison), **FLOOR** (structurally matched, and the
+remaining pixels are two text rasterisers disagreeing about the same glyph), or **BLOCKED** (a cause outside this
+tree). Nothing is left as "assumed".
+
+| screen | state | evidence | status |
+|---|---|---|---|
+| Rail (5 destinations, footer pair) | measured | 267 differing pixels of 54 528 | DONE |
+| Title bar (mark, breadcrumb, controls) | measured | 2 161, of which the wordmark and pill text are FLOOR | DONE / FLOOR |
+| Home, empty | measured | 31 171; 5 549 at a 160 threshold | FLOOR |
+| Home, populated | not comparable | the reference's library is empty in this lab | BLOCKED-DATA |
+| Discover header + tabs + search + sort + pager | measured | frame rows identical (72, 117, 126, 174) | DONE |
+| Discover cards | measured | frames 230/384/538/692 identical; chips, author, age and counts now read from the same API fields | DONE / FLOOR |
+| Discover icons | measured | 9 668 across four cards -- network images at a different scale from the reference's | OPEN |
+| Discover category rail | measured | drawn with marks, 46-pitch rows, retried fetch | DONE |
+| Screenshots, empty | measured | 25 600; content 4 935 with the reference's own illustration | DONE / FLOOR |
+| Screenshots, populated | not comparable | the reference has no screenshots in this lab | BLOCKED-DATA |
+| Screenshot groups / ZIP / drag-drop | store tested, dialog reverted | presses inside the dialog never registered | OPEN |
+| Skins, empty | measured | 164 451; saved grid and 4x2 defaults match; preview column open | OPEN |
+| Skins, 3D preview overlay layers | not built | the reference's model has hat and jacket layers | OPEN |
+| Servers | not comparable | the reference answers "Modrinth App update required" | BLOCKED-REFERENCE |
+| Settings, 13 tabs | in flight | a workstream is capturing each tab against its own reference | OPEN |
+| Instance page, 5 tabs | in flight | a workstream is taking the reference capture first | OPEN |
+| Project page + versions pager | in flight | same | OPEN |
+| Account / Follow / Save / Report | no client | BLOCKED-SERVICE |
+| Rendering gate | measured | 48.4 MB idle RSS (bound 20, FAIL), 13.0--14.9 ms p95 (bound 16, PASS) | DONE |
+| CI | no remote in this environment | BLOCKED-ENVIRONMENT |
