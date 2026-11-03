@@ -4897,3 +4897,22 @@ tree). Nothing is left as "assumed".
 | Account / Follow / Save / Report | no client | BLOCKED-SERVICE |
 | Rendering gate | measured | 48.4 MB idle RSS (bound 20, FAIL), 13.0--14.9 ms p95 (bound 16, PASS) | DONE |
 | CI | no remote in this environment | BLOCKED-ENVIRONMENT |
+
+## A correction that invalidates part of the earlier record (2026-11-03)
+
+The Settings workstream proved that **`.scratch/cap/ref-settings.png` and `ref-tab-*.png` are not reference
+captures**: `ref-tab-14.png` is byte-identical to `ours-settings-open.png`, and ref-settings.png carries this
+build's own "Sift Launcher 0.1.62" rail footer. Several settings comparisons in this record were therefore this
+build measured against itself, and the "known" gaps they produced (plate 928 against 900, a scrolling rail, missing
+body blocks) were artefacts of that.
+
+Genuine reference captures now on file, each taken live from the Modrinth App 0.22.0 AppImage on its own display
+with the pointer parked away from the window:
+
+- `ref101-*.png` -- fourteen settings tabs (:101)
+- `ref-instance.png`, `ref-tab-{content,files,screenshots,worlds,logs,share}.png` -- the instance page (:102)
+- `ref-project.png`, `ref-project-versions.png` -- a project's Description and Versions tabs (:103)
+
+The captures this record's headline numbers rest on were checked the same way and hold: `ab-ref-home.png`,
+`ref-discover-fresh.png`, `ref-screenshots.png` and `ref-skins.png` all differ from this build by tens of thousands
+of pixels, so none of them can be a capture of it.
