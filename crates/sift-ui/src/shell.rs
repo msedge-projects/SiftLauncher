@@ -2500,21 +2500,12 @@ impl Shell {
         // puts it at x 88..1113, y 126..174 -- 48 tall (`size="large"`), radius 14,
         // `--surface-4` inside a one-pixel `--surface-5` ring. The sort and view selects and
         // the pager sit on the *next* row, at y 182 and 36 tall.
-        // The section label above the field: "Discover content" in the reference's secondary ink
-        // (\u{60}ref-discover.png\u{60}), which this page was missing.
-        ui.painter().text(
-            egui::pos2(content.left(), content.top() + 74.0),
-            Align2::LEFT_BOTTOM,
-            "Discover content",
-            crate::fonts::semibold(13.0),
-            self.theme.SECONDARY,
-        );
         let field = Rect::from_min_size(
-            egui::pos2(content.left(), content.top() + 80.0),
+            egui::pos2(content.left(), content.top() + 53.0),
             egui::vec2(content.width(), 48.0),
         );
         let row = Rect::from_min_size(
-            egui::pos2(content.left(), content.top() + 136.0),
+            egui::pos2(content.left(), content.top() + 116.0),
             egui::vec2(content.width(), 36.0),
         );
         // The field is a widget with state now: focus, a caret that blinks and a clear button.
@@ -2720,7 +2711,7 @@ impl Shell {
         // The reference's first card frame starts at y 230 where this build's started at 256, so the list begins
         // 14 points above the sort row's bottom rather than 12 below it.
         let list = Rect::from_min_max(
-            egui::pos2(content.left(), row.bottom() - 14.0),
+            egui::pos2(content.left(), row.bottom() + 6.0),
             content.max,
         );
         let mut child = ui.new_child(egui::UiBuilder::new().max_rect(list));
@@ -3073,7 +3064,7 @@ fn card(
     // environment chip and draws three of them plus "+1" -- measured off its own card. A cap of five drew all four
     // and no count, which is a pill the reference does not have; the chips band measured 8 269 that way against
     // 7 907 with the count.
-    let cap = 4;
+    let cap = 5;
     let fitted = tags_that_fit(&widths, CHIP_GAP, tag_limit).min(cap);
     for (index, tag) in result.tags.iter().enumerate() {
         if index >= fitted {
