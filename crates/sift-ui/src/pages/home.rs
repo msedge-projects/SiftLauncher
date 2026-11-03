@@ -115,16 +115,32 @@ const PLAY_SIZE: f32 = 40.0;
 /// tests aim at exactly the rects the drawing registers, which is the only way a printed
 /// number and a press can be the same number.
 fn row_targets(rect: Rect, index: usize) -> (Rect, Rect, Rect) {
+    // **A grid, as the reference draws it.** Driving its Home page (display :107) showed a wall of cards: the
+    // first plate starts at x 88 and is 168 wide with the pack's icon filling its top and the name and
+    // loader+version under it. This build drew one full-width row per instance with the Play pill and the kebab
+    // inside it, which is a different object on a different page.
+    const CARD_W: f32 = 168.0;
+    const CARD_H: f32 = 208.0;
+    const GAP: f32 = 12.0;
+    let columns = ((rect.width() + GAP) / (CARD_W + GAP)).floor().max(1.0) as usize;
+    let column = index % columns;
+    let row = index / columns;
     let card = Rect::from_min_size(
-        egui::pos2(rect.left(), rect.top() + ROW_TOP + index as f32 * ROW_STEP),
-        egui::vec2(rect.width(), ROW_HEIGHT),
+        egui::pos2(
+            rect.left() + column as f32 * (CARD_W + GAP),
+            rect.top() + ROW_TOP + row as f32 * (CARD_H + GAP),
+        ),
+        egui::vec2(CARD_W, CARD_H),
     );
+    // The old row's constants are still what `ROWS_SHOWN` and the tests read; the grid card is the shape the
+    // reference draws, and the plate below uses this rect.
+    // The two actions sit over the card's foot, where a card of this size can carry them.
     let play = Rect::from_center_size(
-        egui::pos2(card.right() - PLAY_INSET, card.center().y),
-        Vec2::splat(PLAY_SIZE),
+        egui::pos2(card.left() + 28.0, card.bottom() - 24.0),
+        Vec2::splat(32.0),
     );
     let kebab = Rect::from_center_size(
-        egui::pos2(play.right() + ROW_ACTION_GAP + KEBAB_SIZE / 2.0, card.center().y),
+        egui::pos2(card.right() - 20.0, card.bottom() - 24.0),
         Vec2::splat(KEBAB_SIZE),
     );
     (card, play, kebab)
@@ -1094,7 +1110,9 @@ fn list(
         // The card, its pill and its kebab from the one function the probe and the tests read.
         let (card, play, kebab) = row_targets(rect, index);
         painter.rect_filled(card, 12, theme.RAISED_BG);
-        let tile = Rect::from_min_size(card.min + egui::vec2(16.0, 16.0), Vec2::splat(64.0));
+        // The reference's card: the pack's icon fills the top of the plate at the card's own radius, with the name
+        // and the loader+version under it. This drew a 64-point tile with the rows' text beside it.
+        let tile = Rect::from_min_size(card.min + egui::vec2(8.0, 8.0), egui::vec2(152.0, 152.0));
         painter.rect_filled(tile, 12, theme.BUTTON_BG);
         // **The instance's own icon.** This drew an empty plate and threw the cache away (`let _ = icons_cache`);
         // Modrinth's library shows each instance's icon, so a row without one is a library that cannot be told
@@ -1138,10 +1156,10 @@ fn list(
         }
 
         painter.text(
-            egui::pos2(card.left() + 96.0, card.top() + 20.0),
+            egui::pos2(card.left() + 10.0, tile.bottom() + 8.0),
             Align2::LEFT_TOP,
             &instance.name,
-            fonts::title(17.0),
+            fonts::semibold(15.0),
             theme.CONTRAST,
         );
         let loader = if instance.version.is_empty() {
@@ -1150,7 +1168,7 @@ fn list(
             format!("{} {}", instance.loader, instance.version)
         };
         painter.text(
-            egui::pos2(card.left() + 96.0, card.top() + 46.0),
+            egui::pos2(card.left() + 10.0, tile.bottom() + 26.0),
             Align2::LEFT_TOP,
             loader,
             fonts::body(13.0),
