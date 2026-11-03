@@ -219,7 +219,12 @@ pub enum Tab {
 }
 
 impl Tab {
-    /// The six tabs the reference's strip draws in this lab, in its order (`layout.vue:466-524`).
+    /// The tabs the strip draws, in the reference's order (`layout.vue:466-524`).
+    ///
+    /// **Screenshots is conditional**: the reference only adds it when
+    /// `appSettings.showScreenshotsTabInInstances` is set (`layout.vue:530`), and a fresh profile leaves it off --
+    /// its own instance page, driven in this lab, draws five tabs (Content, Files, Worlds, Logs, Share) where this
+    /// build drew six on every profile.
     pub const ALL: [Tab; 6] = [
         Tab::Content,
         Tab::Files,
@@ -228,6 +233,14 @@ impl Tab {
         Tab::Logs,
         Tab::Share,
     ];
+
+    /// The strip as a profile actually draws it.
+    pub fn shown(show_screenshots: bool) -> Vec<Tab> {
+        Tab::ALL
+            .into_iter()
+            .filter(|tab| show_screenshots || *tab != Tab::Screenshots)
+            .collect()
+    }
 
     /// The tab's label, verbatim from
     /// `vendor/modrinth-app/app-frontend/src/locales/en-US/index.json`.
@@ -487,7 +500,7 @@ fn cube(painter: &egui::Painter, avatar: Rect) {
 /// Returns the track's rect, which is what the tab body is placed under.
 fn tab_strip(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State) -> Rect {
     let painter = ui.painter().clone();
-    let pills: Vec<(Tab, f32)> = Tab::ALL
+    let pills: Vec<(Tab, f32)> = Tab::shown(false)
         .iter()
         .map(|tab| {
             let label = painter

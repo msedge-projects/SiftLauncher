@@ -520,134 +520,252 @@ impl Shell {
         // loader and a game version; this draws the three rows it will fill, so the step exists
         // and can be walked before any of them takes input.
         if self.create_step == 1 {
-            for (index, (label, value)) in [
-                ("Name", "Name your instance"),
-                // The chips below decide this; the label reports what they chose. The value is
-                // still not written into the instance -- that is the next slice -- so the chips
-                // change the dialog and not yet the profile.
-                ("Loader", self.create_loader.as_str()),
-                ("Game version", self.create_version.as_str()),
+            // **Measured off the reference's own step** (its plate is x 362..926, y 66..730): an icon block 96
+            // square at (24,104) with Upload / Randomize / Customize beside it, Name at +266, Loader at +350,
+            // Game version at +436, Loader version at +524, and Back + "+ Create instance" at the foot. This drew
+            // three labelled rows and one Create button, which is a different dialog.
+            let icon = egui::Rect::from_min_size(
+                egui::pos2(plate.left() + 24.0, plate.top() + 104.0),
+                egui::Vec2::splat(96.0),
+            );
+            painter.rect_filled(icon, 16.0, theme.BRAND);
+            crate::icons::draw(
+                &painter,
+                crate::icons::Glyph::PackageClosed,
+                egui::Rect::from_center_size(icon.center(), egui::Vec2::splat(44.0)),
+                theme.ACCENT_CONTRAST,
+            );
+            for (index, (label, mark)) in [
+                ("Upload", crate::icons::Glyph::Upload),
+                ("Randomize", crate::icons::Glyph::ArrowLeftRight),
+                ("Customize", crate::icons::Glyph::Settings),
             ]
             .into_iter()
             .enumerate()
             {
-                let row = egui::Rect::from_min_size(
-                    egui::pos2(left, plate.top() + 62.0 + index as f32 * 62.0),
-                    egui::vec2(right - left, 52.0),
+                let button = egui::Rect::from_min_size(
+                    egui::pos2(icon.right() + 16.0, icon.top() + index as f32 * 42.0),
+                    egui::vec2(136.0, 34.0),
+                );
+                painter.rect_filled(button, 8.0, theme.BUTTON_BG);
+                crate::icons::draw(
+                    &painter,
+                    mark,
+                    egui::Rect::from_center_size(
+                        egui::pos2(button.left() + 20.0, button.center().y),
+                        egui::Vec2::splat(14.0),
+                    ),
+                    theme.BASE,
                 );
                 painter.text(
-                    egui::pos2(row.left(), row.top()),
-                    egui::Align2::LEFT_TOP,
+                    egui::pos2(button.left() + 38.0, button.center().y),
+                    egui::Align2::LEFT_CENTER,
                     label,
-                    crate::fonts::semibold(13.0),
+                    crate::fonts::body(13.0),
+                    theme.BASE,
+                );
+            }
+            // Name: the reference's placeholder is the loader and version it would use, not an instruction.
+            painter.text(
+                egui::pos2(left, plate.top() + 266.0),
+                egui::Align2::LEFT_TOP,
+                "Name",
+                crate::fonts::semibold(13.0),
+                theme.CONTRAST,
+            );
+            let name_field = egui::Rect::from_min_size(
+                egui::pos2(left, plate.top() + 290.0),
+                egui::vec2(right - left, 40.0),
+            );
+            let mut name = self.create_name.clone();
+            ui.put(
+                name_field,
+                egui::TextEdit::singleline(&mut name)
+                    .id(egui::Id::new("create-name-field"))
+                    .hint_text(format!("{} {}", self.create_loader, self.create_version))
+                    .text_color(theme.CONTRAST)
+                    .desired_width(name_field.width()),
+            );
+            if name != self.create_name {
+                self.create_name = name;
+            }
+            // Loader: five chips, the chosen one filled and ticked, as the reference draws them.
+            painter.text(
+                egui::pos2(left, plate.top() + 350.0),
+                egui::Align2::LEFT_TOP,
+                "Loader",
+                crate::fonts::semibold(13.0),
+                theme.CONTRAST,
+            );
+            let mut chip_x = left;
+            for loader in ["Vanilla", "Fabric", "NeoForge", "Forge", "Quilt"] {
+                let chosen = self.create_loader == loader;
+                let text = painter.layout_no_wrap(
+                    loader.to_owned(),
+                    crate::fonts::body(13.0),
                     theme.CONTRAST,
                 );
-                let field = egui::Rect::from_min_size(
-                    egui::pos2(row.left(), row.top() + 20.0),
-                    egui::vec2(row.width(), 28.0),
+                let width = text.size().x + if chosen { 46.0 } else { 28.0 };
+                let chip = egui::Rect::from_min_size(
+                    egui::pos2(chip_x, plate.top() + 374.0),
+                    egui::vec2(width, 36.0),
                 );
-                painter.rect_filled(field, 8.0, theme.BUTTON_BG);
-                // The first row's text comes from the real field placed below; painting the
-                // placeholder here as well would draw it twice, and did -- the probe showed the
-                // state holding "abc" while the plate still read "Name your instance".
-                if index != 0 {
-                    painter.text(
-                        egui::pos2(field.left() + 10.0, field.center().y),
-                        egui::Align2::LEFT_CENTER,
-                        value,
-                        crate::fonts::body(13.0),
-                        theme.SECONDARY,
+                if chosen {
+                    painter.rect_filled(chip, 18.0, theme.BUTTON_BG_SELECTED);
+                    crate::icons::draw(
+                        &painter,
+                        crate::icons::Glyph::Check,
+                        egui::Rect::from_center_size(
+                            egui::pos2(chip.left() + 18.0, chip.center().y),
+                            egui::Vec2::splat(12.0),
+                        ),
+                        theme.BRAND,
                     );
+                } else {
+                    painter.rect_filled(chip, 18.0, theme.BUTTON_BG);
                 }
+                painter.galley(
+                    egui::pos2(chip.left() + if chosen { 30.0 } else { 14.0 }, chip.center().y - 8.0),
+                    text,
+                    theme.CONTRAST,
+                );
+                if settled && clicked && pointer.is_some_and(|point| chip.contains(point)) {
+                    self.create_loader = loader.to_owned();
+                    ctx.request_repaint();
+                }
+                chip_x = chip.right() + 8.0;
             }
-            // The name takes typing: a real `TextEdit` over the painted plate, in an area on
-            // the same foreground layer. A painted field that cannot be typed into is the exact
-            // half-truth this codebase spent twelve rounds proving was not true of it.
-            let name_field = egui::Rect::from_min_size(
-                egui::pos2(left, plate.top() + 82.0),
-                egui::vec2(right - left, 28.0),
+            // Game version: a field with the dropdown's chevron; a press cycles it, which is the same value the
+            // create flow now records.
+            painter.text(
+                egui::pos2(left, plate.top() + 436.0),
+                egui::Align2::LEFT_TOP,
+                "Game version",
+                crate::fonts::semibold(13.0),
+                theme.CONTRAST,
             );
-            // Placed on the frame's own `ui`, which carries real screen coordinates. The Area
-            // this replaced put the widget at the layer's origin -- the probe found it at
-            // (0,0) with nothing under the click -- because `ui.put`'s rect is read inside the
-            // area, not on the screen.
-            let mut name = self.create_name.clone();
-            // Its own area, so the field is drawn on a layer that is not the panel's clip: on
-            // the frame's ui after the panel returned, egui culled the glyphs while still
-            // delivering input -- the state held "abc" and the plate looked empty.
-            // Directly on the panel's ui. The diagnostic proved this exact widget paints when
-            // put here; every empty plate came from the Area mount that wrapped it.
-            // The game-version row takes a press and cycles. The reference opens a list here; until that list is
-            // built, a press has to do something real rather than nothing -- and what it must never do again is
-            // report one version and create another.
-            let version_row = egui::Rect::from_min_size(
-                egui::pos2(left, plate.top() + 62.0 + 2.0 * 62.0 + 20.0),
-                egui::vec2(right - left, 28.0),
+            let version_field = egui::Rect::from_min_size(
+                egui::pos2(left, plate.top() + 460.0),
+                egui::vec2(right - left, 40.0),
             );
-            if ui
-                .interact(version_row, egui::Id::new("create-version-row"), Sense::click())
-                .clicked()
-            {
+            painter.rect_filled(version_field, 10.0, theme.BUTTON_BG);
+            painter.text(
+                egui::pos2(version_field.left() + 14.0, version_field.center().y),
+                egui::Align2::LEFT_CENTER,
+                self.create_version.as_str(),
+                crate::fonts::body(13.0),
+                theme.CONTRAST,
+            );
+            crate::icons::draw(
+                &painter,
+                crate::icons::Glyph::ChevronDown,
+                egui::Rect::from_center_size(
+                    egui::pos2(version_field.right() - 18.0, version_field.center().y),
+                    egui::Vec2::splat(14.0),
+                ),
+                theme.SECONDARY,
+            );
+            if settled && clicked && pointer.is_some_and(|point| version_field.contains(point)) {
                 const VERSIONS: [&str; 4] = ["26.3", "1.21.4", "1.20.6", "1.20.1"];
                 let at = VERSIONS
                     .iter()
                     .position(|version| *version == self.create_version)
                     .unwrap_or(0);
                 self.create_version = VERSIONS[(at + 1) % VERSIONS.len()].to_owned();
-                ui.ctx().request_repaint();
+                ctx.request_repaint();
             }
-            ui.put(
-                name_field,
-                egui::TextEdit::singleline(&mut name)
-                    .id(egui::Id::new("create-name-field"))
-                    .hint_text("Name your instance")
-                    .text_color(theme.CONTRAST)
-                    .desired_width(name_field.width()),
+            // Loader version: the reference's three chips.
+            painter.text(
+                egui::pos2(left, plate.top() + 524.0),
+                egui::Align2::LEFT_TOP,
+                "Loader version",
+                crate::fonts::semibold(13.0),
+                theme.CONTRAST,
             );
-
-            self.create_name = name;
-            // The loader chips, under the Loader row: the control the reference offers, which
-            // this step had as a painted label only.
-            for (index, loader) in ["Vanilla", "Fabric", "NeoForge"].into_iter().enumerate() {
-                let chip = egui::Rect::from_min_size(
-                    egui::pos2(left + index as f32 * 92.0, plate.top() + 238.0),
-                    egui::vec2(84.0, 26.0),
+            let mut stable_x = left;
+            for (index, label) in ["Stable", "Latest", "Other"].into_iter().enumerate() {
+                let chosen = index == 0;
+                let text = painter.layout_no_wrap(
+                    label.to_owned(),
+                    crate::fonts::body(13.0),
+                    theme.CONTRAST,
                 );
-                let chosen = self.create_loader == loader;
+                let width = text.size().x + if chosen { 46.0 } else { 28.0 };
+                let chip = egui::Rect::from_min_size(
+                    egui::pos2(stable_x, plate.top() + 548.0),
+                    egui::vec2(width, 36.0),
+                );
                 painter.rect_filled(
                     chip,
-                    8.0,
-                    if chosen { theme.BRAND } else { theme.SURFACE_4 },
+                    18.0,
+                    if chosen { theme.BUTTON_BG_SELECTED } else { theme.BUTTON_BG },
                 );
-                painter.text(
-                    chip.center(),
-                    egui::Align2::CENTER_CENTER,
-                    loader,
-                    crate::fonts::semibold(12.0),
-                    if chosen { theme.ACCENT_CONTRAST } else { theme.BASE },
-                );
-                if settled && clicked && pointer.is_some_and(|point| chip.contains(point)) {
-                    self.create_loader = loader.to_owned();
-                    ctx.request_repaint();
+                if chosen {
+                    crate::icons::draw(
+                        &painter,
+                        crate::icons::Glyph::Check,
+                        egui::Rect::from_center_size(
+                            egui::pos2(chip.left() + 18.0, chip.center().y),
+                            egui::Vec2::splat(12.0),
+                        ),
+                        theme.BRAND,
+                    );
                 }
+                painter.galley(
+                    egui::pos2(chip.left() + if chosen { 30.0 } else { 14.0 }, chip.center().y - 8.0),
+                    text,
+                    theme.CONTRAST,
+                );
+                stable_x = chip.right() + 8.0;
             }
-            // The button that finishes the step. It uses the path the rail's plus used to run
-            // -- the one that creates an instance -- so the dialog can be walked end to end.
-            // What it does not yet do is read the typed name or the loader; that is the next
-            // slice, and this one is the difference between a form and a form that submits.
-            let button = egui::Rect::from_min_size(
-                egui::pos2(plate.right() - 16.0 - 120.0, plate.bottom() - 16.0 - 34.0),
-                egui::vec2(120.0, 34.0),
+            // The foot: Back on the left, "+ Create instance" on the right.
+            let back = egui::Rect::from_min_size(
+                egui::pos2(left, plate.bottom() - 56.0),
+                egui::vec2(92.0, 40.0),
             );
-            painter.rect_filled(button, 10.0, theme.BRAND);
+            painter.rect_filled(back, 10.0, theme.BUTTON_BG);
+            crate::icons::draw(
+                &painter,
+                crate::icons::Glyph::ArrowLeft,
+                egui::Rect::from_center_size(
+                    egui::pos2(back.left() + 20.0, back.center().y),
+                    egui::Vec2::splat(14.0),
+                ),
+                theme.BASE,
+            );
             painter.text(
-                button.center(),
-                egui::Align2::CENTER_CENTER,
-                "Create",
+                egui::pos2(back.left() + 34.0, back.center().y),
+                egui::Align2::LEFT_CENTER,
+                "Back",
+                crate::fonts::body(13.0),
+                theme.BASE,
+            );
+            if settled && clicked && pointer.is_some_and(|point| back.contains(point)) {
+                self.create_step = 0;
+                ctx.request_repaint();
+            }
+            let create = egui::Rect::from_min_size(
+                egui::pos2(right - 176.0, plate.bottom() - 56.0),
+                egui::vec2(176.0, 40.0),
+            );
+            painter.rect_filled(create, 10.0, theme.BRAND);
+            crate::icons::draw(
+                &painter,
+                crate::icons::Glyph::BoxPlus,
+                egui::Rect::from_center_size(
+                    egui::pos2(create.left() + 22.0, create.center().y),
+                    egui::Vec2::splat(14.0),
+                ),
+                theme.ACCENT_CONTRAST,
+            );
+            painter.text(
+                egui::pos2(create.left() + 38.0, create.center().y),
+                egui::Align2::LEFT_CENTER,
+                "Create instance",
                 crate::fonts::semibold(14.0),
                 theme.ACCENT_CONTRAST,
             );
-            if settled && clicked && pointer.is_some_and(|point| button.contains(point)) {
+            if settled && clicked && pointer.is_some_and(|point| create.contains(point)) {
                 self.create_open = false;
                 self.act(crate::pages::home::Action::Create);
                 ctx.request_repaint();
