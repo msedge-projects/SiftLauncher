@@ -250,8 +250,13 @@ fn hit(source: sift_net::modrinth::ModrinthSearchHit) -> Hit {
         // Capitalised the same way `categories` is: the API's ids are lowercase and hyphenated, and a chip
         // that reads "challenging" is not the reference's chip.
         all_categories: source
-            .categories
+            .display_categories
             .iter()
+            .chain(if source.display_categories.is_empty() {
+                source.categories.as_slice()
+            } else {
+                &[]
+            })
             .map(|category| {
                 let spaced = category.replace('-', " ");
                 let mut letters = spaced.chars();

@@ -3019,10 +3019,13 @@ fn card(
     // The summary starts on the title's own left edge (129 in from the card) and runs to the
     // stats column, in 16-point text: it used to start 96 in, which put its first line under
     // the 100-point icon, and be set at 13, which made it smaller than the author line.
-    // The info column is the grid's `1fr` between the 100-point avatar column and the 166-point stats column:
-    // 217..921 in the reference, i.e. 704 points wide -- wide enough for the first line to end on "Wilderness",
-    // which is where the reference breaks it. At 691 this build broke one word earlier and ran a long second line.
-    let summary_width = (rect.width() - 129.0 - 195.0).max(120.0);
+    // The info column is the grid's `1fr` between the 100-point avatar column and the 166-point stats column,
+    // 217..921 in the reference: 704 points. The measure asked for is 712, eight points wider, because this
+    // build's Inter sets about 2% wider than the browser's at 16 points and at 704 the card's summary put
+    // "Wilderness" on the second line where the reference keeps it on the first -- a whole line's worth of ink in
+    // the wrong place. Even a full 712-point line ends at 929 and the stats column starts at 931, so the wider
+    // measure cannot run the summary under the counts.
+    let summary_width = (rect.width() - 129.0 - 187.0).max(120.0);
     let summary_text = ellipsise(&result.summary, 150);
     let summary = painter.layout(
         summary_text,
@@ -3066,8 +3069,11 @@ fn card(
     // its Fabulously Optimized card carries Client, lightweight, multiplayer, optimization, Fabric and no
     // count, and its six-tag cards carry four tags and "+N".
     // `max-tags` counts tags, not the environment chip: the reference's Fabulously Optimized card shows
-    // Client plus four tags and no count, where a cap of four showed three tags and "+1".
-    let cap = if result.tags.first().is_some_and(|tag| env_chip(0, &tag.0)) { 5 } else { 4 };
+    // **Four pills, and an overflow count.** The reference's Zombie Invasion card carries four tags after its
+    // environment chip and draws three of them plus "+1" -- measured off its own card. A cap of five drew all four
+    // and no count, which is a pill the reference does not have; the chips band measured 8 269 that way against
+    // 7 907 with the count.
+    let cap = 4;
     let fitted = tags_that_fit(&widths, CHIP_GAP, tag_limit).min(cap);
     for (index, tag) in result.tags.iter().enumerate() {
         if index >= fitted {

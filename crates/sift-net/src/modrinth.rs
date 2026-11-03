@@ -373,6 +373,14 @@ pub struct ModrinthSearchHit {
     /// same list, and its own cards draw both from it.
     #[serde(default)]
     pub categories: Vec<String>,
+    /// The tags the reference's cards actually draw, which the v3 search API sends beside `categories`.
+    ///
+    /// `display_categories` is the *rendered* set: it leaves out the loaders a project type cannot use and orders
+    /// the rest the way the card draws them, where `categories` is the raw tag list. The reference's card reads this
+    /// field (`SearchResult.vue`'s `display_categories`), which is why its fourth chip on a Forge modpack is
+    /// "Forge" and its "+N" count differs from a count taken over `categories`.
+    #[serde(default)]
+    pub display_categories: Vec<String>,
 }
 
 impl ModrinthSearchHit {
