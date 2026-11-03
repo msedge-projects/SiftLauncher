@@ -104,7 +104,6 @@ use eframe::egui::{self, Align2, Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
 
 use crate::fonts;
 use crate::icons::{self, Glyph};
-use crate::images::Images;
 use crate::skins::SavedSkin;
 use crate::theme::Theme;
 
@@ -380,15 +379,127 @@ const DEMO_TITLE: &str = "Editing with a demo account";
 const DEMO_DESCRIPTION: &str = "Sign in to your Minecraft account to save and apply skins!";
 const SIGN_IN_MICROSOFT: &str = "Sign in to Microsoft";
 
-/// The preview column's width, and the gap beside it. `// guess: re-measure` -- the
-/// reference's column is a flexible third of the page and this is a fixed plate.
-const PREVIEW_WIDTH: f32 = 320.0;
+/// "Drag to rotate" -- the hint the reference prints under the model. It is not a locale
+/// string: `SkinPreviewRendererImpl.vue:17` carries it as literal English, so this page takes
+/// it from there rather than inventing a key.
+const DRAG_TO_ROTATE: &str = "Drag to rotate";
+
+// ---------------------------------------------------------------------------
+// The route's two columns, and the preview column inside the first of them
+// ---------------------------------------------------------------------------
+
+/// The route's own inset: `p-4` on `.skin-layout` (`Skins.vue:1085`) = 1rem. The page's
+/// content box is the shell's content column inset by this, not by [`PAGE_PADDING`]: the
+/// reference draws its columns from x 80 and its heading from x 88, where a 24-point inset
+/// inside the shell's 88-point page rect would put them at 112 and 113.
+const ROUTE_PADDING: f32 = 16.0;
+
+/// The sticky wrapper's padding, `p-2` on `Skins.vue:1086` -- the 8 points between the
+/// route's box and the heading.
+const HEADER_PADDING: f32 = 8.0;
+
+/// The route's columns: `grid-template-columns: minmax(0, 1fr) minmax(0, 2.5fr)` with
+/// `gap: 2.5rem` (`Skins.vue:1340-1348`). Kept as two shares so the split is `share /
+/// (PREVIEW_SHARE + LIST_SHARE)` of whatever the gap leaves.
+const PREVIEW_SHARE: f32 = 1.0;
+const LIST_SHARE: f32 = 2.5;
+const COLUMN_GAP: f32 = 40.0;
+
+/// `ml-5` on the renderer's wrapper (`Skins.vue:1091`): the model sits 20 points inside the
+/// column the heading is 8 inside.
+const PREVIEW_INDENT: f32 = 20.0;
+
+/// `mt-4` between the heading and the renderer (`Skins.vue:1091`).
 const PREVIEW_GAP: f32 = 16.0;
-/// Below this content width the column is dropped rather than squeezing the grid: two cards
-/// and the preview do not fit a page this narrow.
-const PREVIEW_BREAKPOINT: f32 = 900.0;
-/// The preview's corner, matching a card's.
-const PREVIEW_RADIUS: u8 = 20;
+
+/// `h-[calc(80vh-1rem)]` on the renderer (`Skins.vue:1091`): 720 - 16 at this window.
+const PREVIEW_HEIGHT: f32 = 704.0;
+
+/// Below this column width the preview is dropped rather than squeezed: the reference collapses
+/// to one column under 700 points of page (`Skins.vue:1345`), and the model needs room beside
+/// the list's cards before it is worth drawing.
+const PREVIEW_MIN_WIDTH: f32 = 220.0;
+
+/// Where the character's head-top sits below the renderer's top, and how many points one skin
+/// texel is worth. Measured from `.scratch/cap/ref-skins.png`: the character is 157 by 299
+/// points with its head at y 290, in a renderer whose box is y 120 to 824 -- and a skin is 32
+/// texels from head to foot.
+const MODEL_HEAD_TOP: f32 = 170.0;
+const MODEL_TEXEL: f32 = 9.34;
+
+/// The "Drag to rotate" row's 24-point line and the "Edit skin" button's 40-point box,
+/// measured the same way: y 652 and y 700 against a renderer whose top is 120.
+const DRAG_ROW_TOP: f32 = 532.0;
+const EDIT_TOP: f32 = 580.0;
+
+/// The glyph both rows carry: `size-5` (`SkinPreviewRendererImpl.vue:15`,
+/// `ButtonFrame.vue:38`).
+const ROW_GLYPH: f32 = 20.0;
+
+/// `gap-1.5` between the drag row's glyph and its label.
+const ROW_GAP: f32 = 6.0;
+
+/// The drag row's label: `text-base font-medium leading-6`
+/// (`SkinPreviewRendererImpl.vue:17`).
+const ROW_TEXT_SIZE: f32 = 16.0;
+const ROW_LINE: f32 = 24.0;
+
+/// The edit button: `type="base" size="lg"` -- `h-10 rounded-[14px] px-4 gap-2 text-base`
+/// (`ButtonFrame.vue:38`), with `bg-surface-4` and its `inset 0 0 0 1px var(--surface-5)`
+/// ring (`ButtonFrame.vue:172-176`).
+const EDIT_HEIGHT: f32 = 40.0;
+const EDIT_PADDING: f32 = 16.0;
+const EDIT_GAP: f32 = 8.0;
+const EDIT_RADIUS: u8 = 14;
+const ACTION_TEXT_SIZE: f32 = 16.0;
+
+/// The account bar: `mx-auto w-full max-w-5xl ... rounded-[20px] border border-surface-5
+/// bg-surface-3 p-4` in a `p-4 pt-0` sticky wrapper at the page's foot
+/// (`Skins.vue:1263-1268`).
+const ACCOUNT_BAR_MAX: f32 = 1024.0;
+const ACCOUNT_BAR_HEIGHT: f32 = 86.0;
+const ACCOUNT_BAR_MARGIN: f32 = 15.0;
+const ACCOUNT_BAR_PADDING: f32 = 16.0;
+const ACCOUNT_BAR_RADIUS: u8 = 20;
+
+/// `InfoIcon.size-6` and the `gap-3` beside it (`Skins.vue:1269-1270`).
+const ACCOUNT_ICON: f32 = 24.0;
+const ACCOUNT_GAP: f32 = 12.0;
+
+/// The bar's two lines: `text-lg font-semibold leading-6` over `text-base leading-6`, with
+/// `gap-1` between them (`Skins.vue:1272-1278`). Our body face draws its ink 3 points into a
+/// 24-point line where the reference's draws it 6.5, so the gap is the source's 4 plus the 4
+/// that puts the second line's ink on the capture's (rows 850-864).
+const ACCOUNT_TITLE_SIZE: f32 = 18.0;
+const ACCOUNT_LINE: f32 = 24.0;
+const ACCOUNT_TEXT_GAP: f32 = 8.0;
+const ACCOUNT_BODY_SIZE: f32 = 16.0;
+
+/// The sign-in button: a `md` frame -- `h-9 rounded-xl px-2.5 gap-1.5 text-base
+/// font-semibold`, `[&>svg]:size-5` (`ButtonFrame.vue:34`), filled with `--button-color`
+/// (`:61`).
+const SIGN_IN_HEIGHT: f32 = 36.0;
+const SIGN_IN_PADDING: f32 = 10.0;
+const SIGN_IN_GAP: f32 = 6.0;
+const SIGN_IN_RADIUS: u8 = 12;
+
+/// The logo the reference's sign-in button carries (`WindowsIcon`): four squares.
+const SIGN_IN_LOGO: f32 = 20.0;
+
+/// Where the list column's first section header starts, relative to the route's top. The
+/// source's list column starts at the same row top as the heading and pads itself `pt-2`
+/// (`Skins.vue:1241`); this page's header draws its ink 13 points into its box where the
+/// reference's draws it 6, so the strip starts 4.5 points lower to land the header's ink on
+/// the reference's -- both captures put it at rows 82-97.
+const LIST_TOP_OFFSET: f32 = 4.5;
+
+/// `SKIN_SECTION_SPACING` in the source: the 24 points between two sections
+/// (`VirtualSkinSectionList.vue:51`).
+const SKIN_SECTION_SPACING: f32 = 24.0;
+
+/// The Default skins strip's columns: the reference lays its eight catalogue skins out four to
+/// a row (`VirtualSkinSectionList.vue:114-128` at this window's list width).
+const DEFAULTS_COLUMNS: usize = 4;
 
 /// `app.skins.section.default-skins` — "Default skins" (`locales/en-US/index.json:3248-3250`),
 /// the second section of the reference's right-hand column.
@@ -710,7 +821,7 @@ pub fn draw(
     ui: &mut egui::Ui,
     rect: egui::Rect,
     theme: &crate::theme::Theme,
-    images: &mut crate::images::Images,
+    _images: &mut crate::images::Images,
     state: &mut State,
 ) -> bool {
     // Every sample skin's view, uploaded on first use and read by name below: the grid
@@ -768,37 +879,39 @@ pub fn draw(
         state.selected_file = state.files.first().map(|skin| skin.path.clone());
     }
 
-    let toolbar_bottom = heading_and_toolbar(ui, rect, theme, state);
+    let content = page_box(rect);
+    let toolbar_bottom = heading_and_toolbar(ui, content, theme, state);
     if toolbar_bottom >= rect.bottom() - PAGE_PADDING {
         return false;
     }
 
-    // The preview column takes the left third when the page is wide enough to hold it beside
-    // two cards; otherwise the grid keeps the whole width, as it did before the column existed.
-    let content_left = rect.left() + PAGE_PADDING;
-    let content_right = rect.right() - PAGE_PADDING;
-    let content_width = (content_right - content_left).max(0.0);
-    let show_preview = content_width >= PREVIEW_BREAKPOINT;
-    let mut grid_left = content_left;
+    // The route's two columns: the preview takes the 1fr, the list the 2.5fr, and the grid
+    // resolves inside what is left.
+    let column = preview_column_width(content.width());
+    let show_preview = column >= PREVIEW_MIN_WIDTH;
+    let list_left = if show_preview {
+        content.left() + column + COLUMN_GAP
+    } else {
+        content.left() - HEADER_PADDING
+    };
     if show_preview {
-        let preview = Rect::from_min_max(
-            egui::pos2(content_left, toolbar_bottom),
-            egui::pos2(content_left + PREVIEW_WIDTH, rect.bottom() - PAGE_PADDING),
+        let renderer = Rect::from_min_size(
+            egui::pos2(
+                content.left() + HEADER_PADDING + PREVIEW_INDENT,
+                toolbar_bottom + PREVIEW_GAP,
+            ),
+            egui::vec2(column - 2.0 * HEADER_PADDING - PREVIEW_INDENT, PREVIEW_HEIGHT),
         );
-        draw_preview(ui, preview, theme, state, images);
-        grid_left = preview.right() + PREVIEW_GAP;
+        draw_preview(ui, renderer, theme, state);
     }
 
-    let grid_top = section_header(ui, grid_left, toolbar_bottom, theme, SECTION_TITLE);
-    // The Saved grid stops short of the page's foot by the height of the Default skins
-    // heading, so that second heading has somewhere to be drawn that a reader can see.
-    let defaults_strip = SECTION_HEADER_LINE + SECTION_CONTENT_SPACING + HEADING_LINE;
+    let list_top = content.top() + LIST_TOP_OFFSET;
+    let grid_top = section_header(ui, list_left, list_top, theme, SECTION_TITLE);
+    // The list's box runs to the window's foot: the account bar is sticky over the scrolling
+    // list, so the grid passes under it rather than stopping short of it.
     let grid_rect = Rect::from_min_max(
-        egui::pos2(grid_left, grid_top),
-        egui::pos2(
-            content_right,
-            (rect.bottom() - PAGE_PADDING - defaults_strip).max(grid_top + GRID_MIN_HEIGHT),
-        ),
+        egui::pos2(list_left, grid_top),
+        egui::pos2(content.right(), rect.bottom()),
     );
     if grid_rect.width() < 1.0 || grid_rect.height() < 1.0 {
         return false;
@@ -861,7 +974,7 @@ pub fn draw(
             let tile =
                 Rect::from_min_size(grid_rect.min, egui::vec2(grid.card_width, grid.card_height));
             dropzone_tile(&painter, tile, theme);
-            below_grid = tile.bottom() + GRID_GAP;
+            below_grid = tile.bottom();
         }
         // A filtered grid with no survivors: this state is this launcher's own, since the
         // reference has no search on this page.
@@ -879,17 +992,7 @@ pub fn draw(
             let rows = slots.div_ceil(columns);
             let grid_height =
                 (rows as f32 * (grid.card_height + GRID_GAP) - GRID_GAP).max(GRID_MIN_HEIGHT);
-            // The default skins ride in the same column, under the cards, as the reference's one
-            // scrolling list does: in the page's fixed strip below the scroll they had no room.
-            let defaults_top_local = grid_height + SECTION_GAP;
-            // Measured from the reference's own capture: its default-skin cards are 170 wide on a 13-point gap,
-            // four to a row (x 407, 589, 771, 954) and two rows deep, where this build drew one row of
-            // column-width cards.
-            let default_card = 170.0;
-            let content_height = defaults_top_local + HEADING_LINE + 2.0 * (default_card * 1.2 + GRID_GAP);
-            // Directly under the cards when they fit, and at the reserved strip when they
-            // do not: the heading follows the content, not the space reserved for it.
-            below_grid = grid_rect.top() + content_height.min(grid_rect.height()) + SECTION_GAP;
+            below_grid = grid_rect.top() + grid_height;
 
             // The source scrolls the whole page; this page owns only the column below its
             // section header, so the scroll area starts at the grid.
@@ -901,7 +1004,7 @@ pub fn draw(
                     // the fold, then paint the cards at the source's absolute positions
                     // (`instance-group/index.vue:164-171`).
                     let (area, _) = ui.allocate_exact_size(
-                        egui::vec2(grid_rect.width(), content_height),
+                        egui::vec2(grid_rect.width(), grid_height),
                         Sense::hover(),
                     );
                     let painter = ui.painter().clone();
@@ -966,55 +1069,18 @@ pub fn draw(
                             dropzone_tile(&painter, card, theme);
                         }
                     }
-
-                    // The default skins, under the cards in the same column.
-                    let heading = area.top() + defaults_top_local;
-                    painter.text(
-                        egui::pos2(area.left(), heading),
-                        Align2::LEFT_TOP,
-                        DEFAULT_SECTION_TITLE,
-                        fonts::semibold(16.0),
-                        theme.CONTRAST,
-                    );
-                    for index in 0..ART.len() {
-                        // Four to a row, wrapping: the reference's grid is 4 x 2 for its eight defaults.
-                        let column = index % 4;
-                        let row = index / 4;
-                        let tile = Rect::from_min_size(
-                            egui::pos2(
-                                area.left() + column as f32 * (default_card + 13.0),
-                                heading + HEADING_LINE + row as f32 * (default_card * 1.2 + 13.0),
-                            ),
-                            egui::vec2(default_card, default_card * 1.2),
-                        );
-                        painter.rect_filled(tile, 12, theme.RAISED_BG);
-                        if let Some(texture) = art_texture(ui.ctx(), state, index) {
-                            let height = default_card * 1.2 - 20.0;
-                            painter.image(
-                                texture.id(),
-                                Rect::from_center_size(
-                                    tile.center(),
-                                    egui::vec2(height / 2.0, height),
-                                ),
-                                Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-                                egui::Color32::WHITE,
-                            );
-                        }
-                        if index == 0 {
-                            // The check the reference puts on the skin in use.
-                            let badge = egui::pos2(tile.right() - 14.0, tile.top() + 14.0);
-                            painter.circle_filled(badge, 9.0, theme.BRAND);
-                            icons::draw(
-                                &painter,
-                                Glyph::Check,
-                                Rect::from_center_size(badge, Vec2::splat(11.0)),
-                                theme.ACCENT_CONTRAST,
-                            );
-                        }
-                    }
                 });
         }
     }
+
+    // The Default skins section rides under the Saved skins one, in the same columns: the
+    // reference's list is one scroll box holding both sections
+    // (`VirtualSkinSectionList.vue:355-380`).
+    defaults_section(ui, list_left, below_grid, grid, theme, state);
+
+    // The account bar is the last thing painted: it is `sticky bottom-0 z-20` over the list
+    // (`Skins.vue:1263`).
+    account_bar(ui.painter(), content, theme);
 
     false
 }
@@ -1023,17 +1089,19 @@ pub fn draw(
 // Heading and toolbar
 // ---------------------------------------------------------------------------
 
-/// Draw the heading and the toolbar row. Returns the y where the section header begins.
+/// Draw the heading and the toolbar row into the route's content box. Returns the y where the
+/// heading (or the toolbar) ends.
 ///
-/// The heading is `h1.m-0.text-2xl.font-bold` (`Skins.vue:1087`) -- note `font-bold`, 700,
-/// where the library's heading is `font-semibold` (`library/index.vue:268`), which is why
-/// this one is [`fonts::title`] and that one is [`fonts::semibold`].
-fn heading_and_toolbar(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State) -> f32 {
+/// The heading is `h1.m-0.text-2xl.font-bold` inside the sticky wrapper's `p-2`
+/// (`Skins.vue:1086-1089`) -- note `font-bold`, 700, where the library's heading is
+/// `font-semibold` (`library/index.vue:268`), which is why this one is `fonts::title` and that
+/// one is `fonts::semibold`.
+fn heading_and_toolbar(ui: &mut Ui, content: Rect, theme: &Theme, state: &mut State) -> f32 {
     // An owned clone, not a borrow: `model_tabs` needs `&mut Ui` to take the clicks, and a
     // `&Painter` borrowed from `ui` would still be alive while it does.
     let painter = ui.painter().clone();
 
-    let heading_at = egui::pos2(rect.left() + PAGE_PADDING, rect.top() + PAGE_PADDING);
+    let heading_at = egui::pos2(content.left() + HEADER_PADDING, content.top());
     painter.text(
         heading_at,
         Align2::LEFT_TOP,
@@ -1049,11 +1117,8 @@ fn heading_and_toolbar(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State
         return heading_at.y + HEADING_LINE;
     }
     let row = Rect::from_min_size(
-        egui::pos2(
-            rect.left() + PAGE_PADDING,
-            heading_at.y + HEADING_LINE + SECTION_GAP,
-        ),
-        egui::vec2(rect.width() - 2.0 * PAGE_PADDING, CONTROL_HEIGHT),
+        egui::pos2(heading_at.x, heading_at.y + HEADING_LINE + SECTION_GAP),
+        egui::vec2(content.width() - HEADER_PADDING, CONTROL_HEIGHT),
     );
 
     // The two measured controls first, then whatever is left over for the search plate. The
@@ -1299,6 +1364,82 @@ fn section_header(ui: &Ui, left: f32, top: f32, theme: &Theme, title: &str) -> f
     top + SECTION_HEADER_LINE + SECTION_CONTENT_SPACING
 }
 
+/// The Default skins section, under whatever the Saved skins section drew, and the y below
+/// its last row.
+///
+/// The reference's list is one scroll box holding every section (`VirtualSkinSectionList.vue
+/// :355-380`): a section is `pt-6` of space, its header, `pt-2` and then its cards, all in the
+/// same columns as the section above. The eight catalogue skins are this build's whole
+/// catalogue, so they fill two rows of four.
+fn defaults_section(
+    ui: &mut Ui,
+    left: f32,
+    above: f32,
+    grid: Grid,
+    theme: &Theme,
+    state: &mut State,
+) -> f32 {
+    let header = above + SKIN_SECTION_SPACING;
+    if std::env::var_os("SIFT_SKINS_PROBE").is_some() {
+        eprintln!("skins: defaults above={above} header={header} card={:?}x{:?}", grid.card_width, grid.card_height);
+    }
+    let cards = section_header(ui, left, header, theme, DEFAULT_SECTION_TITLE);
+    let painter = ui.painter().clone();
+    for index in 0..SKINS.len() {
+        let column = index % DEFAULTS_COLUMNS;
+        let row = index / DEFAULTS_COLUMNS;
+        let tile = Rect::from_min_size(
+            egui::pos2(
+                left + column as f32 * (grid.card_width + GRID_GAP),
+                cards + row as f32 * (grid.card_height + GRID_GAP),
+            ),
+            egui::vec2(grid.card_width, grid.card_height),
+        );
+        default_card(
+            &painter,
+            tile,
+            theme,
+            // This build authors four arts for its eight catalogue rows, so the second row
+            // repeats the first. A row with no art at all would be a card the reference draws
+            // and this page leaves empty.
+            art_texture(ui.ctx(), state, index % ART.len()),
+            index == 0,
+        );
+    }
+    cards + 2.0 * grid.card_height + GRID_GAP
+}
+
+/// One of the catalogue's tiles: the card's plate and the character on it, with the check the
+/// reference puts on the skin in use (`SkinButton.vue:153-162`).
+fn default_card(
+    painter: &egui::Painter,
+    rect: Rect,
+    theme: &Theme,
+    texture: Option<egui::TextureHandle>,
+    in_use: bool,
+) {
+    painter.rect_filled(rect, CARD_RADIUS, theme.RAISED_BG);
+    if let Some(texture) = texture {
+        let height = rect.height() - 20.0;
+        painter.image(
+            texture.id(),
+            Rect::from_center_size(rect.center(), egui::vec2(height / 2.0, height)),
+            Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
+    }
+    if in_use {
+        let badge = egui::pos2(rect.right() - 14.0, rect.top() + 14.0);
+        painter.circle_filled(badge, 9.0, theme.BRAND);
+        icons::draw(
+            painter,
+            Glyph::Check,
+            Rect::from_center_size(badge, Vec2::splat(11.0)),
+            theme.ACCENT_CONTRAST,
+        );
+    }
+}
+
 // ---------------------------------------------------------------------------
 // The grid
 // ---------------------------------------------------------------------------
@@ -1333,11 +1474,45 @@ fn min_card_width(window_width: f32) -> f32 {
     }
 }
 
+/// The route's content box: the shell's content column inset by the route's own `p-4`
+/// (`Skins.vue:1085`), from the heading's line top to the window's foot.
+///
+/// `Page::rect()` is the shell's text column (88..1116): it has already taken the 24-point
+/// inset the shell's pages pad themselves with. The reference's skins route pads *itself* 16
+/// inside the content column, so its columns start at 80 and its heading -- inside the sticky
+/// wrapper's `p-2` -- at 88. Taking `rect` and insetting again would put this page's columns at
+/// 112 and its heading at 113, 25 points right of the reference's, which is what the capture
+/// measured before this box was recomputed.
+fn page_box(rect: Rect) -> Rect {
+    Rect::from_min_max(
+        egui::pos2(
+            crate::geometry::CONTENT_LEFT + ROUTE_PADDING,
+            rect.top() + PAGE_PADDING,
+        ),
+        egui::pos2(
+            crate::geometry::PANEL_LEFT - ROUTE_PADDING,
+            rect.bottom(),
+        ),
+    )
+}
+
+/// The preview column's width: its share of the route box once the gap is taken
+/// (`Skins.vue:1340-1348`).
+fn preview_column_width(page_width: f32) -> f32 {
+    (page_width - COLUMN_GAP) * PREVIEW_SHARE / (PREVIEW_SHARE + LIST_SHARE)
+}
+
+/// The list column's width: the rest of the route box.
+fn list_column_width(page_width: f32) -> f32 {
+    (page_width - COLUMN_GAP) * LIST_SHARE / (PREVIEW_SHARE + LIST_SHARE)
+}
+
 /// The source's `cardWidth = (gridWidth - gap * (n - 1)) / n`
 /// (`instance-group/index.vue:127-129`), with the height taken from the skin tile's own
-/// aspect rather than the instance card's `+ 3.375rem`.
+/// aspect rather than the instance card's `+ 3.375rem`. The grid is the list column, which is
+/// what the reference's own `useElementSize` measures (`:92`).
 fn grid_layout(page_width: f32, window_width: f32) -> Grid {
-    grid_layout_in(page_width - 2.0 * PAGE_PADDING, window_width)
+    grid_layout_in(list_column_width(page_width), window_width)
 }
 
 /// The same arithmetic over a content width that is not the whole page: the preview column
@@ -1622,36 +1797,26 @@ fn skin_texture(
     art_texture(ctx, state, index)
 }
 
-/// Draw the preview column: the chosen skin's face, its name, the edit button, and the
-/// account bar at the foot.
+/// Draw the preview column: the character on the page's own ground, the "Drag to rotate" hint
+/// and the Edit skin button under it.
 ///
-/// **A face, not a render.** The reference draws a rotatable 3D model here
-/// (`SkinPreviewRenderer`). There is no renderer in this launcher, so the column shows the
-/// eight-by-eight head the selected skin's atlas holds, enlarged with nearest sampling: the
-/// same pixels the card shows at thumbnail size, at a size a reader can actually look at.
-/// The account bar and the edit plate are unchanged -- they are painted stand-ins for
-/// controls owned elsewhere, and this column's brief is the face.
-fn draw_preview(
-    ui: &mut Ui,
-    rect: Rect,
-    theme: &Theme,
-    state: &mut State,
-    images: &mut Images,
-) {
-    let painter = ui.painter();
-    painter.rect_filled(rect, PREVIEW_RADIUS, theme.RAISED_BG);
-
-    // The account bar takes the foot of the column; the preview gets everything above it.
-    let bar_height = 72.0;
-    let bar = Rect::from_min_max(
-        egui::pos2(rect.left(), rect.bottom() - bar_height),
-        rect.max,
-    );
-    painter.rect_filled(bar, PREVIEW_RADIUS, theme.SUPER_RAISED_BG);
-
-    let plate = Rect::from_min_max(rect.min, egui::pos2(rect.right(), bar.top()));
-    // Dragging the plate turns the model, which is the reference's own gesture ("Drag to rotate").
-    let drag = ui.interact(plate, egui::Id::new("skin-preview-drag"), Sense::drag());
+/// **A model on the page, not a plate.** The reference's left column is a transparent
+/// `TresCanvas` on the route's own background (`Skins.vue:1086-1093`): no raised card, no name
+/// line, no filled button. What it holds is the character with its head at y 290, the drag hint
+/// at y 652 and a `type="base"` button at y 700 -- all measured from
+/// `.scratch/cap/ref-skins.png` against a renderer box of y 120 to 824, which is why the three
+/// constants below are offsets into this rect rather than a stack.
+///
+/// **A figure, from the crate's own data.** The reference draws a rotatable 3D model here
+/// (`SkinPreviewRendererImpl.vue:31-78`). This launcher has no graphics backend; the crate does
+/// carry a box rasteriser (`crate::skins3d`), but it projects every part about that part's own
+/// centre, so a body assembled from it stacks its six boxes on one point instead of standing
+/// up. The column therefore draws the composed front view -- the character the cards draw,
+/// enlarged to the reference's measurements -- and keeps the rasteriser for an atlas whose
+/// composed view is missing.
+fn draw_preview(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State) {
+    // Dragging the column turns the model, which is the reference's own gesture ("Drag to rotate").
+    let drag = ui.interact(rect, egui::Id::new("skin-preview-drag"), Sense::drag());
     if drag.dragged() {
         state.yaw = crate::skins3d::yaw_after(state.yaw, drag.drag_delta().x);
         ui.ctx().request_repaint();
@@ -1659,171 +1824,227 @@ fn draw_preview(
     if drag.hovered() {
         ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);
     }
-    let chosen_file = state
-        .selected_file
-        .as_ref()
-        .and_then(|path| state.files.iter().find(|skin| &skin.path == path))
-        .cloned();
-    let file_texture = chosen_file
-        .as_ref()
-        .and_then(|skin| body_texture(ui.ctx(), &mut state.body_textures, &skin.path));
 
-    // The big face sits above the name, centred in the part of the plate the account bar and
-    // the edit button leave. The view branch below keeps the sample skins' full elevation.
-    if let Some(skin) = &chosen_file {
-        // The character's own proportions: sixteen texels across, thirty-two down, as the sample
-        // skins and the reference's preview both draw it.
-        let side = (plate.width() * 0.34).min(120.0);
-        let face = Rect::from_center_size(
-            plate.center() - egui::vec2(0.0, 40.0),
-            egui::vec2(side, side * VIEW_H as f32 / VIEW_W as f32),
+    let painter = ui.painter();
+    // The character's own proportions: sixteen texels across, thirty-two down, hung from the
+    // top of the head.
+    let head = egui::pos2(rect.center().x, rect.top() + MODEL_HEAD_TOP);
+    let body = Rect::from_min_size(
+        egui::pos2(head.x - VIEW_W as f32 * 0.5 * MODEL_TEXEL, head.y),
+        egui::vec2(VIEW_W as f32 * MODEL_TEXEL, VIEW_H as f32 * MODEL_TEXEL),
+    );
+
+    if let Some(texture) = preview_texture(ui.ctx(), state) {
+        // The composed front view: the whole character in one picture, at the reference's
+        // size. It cannot turn, but a turned figure is what `crate::skins3d` cannot draw yet
+        // (see this function's note), and the capture is of a character standing still.
+        painter.image(
+            texture.id(),
+            body,
+            Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+            Color32::WHITE,
         );
-        // A 3D model when the file can be read, so the preview turns with the pointer the way the
-        // reference's does; the composed texture is the fallback for a file that will not decode.
-        let atlas = atlas_of(&mut state.atlases, &skin.path);
-        if let Some(atlas) = atlas {
-            // The character is 32 texels tall and the plate has room for about three quarters of it.
-            // Sized from the column, which is what the reader sees: the character fills about half of it.
-            let scale = rect.height() / 70.0;
-            let centre = egui::pos2(plate.center().x, plate.center().y - 24.0);
-            for texel in crate::skins3d::render(atlas, centre, scale, state.yaw) {
-                painter.add(egui::Shape::convex_polygon(
-                    texel.points.to_vec(),
-                    texel.color,
-                    egui::Stroke::NONE,
-                ));
-            }
-        } else if let Some(texture) = &file_texture {
-            painter.image(
-                texture.id(),
-                face,
-                Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-                egui::Color32::WHITE,
-            );
-        } else {
-            icons::draw(
-                painter,
-                Glyph::Shirt,
-                Rect::from_center_size(face.center(), Vec2::splat(side * 0.5)),
-                theme.SECONDARY,
-            );
-        }
-        painter.text(
-            egui::pos2(plate.center().x, face.bottom() + 12.0),
-            Align2::CENTER_TOP,
-            &skin.name,
-            fonts::semibold(18.0),
-            theme.CONTRAST,
-        );
-        // The file has no author: a PNG on disk is not attributed to anyone. The model tag
-        // is what the card prints, and it is the one field that is always known.
-        painter.text(
-            egui::pos2(plate.center().x, face.bottom() + 36.0),
-            Align2::CENTER_TOP,
-            Model::Classic.label(),
-            fonts::body(13.0),
-            theme.SECONDARY,
-        );
-        if std::env::var_os("SIFT_SKINS_PROBE").is_some() {
-            eprintln!("skins: preview-face={face:?} name={:?}", skin.name);
+    } else if let Some(atlas) = preview_atlas(state) {
+        // No composed view but a readable atlas: the rasteriser still puts the skin's texels
+        // on the page, in the boxes it draws them as.
+        for texel in crate::skins3d::render(&atlas, head, MODEL_TEXEL, state.yaw) {
+            painter.add(egui::Shape::convex_polygon(
+                texel.points.to_vec(),
+                texel.color,
+                egui::Stroke::NONE,
+            ));
         }
     } else {
-        let chosen = SKINS
-            .iter()
-            .find(|skin| skin.name == state.selected)
-            .copied()
-            .unwrap_or(SKINS[0]);
-        // The character, at the view's own proportions: sixteen texels across, thirty-two down.
-        let width = (plate.width() * 0.42).min(128.0);
-        let glyph = Rect::from_center_size(
-            plate.center() - egui::vec2(0.0, 32.0),
-            egui::vec2(width, width * VIEW_H as f32 / VIEW_W as f32),
-        );
-        // The catalogue's own skins are drawn by the same renderer, so the preview turns whatever is
-        // selected -- the reference's preview is a model, not a picture.
-        // ART is parallel to SKINS, so the sample's own atlas is found by position.
-        let sample_atlas = SKINS
-            .iter()
-            .position(|skin| skin.name == chosen.name)
-            .and_then(|index| ART.get(index))
-            .map(|art| art.atlas());
-        if let Some(atlas) = sample_atlas {
-            let scale = rect.height() / 70.0;
-            for texel in crate::skins3d::render(&atlas, glyph.center(), scale, state.yaw) {
-                painter.add(egui::Shape::convex_polygon(
-                    texel.points.to_vec(),
-                    texel.color,
-                    egui::Stroke::NONE,
-                ));
-            }
-        } else if let Some(texture) = skin_texture(ui.ctx(), state, chosen.name) {
-            painter.image(
-                texture.id(),
-                glyph,
-                Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-                egui::Color32::WHITE,
-            );
-        } else {
-            icons::draw(painter, Glyph::Shirt, glyph, theme.SECONDARY);
-        }
-        painter.text(
-            egui::pos2(plate.center().x, glyph.bottom() + 12.0),
-            Align2::CENTER_TOP,
-            chosen.name,
-            fonts::semibold(18.0),
-            theme.CONTRAST,
-        );
-        painter.text(
-            egui::pos2(plate.center().x, glyph.bottom() + 36.0),
-            Align2::CENTER_TOP,
-            chosen.author,
-            fonts::body(13.0),
-            theme.SECONDARY,
-        );
+        icons::draw(painter, Glyph::Shirt, body, theme.BASE);
+    }
+    if std::env::var_os("SIFT_SKINS_PROBE").is_some() {
+        eprintln!("skins: preview-head={head:?} body={body:?}");
     }
 
-    // The edit button, centred under the name, in the same plate the toolbar's Add skin uses.
-    let edit_size = egui::vec2(120.0, 32.0);
-    let edit = Rect::from_center_size(
-        egui::pos2(plate.center().x, plate.bottom() - 28.0),
-        edit_size,
+    drag_hint(painter, rect, theme);
+    edit_button(painter, rect, theme);
+}
+
+/// The atlas the preview's model is built from: the selected file's if it decodes, otherwise the
+/// catalogue sample the reader picked in the Default skins strip.
+fn preview_atlas(state: &mut State) -> Option<Vec<u8>> {
+    if let Some(path) = state.selected_file.clone() {
+        return atlas_of(&mut state.atlases, &path).map(<[u8]>::to_vec);
+    }
+    let chosen = state.selected;
+    SKINS
+        .iter()
+        .position(|skin| skin.name == chosen)
+        .and_then(|index| ART.get(index))
+        .map(Art::atlas)
+}
+
+/// The composed front view of the selection, for a PNG its atlas read could not decode.
+fn preview_texture(ctx: &egui::Context, state: &mut State) -> Option<egui::TextureHandle> {
+    if let Some(path) = state.selected_file.clone() {
+        return body_texture(ctx, &mut state.body_textures, &path);
+    }
+    let chosen = state.selected;
+    skin_texture(ctx, state, chosen)
+}
+
+/// The drag hint: `UnfoldHorizontalIcon` and "Drag to rotate" on one 24-point line
+/// (`SkinPreviewRendererImpl.vue:13-20`), centred on the column.
+fn drag_hint(painter: &egui::Painter, rect: Rect, theme: &Theme) {
+    let font = fonts::label(ROW_TEXT_SIZE);
+    let width = ROW_GLYPH + ROW_GAP + text_width(painter, DRAG_TO_ROTATE, font.clone());
+    let left = rect.center().x - width / 2.0;
+    let top = rect.top() + DRAG_ROW_TOP;
+    icons::draw(
+        painter,
+        Glyph::UnfoldHorizontal,
+        Rect::from_min_size(
+            egui::pos2(left, top + (ROW_LINE - ROW_GLYPH) / 2.0),
+            Vec2::splat(ROW_GLYPH),
+        ),
+        theme.BASE,
     );
-    painter.rect_filled(edit, 12, theme.BUTTON_BG);
     painter.text(
-        edit.center(),
-        Align2::CENTER_CENTER,
+        egui::pos2(left + ROW_GLYPH + ROW_GAP, top + ROW_LINE / 2.0),
+        Align2::LEFT_CENTER,
+        DRAG_TO_ROTATE,
+        font,
+        theme.BASE,
+    );
+}
+
+/// The edit button: `type="base" size="lg"` -- `h-10 rounded-[14px] px-4 gap-2 text-base`
+/// with `bg-surface-4` and the `inset 0 0 0 1px var(--surface-5)` ring its type carries
+/// (`ButtonFrame.vue:38,61,172-176`).
+fn edit_button(painter: &egui::Painter, rect: Rect, theme: &Theme) {
+    let font = fonts::semibold(ACTION_TEXT_SIZE);
+    let width = 2.0 * EDIT_PADDING + ROW_GLYPH + EDIT_GAP + text_width(painter, PREVIEW_EDIT, font.clone());
+    let button = Rect::from_min_size(
+        egui::pos2(rect.center().x - width / 2.0, rect.top() + EDIT_TOP),
+        egui::vec2(width, EDIT_HEIGHT),
+    );
+    painter.rect_filled(button, EDIT_RADIUS, theme.BUTTON_BG);
+    painter.rect_stroke(
+        button,
+        EDIT_RADIUS,
+        Stroke::new(crate::theme::STROKE_WIDTH, theme.SURFACE_5),
+        egui::StrokeKind::Inside,
+    );
+    let icon = Rect::from_center_size(
+        egui::pos2(
+            button.left() + EDIT_PADDING + ROW_GLYPH / 2.0,
+            button.center().y,
+        ),
+        Vec2::splat(ROW_GLYPH),
+    );
+    icons::draw(painter, Glyph::Edit, icon, theme.BASE);
+    painter.text(
+        egui::pos2(icon.right() + EDIT_GAP, button.center().y),
+        Align2::LEFT_CENTER,
         PREVIEW_EDIT,
-        fonts::semibold(13.0),
+        font,
         theme.CONTRAST,
+    );
+}
+
+/// The account bar: "Editing with a demo account" and the sign-in button, sticky at the page's
+/// foot and spanning the route's width up to `max-w-5xl` (`Skins.vue:1263-1290`).
+///
+/// Drawn last, over the list: the reference's bar is `z-20` and the list scrolls under it.
+fn account_bar(painter: &egui::Painter, content: Rect, theme: &Theme) {
+    let width = content.width().min(ACCOUNT_BAR_MAX);
+    let bar = Rect::from_min_size(
+        egui::pos2(
+            content.center().x - width / 2.0,
+            content.bottom() - ACCOUNT_BAR_MARGIN - ACCOUNT_BAR_HEIGHT,
+        ),
+        egui::vec2(width, ACCOUNT_BAR_HEIGHT),
+    );
+    painter.rect_filled(bar, ACCOUNT_BAR_RADIUS, theme.RAISED_BG);
+    painter.rect_stroke(
+        bar,
+        ACCOUNT_BAR_RADIUS,
+        Stroke::new(crate::theme::STROKE_WIDTH, theme.SURFACE_5),
+        egui::StrokeKind::Inside,
     );
 
-    // The account bar: what the reference says when the skin cannot be saved anywhere.
+    // `flex items-start gap-3`: a 24-point info glyph with the two lines beside it.
+    let inner = bar.shrink(ACCOUNT_BAR_PADDING);
+    icons::draw(
+        painter,
+        Glyph::Info,
+        Rect::from_min_size(inner.min, Vec2::splat(ACCOUNT_ICON)),
+        theme.BLUE,
+    );
+    let text_left = inner.left() + ACCOUNT_ICON + ACCOUNT_GAP;
     painter.text(
-        egui::pos2(bar.left() + 16.0, bar.top() + 14.0),
+        egui::pos2(text_left, inner.top()),
         Align2::LEFT_TOP,
         DEMO_TITLE,
-        fonts::semibold(12.0),
+        fonts::semibold(ACCOUNT_TITLE_SIZE),
         theme.CONTRAST,
     );
     painter.text(
-        egui::pos2(bar.left() + 16.0, bar.top() + 32.0),
+        egui::pos2(text_left, inner.top() + ACCOUNT_LINE + ACCOUNT_TEXT_GAP),
         Align2::LEFT_TOP,
         DEMO_DESCRIPTION,
-        fonts::body(11.0),
-        theme.SECONDARY,
+        fonts::body(ACCOUNT_BODY_SIZE),
+        theme.BASE,
     );
-    let sign_in = Rect::from_min_max(
-        egui::pos2(bar.left() + 16.0, bar.bottom() - 26.0),
-        egui::pos2(bar.right() - 16.0, bar.bottom() - 6.0),
+
+    // The sign-in button: `type="colored" color="brand"` at the `md` size -- `h-9 rounded-xl
+    // px-2.5 gap-1.5`, `bg-[--button-color]`, `text-[var(--color-accent-contrast)]`
+    // (`ButtonFrame.vue:34,61`).
+    let font = fonts::semibold(ACTION_TEXT_SIZE);
+    let width = 2.0 * SIGN_IN_PADDING
+        + SIGN_IN_LOGO
+        + SIGN_IN_GAP
+        + text_width(painter, SIGN_IN_MICROSOFT, font.clone());
+    let button = Rect::from_min_size(
+        egui::pos2(inner.right() - width, inner.center().y - SIGN_IN_HEIGHT / 2.0),
+        egui::vec2(width, SIGN_IN_HEIGHT),
     );
-    painter.rect_filled(sign_in, 8, theme.BRAND);
-    painter.text(
-        sign_in.center(),
-        Align2::CENTER_CENTER,
-        SIGN_IN_MICROSOFT,
-        fonts::semibold(11.0),
+    painter.rect_filled(button, SIGN_IN_RADIUS, theme.BRAND);
+    windows_logo(
+        painter,
+        Rect::from_center_size(
+            egui::pos2(
+                button.left() + SIGN_IN_PADDING + SIGN_IN_LOGO / 2.0,
+                button.center().y,
+            ),
+            Vec2::splat(SIGN_IN_LOGO),
+        ),
         theme.ACCENT_CONTRAST,
     );
+    painter.text(
+        egui::pos2(
+            button.left() + SIGN_IN_PADDING + SIGN_IN_LOGO + SIGN_IN_GAP,
+            button.center().y,
+        ),
+        Align2::LEFT_CENTER,
+        SIGN_IN_MICROSOFT,
+        font,
+        theme.ACCENT_CONTRAST,
+    );
+}
+
+/// The mark the reference's sign-in button carries (`WindowsIcon`): four squares in a
+/// two-by-two block with a two-point gutter.
+fn windows_logo(painter: &egui::Painter, rect: Rect, ink: Color32) {
+    let square = (rect.width() - 2.0) / 2.0;
+    for (column, row) in [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)] {
+        painter.rect_filled(
+            Rect::from_min_size(
+                egui::pos2(
+                    rect.left() + column * (square + 2.0),
+                    rect.top() + row * (square + 2.0),
+                ),
+                Vec2::splat(square),
+            ),
+            0,
+            ink,
+        );
+    }
 }
 
 /// The plate a card leaves for its picture: below the top padding, above the name line.
@@ -2284,33 +2505,36 @@ mod tests {
         assert_ne!(foot, egui::Color32::TRANSPARENT, "the legs reach the foot");
     }
 
-    /// The shell's content column at a window width: the rail, the panel and the 24-point
-    /// inset, with the last 16 points the shell keeps for itself (`pages/mod.rs:39-58`).
+    /// The route's content box at a window width: the rail and the panel either side of it,
+    /// and the route's own `p-4` (`Skins.vue:1085`) inside that.
     fn page_width_at(window_width: f32) -> f32 {
-        // The surface's left edge to the sidebar's left edge, less the page's own px-6 on
+        // The surface's left edge to the sidebar's left edge, less the route's own px-4 on
         // both sides. There is no further gutter: the sidebar is the surface's right
         // column, not a panel with a gap in front of it.
         window_width
             - crate::geometry::RAIL
             - crate::geometry::PANEL
-            - 2.0 * crate::geometry::CONTENT_INSET
+            - 2.0 * ROUTE_PADDING
     }
 
-    /// At 1440 the source's `windowWidth < 1280` test is false, so `minWidth` is 10rem =
-    /// 160, not 8rem. `floor((948 + 12) / (160 + 12)) = 5` columns of 180 points, and the
-    /// four gaps and the two 24-point insets leave exactly the page's 996 points.
-    /// The preview column and the grid together are the content width, and the grid still
-    /// gets at least one column of the minimum size beside the column.
+    /// The route's two columns take the whole content box: the 1fr preview, the 2.5rem gap
+    /// and the 2.5fr list are exactly the route's width, and the list still has a real card
+    /// in it.
     #[test]
     fn the_preview_column_leaves_the_grid_a_real_width() {
-        let page = 1440.0 - 2.0 * PAGE_PADDING;
-        let grid_width = page - PREVIEW_WIDTH - PREVIEW_GAP;
-        assert!(grid_width > 0.0, "the grid keeps a positive width");
+        let page = page_width_at(crate::geometry::WINDOW.0);
+        let preview = preview_column_width(page);
+        let list = list_column_width(page);
+        assert!(list > 0.0, "the grid keeps a positive width");
         assert!(
-            page - (PREVIEW_WIDTH + PREVIEW_GAP + grid_width) < 0.01,
+            (preview + COLUMN_GAP + list - page).abs() < 0.01,
             "column, gap and grid account for the content width exactly"
         );
-        let grid = grid_layout_in(grid_width, 1440.0);
+        assert!(
+            (list / preview - LIST_SHARE / PREVIEW_SHARE).abs() < 0.001,
+            "the list is two and a half previews, as the source's track sizes say"
+        );
+        let grid = grid_layout_in(list, 1440.0);
         assert!(
             grid.card_width >= 1.0,
             "a card {} points wide is not a card",
@@ -2321,66 +2545,77 @@ mod tests {
     /// Below the breakpoint the column is not drawn, so the grid has the whole page.
     #[test]
     fn a_narrow_page_drops_the_preview_column() {
-        let wide = 1440.0 - 2.0 * PAGE_PADDING;
-        let narrow = 860.0 - 2.0 * PAGE_PADDING;
-        assert!(wide >= PREVIEW_BREAKPOINT, "1440 keeps the column");
-        assert!(narrow < PREVIEW_BREAKPOINT, "860 does not");
+        let wide = preview_column_width(page_width_at(crate::geometry::WINDOW.0));
+        let narrow = preview_column_width(page_width_at(860.0));
+        assert!(wide >= PREVIEW_MIN_WIDTH, "1440 keeps the column");
+        assert!(narrow < PREVIEW_MIN_WIDTH, "860 does not");
     }
 
+    /// At 1440 the route's box is 1044 points wide: 1fr of it is 286.86 and 2.5fr 717.14,
+    /// which is the list the reference's own grid is drawn in (its first card starts at x 407
+    /// and its last ends at 1123). The `windowWidth < 1280` test is false, so `minWidth` is
+    /// 10rem = 160, not 8rem: `floor((717.14 + 12) / (160 + 12)) = 4` columns of 170.29.
     #[test]
     fn the_grid_tiles_the_page_at_1440() {
         let page = page_width_at(crate::geometry::WINDOW.0);
-        assert_eq!(page, 1028.0, "the shell's content column at 1440");
+        assert_eq!(page, 1044.0, "the route's box at 1440");
         assert_eq!(min_card_width(crate::geometry::WINDOW.0), 160.0);
 
+        let list = list_column_width(page);
+        assert!((list - 717.142_857).abs() < 0.01, "2.5 / 3.5 of (1044 - 40)");
+
         let grid = grid_layout(page, crate::geometry::WINDOW.0);
-        assert_eq!(grid.columns, 5, "floor((980 + 12) / (160 + 12))");
+        assert_eq!(grid.columns, 4, "floor((717.14 + 12) / (160 + 12))");
         assert!(
-            (grid.card_width - 186.4).abs() < 0.001,
-            "(980 - 4 * 12) / 5"
+            (grid.card_width - 170.285_71).abs() < 0.01,
+            "(717.14 - 3 * 12) / 4, got {}",
+            grid.card_width
         );
 
-        let used = 2.0 * PAGE_PADDING
-            + grid.columns as f32 * grid.card_width
+        let used = grid.columns as f32 * grid.card_width
             + (grid.columns as f32 - 1.0) * GRID_GAP;
         assert!(
-            (used - page).abs() < 0.001,
-            "padding + columns * card + gaps must be the page width: {used} vs {page}"
+            (used - list).abs() < 0.001,
+            "columns * card + gaps must be the list's width: {used} vs {list}"
         );
 
-        // 186.4 * 40 / 31: the skin tile's own aspect decides the height, not the instance
-        // card's `+ 3.375rem`.
+        // 170.29 * 40 / 31: the skin tile's own aspect decides the height, not the instance
+        // card's `+ 3.375rem`. The reference's default cards are 219.7 points tall.
         assert!(
-            (grid.card_height - 240.516).abs() < 0.01,
-            "186.4 * 40 / 31, got {}",
+            (grid.card_height - 219.723).abs() < 0.01,
+            "170.29 * 40 / 31, got {}",
             grid.card_height
         );
         assert_eq!(grid.card_height, card_height(grid.card_width));
     }
 
     /// At 960 the ternary takes the other branch: `minWidth` is 8rem = 128, so
-    /// `floor((468 + 12) / (128 + 12)) = 3` and the cards are 148 wide. The identity still
-    /// closes exactly.
+    /// `floor((374.29 + 12) / (128 + 12)) = 2` and the cards are 181.14 wide. The identity
+    /// still closes exactly.
     #[test]
     fn the_grid_tiles_the_page_at_960() {
         let page = page_width_at(960.0);
-        assert_eq!(page, 548.0, "the same shell furniture at 960");
+        assert_eq!(page, 564.0, "the same shell furniture at 960");
         assert_eq!(min_card_width(960.0), 128.0);
 
+        let list = list_column_width(page);
         let grid = grid_layout(page, 960.0);
-        assert_eq!(grid.columns, 3, "floor((500 + 12) / (128 + 12))");
-        assert!((grid.card_width - 158.666_664).abs() < 0.01);
+        assert_eq!(grid.columns, 2, "floor((374.29 + 12) / (128 + 12))");
+        assert!(
+            (grid.card_width - 181.142_85).abs() < 0.01,
+            "(374.29 - 12) / 2, got {}",
+            grid.card_width
+        );
 
-        let used = 2.0 * PAGE_PADDING
-            + grid.columns as f32 * grid.card_width
+        let used = grid.columns as f32 * grid.card_width
             + (grid.columns as f32 - 1.0) * GRID_GAP;
         assert!(
-            (used - page).abs() < 0.001,
-            "padding + columns * card + gaps must be the page width: {used} vs {page}"
+            (used - list).abs() < 0.001,
+            "columns * card + gaps must be the list's width: {used} vs {list}"
         );
         assert!(
-            (grid.card_height - 204.731).abs() < 0.01,
-            "158.67 * 40 / 31, got {}",
+            (grid.card_height - 233.733).abs() < 0.01,
+            "181.14 * 40 / 31, got {}",
             grid.card_height
         );
     }
@@ -2398,7 +2633,7 @@ mod tests {
     /// pure function of the two widths the source's expression names.
     #[test]
     fn a_page_narrower_than_one_card_still_gets_one_column() {
-        let grid = grid_layout(2.0 * PAGE_PADDING + 40.0, 960.0);
+        let grid = grid_layout_in(40.0, 960.0);
         assert_eq!(grid.columns, 1);
         assert!((grid.card_width - 40.0).abs() < 0.001);
     }
