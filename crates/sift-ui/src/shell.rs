@@ -518,7 +518,7 @@ impl Shell {
                 // still not written into the instance -- that is the next slice -- so the chips
                 // change the dialog and not yet the profile.
                 ("Loader", self.create_loader.as_str()),
-                ("Game version", "1.21.4"),
+                ("Game version", self.create_version.as_str()),
             ]
             .into_iter()
             .enumerate()
@@ -569,6 +569,25 @@ impl Shell {
             // delivering input -- the state held "abc" and the plate looked empty.
             // Directly on the panel's ui. The diagnostic proved this exact widget paints when
             // put here; every empty plate came from the Area mount that wrapped it.
+            // The game-version row takes a press and cycles. The reference opens a list here; until that list is
+            // built, a press has to do something real rather than nothing -- and what it must never do again is
+            // report one version and create another.
+            let version_row = egui::Rect::from_min_size(
+                egui::pos2(left, plate.top() + 62.0 + 2.0 * 62.0 + 20.0),
+                egui::vec2(right - left, 28.0),
+            );
+            if ui
+                .interact(version_row, egui::Id::new("create-version-row"), Sense::click())
+                .clicked()
+            {
+                const VERSIONS: [&str; 4] = ["26.3", "1.21.4", "1.20.6", "1.20.1"];
+                let at = VERSIONS
+                    .iter()
+                    .position(|version| *version == self.create_version)
+                    .unwrap_or(0);
+                self.create_version = VERSIONS[(at + 1) % VERSIONS.len()].to_owned();
+                ui.ctx().request_repaint();
+            }
             ui.put(
                 name_field,
                 egui::TextEdit::singleline(&mut name)
@@ -854,6 +873,11 @@ pub struct Shell {
     /// chosen. The chips are the reference's three common loaders; Forge and Quilt arrive with
     /// the profile work that writes them.
     pub create_loader: String,
+    /// The game version the custom setup will create. A real value, not the hardcoded label this row used to
+    /// draw: the dialog said "1.21.4" and `create_instance` wrote its own default (26.3) regardless, so a
+    /// reader who chose a version got another one. A press on the row cycles the list below until the version
+    /// picker the reference opens lands.
+    pub create_version: String,
     /// The selected rail destination.
     pub rail: Rail,
     /// The hovered rail destination, if any. A press animates between the two, which is
@@ -965,6 +989,7 @@ impl Default for Shell {
             create_step: 0,
             create_name: String::new(),
             create_loader: "Vanilla".to_owned(),
+            create_version: DEFAULT_MC_VERSION.to_owned(),
             // The reference opens on Home, and a launcher that opens on a catalogue looks
             // like a store rather than a launcher.
             rail: Rail::Home,
@@ -2210,7 +2235,7 @@ impl Shell {
             } else {
                 format!("Instance {index}")
             };
-            match sift_core::instance::Instance::create(&root, &name, DEFAULT_MC_VERSION) {
+            match sift_core::instance::Instance::create(&root, &name, &self.create_version) {
                 Ok(instance) => {
                     let made = instance
                         .root()
