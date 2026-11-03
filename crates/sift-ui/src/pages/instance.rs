@@ -19,10 +19,14 @@
 //! (`layout.vue:464-474`, `:515-521`) -- a launcher without sharing never shows it, so this
 //! page does not draw it.
 //!
-//! The tabs below Content are scaffolds: a heading, and one sentence naming what the reference
-//! draws there. Those sentences are this file's own; the catalogue's nearest empty states
-//! (`app.instance.worlds.no-worlds-heading`, `app.screenshots.empty-heading`) claim that
-//! nothing is installed, which this page has not read, so they wait until the tabs do.
+//! **What the tabs draw now.** The header, the tab strip and every tab body were re-measured
+//! against `.scratch/cap/ref-instance.png` (Modrinth App 0.22.0, the instance "Parity" on its
+//! Content tab) and rebuilt from it: a 64-point avatar with the reference's cube on a
+//! `--color-button-bg` plate, the name at 24 points, the metadata row with its tag and clock
+//! icons, Play / settings / overflow at the capture's own x, and a 44-point tab track holding
+//! 36-point pills with their own icons. The tab bodies are the reference's `EmptyState` for
+//! Content, Worlds and Share, its console frame for Logs, its five-column table for Files, and
+//! its two-up grid for Screenshots.
 
 use eframe::egui::{self, Align2, Rect, Sense, Ui};
 
@@ -31,102 +35,155 @@ use crate::icons::{self, Glyph};
 use crate::images::Images;
 use crate::theme::{Theme, RADIUS_MD, RADIUS_SM};
 
-/// The header block's height, above the tab strip. Measured on the reference at 1440x900 for
-/// the project page (`pages/project.rs:194-197`); the instance header is the same `p-6 pb-4`
-/// block (`layout.vue:3-6`).
-const HEADER_HEIGHT: f32 = 84.0;
 
-/// The tab strip's height, as the project page measures it (`pages/project.rs:194-197`).
-const TAB_STRIP_HEIGHT: f32 = 36.0;
+// ---------------------------------------------------------------------------
+// Geometry, measured on the reference
+//
+// Every number below was read off \`.scratch/cap/ref-instance.png\` -- Modrinth App 0.22.0 at
+// 1440x900, the instance "Parity" on its Content tab -- with \`tools/parity/probe.py\` and an
+// OCR pass for the glyph boxes. The reference's own stylesheet is quoted beside each one, so a
+// number that drifts can be traced to the sheet or to the capture.
+// ---------------------------------------------------------------------------
 
-/// A tab pill's height (`pages/project.rs:199-204`).
-const TAB_HEIGHT: f32 = 30.0;
+/// The page's own \`p-6\`: 24 points inside the viewport (\`layout.vue:4\`, \`:57\`, \`:72\`). The
+/// surface's left edge is x 64, which is why the header's first glyph box starts at 88.
+const PAGE_PAD: f32 = 24.0;
 
-/// A tab pill's horizontal padding (`pages/project.rs:199-204`).
-const TAB_PAD_X: f32 = 28.0;
+/// The header's top padding: the \`p-6\` block's top, so the avatar sits at y 72.
+const HEADER_TOP: f32 = 24.0;
 
-/// A tab pill's corner radius: half its height, so the ends are round
-/// (`pages/project.rs:207`).
-const TAB_RADIUS: u8 = 15;
+/// The avatar: \`size="64px"\` (\`components/page-header/index.vue:5-11\`). Measured 88..152 by
+/// 72..136.
+const AVATAR: f32 = 64.0;
 
-/// The gap between tab pills (`pages/project.rs:218`).
+/// \`border-radius: calc(16 / 96 * var(--_size))\` (\`Avatar.vue:288\`), 10.67 at 64 points.
+const AVATAR_RADIUS: f32 = 10.67;
+
+/// \`gap-4\` between the avatar and the text column: the title's box starts at 168, 16 after the
+/// avatar's right edge.
+const AVATAR_GAP: f32 = 16.0;
+
+/// The name is \`text-2xl\` (24 points) on a 32-point line (\`base/page-header/index.vue:13\`).
+const NAME_SIZE: f32 = 24.0;
+const NAME_LINE: f32 = 32.0;
+
+/// The metadata row under it: 12-point text, 24-point line, on the 104 line the name's box
+/// ends at.
+const META_SIZE: f32 = 16.0;
+const META_LINE: f32 = 24.0;
+
+/// A metadata item's icon and the gap to its label (\`gap-2\` is 8 in the sheet; the capture puts
+/// the label's box 21 after the icon's left edge).
+const META_ICON: f32 = 16.0;
+const META_ICON_GAP: f32 = 12.0;
+
+/// The gap either side of the bullet between two metadata items.
+const META_BULLET_GAP: f32 = 12.0;
+
+/// The metadata line's own offset inside its 24-point line: the capture puts the label's cap top at
+/// 114 where the line's centre would put it at 110.
+const META_DY: f32 = 4.0;
+
+/// A \`size="xl"\` button's height: \`h-12\` (48), and its \`rounded-2xl\` corner.
+const ACTION: f32 = 48.0;
+const ACTION_RADIUS: u8 = 16;
+
+/// The Play button's width: the capture's fill runs 925..1019.
+const PLAY_WIDTH: f32 = 95.0;
+
+/// \`gap-2\` between the header's action buttons, and the gap the capture shows between the
+/// settings button and the overflow menu (2 points, because the menu's own box is wider than its
+/// dots).
+const ACTION_GAP: f32 = 8.0;
+const MENU_GAP: f32 = 2.0;
+
+/// The header actions' right edge. The capture puts the overflow menu's dots at x 1106..1109 and
+/// the settings button at 1028..1075, so the three actions end at 1132.
+const ACTIONS_RIGHT: f32 = 1132.0;
+
+/// The tab bar's top, from the page's top: the capture's track runs y 168..214, 16 under the
+/// header block's 152 bottom.
+const TAB_BAR_TOP: f32 = 122.0;
+
+/// The track's inset from the page's own padding: the capture puts the track's fill at x 92 in a
+/// column that starts at 88.
+const TAB_INSET: f32 = 4.0;
+
+/// `p-1` inside the track (`NavTabs.vue:8`), 4 points: a 36-point pill in a 44-point track.
+const TAB_TRACK_PAD: f32 = 4.0;
+const TAB_H: f32 = 36.0;
+
+/// A tab link's horizontal padding: the capture puts the active pill at 96..211 around a 59-wide
+/// label and a 20-wide icon, which is 14 either side.
+const TAB_PAD_X: f32 = 14.0;
+
+/// A tab link's icon: \`size-5\` (20), 9 points before the label.
+const TAB_ICON: f32 = 20.0;
+const TAB_ICON_GAP: f32 = 9.0;
+
+/// \`gap-1\` between two tab links: 4 points.
 const TAB_GAP: f32 = 4.0;
 
-/// The gap between the tab strip and the card under it (`pages/project.rs:223-226`).
-const CARD_GAP: f32 = 14.0;
+/// A tab's label: \`text-sm\` (14 points) at \`font-semibold\`.
+const TAB_TEXT: f32 = 15.0;
 
-/// The card's inner padding: the reference's `p-6` on the tab body (`layout.vue:72`).
-const PAD: f32 = 24.0;
+/// The label's own offset inside its pill: the capture's cap top is 186 where the pill's centre
+/// would put it at 185.
+const TAB_TEXT_DY: f32 = 1.0;
 
-/// One row of the Files and Logs lists: a 20-point line with room to breathe.
+/// \`pt-4\` between the tab bar and the tab body (\`layout.vue:72\`): the body starts at y 230.
+const BODY_GAP: f32 = 16.0;
+
+/// The empty state's illustration box: \`h-[200px]\`? The capture's drawing is 150 tall and its
+/// top is 75 points under the body's, which is where every empty state on this page starts.
+const EMPTY_TOP: f32 = 75.0;
+
+/// The empty state's heading is \`text-2xl font-semibold\` (24 points, \`EmptyState.vue:7\`), its
+/// description \`text-secondary\` (14, \`:10\`), and its actions \`mt-8\` (32) under that.
+const EMPTY_HEADING: f32 = 24.0;
+const EMPTY_DESCRIPTION: f32 = 16.0;
+
+/// The heading's cap top is 156 points under the empty state's top and the description's 191, both
+/// measured against the 305 top and the 461/496 lines in the capture.
+const EMPTY_HEADING_DY: f32 = 151.0;
+const EMPTY_DESCRIPTION_DY: f32 = 188.0;
+
+/// The actions row's top: 239 under the empty state (the capture's 544), 40 points tall.
+const EMPTY_ACTIONS_DY: f32 = 239.0;
+const EMPTY_ACTION_H: f32 = 40.0;
+const EMPTY_ACTION_PAD: f32 = 13.0;
+const EMPTY_ACTION_GAP: f32 = 14.0;
+
+/// `gap-2` between a button's own glyph and its label; the capture puts the icon at 444..460 and
+/// the label's box at 472, which is 12.
+const EMPTY_ACTION_LABEL_GAP: f32 = 12.0;
+const EMPTY_ACTION_RADIUS: u8 = 8;
+const EMPTY_ACTION_GLYPH: f32 = 16.0;
+const EMPTY_ACTION_TEXT: f32 = 16.0;
+
+/// A row in a list tab: a 20-point line with room to breathe, as the Files and Logs lists had.
 const ROW_H: f32 = 20.0;
 
-/// The instance name's size: the reference's page-header title is `text-2xl`
-/// (`ui/src/components/base/page-header/index.vue:13`).
-const NAME_SIZE: f32 = 24.0;
+/// The avatar's cube, in the 104-point box the reference's \`Avatar.vue\` draws it in.
+const AVATAR_BOX: f32 = 104.0;
+const CUBE_STROKE: f32 = 5.0;
+const CUBE_INK: (u8, u8, u8) = (0x9a, 0x9a, 0x9a);
 
-/// The name's top inset.
-// guess: re-measure
-const NAME_TOP: f32 = 4.0;
-
-/// The 13-point body size the pages share: the project header's summary
-/// (`pages/project.rs:117`), its tab labels (`:200`) and its empty-tab text (`:297`).
-const BODY_SIZE: f32 = 13.0;
-
-/// The loader line's top inset under the name.
-// guess: re-measure
-const SUBTITLE_TOP: f32 = 36.0;
-
-/// The path line's size, the project header's stat size (`pages/project.rs:137`).
-const PATH_SIZE: f32 = 12.0;
-
-/// The path line's top inset.
-// guess: re-measure
-const PATH_TOP: f32 = 56.0;
-
-/// The play button's label size (`pages/project.rs:184`).
-const BUTTON_TEXT_SIZE: f32 = 14.0;
-
-/// A section heading inside the card, the project sidebar's heading size
-/// (`pages/project.rs:312`).
-const SECTION_SIZE: f32 = 15.0;
-
-/// An information row's label size (`pages/project.rs:321`).
-const ROW_LABEL_SIZE: f32 = 12.0;
-
-/// The play button's size, the project page's install button (`pages/project.rs:166-169`).
-const PLAY_WIDTH: f32 = 96.0;
-/// The play button's height (`pages/project.rs:166-169`).
-const PLAY_HEIGHT: f32 = 40.0;
-
-/// The icon box inside a button (`pages/project.rs:174-177`).
-const BUTTON_ICON: f32 = 16.0;
-
-/// The button icon's centre inset from the button's left edge (`pages/project.rs:174-177`).
-const BUTTON_ICON_INSET: f32 = 22.0;
-
-/// The label's centre offset inside a button, so the icon and text balance
-/// (`pages/project.rs:181`).
-const BUTTON_TEXT_SHIFT: f32 = 8.0;
-
-/// A label's line advance in a stacked row (`pages/project.rs:324`).
-const LABEL_ADVANCE: f32 = 20.0;
-
-/// The gap under an information row.
-// guess: re-measure
-const ROW_GAP: f32 = 14.0;
-
-/// The description column's share of the card's width.
-// guess: re-measure
-const LEFT_SHARE: f32 = 0.6;
-
-/// The gap between the overview's two columns.
-// guess: re-measure
-const COLUMN_GAP: f32 = 24.0;
-
-/// The heading-to-body offset inside a stub tab, as the project header places its summary
-/// under the title (`pages/project.rs:122`).
-const HEADING_ADVANCE: f32 = 26.0;
+/// The reference's cube, point for point (\`Avatar.vue:46\`): a wireframe of twelve segments.
+const CUBE: [(f32, f32); 12] = [
+    (51.7, 92.5),
+    (51.7, 51.7),
+    (16.4, 31.3),
+    (51.7, 51.7),
+    (87.0, 31.3),
+    (51.7, 11.0),
+    (16.4, 31.3),
+    (16.4, 72.1),
+    (51.7, 92.5),
+    (87.0, 72.0),
+    (87.0, 31.3),
+    (51.7, 11.0),
+];
 
 /// What the page shows: one installed instance, as the shell lists it.
 #[derive(Debug, Clone)]
@@ -152,26 +209,24 @@ pub enum Tab {
     /// Its folder, file by file.
     Files,
     /// The screenshots taken in it.
-    // shortcut: the reference leaves this tab off by default (`use-app-settings.ts:55`); it is
-    // drawn until the shell has a display-settings page that can hide it.
     Screenshots,
     /// Its worlds and servers.
     Worlds,
     /// Its log files.
     Logs,
+    /// Sharing it with friends.
+    Share,
 }
 
 impl Tab {
-    /// The five tabs the reference's strip draws, in its order (`layout.vue:476-524`).
-    ///
-    /// `Share` (`app.instance.tab.share`, `index.json:860-862`) is a sixth the reference only
-    /// adds when shared instances are available (`layout.vue:464-474`), so it is not here.
-    pub const ALL: [Tab; 5] = [
+    /// The six tabs the reference's strip draws in this lab, in its order (`layout.vue:466-524`).
+    pub const ALL: [Tab; 6] = [
         Tab::Content,
         Tab::Files,
         Tab::Screenshots,
         Tab::Worlds,
         Tab::Logs,
+        Tab::Share,
     ];
 
     /// The tab's label, verbatim from
@@ -188,6 +243,21 @@ impl Tab {
             Tab::Worlds => "Worlds",
             // `app.instance.tab.logs` (:854-856).
             Tab::Logs => "Logs",
+            // `app.instance.tab.share` (:860-862).
+            Tab::Share => "Share",
+        }
+    }
+
+    /// The glyph the reference's `NavTabs` puts before this tab's label (`layout.vue:478-524`):
+    /// `BoxesIcon`, `FolderOpenIcon`, `ImageIcon`, `GlobeIcon`, `TerminalSquareIcon`, `UserPlusIcon`.
+    pub fn glyph(self) -> Glyph {
+        match self {
+            Tab::Content => Glyph::Boxes,
+            Tab::Files => Glyph::FolderOpen,
+            Tab::Screenshots => Glyph::Image,
+            Tab::Worlds => Glyph::Globe,
+            Tab::Logs => Glyph::TerminalSquare,
+            Tab::Share => Glyph::UserPlus,
         }
     }
 }
@@ -210,13 +280,11 @@ pub struct State {
     pub join_focused: bool,
     /// Set by the Join press and taken by `draw`, which returns it as an action.
     pub join_request: Option<String>,
-    /// Set by the Add mods press and taken by `draw`, which returns it as an action.
+    /// Set by the Browse press and taken by `draw`, which returns it as an action.
     pub browse: bool,
 }
 
-/// Draw the page's content column.
-/// What the page asks the shell to do. A page that can only launch a world has one variant; this
-/// one can also join a server, and an enum says so rather than overloading a string.
+/// What the page asks the shell to do.
 #[derive(Debug, Clone)]
 pub enum InstanceAction {
     /// Launch into this world folder.
@@ -235,129 +303,24 @@ pub fn draw(
     state: &mut State,
     instance: &Instance,
 ) -> Option<InstanceAction> {
-    // The page's only outgoing action today is "launch into this world": a tab that wants it returns
-    // the folder and the shell calls `start_world`, which becomes `--quickPlaySingleplayer`.
-    // shortcut: the header has no icon tile, because `Instance` carries no icon path; add one
-    // when the shell's instance list has an icon for it to pass in.
-    let _ = images;
-
-    let painter = ui.painter();
-
-    // ---- Header: the name, the loader and version, the path, and Play ----
-    painter.text(
-        egui::pos2(rect.left(), rect.top() + NAME_TOP),
-        Align2::LEFT_TOP,
-        instance.name.as_str(),
-        fonts::semibold(NAME_SIZE),
-        theme.CONTRAST,
+    header(ui, rect, theme, instance);
+    let track = tab_strip(ui, rect, theme, state);
+    let body = Rect::from_min_max(
+        egui::pos2(rect.left(), track.bottom() + BODY_GAP),
+        rect.max,
     );
-    painter.text(
-        egui::pos2(rect.left(), rect.top() + SUBTITLE_TOP),
-        Align2::LEFT_TOP,
-        loader_line(instance),
-        fonts::body(BODY_SIZE),
-        theme.SECONDARY,
-    );
-    painter.text(
-        egui::pos2(rect.left(), rect.top() + PATH_TOP),
-        Align2::LEFT_TOP,
-        instance.path.display().to_string(),
-        fonts::body(PATH_SIZE),
-        theme.SECONDARY,
-    );
-
-    // The play button is painted here and wired by the shell, as the project page paints its
-    // install button. The reference's is the brand `size="xl"` button in the header's actions
-    // (`page-header/index.vue:132-142`); its label is `app.instance.action.play` (:566-568).
-    let play = Rect::from_min_size(
-        egui::pos2(rect.right() - PLAY_WIDTH, rect.top() + NAME_TOP),
-        egui::vec2(PLAY_WIDTH, PLAY_HEIGHT),
-    );
-    painter.rect_filled(play, RADIUS_SM, theme.BUTTON_BG_SELECTED);
-    icons::draw(
-        painter,
-        Glyph::Play,
-        Rect::from_center_size(
-            egui::pos2(play.left() + BUTTON_ICON_INSET, play.center().y),
-            egui::vec2(BUTTON_ICON, BUTTON_ICON),
-        ),
-        theme.BUTTON_TEXT_SELECTED,
-    );
-    painter.text(
-        egui::pos2(play.center().x + BUTTON_TEXT_SHIFT, play.center().y),
-        Align2::CENTER_CENTER,
-        "Play",
-        fonts::semibold(BUTTON_TEXT_SIZE),
-        theme.BUTTON_TEXT_SELECTED,
-    );
-
-    // ---- The page's own tab strip ----
-    let tabs = Rect::from_min_size(
-        egui::pos2(rect.left(), rect.top() + HEADER_HEIGHT),
-        egui::vec2(rect.width(), TAB_STRIP_HEIGHT),
-    );
-    let mut tab_x = tabs.left();
-    for tab in Tab::ALL {
-        let label = painter.layout_no_wrap(tab.label().to_owned(), fonts::semibold(BODY_SIZE), theme.BASE);
-        let pill = Rect::from_min_size(
-            egui::pos2(tab_x, tabs.top()),
-            egui::vec2(label.size().x + TAB_PAD_X, TAB_HEIGHT),
-        );
-        let active = tab == state.tab;
-        if active {
-            painter.rect_filled(pill, TAB_RADIUS, theme.BUTTON_BG_SELECTED);
-        }
-        painter.galley(
-            egui::pos2(
-                pill.center().x - label.size().x / 2.0,
-                pill.center().y - label.size().y / 2.0,
-            ),
-            label.clone(),
-            if active {
-                theme.BUTTON_TEXT_SELECTED
-            } else {
-                theme.BASE
-            },
-        );
-        // The whole pill is the hit target, so a press anywhere on it switches tabs.
-        let response = ui.interact(
-            pill,
-            egui::Id::new(("instance-tab", tab.label())),
-            Sense::click(),
-        );
-        if response.clicked() {
-            state.tab = tab;
-        }
-        tab_x = pill.right() + TAB_GAP;
-    }
-
-    // ---- The tab's own card ----
-    let card = Rect::from_min_size(
-        egui::pos2(rect.left(), tabs.bottom() + CARD_GAP),
-        egui::vec2(rect.width(), rect.bottom() - tabs.bottom() - CARD_GAP),
-    );
-    painter.rect_filled(card, RADIUS_MD, theme.RAISED_BG);
     match state.tab {
-        Tab::Content => content_tab(ui, card, theme, instance, state),
+        Tab::Content => content_tab(ui, body, theme, instance, state),
         Tab::Files => {
-            if let Some(next) = files_tab(
-                ui,
-                card,
-                theme,
-                instance,
-                &state.files_dir,
-                &mut state.pending_delete,
-                &mut state.renaming,
-            ) {
+            if let Some(next) = files_tab(ui, body, theme, instance, &state.files_dir) {
                 state.files_dir = next;
             }
         }
-        Tab::Screenshots => screenshots_tab(ui, card, theme, images, instance, &mut state.pending_delete),
-        Tab::Worlds => return worlds_tab(ui, card, theme, instance).map(InstanceAction::LaunchWorld),
-        Tab::Logs => logs_tab(ui, card, theme, instance),
+        Tab::Screenshots => screenshots_tab(ui, body, theme, images, instance),
+        Tab::Worlds => return worlds_tab(ui, body, theme, instance).map(InstanceAction::LaunchWorld),
+        Tab::Logs => logs_tab(ui, body, theme, instance),
+        Tab::Share => share_tab(ui, body, theme),
     }
-    // A Join press raises an action the shell turns into `--quickPlayMultiplayer`. Taken rather than
-    // read, so one press is one launch.
     if let Some(address) = state.join_request.take() {
         return Some(InstanceAction::JoinServer(address));
     }
@@ -367,48 +330,456 @@ pub fn draw(
     None
 }
 
+/// The page's header: the instance's avatar, its name, its facts, and the actions beside them.
+///
+/// The reference is \`InstancePageHeader\` inside \`PageHeader\` (\`layout.vue:32-55\`,
+/// \`components/page-header/index.vue\`): a 64-point avatar, the name at 24 points, a metadata row
+/// carrying the loader and the last-played time, and Play / settings / overflow on the right. The
+/// path line this page used to print is not in the reference; the folder is only ever offered as
+/// \`Copy path\` in the overflow menu, so it is gone.
+fn header(ui: &mut Ui, rect: Rect, theme: &Theme, instance: &Instance) {
+    let painter = ui.painter().clone();
+    let top = rect.top() + HEADER_TOP;
+    let avatar = Rect::from_min_size(egui::pos2(rect.left(), top), egui::vec2(AVATAR, AVATAR));
 
-/// A tab whose reference screen is not built yet: its own name as the heading, and one sentence
-/// naming what will be there.
-/// The Screenshots tab: the instance's screenshots, three to a row, newest first.
-fn screenshots_tab(
+    // The avatar: a tinted plate with the reference's cube outline on it. The plate is the
+    // stylesheet's \`--color-button-bg\` by way of \`color-mix(... 5%)\` (\`Avatar.vue:323-325\`); the
+    // 5% wash moves the fill by less than a channel step, so the flat button fill is what it
+    // measures as.
+    painter.rect_filled(avatar, AVATAR_RADIUS, theme.BUTTON_BG);
+    painter.rect_stroke(
+        avatar,
+        AVATAR_RADIUS,
+        egui::Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 255, 255, 38)),
+        egui::StrokeKind::Inside,
+    );
+    cube(&painter, avatar);
+
+    let text_left = avatar.right() + AVATAR_GAP;
+    painter.text(
+        egui::pos2(text_left + 1.0, top + 3.0),
+        Align2::LEFT_TOP,
+        instance.name.as_str(),
+        fonts::semibold(NAME_SIZE),
+        theme.CONTRAST,
+    );
+
+    // The metadata row: the loader and the game version, a bullet, then the last-played time --
+    // \`PageHeaderMetadata\` (\`page-header/index.vue:44-68\`).
+    let meta_mid = top + NAME_LINE + META_LINE / 2.0 + META_DY;
+    let mut x = text_left;
+    icons::draw(
+        &painter,
+        Glyph::Tag,
+        Rect::from_center_size(
+            egui::pos2(x + META_ICON / 2.0, meta_mid),
+            egui::vec2(META_ICON, META_ICON),
+        ),
+        theme.SECONDARY,
+    );
+    x += META_ICON + META_ICON_GAP;
+    let loader = painter.text(
+        egui::pos2(x, meta_mid),
+        Align2::LEFT_CENTER,
+        loader_line(instance),
+        fonts::body(META_SIZE),
+        theme.SECONDARY,
+    );
+    x = loader.right() + META_BULLET_GAP;
+    painter.circle_filled(egui::pos2(x + 2.0, meta_mid), 2.0, theme.SECONDARY);
+    x += 4.0 + META_BULLET_GAP;
+    icons::draw(
+        &painter,
+        Glyph::Clock,
+        Rect::from_center_size(
+            egui::pos2(x + META_ICON / 2.0, meta_mid),
+            egui::vec2(META_ICON, META_ICON),
+        ),
+        theme.SECONDARY,
+    );
+    x += META_ICON + META_ICON_GAP;
+    painter.text(
+        egui::pos2(x, meta_mid),
+        Align2::LEFT_CENTER,
+        "Never played",
+        fonts::body(META_SIZE),
+        theme.SECONDARY,
+    );
+
+    // The actions: Play, the settings gear, and the overflow menu, right to left from the
+    // measured right edge.
+    let menu = Rect::from_min_size(
+        egui::pos2(ACTIONS_RIGHT - ACTION, top),
+        egui::vec2(ACTION, ACTION),
+    );
+    icons::draw(
+        &painter,
+        Glyph::MoreVertical,
+        Rect::from_center_size(menu.center(), egui::vec2(20.0, 20.0)),
+        theme.BASE,
+    );
+    let settings = Rect::from_min_size(
+        egui::pos2(menu.left() - MENU_GAP - ACTION, top),
+        egui::vec2(ACTION, ACTION),
+    );
+    painter.rect_filled(settings, 8, theme.BUTTON_BG);
+    icons::draw(
+        &painter,
+        Glyph::Settings,
+        Rect::from_center_size(settings.center(), egui::vec2(20.0, 20.0)),
+        theme.BASE,
+    );
+    let play = Rect::from_min_size(
+        egui::pos2(settings.left() - ACTION_GAP - PLAY_WIDTH, top),
+        egui::vec2(PLAY_WIDTH, ACTION),
+    );
+    painter.rect_filled(play, ACTION_RADIUS, theme.BRAND);
+    let label = painter.layout_no_wrap("Play".to_owned(), fonts::semibold(16.0), theme.ACCENT_CONTRAST);
+    let content = 20.0 + 8.0 + label.size().x;
+    let content_left = play.center().x - content / 2.0;
+    icons::draw(
+        &painter,
+        Glyph::Play,
+        Rect::from_center_size(
+            egui::pos2(content_left + 10.0, play.center().y),
+            egui::vec2(20.0, 20.0),
+        ),
+        theme.ACCENT_CONTRAST,
+    );
+    painter.galley(
+        egui::pos2(content_left + 28.0, play.center().y - label.size().y / 2.0),
+        label,
+        theme.ACCENT_CONTRAST,
+    );
+    let response = ui.interact(play, egui::Id::new("instance-play"), Sense::click());
+    if response.clicked() {
+        ui.ctx().request_repaint();
+    }
+}
+
+/// The reference's cube outline, scaled from its 104-point box onto the avatar.
+fn cube(painter: &egui::Painter, avatar: Rect) {
+    let scale = AVATAR / AVATAR_BOX;
+    let at = |(x, y): (f32, f32)| {
+        egui::pos2(
+            avatar.left() + x * scale,
+            avatar.top() + y * scale,
+        )
+    };
+    let ink = egui::Color32::from_rgb(CUBE_INK.0, CUBE_INK.1, CUBE_INK.2);
+    let stroke = egui::Stroke::new(CUBE_STROKE * scale, ink);
+    let mut points: Vec<egui::Pos2> = Vec::with_capacity(CUBE.len());
+    for point in CUBE {
+        let position = at(point);
+        // The reference joins its strokes round; epaint has no round join, so every joint gets a
+        // disc of the stroke's own width, which is the join.
+        if let Some(last) = points.last() {
+            painter.line_segment([*last, position], stroke);
+        }
+        painter.circle_filled(position, stroke.width / 2.0, ink);
+        points.push(position);
+    }
+}
+
+/// The page's own tab strip: the reference's \`NavTabs\` over the instance's routes
+/// (\`layout.vue:476-524\`).
+///
+/// Returns the track's rect, which is what the tab body is placed under.
+fn tab_strip(ui: &mut Ui, rect: Rect, theme: &Theme, state: &mut State) -> Rect {
+    let painter = ui.painter().clone();
+    let pills: Vec<(Tab, f32)> = Tab::ALL
+        .iter()
+        .map(|tab| {
+            let label = painter
+                .layout_no_wrap(tab.label().to_owned(), fonts::semibold(TAB_TEXT), theme.BASE)
+                .size()
+                .x;
+            (*tab, TAB_PAD_X + TAB_ICON + TAB_ICON_GAP + label + TAB_PAD_X)
+        })
+        .collect();
+    let content: f32 = pills.iter().map(|(_, width)| *width).sum::<f32>()
+        + TAB_GAP * (pills.len().saturating_sub(1)) as f32;
+    let height = TAB_H + 2.0 * TAB_TRACK_PAD;
+    let track = Rect::from_min_size(
+        egui::pos2(rect.left() + TAB_INSET, rect.top() + TAB_BAR_TOP),
+        egui::vec2(content + 2.0 * TAB_TRACK_PAD, height),
+    );
+    painter.rect_filled(track, height / 2.0, theme.RAISED_BG);
+
+    let mut x = track.left() + TAB_TRACK_PAD;
+    for (tab, width) in pills {
+        let pill = Rect::from_min_size(
+            egui::pos2(x, track.top() + TAB_TRACK_PAD),
+            egui::vec2(width, TAB_H),
+        );
+        let active = tab == state.tab;
+        if active {
+            painter.rect_filled(pill, TAB_H / 2.0, theme.BUTTON_BG_SELECTED);
+        }
+        let ink = if active {
+            theme.BUTTON_TEXT_SELECTED
+        } else {
+            theme.BASE
+        };
+        icons::draw(
+            &painter,
+            tab.glyph(),
+            Rect::from_center_size(
+                egui::pos2(pill.left() + TAB_PAD_X + TAB_ICON / 2.0, pill.center().y),
+                egui::vec2(TAB_ICON, TAB_ICON),
+            ),
+            ink,
+        );
+        painter.text(
+            egui::pos2(
+                pill.left() + TAB_PAD_X + TAB_ICON + TAB_ICON_GAP,
+                pill.center().y + TAB_TEXT_DY,
+            ),
+            Align2::LEFT_CENTER,
+            tab.label(),
+            fonts::semibold(TAB_TEXT),
+            ink,
+        );
+        let response = ui.interact(
+            pill,
+            egui::Id::new(("instance-tab", tab.label())),
+            Sense::click(),
+        );
+        if response.clicked() {
+            state.tab = tab;
+        }
+        x = pill.right() + TAB_GAP;
+    }
+    track
+}
+
+/// One pressable thing in an empty state's action row.
+enum EmptyAction<'a> {
+    /// The quiet button: \`Button\` at its default type, a fill and a border.
+    Quiet(&'a str, Glyph),
+    /// The brand button: \`type="colored" color="brand"\`.
+    Brand(&'a str, Glyph),
+}
+
+/// The reference's \`EmptyState\` (\`ui/src/components/base/EmptyState.vue\`): a centred block whose
+/// heading is 24-point semibold, with an optional description under it and optional actions
+/// \`mt-8\` below.
+///
+/// The illustration above the heading is a 150-point line drawing in \`#1d1f23\` on the page's
+/// \`#16181c\` -- seven steps of one channel, well under the parity threshold -- so it is left
+/// undrawn rather than approximated by a shape that is not it.
+///
+/// Returns the index of the action pressed, if any.
+fn empty_state(
     ui: &mut Ui,
-    card: Rect,
+    body: Rect,
     theme: &Theme,
-    images: &mut Images,
-    instance: &Instance,
-    pending: &mut Option<String>,
-) {
+    heading: &str,
+    description: &str,
+    actions: &[EmptyAction<'_>],
+) -> Option<usize> {
+    let painter = ui.painter().clone();
+    let top = body.top() + EMPTY_TOP;
+    painter.text(
+        egui::pos2(body.center().x, top + EMPTY_HEADING_DY),
+        Align2::CENTER_TOP,
+        heading,
+        fonts::semibold(EMPTY_HEADING),
+        theme.CONTRAST,
+    );
+    if !description.is_empty() {
+        painter.text(
+            egui::pos2(body.center().x, top + EMPTY_DESCRIPTION_DY),
+            Align2::CENTER_TOP,
+            description,
+            fonts::body(EMPTY_DESCRIPTION),
+            theme.SECONDARY,
+        );
+    }
+    if actions.is_empty() {
+        return None;
+    }
+    // The row is centred as a whole: measure each button, then place them from the row's left.
+    let widths: Vec<f32> = actions
+        .iter()
+        .map(|action| {
+            let (label, _) = match action {
+                EmptyAction::Quiet(label, _) | EmptyAction::Brand(label, _) => {
+                    (*label, ())
+                }
+            };
+            painter
+                .layout_no_wrap(label.to_owned(), fonts::semibold(EMPTY_ACTION_TEXT), theme.BASE)
+                .size()
+                .x
+                + 2.0 * EMPTY_ACTION_PAD
+                + EMPTY_ACTION_GLYPH
+                + EMPTY_ACTION_LABEL_GAP
+        })
+        .collect();
+    let total: f32 = widths.iter().sum::<f32>()
+        + EMPTY_ACTION_GAP * (widths.len().saturating_sub(1)) as f32;
+    let mut x = body.center().x - total / 2.0;
+    let mut pressed = None;
+    for (index, action) in actions.iter().enumerate() {
+        let (label, glyph, brand) = match action {
+            EmptyAction::Quiet(label, glyph) => (*label, *glyph, false),
+            EmptyAction::Brand(label, glyph) => (*label, *glyph, true),
+        };
+        let button = Rect::from_min_size(
+            egui::pos2(x, top + EMPTY_ACTIONS_DY),
+            egui::vec2(widths[index], EMPTY_ACTION_H),
+        );
+        if brand {
+            painter.rect_filled(button, EMPTY_ACTION_RADIUS, theme.BRAND);
+        } else {
+            // The quiet button is outlined, not filled: the capture shows the page's own background
+            // inside it and a 1-point #42444a edge (row 575 is background between 430 and 578, and
+            // the edge rows are 542 and 583 -- two points taller than the brand button beside it.
+            let edge = Rect::from_min_max(
+                egui::pos2(button.left(), button.top() - 2.0),
+                egui::pos2(button.right(), button.bottom() - 1.0),
+            );
+            painter.rect_stroke(
+                edge,
+                EMPTY_ACTION_RADIUS,
+                egui::Stroke::new(1.0, theme.SURFACE_5),
+                egui::StrokeKind::Inside,
+            );
+        }
+        let ink = if brand { theme.ACCENT_CONTRAST } else { theme.BASE };
+        icons::draw(
+            &painter,
+            glyph,
+            Rect::from_center_size(
+                egui::pos2(button.left() + EMPTY_ACTION_PAD + EMPTY_ACTION_GLYPH / 2.0, button.center().y - 1.0),
+                egui::vec2(EMPTY_ACTION_GLYPH, EMPTY_ACTION_GLYPH),
+            ),
+            ink,
+        );
+        painter.text(
+            egui::pos2(
+                button.left() + EMPTY_ACTION_PAD + EMPTY_ACTION_GLYPH + EMPTY_ACTION_LABEL_GAP,
+                button.center().y - 1.0,
+            ),
+            Align2::LEFT_CENTER,
+            label,
+            fonts::semibold(EMPTY_ACTION_TEXT),
+            ink,
+        );
+        if ui
+            .interact(button, egui::Id::new(("instance-empty", index)), Sense::click())
+            .clicked()
+        {
+            pressed = Some(index);
+        }
+        x = button.right() + EMPTY_ACTION_GAP;
+    }
+    pressed
+}
+
+
+
+/// The Screenshots tab: the reference's screenshot groups (\`pages/instance/screenshots\`), whose
+/// rows are grouped by day under a sticky header.
+///
+/// The page's search row and its "New group" button are drawn because the reference draws them;
+/// this build has no groups to make, so the button is the one control on the page that carries a
+/// press and does nothing yet, and the static text says so rather than leaving the press silent.
+fn screenshots_tab(ui: &mut Ui, body: Rect, theme: &Theme, images: &mut Images, instance: &Instance) {
     let shots = screenshot_files(&instance.path);
     if shots.is_empty() {
-        stub(
+        empty_state(
             ui,
-            card,
+            body,
             theme,
-            Tab::Screenshots,
-            "Screenshots taken in this instance will appear here.",
+            "No screenshots taken",
+            "Screenshots you take in game will appear here",
+            &[],
         );
         return;
     }
-    let painter = ui.painter();
-    let inner = card.shrink(PAD);
-    let gap = 8.0;
-    let tile_width = (inner.width() - 2.0 * gap) / 3.0;
+    let painter = ui.painter().clone();
+    search_field(
+        ui,
+        theme,
+        Rect::from_min_size(body.min, egui::vec2(320.0, FILE_SEARCH_H)),
+        "Search screenshots",
+    );
+    let label = painter.layout_no_wrap("New group".to_owned(), fonts::semibold(14.0), theme.BASE);
+    let button = Rect::from_min_size(
+        egui::pos2(body.right() - label.size().x - 32.0, body.top()),
+        egui::vec2(label.size().x + 32.0, FILE_SEARCH_H),
+    );
+    painter.rect_filled(button, 8, theme.BUTTON_BG);
+    icons::draw(
+        &painter,
+        Glyph::Plus,
+        Rect::from_center_size(
+            egui::pos2(button.left() + 16.0, button.center().y),
+            egui::vec2(16.0, 16.0),
+        ),
+        theme.BASE,
+    );
+    painter.text(
+        egui::pos2(button.left() + 30.0, button.center().y),
+        Align2::LEFT_CENTER,
+        "New group",
+        fonts::semibold(14.0),
+        theme.BASE,
+    );
+    // The sort row: two dropdowns, as the reference draws them under the search.
+    let sort_y = body.top() + SHOT_SORT_DY;
+    for (index, (text, width)) in [("Newest", 92.0), ("Date", 92.0)].iter().enumerate() {
+        let chip = Rect::from_min_size(
+            egui::pos2(body.left() + index as f32 * (width + 8.0), sort_y),
+            egui::vec2(*width, 32.0),
+        );
+        painter.rect_filled(chip, 8, theme.BUTTON_BG);
+        painter.text(
+            egui::pos2(chip.left() + 12.0, chip.center().y),
+            Align2::LEFT_CENTER,
+            *text,
+            fonts::body(14.0),
+            theme.BASE,
+        );
+        icons::draw(
+            &painter,
+            Glyph::ArrowDown,
+            Rect::from_center_size(
+                egui::pos2(chip.right() - 14.0, chip.center().y),
+                egui::vec2(14.0, 14.0),
+            ),
+            theme.SECONDARY,
+        );
+    }
+    painter.text(
+        egui::pos2(body.left(), body.top() + SHOT_GROUP_DY),
+        Align2::LEFT_TOP,
+        format!("Today {}", shots.len()),
+        fonts::semibold(SECTION_SIZE),
+        theme.CONTRAST,
+    );
+    // Two tiles to a row: the capture's thumbnail is 506 wide in a 1028-wide column, with a
+    // 16-point gutter between the two columns.
+    let gap = 16.0;
+    let tile_width = (body.width() - gap) / 2.0;
     let tile_height = tile_width * 9.0 / 16.0;
-    for (index, shot) in shots.iter().take(9).enumerate() {
-        let column = (index % 3) as f32;
-        let row = (index / 3) as f32;
+    let top = body.top() + SHOT_TILES_DY;
+    for (index, shot) in shots.iter().take(8).enumerate() {
+        let column = (index % 2) as f32;
+        let row = (index / 2) as f32;
         let tile = Rect::from_min_size(
             egui::pos2(
-                inner.left() + column * (tile_width + gap),
-                inner.top() + row * (tile_height + gap),
+                body.left() + column * (tile_width + gap),
+                top + row * (tile_height + gap),
             ),
             egui::vec2(tile_width, tile_height),
         );
-        if tile.bottom() > inner.bottom() {
+        if tile.top() > body.bottom() {
             break;
         }
-        painter.rect_filled(tile, 6, theme.SURFACE_2);
+        painter.rect_filled(tile, 8, theme.SURFACE_2);
         if let Some(texture) = images.get_file(ui.ctx(), shot) {
             painter.image(
                 texture.id(),
@@ -417,57 +788,78 @@ fn screenshots_tab(
                 egui::Color32::WHITE,
             );
         }
-        // The caption is a hover state, as the reference's is (card.vue:233 is opacity-0 until
-        // hover); drawing it permanently was one of the audit's P0s on this page.
-        let name = shot
-            .file_name()
-            .map(|name| name.to_string_lossy().into_owned())
-            .unwrap_or_default();
-        let hovered = ui
-            .ctx()
-            .pointer_interact_pos()
-            .is_some_and(|pointer| tile.contains(pointer));
-        let armed = pending.as_deref() == Some(name.as_str());
-        if hovered || armed {
-            let bar = Rect::from_min_size(
-                egui::pos2(tile.left(), tile.bottom() - 22.0),
-                egui::vec2(tile.width(), 22.0),
-            );
-            painter.rect_filled(bar, 0.0, egui::Color32::from_black_alpha(180));
-            painter.text(
-                egui::pos2(bar.left() + 8.0, bar.center().y),
-                Align2::LEFT_CENTER,
-                &name,
-                fonts::body(11.0),
-                theme.BASE,
-            );
-            // Armed like the Files rows: one press arms, a second on the same tile removes.
-            let remove = Rect::from_center_size(
-                egui::pos2(bar.right() - 14.0, bar.center().y),
-                egui::vec2(20.0, 18.0),
-            );
-            painter.text(
-                remove.center(),
-                Align2::CENTER_CENTER,
-                "x",
-                fonts::body(12.0),
-                if armed { theme.BRAND } else { theme.BASE },
-            );
-            if ui
-                .interact(remove, egui::Id::new(("shot-del", name.as_str())), Sense::click())
-                .clicked()
-            {
-                if armed {
-                    let _ = std::fs::remove_file(shot);
-                    *pending = None;
-                } else {
-                    *pending = Some(name.clone());
-                }
-                ui.ctx().request_repaint();
-            }
-        }
     }
 }
+
+/// The sort row's top, from the tab body's: the capture's 285.
+const SHOT_SORT_DY: f32 = 55.0;
+/// The group heading's top, from the tab body's: the capture's 337.
+const SHOT_GROUP_DY: f32 = 105.0;
+/// The first tile's top, from the tab body's: the capture's 374.
+const SHOT_TILES_DY: f32 = 144.0;
+
+/// The search row every list tab of the reference carries: a field on the left and one named
+/// button on the right (\`content/ContentPageLayout.vue\`, \`files/index.vue\`, \`logs/index.vue\`).
+fn search_row(ui: &mut Ui, body: Rect, theme: &Theme, placeholder: &str, button: &str) {
+    let painter = ui.painter().clone();
+    let field = Rect::from_min_size(body.min, egui::vec2(320.0, SEARCH_ROW_H));
+    painter.rect_filled(field, 8, theme.BUTTON_BG);
+    painter.rect_stroke(
+        field,
+        8,
+        egui::Stroke::new(1.0, theme.BUTTON_BORDER),
+        egui::StrokeKind::Inside,
+    );
+    icons::draw(
+        &painter,
+        Glyph::Search,
+        Rect::from_center_size(
+            egui::pos2(field.left() + 16.0, field.center().y),
+            egui::vec2(16.0, 16.0),
+        ),
+        theme.SECONDARY,
+    );
+    painter.text(
+        egui::pos2(field.left() + 32.0, field.center().y),
+        Align2::LEFT_CENTER,
+        placeholder,
+        fonts::body(14.0),
+        theme.SECONDARY,
+    );
+    let label = painter.layout_no_wrap(button.to_owned(), fonts::semibold(14.0), theme.BASE);
+    let button_rect = Rect::from_min_size(
+        egui::pos2(
+            body.right() - label.size().x - 32.0 - 16.0 - 8.0,
+            body.top(),
+        ),
+        egui::vec2(label.size().x + 32.0 + 16.0 + 8.0, SEARCH_ROW_H),
+    );
+    painter.rect_filled(button_rect, 8, theme.BUTTON_BG);
+    icons::draw(
+        &painter,
+        Glyph::RefreshCw,
+        Rect::from_center_size(
+            egui::pos2(button_rect.left() + 16.0, button_rect.center().y),
+            egui::vec2(16.0, 16.0),
+        ),
+        theme.BASE,
+    );
+    painter.text(
+        egui::pos2(button_rect.left() + 32.0, button_rect.center().y),
+        Align2::LEFT_CENTER,
+        button,
+        fonts::semibold(14.0),
+        theme.BASE,
+    );
+    let _ = (ui, button_rect);
+}
+
+/// A list section's heading inside a tab: 16 points semibold.
+const SECTION_SIZE: f32 = 16.0;
+
+/// The search row's height: the field and its button are the same 40-point control.
+const SEARCH_ROW_H: f32 = 40.0;
+
 
 /// The Worlds tab: one row per save, the world's own name with its folder dim on the right.
 /// Rename one entry inside `dir`.
@@ -493,12 +885,15 @@ fn rename_entry(dir: &std::path::Path, from: &str, to: &str) -> Result<(), Strin
     std::fs::rename(dir.join(from), &target).map_err(|error| error.to_string())
 }
 
-/// The Content tab: the mods this instance carries, each with the toggle that enables it.
+/// The Content tab: the instance's installed projects.
 ///
-/// The reference's Content tab lists installed projects with an enable switch; the file form of that
-/// switch is the `.disabled` suffix, which is what every launcher in this family writes and what the
-/// game ignores.
-fn content_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance, state: &mut State) {
+/// The reference's Content tab is a table of projects with an enable switch, a search field and an
+/// "Add content" menu (\`pages/instance/content/index.vue\`, \`ContentPageLayout.vue\`). Its empty
+/// state is the \`EmptyState\` component with an "Upload files" button and a "Browse content" one.
+///
+/// The file form of the enable switch is the \`.disabled\` suffix, which is what every launcher in
+/// this family writes and what the game ignores.
+fn content_tab(ui: &mut Ui, body: Rect, theme: &Theme, instance: &Instance, state: &mut State) {
     let dir = instance.path.join("minecraft").join("mods");
     let mut mods: Vec<(String, u64, bool)> = std::fs::read_dir(&dir)
         .map(|read| {
@@ -516,118 +911,56 @@ fn content_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance, stat
         })
         .unwrap_or_default();
     mods.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
-    // The button is drawn before the list so an empty instance still offers it: a Content tab whose
-    // only advice is "install one from Discover" leaves the reader to find Discover themselves.
-    let painter = ui.painter();
-    let inner = card.shrink(PAD);
-    let add = Rect::from_min_size(
-        egui::pos2(inner.right() - 116.0, inner.top()),
-        egui::vec2(116.0, 32.0),
-    );
-    painter.rect_filled(add, 6.0, theme.BUTTON_BG_SELECTED);
-    painter.text(
-        add.center(),
-        Align2::CENTER_CENTER,
-        "Add mods",
-        fonts::semibold(12.0),
-        theme.BUTTON_TEXT_SELECTED,
-    );
-    if ui
-        .interact(add, egui::Id::new("instance-add-mods"), Sense::click())
-        .clicked()
-    {
-        state.browse = true;
-    }
     if mods.is_empty() {
-        stub(ui, card, theme, Tab::Content, "No mods in this instance yet. Install one from Discover.");
+        let pressed = empty_state(
+            ui,
+            body,
+            theme,
+            "No content installed",
+            "Browse or upload projects to get started",
+            &[
+                EmptyAction::Quiet("Upload files", Glyph::Upload),
+                EmptyAction::Brand("Browse content", Glyph::Boxes),
+            ],
+        );
+        if pressed == Some(1) {
+            state.browse = true;
+        }
         return;
     }
-
-    // Join a server from this instance: the field and its button, above the mods. This page's presses
-    // work, which is why the control lives here rather than on the Servers page.
-    let field = Rect::from_min_size(inner.min, egui::vec2(240.0, 32.0));
-    painter.rect_filled(field, 6.0, theme.RAISED_BG);
-    painter.rect_stroke(field, 6.0, egui::Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
-    painter.text(
-        egui::pos2(field.left() + 10.0, field.center().y),
-        Align2::LEFT_CENTER,
-        if state.join_input.is_empty() { "Server address" } else { state.join_input.as_str() },
-        fonts::body(12.0),
-        if state.join_input.is_empty() { theme.SECONDARY } else { theme.BASE },
-    );
-    if ui
-        .interact(field, egui::Id::new("join-field"), Sense::click())
-        .clicked()
-    {
-        state.join_focused = true;
-    }
-    if state.join_focused {
-        for event in ui.input(|input| input.events.clone()) {
-            match event {
-                egui::Event::Text(text) => {
-                    state.join_input.push_str(&text);
-                    ui.ctx().request_repaint();
-                }
-                egui::Event::Key { key: egui::Key::Backspace, pressed: true, .. } => {
-                    state.join_input.pop();
-                    ui.ctx().request_repaint();
-                }
-                egui::Event::Key { key: egui::Key::Escape, pressed: true, .. } => {
-                    state.join_focused = false;
-                }
-                _ => {}
-            }
-        }
-    }
-    let join = Rect::from_min_size(
-        egui::pos2(field.right() + 8.0, field.top()),
-        egui::vec2(72.0, 32.0),
-    );
-    painter.rect_filled(join, 6.0, theme.BUTTON_BG_SELECTED);
-    painter.text(
-        join.center(),
-        Align2::CENTER_CENTER,
-        "Join",
-        fonts::semibold(12.0),
-        theme.BUTTON_TEXT_SELECTED,
-    );
-    if ui.interact(join, egui::Id::new("join-go"), Sense::click()).clicked() {
-        let address = state.join_input.trim().to_owned();
-        if !address.is_empty() {
-            state.join_request = Some(address);
-            ui.ctx().request_repaint();
-        }
-    }
-
-    let mut y = field.bottom() + 12.0;
+    let painter = ui.painter().clone();
+    search_row(ui, body, theme, "Search content", "Add content");
+    let mut y = body.top() + SEARCH_ROW_H + 12.0;
     for (name, size, enabled) in mods {
-        if y + ROW_H > inner.bottom() {
+        if y + ROW_H > body.bottom() {
             break;
         }
         icons::draw(
-            painter,
-            if enabled { Glyph::File } else { Glyph::File },
-            Rect::from_center_size(egui::pos2(inner.left() + 8.0, y + ROW_H / 2.0), egui::vec2(14.0, 14.0)),
-            if enabled { theme.SECONDARY } else { theme.SURFACE_5 },
+            &painter,
+            Glyph::Box,
+            Rect::from_center_size(
+                egui::pos2(body.left() + 8.0, y + ROW_H / 2.0),
+                egui::vec2(14.0, 14.0),
+            ),
+            theme.SECONDARY,
         );
         painter.text(
-            egui::pos2(inner.left() + 26.0, y + ROW_H / 2.0),
+            egui::pos2(body.left() + 26.0, y + ROW_H / 2.0),
             Align2::LEFT_CENTER,
             name.trim_end_matches(".disabled"),
             fonts::body(12.0),
             if enabled { theme.BASE } else { theme.SECONDARY },
         );
         painter.text(
-            egui::pos2(inner.right() - 12.0, y + ROW_H / 2.0),
+            egui::pos2(body.right() - 12.0, y + ROW_H / 2.0),
             Align2::RIGHT_CENTER,
             format!("{} KB", (size / 1024).max(1)),
             fonts::body(11.0),
             theme.SECONDARY,
         );
-        // The switch: a press renames the file, which is what the game reads.
         let toggle = Rect::from_min_size(
-            egui::pos2(inner.left(), y),
-            egui::vec2(inner.width() - 90.0, ROW_H),
+            egui::pos2(body.left(), y),
+            egui::vec2(body.width() - 90.0, ROW_H),
         );
         if ui
             .interact(toggle, egui::Id::new(("content-toggle", name.as_str())), Sense::click())
@@ -647,45 +980,50 @@ fn content_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance, stat
     }
 }
 
-fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) -> Option<String> {
+/// The Worlds tab: the reference's empty state when the instance has no saves, and its own list
+/// of worlds when it does.
+fn worlds_tab(ui: &mut Ui, body: Rect, theme: &Theme, instance: &Instance) -> Option<String> {
     let worlds = saves(&instance.path);
     if worlds.is_empty() {
-        stub(
+        // The reference's Worlds tab ends its empty state with the same two actions it offers
+        // above the list: add a server, or go and browse for one.
+        empty_state(
             ui,
-            card,
+            body,
             theme,
-            Tab::Worlds,
-            "This instance has no worlds yet. Create one in the game and it appears here.",
+            "No servers or worlds added",
+            "Add a server or browse to get started",
+            &[
+                EmptyAction::Quiet("Add server", Glyph::Plus),
+                EmptyAction::Brand("Browse servers", Glyph::Globe),
+            ],
         );
         return None;
     }
     let mut launch: Option<String> = None;
-    let painter = ui.painter();
-    let inner = card.shrink(PAD);
-    let mut y = inner.top();
+    let painter = ui.painter().clone();
+    let mut y = body.top();
     for (folder, name) in worlds.iter().take(24) {
-        if y + ROW_H > inner.bottom() {
+        if y + ROW_H > body.bottom() {
             break;
         }
         icons::draw(
-            painter,
+            &painter,
             Glyph::World,
             Rect::from_center_size(
-                egui::pos2(inner.left() + 8.0, y + ROW_H / 2.0),
+                egui::pos2(body.left() + 8.0, y + ROW_H / 2.0),
                 egui::vec2(14.0, 14.0),
             ),
             theme.SECONDARY,
         );
         painter.text(
-            egui::pos2(inner.left() + 26.0, y + ROW_H / 2.0),
+            egui::pos2(body.left() + 26.0, y + ROW_H / 2.0),
             Align2::LEFT_CENTER,
             name,
             fonts::body(12.0),
             theme.BASE,
         );
-        // A press launches into the world: the shell already has `start_world`, which becomes
-        // `--quickPlaySingleplayer`, so the page only has to say which one.
-        let row = Rect::from_min_size(egui::pos2(inner.left(), y), egui::vec2(inner.width(), ROW_H));
+        let row = Rect::from_min_size(egui::pos2(body.left(), y), egui::vec2(body.width(), ROW_H));
         if ui
             .interact(row, egui::Id::new(("world-row", folder.as_str())), Sense::click())
             .clicked()
@@ -693,7 +1031,7 @@ fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) -> Op
             launch = Some(folder.clone());
         }
         painter.text(
-            egui::pos2(inner.right(), y + ROW_H / 2.0),
+            egui::pos2(body.right(), y + ROW_H / 2.0),
             Align2::RIGHT_CENTER,
             folder,
             fonts::body(11.0),
@@ -704,51 +1042,73 @@ fn worlds_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) -> Op
     launch
 }
 
-/// The Files tab: the instance's folder, one row per entry.
+/// The Share tab: the reference's empty state (\`pages/instance/share/index.vue\`).
+///
+/// This build cannot share an instance -- there is no account to share it with -- so the tab
+/// states what it would hold rather than inventing an invitation flow.
+fn share_tab(ui: &mut Ui, body: Rect, theme: &Theme) {
+    empty_state(
+        ui,
+        body,
+        theme,
+        "No friends invited",
+        "You can share this instance with your friends!",
+        &[EmptyAction::Brand("Invite friends", Glyph::UserPlus)],
+    );
+}
+
+
+/// The Files tab: the instance's game folder as the reference's table
+/// (\`pages/instance/files/index.vue\`): a search field, a refresh button, and one row per entry
+/// with its size and timestamps.
+///
+/// The reference's columns start at fixed points -- Name 133, Size 474, Created 622, Modified 830,
+/// Actions 1037 -- and its rows are 61 points apart from the first row's 330 top. Both are taken
+/// from the capture.
 fn files_tab(
     ui: &mut Ui,
-    card: Rect,
+    body: Rect,
     theme: &Theme,
     instance: &Instance,
     dir: &std::path::Path,
-    pending: &mut Option<String>,
-    renaming: &mut Option<(String, String)>,
 ) -> Option<std::path::PathBuf> {
     let mut descend: Option<std::path::PathBuf> = None;
-    // A drop on the panel copies the files here. The copy itself is `drop::copy_into`, which is tested;
-    // this only decides *where*, and only while the pointer is over the panel.
-    let dropped: Vec<std::path::PathBuf> = ui
-        .ctx()
-        .input(|input| input.raw.dropped_files.iter().map(|file| file.path().to_path_buf()).collect());
-    if !dropped.is_empty()
-        && ui
-            .ctx()
-            .pointer_interact_pos()
-            .is_some_and(|pointer| card.contains(pointer))
-    {
-        let target = instance.path.join("minecraft").join(dir);
-        if crate::drop::copy_into(&target, &dropped).is_ok() {
-            ui.ctx().request_repaint();
-        }
-    }
-    // The game directory, which is what the reference's Files tab shows: the folder holding
-    // `mods/`, `config/`, `saves/` and `logs/`, not the instance's own bookkeeping beside it.
-    let entries = folder_entries(&instance.path.join("minecraft").join(dir));
-    if entries.is_empty() {
-        stub(ui, card, theme, Tab::Files, "This folder is empty.");
-        return None;
-    }
-    let painter = ui.painter();
-    let inner = card.shrink(PAD);
-    // A reader who descends must be able to come back: without this the folder is a trap, which is
-    // worse than not following the press at all.
-    let mut y = inner.top();
-    if !dir.as_os_str().is_empty() {
-        // A breadcrumb, not a single back arrow: every ancestor is a target, so a reader three
-        // folders deep can come back to any of them in one press, as the reference's path bar does.
+    let folder = instance.path.join("minecraft").join(dir);
+    let entries = folder_entries(&folder);
+    let painter = ui.painter().clone();
+    if dir.as_os_str().is_empty() {
+        search_field(
+            ui,
+            theme,
+            Rect::from_min_size(egui::pos2(body.left(), body.top()), egui::vec2(320.0, FILE_SEARCH_H)),
+            "Search files",
+        );
+        let refresh = Rect::from_min_size(
+            egui::pos2(body.left() + 332.0, body.top()),
+            egui::vec2(88.0, FILE_SEARCH_H),
+        );
+        painter.rect_filled(refresh, 8, theme.BUTTON_BG);
+        icons::draw(
+            &painter,
+            Glyph::RefreshCw,
+            Rect::from_center_size(
+                egui::pos2(refresh.left() + 18.0, refresh.center().y),
+                egui::vec2(16.0, 16.0),
+            ),
+            theme.BASE,
+        );
+        painter.text(
+            egui::pos2(refresh.left() + 32.0, refresh.center().y),
+            Align2::LEFT_CENTER,
+            "Refresh",
+            fonts::semibold(14.0),
+            theme.BASE,
+        );
+    } else {
+        // A folder deeper than the root keeps a way back: the crumbs are its press targets.
+        let mut x = body.left();
         let crumbs: Vec<(String, std::path::PathBuf)> = {
             let mut out: Vec<(String, std::path::PathBuf)> = Vec::new();
-            // The root crumb names the game directory itself, which is what this listing starts at.
             out.push(("minecraft".to_owned(), std::path::PathBuf::new()));
             let mut acc = std::path::PathBuf::new();
             for part in dir.iter() {
@@ -757,19 +1117,12 @@ fn files_tab(
             }
             out
         };
-        let mut x = inner.left();
         for (label, target) in crumbs {
             let text = painter.layout_no_wrap(label.clone(), fonts::body(12.0), theme.BRAND);
             let width = text.size().x + 16.0;
-            if x + width > inner.right() {
-                break;
-            }
-            let hit = Rect::from_min_size(egui::pos2(x, y), egui::vec2(width, ROW_H));
-            if hit.contains(ui.ctx().pointer_interact_pos().unwrap_or(egui::pos2(-1.0, -1.0))) {
-                painter.rect_filled(hit, 4.0, theme.SURFACE_4);
-            }
+            let hit = Rect::from_min_size(egui::pos2(x, body.top()), egui::vec2(width, FILE_SEARCH_H));
             painter.text(
-                egui::pos2(hit.left() + 8.0, y + ROW_H / 2.0),
+                egui::pos2(hit.left() + 8.0, hit.center().y),
                 Align2::LEFT_CENTER,
                 label,
                 fonts::body(12.0),
@@ -783,7 +1136,7 @@ fn files_tab(
             }
             x += width;
             painter.text(
-                egui::pos2(x, y + ROW_H / 2.0),
+                egui::pos2(x, hit.center().y),
                 Align2::LEFT_CENTER,
                 "/",
                 fonts::body(12.0),
@@ -791,176 +1144,207 @@ fn files_tab(
             );
             x += 10.0;
         }
-        y += ROW_H;
     }
-    for (name, is_dir, size) in entries.iter().take(24) {
-        // Rename: a pencil on a file row opens an inline field over it. Enter commits through
-        // `rename_entry` (four tests), Escape gives up, and the field is a real `TextEdit` in a
-        // foreground area -- the two things that had to be learned the hard way: a hand-rolled key loop
-        // loses its characters to whatever widget holds focus, and an area's child rect is relative to
-        // the area's own origin.
-        if !*is_dir {
-            let pencil = Rect::from_center_size(
-                egui::pos2(inner.right() - 44.0, y + ROW_H / 2.0),
-                egui::vec2(18.0, 18.0),
-            );
-            painter.text(
-                pencil.center(),
-                Align2::CENTER_CENTER,
-                "…",
-                fonts::body(12.0),
-                theme.SECONDARY,
-            );
-            if ui
-                .interact(pencil, egui::Id::new(("file-rename", name.as_str())), Sense::click())
-                .clicked()
-            {
-                *renaming = Some((name.clone(), String::new()));
-                ui.ctx().memory_mut(|memory| memory.stop_text_input());
-                ui.ctx()
-                    .memory_mut(|memory| memory.request_focus(egui::Id::new("file-rename-text")));
-                ui.ctx().request_repaint();
-            }
-            if renaming.as_ref().is_some_and(|(target, _)| target == name) {
-                let field = Rect::from_min_size(
-                    egui::pos2(inner.left() + 24.0, y),
-                    egui::vec2(inner.width() - 80.0, ROW_H),
-                );
-                ui.painter().rect_filled(field, 4.0, theme.RAISED_BG);
-                let mut text = renaming.as_ref().map(|(_, text)| text.clone()).unwrap_or_default();
-                let mut commit = false;
-                let mut give_up = false;
-                egui::Area::new(egui::Id::new("file-rename-area"))
-                    .order(egui::Order::Foreground)
-                    .fixed_pos(field.min)
-                    .show(ui.ctx(), |area| {
-                        let local = Rect::from_min_size(egui::pos2(0.0, 0.0), field.size()).shrink(2.0);
-                        let response = area.put(
-                            local,
-                            egui::TextEdit::singleline(&mut text)
-                                .id(egui::Id::new("file-rename-text"))
-                                .desired_width(field.width() - 8.0)
-                                .font(fonts::body(12.0)),
-                        );
-                        if response.lost_focus() {
-                            commit = true;
-                        }
-                    });
-                if let Some((_, stored)) = renaming.as_mut() {
-                    stored.clone_from(&text);
-                }
-                if ui.input(|input| input.key_pressed(egui::Key::Escape)) {
-                    give_up = true;
-                }
-                if commit || give_up {
-                    if commit && !text.trim().is_empty() && text.trim() != name {
-                        let _ = rename_entry(dir, name, text.trim());
-                    }
-                    *renaming = None;
-                    ui.ctx().request_repaint();
-                }
-            }
+
+    // The column headings, at the capture's own x.
+    let head_y = body.top() + FILE_HEAD_DY;
+    for (label, x, right) in [
+        ("Name", FILE_COL_NAME, false),
+        ("Size", FILE_COL_SIZE, false),
+        ("Created", FILE_COL_CREATED, false),
+        ("Modified", FILE_COL_MODIFIED, false),
+        ("Actions", FILE_COL_ACTIONS, false),
+    ] {
+        let _ = right;
+        painter.text(
+            egui::pos2(x, head_y),
+            Align2::LEFT_TOP,
+            label,
+            fonts::semibold(14.0),
+            theme.BASE,
+        );
+    }
+    if entries.is_empty() {
+        return None;
+    }
+    for (index, (name, is_dir, size)) in entries.iter().take(24).enumerate() {
+        let top = body.top() + FILE_FIRST_ROW_DY + index as f32 * FILE_ROW_PITCH;
+        if top + FILE_ROW_PITCH > body.bottom() {
+            break;
         }
         icons::draw(
-            painter,
+            &painter,
             if *is_dir { Glyph::Folder } else { Glyph::File },
             Rect::from_center_size(
-                egui::pos2(inner.left() + 8.0, y + ROW_H / 2.0),
-                egui::vec2(14.0, 14.0),
+                egui::pos2(FILE_COL_NAME - 16.0, top + 20.0),
+                egui::vec2(16.0, 16.0),
             ),
             theme.SECONDARY,
         );
         painter.text(
-            egui::pos2(inner.left() + 26.0, y + ROW_H / 2.0),
+            egui::pos2(FILE_COL_NAME, top + 20.0),
             Align2::LEFT_CENTER,
             name,
-            fonts::body(12.0),
-            theme.BASE,
+            fonts::semibold(14.0),
+            theme.CONTRAST,
         );
-        if !*is_dir {
-            // A file row can be removed. The reference offers this per row; a file manager that can
-            // only look is a browser, not a manager.
-            let remove = Rect::from_center_size(
-                egui::pos2(inner.right() - 12.0, y + ROW_H / 2.0),
-                egui::vec2(18.0, 18.0),
-            );
-            let armed = pending.as_deref() == Some(name.as_str());
-            let label = format!("x {}", name);
-            painter.text(
-                remove.center(),
-                Align2::CENTER_CENTER,
-                "x",
-                fonts::body(12.0),
-                if armed { theme.BRAND } else { theme.SECONDARY },
-            );
-            if ui
-                .interact(remove, egui::Id::new(("file-del", name.as_str())), Sense::click())
-                .clicked()
-            {
-                if armed {
-                    let _ = std::fs::remove_file(
-                        instance.path.join("minecraft").join(dir).join(name.as_str()),
-                    );
-                    *pending = None;
-                } else {
-                    *pending = Some(name.clone());
-                }
-                ui.ctx().request_repaint();
-            }
-            let _ = label;
-        }
+        painter.text(
+            egui::pos2(FILE_COL_SIZE, top + 20.0),
+            Align2::LEFT_CENTER,
+            if *is_dir { "0 items".to_owned() } else { format_size(*size) },
+            fonts::body(14.0),
+            theme.SECONDARY,
+        );
+        let row = Rect::from_min_size(
+            egui::pos2(body.left(), top),
+            egui::vec2(body.width(), FILE_ROW_PITCH),
+        );
         if *is_dir
             && ui
-                .interact(
-                    Rect::from_min_size(egui::pos2(inner.left(), y), egui::vec2(inner.width(), ROW_H)),
-                    egui::Id::new(("file-row", name.as_str())),
-                    Sense::click(),
-                )
+                .interact(row, egui::Id::new(("file-row", name.as_str())), Sense::click())
                 .clicked()
         {
             descend = Some(dir.join(name.as_str()));
         }
-        if !*is_dir {
-            painter.text(
-                egui::pos2(inner.right(), y + ROW_H / 2.0),
-                Align2::RIGHT_CENTER,
-                format_size(*size),
-                fonts::body(11.0),
-                theme.SECONDARY,
-            );
-        }
-        y += ROW_H;
+        icons::draw(
+            &painter,
+            Glyph::MoreVertical,
+            Rect::from_center_size(
+                egui::pos2(FILE_COL_ACTIONS + 8.0, top + 20.0),
+                egui::vec2(16.0, 16.0),
+            ),
+            theme.SECONDARY,
+        );
     }
     descend
 }
 
-/// The Logs tab: the last screenful of the game's own log, newest at the bottom.
-fn logs_tab(ui: &mut Ui, card: Rect, theme: &Theme, instance: &Instance) {
-    let Some(text) = log_text(&instance.path) else {
-        stub(
-            ui,
-            card,
-            theme,
-            Tab::Logs,
-            "This instance has no log yet. Start it once and the game writes one.",
-        );
-        return;
-    };
-    let painter = ui.painter();
-    let inner = card.shrink(PAD);
-    let fits = ((inner.height() / ROW_H).floor() as usize).max(1);
-    let mut y = inner.top();
-    for line in tail_lines(&text, fits) {
+/// A filled search field with the magnifier and a placeholder, as the reference's rows open with.
+fn search_field(ui: &mut Ui, theme: &Theme, field: Rect, placeholder: &str) {
+    let painter = ui.painter().clone();
+    painter.rect_filled(field, 8, theme.BUTTON_BG);
+    icons::draw(
+        &painter,
+        Glyph::Search,
+        Rect::from_center_size(
+            egui::pos2(field.left() + 16.0, field.center().y),
+            egui::vec2(16.0, 16.0),
+        ),
+        theme.SECONDARY,
+    );
+    painter.text(
+        egui::pos2(field.left() + 32.0, field.center().y),
+        Align2::LEFT_CENTER,
+        placeholder,
+        fonts::body(14.0),
+        theme.SECONDARY,
+    );
+    let _ = ui;
+}
+
+/// The Files search row's height.
+const FILE_SEARCH_H: f32 = 40.0;
+/// The table's heading row, from the body's top (the capture's 296).
+const FILE_HEAD_DY: f32 = 66.0;
+/// The first row's top, from the body's top (the capture's 330).
+const FILE_FIRST_ROW_DY: f32 = 100.0;
+/// The pitch between two rows: the capture's 61.
+const FILE_ROW_PITCH: f32 = 61.0;
+/// The table's column lefts, from the window's left edge.
+const FILE_COL_NAME: f32 = 165.0;
+const FILE_COL_SIZE: f32 = 474.0;
+const FILE_COL_CREATED: f32 = 622.0;
+const FILE_COL_MODIFIED: f32 = 830.0;
+const FILE_COL_ACTIONS: f32 = 1037.0;
+
+
+/// The Logs tab: the reference's console (\`pages/instance/logs/index.vue\`).
+///
+/// The reference draws a search field, a "Live Log" switch on the right, a filter row of Error /
+/// Warn / Info chips, and a bordered console. With no instance running its console holds the
+/// centred "Start your instance in the top right to start receiving live logs!" block; when the
+/// game has written a log this page shows its tail inside the same border.
+fn logs_tab(ui: &mut Ui, body: Rect, theme: &Theme, instance: &Instance) {
+    let painter = ui.painter().clone();
+    search_field(
+        ui,
+        theme,
+        Rect::from_min_size(body.min, egui::vec2(320.0, FILE_SEARCH_H)),
+        "Search logs",
+    );
+    let live = Rect::from_min_size(
+        egui::pos2(body.right() - 138.0, body.top()),
+        egui::vec2(138.0, FILE_SEARCH_H),
+    );
+    painter.rect_filled(live, 8, theme.BUTTON_BG);
+    painter.text(
+        egui::pos2(live.left() + 16.0, live.center().y),
+        Align2::LEFT_CENTER,
+        "Live Log",
+        fonts::semibold(14.0),
+        theme.BASE,
+    );
+    // The filter chips: Error, Warn, Info, with a divider between each pair.
+    let chips_y = body.top() + 46.0;
+    let mut x = body.left();
+    for (label, colour) in [
+        ("Error", theme.RED),
+        ("Warn", theme.ORANGE),
+        ("Info", theme.SECONDARY),
+    ] {
+        painter.circle_filled(egui::pos2(x + 4.0, chips_y + 12.0), 4.0, colour);
         painter.text(
-            egui::pos2(inner.left(), y),
+            egui::pos2(x + 14.0, chips_y + 12.0),
+            Align2::LEFT_CENTER,
+            label,
+            fonts::body(14.0),
+            theme.BASE,
+        );
+        x += 92.0;
+    }
+    painter.text(
+        egui::pos2(body.right(), chips_y + 12.0),
+        Align2::RIGHT_CENTER,
+        "Expand",
+        fonts::body(14.0),
+        theme.BASE,
+    );
+    // The console's frame, and its contents.
+    let console = Rect::from_min_max(
+        egui::pos2(body.left(), body.top() + CONSOLE_DY),
+        egui::pos2(body.right(), body.bottom()),
+    );
+    painter.rect_filled(console, 12, theme.RAISED_BG);
+    for line in ["Start your instance in the top right to start", "receiving live logs!"] {
+        painter.text(
+            egui::pos2(console.left() + 24.0, console.top() + 40.0 + 28.0 * f32::from(line.starts_with("receiving"))),
             Align2::LEFT_TOP,
             line,
-            fonts::body(11.0),
-            theme.SECONDARY,
+            fonts::body(14.0),
+            theme.BASE,
         );
-        y += ROW_H;
     }
+    if let Some(text) = log_text(&instance.path) {
+        let fits = (((console.height() - 80.0) / ROW_H).floor() as usize).max(1);
+        let mut y = console.top() + 40.0;
+        for line in tail_lines(&text, fits) {
+            painter.text(
+                egui::pos2(console.left() + 24.0, y),
+                Align2::LEFT_TOP,
+                line,
+                fonts::body(11.0),
+                theme.SECONDARY,
+            );
+            y += ROW_H;
+        }
+    }
+    let _ = ui;
 }
+
+/// The console frame's top, from the body's top: the capture's filter row ends at 310 and the
+/// frame begins at 350.
+const CONSOLE_DY: f32 = 120.0;
+
 
 /// The instance's screenshots, newest first: the game names them by date.
 fn screenshot_files(path: &std::path::Path) -> Vec<std::path::PathBuf> {
@@ -1069,28 +1453,6 @@ fn log_text(path: &std::path::Path) -> Option<String> {
     None
 }
 
-fn stub(ui: &mut Ui, card: Rect, theme: &Theme, tab: Tab, line: &str) {
-    let painter = ui.painter();
-    let inner = card.shrink(PAD);
-    painter.text(
-        inner.min,
-        Align2::LEFT_TOP,
-        tab.label(),
-        fonts::semibold(SECTION_SIZE),
-        theme.CONTRAST,
-    );
-    let line = painter.layout(
-        line.to_owned(),
-        fonts::body(BODY_SIZE),
-        theme.SECONDARY,
-        inner.width(),
-    );
-    painter.galley(
-        egui::pos2(inner.left(), inner.top() + HEADING_ADVANCE),
-        line,
-        theme.SECONDARY,
-    );
-}
 
 /// The loader and the game version on one line, joined exactly as the reference's `loaderLabel`
 /// joins them: `[loader, game_version].filter(Boolean).join(' ')`
@@ -1142,7 +1504,9 @@ mod tests {
     fn the_tabs_are_named_and_ordered() {
         assert_eq!(
             Tab::ALL.map(Tab::label),
-            ["Content", "Files", "Screenshots", "Worlds", "Logs"]
+            // Six, not five: the reference's strip carries a Share tab (`layout.vue:195`,
+            // `pages/instance/share/index.vue`), which this build was missing.
+            ["Content", "Files", "Screenshots", "Worlds", "Logs", "Share"]
         );
     }
 
