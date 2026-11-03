@@ -62,28 +62,29 @@
 //! (`VirtualSkinSectionList.vue:139-141`), because a 31/40 skin tile is the one proportion
 //! the source is unambiguous about.
 //!
-//! The two rules disagree about how many columns appear, and that is the honest cost of
-//! taking the library's rule: the reference's 2.5fr list column at 1440 is about 660 points
-//! wide and lays out four ~156-point tiles, where this page lays out five 180-point ones
-//! across the full content column. Two grids that line up on two pages was judged worth
-//! more than one grid that matches the source's own column split exactly. The preview
-//! column the source puts in the other 1fr *is* drawn — a fixed 320-point plate, see below.
+//! **What the column split costs.** The grid therefore resolves inside the list column,
+//! not across the whole route: at 1440 the route's box is 1044 points, its 2.5fr column
+//! 717.14 of them, and the library's rule takes four 170.29-point columns -- the same four
+//! the reference's own list lays out (its first card starts at x 407, its last ends at 1123).
+//! The reference's list column is 715.7 wide against this page's 717.14; that 1.4 points is
+//! the whole cost of taking the library's rule over the source's fixed column counts, and it
+//! lands as about a point on each card's right edge.
 //!
-//! **The grid at 1440.** The shell's content column is 996 points
-//! (`PANEL_LEFT - CONTENT_LEFT - 16`, `pages/mod.rs:39-58`), the page's 24-point insets
-//! leave 948, the window is not below 1280 so the 160-point minimum applies, and
-//! `floor((948 + 12) / (160 + 12)) = 5` columns of 180 points; the identity
-//! `2 * 24 + 5 * 180 + 4 * 12 = 996` closes exactly, and each tile is
-//! `180 * 40 / 31 = 232.26` points tall. The 8rem branch is the 960-point window's, whose
-//! 516-point column gives three 148-point cards.
+//! **The grid at 1440.** The shell's content column is 64..1140, the route pads it `p-4` to
+//! 80..1124, the window is not below 1280 so the 160-point minimum applies, and the list's
+//! 717.14 points give `floor((717.14 + 12) / (160 + 12)) = 4` columns of
+//! `(717.14 - 3 * 12) / 4 = 170.29` points, each `170.29 * 40 / 31 = 219.72` tall --
+//! the 170 by 219 the reference's default cards measure. The 8rem branch is the 960-point
+//! window's: the same furniture leaves 564 points of route, 374.29 of list, and two
+//! 181.14-point cards.
 //!
-//! **The page inset is 24, not the skins page's own 16.** `Skins.vue:1085` pads the route
-//! with `p-4` (1rem = 16), where the library's route container pads with `p-6` (24,
-//! `pages/Index.vue:96`). This page takes the 24 for two reasons: `geometry::CONTENT_INSET`
-//! is 24 — the column's measured inset — and the grid arithmetic has to resolve to the same
-//! numbers as the library's to keep the two pages' tiles aligned. At 16 the same 996-point
-//! page would give five 183.2-point columns, which is neither the source's grid nor the
-//! library's.
+//! **The page box is the route's, not the shell's 24-point inset.** `Page::rect()` starts
+//! at x 88 because the shell's pages pad themselves by `CONTENT_INSET`; `Skins.vue:1085`
+//! pads the route itself with `p-4` (16), so the reference's columns start at x 80 and
+//! its heading -- eight points further in, inside the sticky wrapper's `p-2` -- at
+//! x 88. [`page_box`] recomputes the box from the content column for exactly
+//! that reason: taking `rect` and insetting it again put this page's columns 24 points
+//! right of the reference's, and the capture measured it.
 //!
 //! **Faces from a local file, not from a renderer.** The source's whole left column is a 3D
 //! `SkinPreviewRenderer` (`Skins.vue:1093-1237`), and each card's face is a baked skin image
@@ -92,8 +93,9 @@
 //! face every skin format agrees on: the head's front at atlas `(8,8,8,8)` and its overlay at
 //! `(40,8,8,8)`, scaled into the card's picture plate and into the preview column. The grid
 //! falls back to the eight sample rows only while the folder is empty; the moment a file is
-//! there, the saved skins are the section's content. There is still no 3D model, no camera,
-//! no drag-to-rotate: a face is the part of the reference this source can actually feed.
+//! there, the saved skins are the section's content. There is still no 3D renderer: the
+//! preview draws the composed front view at the reference's size, and the hint under it is
+//! the reference's own Drag to rotate line (see [`draw_preview`]).
 //!
 //! [`draw`] returns `false`: nothing on this page animates, and the search plate is a
 //! painted stand-in for the widget another agent owns (see [`search_plate`]).
@@ -505,12 +507,6 @@ const DEFAULTS_COLUMNS: usize = 4;
 /// the second section of the reference's right-hand column.
 const DEFAULT_SECTION_TITLE: &str = "Default skins";
 
-/// The reference's own line for a section whose contents come from an account this launcher
-/// does not have (`app.skins.default-skins.empty`). Said plainly rather than drawing eight
-/// invented names under a heading that promises Mojang's.
-const DEFAULT_SECTION_BODY: &str =
-    "Sign in to your Minecraft account to use its default skins.";
-
 /// `app.skins.add-button` -- "Add skin" (`locales/en-US/index.json:3131-3133`). The reference
 /// prints it on the grid's add tile (`VirtualSkinSectionList.vue:61-64,441`); this page
 /// prints it on that tile and, as the brief's `Upload` control, on the toolbar button.
@@ -890,7 +886,7 @@ pub fn draw(
     let column = preview_column_width(content.width());
     let show_preview = column >= PREVIEW_MIN_WIDTH;
     let list_left = if show_preview {
-        content.left() + column + COLUMN_GAP
+        content.right() - list_column_width(content.width())
     } else {
         content.left() - HEADER_PADDING
     };
@@ -900,7 +896,10 @@ pub fn draw(
                 content.left() + HEADER_PADDING + PREVIEW_INDENT,
                 toolbar_bottom + PREVIEW_GAP,
             ),
-            egui::vec2(column - 2.0 * HEADER_PADDING - PREVIEW_INDENT, PREVIEW_HEIGHT),
+            egui::vec2(
+                column - 2.0 * HEADER_PADDING - PREVIEW_INDENT,
+                PREVIEW_HEIGHT,
+            ),
         );
         draw_preview(ui, renderer, theme, state);
     }
@@ -962,8 +961,8 @@ pub fn draw(
         );
     }
 
-    // Where the next section starts: the saved grid, its rows, and the gap below it.
-    let mut below_grid = grid_rect.top();
+    // Where the Default skins section starts: the bottom of whatever the saved section drew.
+    let below_grid;
 
     match empty_state(query.as_deref(), visible_count) {
         // The source's own state for "nothing saved": the Saved-skins grid's first tile is
@@ -1507,13 +1506,6 @@ fn list_column_width(page_width: f32) -> f32 {
     (page_width - COLUMN_GAP) * LIST_SHARE / (PREVIEW_SHARE + LIST_SHARE)
 }
 
-/// The source's `cardWidth = (gridWidth - gap * (n - 1)) / n`
-/// (`instance-group/index.vue:127-129`), with the height taken from the skin tile's own
-/// aspect rather than the instance card's `+ 3.375rem`. The grid is the list column, which is
-/// what the reference's own `useElementSize` measures (`:92`).
-fn grid_layout(page_width: f32, window_width: f32) -> Grid {
-    grid_layout_in(list_column_width(page_width), window_width)
-}
 
 /// The same arithmetic over a content width that is not the whole page: the preview column
 /// takes its share first, and the grid is resolved inside what is left.
@@ -2564,7 +2556,7 @@ mod tests {
         let list = list_column_width(page);
         assert!((list - 717.142_857).abs() < 0.01, "2.5 / 3.5 of (1044 - 40)");
 
-        let grid = grid_layout(page, crate::geometry::WINDOW.0);
+        let grid = grid_layout_in(list, crate::geometry::WINDOW.0);
         assert_eq!(grid.columns, 4, "floor((717.14 + 12) / (160 + 12))");
         assert!(
             (grid.card_width - 170.285_71).abs() < 0.01,
@@ -2599,7 +2591,7 @@ mod tests {
         assert_eq!(min_card_width(960.0), 128.0);
 
         let list = list_column_width(page);
-        let grid = grid_layout(page, 960.0);
+        let grid = grid_layout_in(list, 960.0);
         assert_eq!(grid.columns, 2, "floor((374.29 + 12) / (128 + 12))");
         assert!(
             (grid.card_width - 181.142_85).abs() < 0.01,
