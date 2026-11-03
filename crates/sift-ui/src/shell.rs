@@ -2960,13 +2960,22 @@ fn card(
     );
     let tile = Rect::from_min_size(rect.min + egui::vec2(16.0, 16.0), Vec2::splat(100.0));
     painter.rect_filled(tile, 12, theme.BUTTON_BG);
+    // The plate's ring, one point and inside the fill: the reference's tile shows a hairline around its logo, and
+    // without it the icon's edge ran straight into the plate.
+    painter.rect_stroke(
+        tile,
+        12,
+        Stroke::new(1.0, theme.SURFACE_4),
+        egui::StrokeKind::Inside,
+    );
     // The project's own icon once it has arrived; the plate until then, and for ever if the
     // fetch failed. Rounded corners are the tile's: a texture drawn into a square rect inside
     // a rounded plate keeps the plate's corner showing, which is what the reference does.
     if let Some(texture) = icons.get(ui.ctx(), &result.icon) {
-        // Measured from the reference's card: its icon is inset inside the 100-point tile with the plate's own
-        // ring still visible around it, where a 2-point inset filled the tile edge to edge.
-        let inner = tile.shrink(7.0);
+        // Measured at 1:1 off the reference's own card: its tile starts at x 104 and its logo at 110 -- a 6-point
+        // inset inside a plate that carries a 1-point ring. Seven was leaving the logo 12 points in and the ring was
+        // missing entirely, both of which the card's own pixels show.
+        let inner = tile.shrink(5.5);
         painter.image(
             texture.id(),
             inner,
