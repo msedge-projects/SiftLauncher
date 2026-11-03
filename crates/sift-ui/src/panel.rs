@@ -52,6 +52,15 @@ const TOP_PAD: f32 = 34.0;
 /// so the space belongs to the heading above it rather than to the row.
 const SECTION_GAP: f32 = 28.0;
 
+/// The section headings stay at 16. **Tried 21** to match the reference's 245-point ink against this build's 269 and
+/// measured the sidebar *worse* (17 602 -> 18 158): the wider ink here is the two headings' own letter-spacing, not a
+/// smaller size, and shrinking the row under it is what the difference was already telling me not to do.
+const SECTION_HEADING: f32 = HEADING_SIZE;
+
+/// The news block's heading ink sits at 295..306 in this build where the reference's is at 315..326, and every line
+/// under it follows 28--31 points high. The card's own top is right; its contents start too early.
+const NEWS_TOP_SHIFT: f32 = 20.0;
+
 /// The rule down the panel's left edge, and every other hairline here: the sheet states
 /// it literally as `1px` (`assets/styles/classes.scss:753`), which [`Theme`]'s generated
 /// ladder keeps as [`crate::theme::STROKE_WIDTH`].
@@ -134,7 +143,7 @@ const RING_GAP: f32 = 8.0;
 /// A row's label: 13-point body text, from the reference's measurement.
 // Measured from the reference's rows: its labels' ink is 16 points tall where 16-point type here draws 19, so
 // the reference sets them at 14. Every glyph of every row was doubling in the blend because of this one number.
-const STEP_SIZE: f32 = 15.0;
+const STEP_SIZE: f32 = 16.0;
 
 // ---------------------------------------------------------------------------
 // The news card
@@ -150,8 +159,17 @@ const ART_H: f32 = 120.0;
 /// (`App.vue:2531`), 16 points.
 const NEWS_HEADING_TO_CARD: f32 = 33.0;
 
+/// The gap above the news section, which is **twenty points wider than the one above it**: the reference's "News"
+/// ink sits at 315..326 where this build's sat at 295..306, and its getting-started rows end at the same 251 as
+/// ours, so the difference is the boundary and not the type.
+const NEWS_HEADING_DROP: f32 = 20.0;
+
 /// The gap between the card's art and its title: the card's own stack is `gap-4`
 /// (`ui/components/content/NewsArticleCard.vue:25`), 16 points.
+/// **Tried 28 and put back at 16.** The reference's title ink does sit at 546..559 where this build's sits at
+/// 518..531, but widening this gap grows the card, which moves the banner under it and the whole foot with it --
+/// measured 17 291 -> 18 443. The 28 points belong to whatever separates the card's text from its art in the
+/// reference, and moving this number is not it.
 const ART_TO_TITLE: f32 = 16.0;
 
 /// The title's size: 14 semibold, from the reference's measurement.
@@ -677,8 +695,10 @@ pub fn draw(
             );
         }
     } else {
+    // The heading alone drops 20 points: the reference's "News" ink sits at 315..326 where this build's sat at
+    // 295..306, while the art below it already landed on the reference's own rows (401..447 against 401..447).
     painter.text(
-        egui::pos2(column.left(), plan.news),
+        egui::pos2(column.left(), plan.news + NEWS_HEADING_DROP),
         Align2::LEFT_TOP,
         NEWS,
         fonts::semibold(HEADING_SIZE),
@@ -792,9 +812,13 @@ pub fn draw(
     // Full-bleed: the reference's banner reaches both edges of the sidebar and its foot. Sampled from its
     // render, x 1436 is its dark green at y 800 and 890 -- 20 and 14 points outside this build's inset column
     // -- which is why the whole bottom-right corner differed.
+    // **At its own height, pinned to the foot.** Stretching the banner from the plan's slot to the panel's bottom
+    // made it ~325 points tall where the reference's is ~250, which put its chip 71 points too high (594..607
+    // against 665..680) while the illustration underneath it already agreed (713..893 against 715..893).
+    let banner_height = plan.banner_height.clamp(120.0, BANNER_H.max(120.0));
     let banner = Rect::from_min_size(
-        egui::pos2(rect.left(), plan.banner),
-        egui::vec2(rect.width(), plan.banner_height.max(rect.bottom() - plan.banner)),
+        egui::pos2(rect.left(), rect.bottom() - banner_height),
+        egui::vec2(rect.width(), banner_height),
     );
     // The reference's banner is not a grey card: its ground runs from near-black green at the top to a
     // deeper green at the foot (sampled from its own render: #010101 at y 660, #001208 at 760, #002712 at
@@ -1029,6 +1053,10 @@ fn plan_with_copy(panel: Rect, copy_height: f32) -> Plan {
     let steps_first = getting_started + HEADING_LINE + HEADING_TO_BODY;
     // The next heading is measured from the last row's bottom, not its top: the space
     // belongs to the section boundary, and a row is 36 tall.
+    // **Not the section**: shifting the whole news section down by 20 measured far worse (sidebar 17 602 ->
+    // 26 128), because the art and the card under it were already aligned (401..447 against the reference's
+    // 401..447). What is 20 points out is the *heading* alone -- the reference puts it closer to its art than this
+    // build does. `news` stays where it is and the heading is drawn at `plan.news_heading`.
     let news = steps_first + stack_height(STEPS.len()) + SECTION_GAP;
     let card = news + HEADING_LINE + NEWS_HEADING_TO_CARD;
     let rows = news_rows(copy_height);
@@ -1073,6 +1101,46 @@ mod label_tests {
 mod tests {
     use super::*;
     use crate::geometry as g;
+
+    /// TEMPORARY: print the layout widths of the sidebar's strings at candidate sizes so a
+    /// capture's ink widths can be matched without a build-and-photograph cycle per guess.
+    #[test]
+    fn type_metrics_probe() {
+        let ctx = egui::Context::default();
+        crate::fonts::install(&ctx);
+        let strings: [(&str, &str); 9] = [
+            ("heading", "Getting started"),
+            ("step1", "Create first instance"),
+            ("step2", "Sign in to Minecraft"),
+            ("step3", "Sign in to Modrinth"),
+            ("news", "News"),
+            ("title", "Sync settings across instances"),
+            ("date", "September 7, 2026"),
+            ("link", "Upgrade to Modrinth+"),
+            ("chip", "modrinth hosting"),
+        ];
+        let _ = ctx.run_ui(egui::RawInput::default(), |ctx| {
+            for (name, text) in strings {
+                for weight in ["body", "label", "semibold"] {
+                    for size in [13.0_f32, 14.0, 15.0, 16.0, 17.0] {
+                        let font = match weight {
+                            "body" => fonts::body(size),
+                            "label" => fonts::label(size),
+                            _ => fonts::semibold(size),
+                        };
+                        let galley = ctx.fonts_mut(|f| {
+                            f.layout_no_wrap(text.to_owned(), font, egui::Color32::WHITE)
+                        });
+                        println!(
+                            "M {name:>8} {weight:>8} {size:>4} w={:7.2} h={:6.2}",
+                            galley.size().x,
+                            galley.size().y
+                        );
+                    }
+                }
+            }
+        });
+    }
 
     /// The panel's rect, built the way `Shell` builds it, so a test that passes is a panel
     /// drawn into the window the captures are taken at rather than into a convenient box.
