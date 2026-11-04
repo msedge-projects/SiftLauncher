@@ -198,6 +198,10 @@ pub struct Instance {
     pub version: String,
     /// The instance's folder on disk.
     pub path: std::path::PathBuf,
+    /// What the launcher is doing with this instance right now -- "No instances running", "Preparing…",
+    /// "Downloading 12/346", "Running". The reference's header turns its Play button into **"Installing…"** while a
+    /// launch is preparing, and shows the speed beside it; this build's button said "Play" throughout.
+    pub status: String,
 }
 
 /// The page's own tabs, in the reference's order. `Content` is the landing tab.
@@ -300,6 +304,9 @@ pub struct State {
 /// What the page asks the shell to do.
 #[derive(Debug, Clone)]
 pub enum InstanceAction {
+    /// Launch the instance, the same verb the library row's Play pill sends. The header's own button used to only
+    /// request a repaint, so pressing the only Play button on the page did nothing at all.
+    Play,
     /// Launch into this world folder.
     LaunchWorld(String),
     /// Launch and connect to this address.
@@ -316,7 +323,10 @@ pub fn draw(
     state: &mut State,
     instance: &Instance,
 ) -> Option<InstanceAction> {
-    header(ui, rect, theme, instance, images);
+    // A press on the header's Play is the page's action, returned the moment it happens.
+    if let Some(action) = header(ui, rect, theme, instance, images) {
+        return Some(action);
+    }
     let track = tab_strip(ui, rect, theme, state);
     let body = Rect::from_min_max(
         egui::pos2(rect.left(), track.bottom() + BODY_GAP),
@@ -350,7 +360,13 @@ pub fn draw(
 /// carrying the loader and the last-played time, and Play / settings / overflow on the right. The
 /// path line this page used to print is not in the reference; the folder is only ever offered as
 /// \`Copy path\` in the overflow menu, so it is gone.
-fn header(ui: &mut Ui, rect: Rect, theme: &Theme, instance: &Instance, images: &mut crate::images::Images) {
+fn header(
+    ui: &mut Ui,
+    rect: Rect,
+    theme: &Theme,
+    instance: &Instance,
+    images: &mut crate::images::Images,
+) -> Option<InstanceAction> {
     let painter = ui.painter().clone();
     let top = rect.top() + HEADER_TOP;
     let avatar = Rect::from_min_size(egui::pos2(rect.left(), top), egui::vec2(AVATAR, AVATAR));
@@ -458,12 +474,19 @@ fn header(ui: &mut Ui, rect: Rect, theme: &Theme, instance: &Instance, images: &
         Rect::from_center_size(settings.center(), egui::vec2(20.0, 20.0)),
         theme.BASE,
     );
+    // **"Installing…" while a launch is preparing.** The reference's button changes state with the launcher's own
+    // work, and its header carries the status line; this button said "Play" through every phase.
+    let busy = instance.status.starts_with("Preparing")
+        || instance.status.starts_with("Downloading")
+        || instance.status.starts_with("Installing");
+    let play_text = if busy { "Installing…" } else { "Play" };
+    let wide = if busy { PLAY_WIDTH + 40.0 } else { PLAY_WIDTH };
     let play = Rect::from_min_size(
-        egui::pos2(settings.left() - ACTION_GAP - PLAY_WIDTH, top),
-        egui::vec2(PLAY_WIDTH, ACTION),
+        egui::pos2(settings.left() - ACTION_GAP - wide, top),
+        egui::vec2(wide, ACTION),
     );
     painter.rect_filled(play, ACTION_RADIUS, theme.BRAND);
-    let label = painter.layout_no_wrap("Play".to_owned(), fonts::semibold(16.0), theme.ACCENT_CONTRAST);
+    let label = painter.layout_no_wrap(play_text.to_owned(), fonts::semibold(16.0), theme.ACCENT_CONTRAST);
     let content = 20.0 + 8.0 + label.size().x;
     let content_left = play.center().x - content / 2.0;
     icons::draw(
@@ -483,7 +506,9 @@ fn header(ui: &mut Ui, rect: Rect, theme: &Theme, instance: &Instance, images: &
     let response = ui.interact(play, egui::Id::new("instance-play"), Sense::click());
     if response.clicked() {
         ui.ctx().request_repaint();
+        return Some(InstanceAction::Play);
     }
+    None
 }
 
 /// The reference's cube outline, scaled from its 104-point box onto the avatar.

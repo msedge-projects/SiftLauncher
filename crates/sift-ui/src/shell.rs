@@ -1285,6 +1285,11 @@ impl Shell {
         rail_animating |= self.rail_column(ui);
         rail_animating |= self.right_panel(ui);
 
+        // The status is live, not the snapshot the page was opened with: the button has to move when the launcher
+        // starts preparing, and a clone taken at open time never changes.
+        if let Some(open) = self.open_instance.as_mut() {
+            open.status = self.game.status().to_string();
+        }
         let content = if let Some(instance) = self.open_instance.clone() {
             let rect = crate::pages::Page::Instance.rect();
             ui.painter().rect_filled(rect, 0, self.theme.BG);
@@ -1300,6 +1305,17 @@ impl Shell {
             if let Some(action) = result {
                 let id = instance.id.clone();
                 match action {
+                    crate::pages::instance::InstanceAction::Play => {
+                        // The same verb the library row's pill sends, with the same one-game rule.
+                        if self.game.busy() {
+                            self.toast = Some(
+                                "A launch is already running: this launcher starts one game at a time."
+                                    .to_owned(),
+                            );
+                        } else {
+                            self.game.start(&id);
+                        }
+                    }
                     crate::pages::instance::InstanceAction::LaunchWorld(world) => {
                         self.game.start_world(&id, &world)
                     }
@@ -2292,6 +2308,7 @@ impl Shell {
             loader: entry.loader.clone(),
             version: entry.version.clone(),
             path: crate::data::instances_dir().join(&entry.id),
+            status: self.game.status().to_string(),
         });
         self.open_project = None;
     }
