@@ -109,6 +109,34 @@ const ROW_STEP: f32 = 108.0;
 const PLAY_INSET: f32 = 60.0;
 const PLAY_SIZE: f32 = 40.0;
 
+/// A dashed rounded rectangle: the reference's "Jump in" strip is drawn with a dashed border, and epaint has no
+/// dash pattern of its own, so this walks the four edges in 6-on/4-off steps.
+pub fn dashed_rect(painter: &egui::Painter, rect: Rect, radius: f32, ink: egui::Color32) {
+    let stroke = egui::Stroke::new(1.0, ink);
+    let step = 6.0;
+    let gap = 4.0;
+    let mut x = rect.left() + radius;
+    while x < rect.right() - radius {
+        let end = (x + step).min(rect.right() - radius);
+        painter.line_segment([egui::pos2(x, rect.top()), egui::pos2(end, rect.top())], stroke);
+        painter.line_segment(
+            [egui::pos2(x, rect.bottom()), egui::pos2(end, rect.bottom())],
+            stroke,
+        );
+        x = end + gap;
+    }
+    let mut y = rect.top() + radius;
+    while y < rect.bottom() - radius {
+        let end = (y + step).min(rect.bottom() - radius);
+        painter.line_segment([egui::pos2(rect.left(), y), egui::pos2(rect.left(), end)], stroke);
+        painter.line_segment(
+            [egui::pos2(rect.right(), y), egui::pos2(rect.right(), end)],
+            stroke,
+        );
+        y = end + gap;
+    }
+}
+
 /// An instance's folder on disk, from the entry's own id.
 fn recent_path(entry: &Entry) -> std::path::PathBuf {
     crate::data::instances_dir().join(&entry.id)
@@ -1008,11 +1036,17 @@ fn list(
             egui::pos2(rect.left(), rect.top() + 38.0),
             egui::vec2((rect.width() - 240.0).min(800.0), 72.0),
         );
-        painter.rect_stroke(
-            strip,
-            12.0,
-            Stroke::new(1.0, theme.SURFACE_5),
-            egui::StrokeKind::Inside,
+        // A **dashed** border, as the reference draws it, plus the heading's collapse chevron: a solid rule read as
+        // another card instead of the temporary space it is.
+        crate::pages::home::dashed_rect(&painter, strip, 12.0, theme.SURFACE_5);
+        crate::icons::draw(
+            &painter,
+            Glyph::ChevronUp,
+            Rect::from_center_size(
+                egui::pos2(rect.left() + 96.0, rect.top() + 18.0),
+                egui::Vec2::splat(14.0),
+            ),
+            theme.SECONDARY,
         );
         let tile = Rect::from_min_size(
             egui::pos2(strip.left() + 12.0, strip.top() + 12.0),
@@ -1096,7 +1130,7 @@ fn list(
         egui::pos2(rect.left(), rect.top() + 160.0),
         egui::vec2(rect.width(), 36.0),
     );
-    let field = Rect::from_min_size(toolbar.min, egui::vec2(552.0, 36.0));
+    let field = Rect::from_min_size(toolbar.min, egui::vec2(600.0, 36.0));
     painter.rect_filled(field, 10, theme.RAISED_BG);
     painter.rect_stroke(field, 10, Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
     crate::icons::draw(
@@ -1156,11 +1190,22 @@ fn list(
         );
         painter.rect_filled(chip, 8.0, theme.BUTTON_BG);
         painter.text(
-            chip.center(),
-            Align2::CENTER_CENTER,
+            egui::pos2(chip.left() + 12.0, chip.center().y),
+            Align2::LEFT_CENTER,
             label,
             fonts::body(12.0),
             theme.BASE,
+        );
+        // Every chip the reference draws ends in a chevron: the two selects open a menu and "Add filter" opens
+        // one too.
+        crate::icons::draw(
+            &painter,
+            Glyph::ChevronDown,
+            Rect::from_center_size(
+                egui::pos2(chip.right() - 12.0, chip.center().y),
+                egui::Vec2::splat(12.0),
+            ),
+            theme.SECONDARY,
         );
         filter_x = chip.right() + 8.0;
     }
