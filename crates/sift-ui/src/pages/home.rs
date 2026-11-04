@@ -97,7 +97,7 @@ const MENU_DISTANCE: f32 = 8.0;
 
 /// Where the first row's card starts, down from the page's top edge: the heading line is 24
 /// at 24 and the row starts below it -- the number the shell's Home capture was aimed with.
-const ROW_TOP: f32 = 72.0;
+const ROW_TOP: f32 = 254.0;
 
 /// The step between two rows: a 96-point card and a 12-point gap.
 const ROW_HEIGHT: f32 = 96.0;
@@ -108,6 +108,11 @@ const ROW_STEP: f32 = 108.0;
 /// (`instance-card-view.vue:66-71`); on this row it is the same 40-point circle.
 const PLAY_INSET: f32 = 60.0;
 const PLAY_SIZE: f32 = 40.0;
+
+/// An instance's folder on disk, from the entry's own id.
+fn recent_path(entry: &Entry) -> std::path::PathBuf {
+    crate::data::instances_dir().join(&entry.id)
+}
 
 /// The three targets on one row: the card, its play pill and its kebab.
 ///
@@ -545,6 +550,9 @@ pub fn menu_press(key: MenuKey, menu: &mut Menu, now: f64) -> Option<MenuItem> {
 pub struct State {
     /// The kebab popover.
     pub menu: Menu,
+    /// A press on the library toolbar's "+ New instance", recorded for the shell: the toolbar is painted before
+    /// this page's action variable is in scope, so the press is a flag the shell reads rather than a return.
+    pub open_create: bool,
     /// Every drawn instance's `saves/` folder names, read when the set of instances last
     /// changed. Held here rather than re-read per frame: see `State::refresh_worlds`.
     worlds: Vec<(String, Vec<(String, String)>)>,
@@ -984,35 +992,178 @@ fn list(
     let worlds = &state.worlds;
 
     let painter = ui.painter();
+    // **The "Jump in" strip**, which the reference draws above its Library heading: a dashed row carrying the
+    // most recent instance -- its icon, its name with the green "New instance" badge, the loader and last-played
+    // line under them, and Play at the right. Driving its Home page (display :107) is where this came from; this
+    // build had no such section at all.
+    if let Some(recent) = instances.first() {
+        painter.text(
+            egui::pos2(rect.left(), rect.top() + 6.0),
+            Align2::LEFT_TOP,
+            "Jump in",
+            fonts::semibold(20.0),
+            theme.CONTRAST,
+        );
+        let strip = Rect::from_min_size(
+            egui::pos2(rect.left(), rect.top() + 38.0),
+            egui::vec2((rect.width() - 240.0).min(800.0), 72.0),
+        );
+        painter.rect_stroke(
+            strip,
+            12.0,
+            Stroke::new(1.0, theme.SURFACE_5),
+            egui::StrokeKind::Inside,
+        );
+        let tile = Rect::from_min_size(
+            egui::pos2(strip.left() + 12.0, strip.top() + 12.0),
+            Vec2::splat(48.0),
+        );
+        let strip_icon = [recent_path(recent).join("icon.png"), recent_path(recent).join("minecraft").join("icon.png")]
+            .into_iter()
+            .find(|candidate| candidate.is_file())
+            .and_then(|path| icons_cache.get_file(ui.ctx(), &path));
+        match strip_icon {
+            Some(texture) => {
+                painter.image(
+                    texture.id(),
+                    tile,
+                    Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                    egui::Color32::WHITE,
+                );
+            }
+            None => {
+                painter.rect_filled(tile, 10.0, theme.BUTTON_BG);
+            }
+        }
+        let name = painter.text(
+            egui::pos2(tile.right() + 12.0, strip.top() + 16.0),
+            Align2::LEFT_TOP,
+            recent.name.as_str(),
+            fonts::semibold(15.0),
+            theme.CONTRAST,
+        );
+        // The badge the reference shows beside a freshly-made instance.
+        let badge = Rect::from_min_size(
+            egui::pos2(name.right() + 8.0, strip.top() + 16.0),
+            egui::vec2(96.0, 20.0),
+        );
+        painter.rect_filled(badge, 10.0, theme.BUTTON_BG_SELECTED);
+        painter.text(
+            badge.center(),
+            Align2::CENTER_CENTER,
+            "New instance",
+            fonts::body(11.0),
+            theme.BRAND,
+        );
+        painter.text(
+            egui::pos2(tile.right() + 12.0, strip.top() + 40.0),
+            Align2::LEFT_TOP,
+            format!("{} • Never played", recent.loader),
+            fonts::body(12.0),
+            theme.SECONDARY,
+        );
+        let play = Rect::from_min_size(
+            egui::pos2(strip.right() - 96.0, strip.top() + 20.0),
+            egui::vec2(84.0, 32.0),
+        );
+        painter.rect_filled(play, 10.0, theme.BRAND);
+        painter.text(
+            play.center(),
+            Align2::CENTER_CENTER,
+            "Play",
+            fonts::semibold(13.0),
+            theme.ACCENT_CONTRAST,
+        );
+    }
     painter.text(
-        egui::pos2(rect.left(), rect.top() + 24.0),
+        egui::pos2(rect.left(), rect.top() + 124.0),
         Align2::LEFT_TOP,
         // `app.library.title` -- "Library" (`locales/en-US/index.json:1235-1237`): the
         // reference's own name for the instance list, which is what these rows are. The
         // string this heading used to print, `Jump back in`, is not in the locale at all;
         // the `Jump in` section is the worlds below (`pages/Index.vue:99-103`).
         "Library",
-        fonts::heading(24.0),
+        fonts::heading(26.0),
         theme.CONTRAST,
     );
 
     // The library's search field, in the heading row on the right. Three parts, as everywhere else on
     // this launcher: it takes the keyboard, it shows the query, and the list below filters by it.
-    let field = Rect::from_min_size(
-        egui::pos2(rect.right() - 236.0, rect.top() + 16.0),
-        egui::vec2(224.0, 36.0),
+    // **The toolbar**, where the reference puts it: under the Library heading, the search field taking the
+    // left of the row and the two buttons at its right. Driving the reference's Home page showed the field
+    // there, not in the heading's top-right corner where this build drew it.
+    let toolbar = Rect::from_min_size(
+        egui::pos2(rect.left(), rect.top() + 160.0),
+        egui::vec2(rect.width(), 36.0),
     );
-    painter.rect_filled(field, 8, theme.RAISED_BG);
-    painter.rect_stroke(field, 8, Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
-    let placeholder = "Search instances...";
+    let field = Rect::from_min_size(toolbar.min, egui::vec2(552.0, 36.0));
+    painter.rect_filled(field, 10, theme.RAISED_BG);
+    painter.rect_stroke(field, 10, Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
+    crate::icons::draw(
+        &painter,
+        Glyph::Search,
+        Rect::from_center_size(
+            egui::pos2(field.left() + 22.0, field.center().y),
+            egui::Vec2::splat(16.0),
+        ),
+        theme.SECONDARY,
+    );
+    let placeholder = "Search";
     let shown_text = if state.query.is_empty() { placeholder } else { state.query.as_str() };
     painter.text(
-        egui::pos2(field.left() + 12.0, field.center().y),
+        egui::pos2(field.left() + 38.0, field.center().y),
         Align2::LEFT_CENTER,
         shown_text,
         fonts::body(13.0),
         if state.query.is_empty() { theme.SECONDARY } else { theme.BASE },
     );
+    // The reference's two buttons beside the field: "New group" and the brand "New instance".
+    for (index, (label, brand)) in [("New group", false), ("New instance", true)].into_iter().enumerate() {
+        let width = if brand { 132.0 } else { 118.0 };
+        let left = field.right() + 12.0 + if index == 1 { 130.0 } else { 0.0 };
+        let button = Rect::from_min_size(
+            egui::pos2(left, toolbar.top()),
+            egui::vec2(width, 36.0),
+        );
+        painter.rect_filled(button, 10.0, if brand { theme.BRAND } else { theme.BUTTON_BG });
+        painter.text(
+            button.center(),
+            Align2::CENTER_CENTER,
+            label,
+            fonts::semibold(13.0),
+            if brand { theme.ACCENT_CONTRAST } else { theme.BASE },
+        );
+        // A press on "+ New instance" opens the create dialog. The press is recorded here and read by the
+        // caller below, where the function's own action variable lives.
+        if brand
+            && ui
+                .interact(button, egui::Id::new("library-new-instance"), Sense::click())
+                .clicked()
+        {
+            state.open_create = true;
+        }
+    }
+    // The filter row under it: the two selects, a divider and the add-filter chip.
+    let filters = Rect::from_min_size(
+        egui::pos2(rect.left(), rect.top() + 206.0),
+        egui::vec2(rect.width(), 32.0),
+    );
+    let mut filter_x = filters.left();
+    for (label, width) in [("Last played", 104.0_f32), ("Custom group", 152.0), ("Add filter", 108.0)] {
+        let chip = Rect::from_min_size(
+            egui::pos2(filter_x, filters.top()),
+            egui::vec2(width, 32.0),
+        );
+        painter.rect_filled(chip, 8.0, theme.BUTTON_BG);
+        painter.text(
+            chip.center(),
+            Align2::CENTER_CENTER,
+            label,
+            fonts::body(12.0),
+            theme.BASE,
+        );
+        filter_x = chip.right() + 8.0;
+    }
     if ui
         .interact(field, egui::Id::new("library-search"), Sense::click())
         .clicked()
