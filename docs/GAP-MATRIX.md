@@ -5180,3 +5180,19 @@ all fixed:
 What still differs on this page is the instance itself: its name ("Instance 3" against "Fabric 26.3"), its loader line
 ("Vanilla 26.3" against "Fabric 26.3") and its card art, which this lab's instance does not have. Those are data, and the
 record keeps them counted as data rather than chased as pixels.
+
+### Skins, measured with matched libraries (2026-11-05)
+
+With no saved skins on either side (`/tmp/matchdata`), the page measures **155 619** -- titlebar 2 844, rail 1 049,
+content 119 092, sidebar 32 634.
+
+The structure lines up element for element: "Skin selector", the collapsed "Saved skins" section with its chevron, the
+"Add skin / Drag and drop" card, the preview figure at the left, and the "Default skins" row whose first card carries the
+pale selection disc.
+
+**The preview is identical, not merely similar**: its ink spans x 156..259, y 289..519 in the reference and x 159..259,
+y 290..519 here -- within three pixels on every edge. What reads as "ours is smaller" in a resized crop is the *figure's
+art*, which is the default skin itself, not the frame around it.
+
+The content slab is therefore almost entirely **skin artwork**: four default skins drawn from different files. That is
+data, not drawing, and is recorded as such.
