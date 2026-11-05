@@ -2317,13 +2317,16 @@ const RESOURCES_BLOCKS: &[Block] = &[
         },
     },
     Block::Rule,
-    Block::PathText,
     Block::Heading {
         text: APP_DIRECTORY_LABEL,
         description: Some(APP_DIRECTORY_DESCRIPTION),
         big: false,
         control: None,
     },
+    // **The path under its heading, not above it.** Driving the reference's Resources page shows "App directory",
+    // its sentence, the path field with the folder button, and only then "Browse for an app directory"; this list had
+    // the field before the heading, which put it above the words that name it.
+    Block::PathText,
     // A standalone button rather than the row's control slot: a row's control is painted by a
     // helper with no `ui`, so its presses were never heard, and this shape's are verified.
     Block::Standalone(Control::Button {

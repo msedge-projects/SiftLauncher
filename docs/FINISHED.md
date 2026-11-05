@@ -252,3 +252,13 @@ All thirteen tabs, this build, against the live reference captures:
 Each capture was checked for *identity* as well as counted: the Launch hooks pane reads "Pre-launch hook / Enter
 pre-launch command... / Wrapper hook", and the Resources pane reads "Content storage". Three earlier readings were
 replaced because their panes were the wrong page; they are noted above rather than deleted.
+
+### Resources: the path field belongs under its heading (fixed, 73 597 -> 71 582)
+
+Driving the reference's Resources page shows the order plainly: "App directory", its sentence, **the path field with
+the folder button**, and only then "Browse for an app directory". This build had `Block::PathText` before the heading,
+which put the field above the words that name it. Moving it took the page from **73 597 to 71 582**.
+
+What still differs there, and stays: the reference's bar is keyed **Unique / Shared / Orphaned** because it splits a
+content cache this build does not have; ours is keyed by folder and reads "Cache 2.5 MB" with a green bar, because that
+is what is actually on disk. The shape of the block matches; the state behind it does not.
