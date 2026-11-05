@@ -4974,3 +4974,15 @@ when the launcher is what is on screen.
 
 So the library's own number has no trustworthy reference at this moment. It is not that the page is close or far; it is
 that the pair of states does not exist yet. Naming it here is cheaper than re-learning it next week.
+
+### A third fake reference, caught by hash (2026-11-05)
+
+I started the reference AppImage on display :107 expecting a library page with instances, captured "the reference", and
+compared it: **total 0, every slab 0**. A byte-identical result is not a perfect match -- it is the same picture twice.
+`md5sum` gives `f496e409...` for both files, and the picture is this build's own library.
+
+What went wrong: the AppImage never put a window on screen. Every `ModrinthApp` process in the container is
+`<defunct>`, and the window `xdotool` found was ours. `ref107-lib.png` is deleted rather than kept.
+
+**The rule, now caught three times**: a capture is only a reference if the process that drew it is the reference. Check
+the process, not the filename -- and treat "zero differing pixels" as the loudest possible alarm, not a triumph.
