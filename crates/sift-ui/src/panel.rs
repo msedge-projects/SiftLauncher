@@ -381,17 +381,16 @@ pub fn getting_started_card(
     painter: &egui::Painter,
     rect: Rect,
     theme: &Theme,
+    // The card's own fill: the sidebar paints it with the gradient showing through, the project page with a flat
+    // raised surface, and both are the reference's own colour for their page. `ring` is the one-pixel step above it.
+    fill: egui::Color32,
+    ring: egui::Color32,
     done: [bool; 3],
     labels: [&str; 3],
 ) -> f32 {
     let card = Rect::from_min_size(rect.min, egui::vec2(rect.width(), 40.0 + 3.0 * 44.0));
-    painter.rect_filled(card, 12, theme.RAISED_BG);
-    painter.rect_stroke(
-        card,
-        12,
-        Stroke::new(1.0, theme.SURFACE_5),
-        egui::StrokeKind::Inside,
-    );
+    painter.rect_filled(card, 12, fill);
+    painter.rect_stroke(card, 12, Stroke::new(1.0, ring), egui::StrokeKind::Inside);
     painter.text(
         egui::pos2(card.left() + 16.0, card.top() + 14.0),
         Align2::LEFT_TOP,

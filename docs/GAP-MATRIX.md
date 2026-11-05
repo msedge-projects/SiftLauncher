@@ -5055,3 +5055,20 @@ fill sits a shade off the card's own and they had no ring. They are ringed in `S
 **One difference found and recorded as open**: the reference's project sidebar is *Getting started* then
 *Compatibility* then the Upgrade link -- no News card. This build's sidebar shows Compatibility with no Getting started
 block above it, so the card sits higher and the panel below it shifts.
+
+### Why the two Getting started cards are not yet one (2026-11-05)
+
+The project page now calls `panel::getting_started_card`; the sidebar inside `panel::draw` still draws its own. That is
+not laziness, it is a measurement:
+
+- the sidebar's rows start at `steps_first = getting_started + HEADING_LINE + HEADING_TO_BODY`, i.e. **34** below the
+  heading's top;
+- the shared card's rows start at `card.top + 34`, and its card top is `getting_started - 16`, i.e. **18** below the
+  heading's top.
+
+Sixteen points apart. Driving the sidebar's card into the shared function would move Home's three rows up by 16 and
+change a figure that is currently 24 444, so the merge is a decision about which measurement is right -- not a mechanical
+edit. The shared function now takes its **fill and ring** from the caller (the sidebar's is the gradient showing through,
+the project page's a flat raised surface), which is the part of the difference that *was* mechanical and is now done.
+
+Recorded so the next attempt starts from the numbers rather than from the assumption that the two cards are the same.

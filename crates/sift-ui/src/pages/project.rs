@@ -2400,6 +2400,8 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
             &painter,
             Rect::from_min_size(egui::pos2(rect.left(), y), egui::vec2(rect.width(), 0.0)),
             theme,
+            theme.RAISED_BG,
+            theme.SURFACE_5,
             [has_instance, false, false],
             ["Create first instance", "Sign in to Minecraft", "Sign in to Modrinth"],
         );
