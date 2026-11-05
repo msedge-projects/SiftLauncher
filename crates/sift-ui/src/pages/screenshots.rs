@@ -440,6 +440,10 @@ const SHOW_IN_FOLDER: &str = "Show in folder";
 /// viewer only views, so the row says what it does.
 const OPEN: &str = "Open";
 
+/// The menu's group row. The reference puts a screenshot in a group from this menu; the store that holds the
+/// groups is here, so the row is the way in.
+const ADD_TO_GROUP: &str = "Add to group";
+
 /// `app.screenshots.delete-success`.
 const DELETE_SUCCESS: &str = "Screenshot deleted";
 
@@ -565,6 +569,8 @@ impl GroupBy {
 enum Item {
     /// Show the screenshot full-size.
     Open,
+    /// Put this screenshot in one of the reader's groups.
+    AddToGroup,
     /// Reveal the file in the desktop's file manager.
     ShowInFolder,
     /// Remove the file from the disk.
@@ -578,13 +584,19 @@ enum Item {
 /// an image editor, an image clipboard, and a route out of a page whose `draw` returns a
 /// `bool` — so the menu carries every row this page can carry out, and each one does something
 /// when pressed.
-const MENU_ITEMS: [Item; 3] = [Item::Open, Item::ShowInFolder, Item::Delete];
+const MENU_ITEMS: [Item; 4] = [
+    Item::Open,
+    Item::AddToGroup,
+    Item::ShowInFolder,
+    Item::Delete,
+];
 
 impl Item {
     /// The row's label.
     fn label(self) -> &'static str {
         match self {
             Item::Open => OPEN,
+            Item::AddToGroup => ADD_TO_GROUP,
             Item::ShowInFolder => SHOW_IN_FOLDER,
             Item::Delete => DELETE,
         }
@@ -594,6 +606,7 @@ impl Item {
     fn glyph(self) -> Glyph {
         match self {
             Item::Open => Glyph::Image,
+            Item::AddToGroup => Glyph::SquarePlus,
             Item::ShowInFolder => Glyph::FolderOpen,
             Item::Delete => Glyph::Trash,
         }
@@ -2155,6 +2168,27 @@ fn card_menu(
                 .iter()
                 .position(|shot| shot.path == menu.target)
                 .or(Some(0));
+            true
+        }
+        Some(Item::AddToGroup) => {
+            state.menu = None;
+            // The press assigns the card to the reader's first group and says which. With one group that is the
+            // whole choice; the submenu the reference draws for several is the next slice.
+            let first = state.groups.groups.first().map(|group| (group.id.clone(), group.name.clone()));
+            match first {
+                Some((id, name)) => {
+                    let shot = menu
+                        .target
+                        .file_name()
+                        .map(|name| name.to_string_lossy().into_owned())
+                        .unwrap_or_default();
+                    state.groups.assign(&shot, Some(&id));
+                    let path = crate::groups::Groups::path(&crate::data::instances_dir());
+                    let _ = state.groups.save(&path);
+                    state.say(seconds, &format!("Added to {name}."));
+                }
+                None => state.say(seconds, "Make a group first."),
+            }
             true
         }
         Some(Item::ShowInFolder) => {
