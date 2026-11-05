@@ -97,7 +97,10 @@ const MENU_DISTANCE: f32 = 8.0;
 
 /// Where the first row's card starts, down from the page's top edge: the heading line is 24
 /// at 24 and the row starts below it -- the number the shell's Home capture was aimed with.
-const ROW_TOP: f32 = 254.0;
+/// Where the first card's row starts inside the page: the reference's own capture puts the first card's top at
+/// **y 335** in the window (page top 48), so 287. Driving its library (`docs/captures/ref-lib-real.png`) showed this
+/// build drawing the heading, the toolbar and the cards about 28 points higher than the reference does.
+const ROW_TOP: f32 = 287.0;
 
 /// The step between two rows: a 96-point card and a 12-point gap.
 const ROW_HEIGHT: f32 = 96.0;
@@ -1148,7 +1151,9 @@ fn list(
         );
     }
     painter.text(
-        egui::pos2(rect.left(), rect.top() + 124.0),
+        // The reference's own capture puts this heading's top at y 218 in the window, 170 below the page's top:
+        // **+33 on the number this used**, which drew it above the strip's tail.
+        egui::pos2(rect.left(), rect.top() + 157.0),
         Align2::LEFT_TOP,
         // `app.library.title` -- "Library" (`locales/en-US/index.json:1235-1237`): the
         // reference's own name for the instance list, which is what these rows are. The
@@ -1165,7 +1170,7 @@ fn list(
     // left of the row and the two buttons at its right. Driving the reference's Home page showed the field
     // there, not in the heading's top-right corner where this build drew it.
     let toolbar = Rect::from_min_size(
-        egui::pos2(rect.left(), rect.top() + 160.0),
+        egui::pos2(rect.left(), rect.top() + 193.0),
         egui::vec2(rect.width(), 36.0),
     );
     let field = Rect::from_min_size(toolbar.min, egui::vec2(600.0, 36.0));
@@ -1217,18 +1222,34 @@ fn list(
     }
     // The filter row under it: the two selects, a divider and the add-filter chip.
     let filters = Rect::from_min_size(
-        egui::pos2(rect.left(), rect.top() + 206.0),
+        egui::pos2(rect.left(), rect.top() + 239.0),
         egui::vec2(rect.width(), 32.0),
     );
     let mut filter_x = filters.left();
-    for (label, width) in [("Last played", 104.0_f32), ("Custom group", 152.0), ("Add filter", 108.0)] {
+    // **Each chip carries a leading glyph**, as the reference's own library row does: the sort arrows on "Last
+    // played", the grid on "Custom group", the filter funnel on "Add filter". Ours drew bare text, which read as three
+    // buttons rather than three controls of the same kind.
+    for (label, width, glyph) in [
+        ("Last played", 118.0_f32, Glyph::ArrowUpDown),
+        ("Custom group", 164.0, Glyph::Grid),
+        ("Add filter", 122.0, Glyph::Filter),
+    ] {
         let chip = Rect::from_min_size(
             egui::pos2(filter_x, filters.top()),
             egui::vec2(width, 32.0),
         );
         painter.rect_filled(chip, 8.0, theme.BUTTON_BG);
+        crate::icons::draw(
+            &painter,
+            glyph,
+            Rect::from_center_size(
+                egui::pos2(chip.left() + 15.0, chip.center().y),
+                egui::Vec2::splat(13.0),
+            ),
+            theme.BASE,
+        );
         painter.text(
-            egui::pos2(chip.left() + 12.0, chip.center().y),
+            egui::pos2(chip.left() + 28.0, chip.center().y),
             Align2::LEFT_CENTER,
             label,
             fonts::body(12.0),
