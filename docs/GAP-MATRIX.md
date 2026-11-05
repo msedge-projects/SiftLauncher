@@ -5146,3 +5146,13 @@ reference has no skins search field" -- and the field was invented anyway.
 **The page still measures about 189 000**, and that figure is almost all *state*: the reference's saved-skins list is empty
 while this lab's holds three (hero, nightcap, probe-face), so the two grids are different pictures. What is comparable --
 the header, the toggle, the Add skin card, the Default skins row -- now lines up.
+
+### The Skin selector's marks, against the reference's own capture (2026-11-05)
+
+- **The in-use badge is a light disc**, not the brand-green circle this build drew: the reference's capture shows a pale
+  circle with a dark tick at the card's top-right. Changed to `CONTRAST` with a `BUTTON_BG` tick.
+- The **search field is gone** (previous round), and the tabs now start at the row's left edge.
+
+Page totals for this pair (both 1440x900, same rail item): **188 034 -> 189 047** across the two changes. The figure is
+dominated by what the two libraries hold -- the reference has no saved skins, this lab has three -- so it is recorded as a
+state difference and not chased.

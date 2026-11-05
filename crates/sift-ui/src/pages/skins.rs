@@ -1422,13 +1422,15 @@ fn default_card(
         );
     }
     if in_use {
+        // **A light circle with a dark tick.** The reference's own capture shows a pale disc at the card's top-right
+        // corner; this drew the brand green, which reads as a different state rather than the same one.
         let badge = egui::pos2(rect.right() - 14.0, rect.top() + 14.0);
-        painter.circle_filled(badge, 9.0, theme.BRAND);
+        painter.circle_filled(badge, 9.0, theme.CONTRAST);
         icons::draw(
             painter,
             Glyph::Check,
             Rect::from_center_size(badge, Vec2::splat(11.0)),
-            theme.ACCENT_CONTRAST,
+            theme.BUTTON_BG,
         );
     }
 }
