@@ -5217,3 +5217,22 @@ Measured on the Screenshots page, three samples six seconds apart:
 So the ~18 000 that vanished is the plate, and what remains of the sidebar (14 213) is the card's text and the hosting
 banner. **The lesson is the same one this record keeps teaching**: a stubborn slab is worth measuring against the thing
 that occupies it, not against the number.
+
+### Where the sidebar's remaining 14 213 actually is (2026-11-05)
+
+With the carousels on the same article, the sidebar's difference bands like this:
+
+| band | pixels |
+|---|---:|
+| Getting started (48..290) | 4 100 |
+| News heading (290..380) | 246 |
+| News card (380..560) | 3 234 |
+| **News copy, date and upgrade row (560..700)** | **7 994** |
+| Hosting banner art (700..900) | 750 |
+
+The largest band is not the banner at all -- it is the news card's **text block**: this build's copy wraps at different
+words than the reference's, and its second slide carries no date where the reference's does (the reference's own layout
+puts that date under the "Upgrade to Modrinth+" link, which is why its row reads as overlapping).
+
+Recorded rather than tuned blind: the two ways to close it are to match the copy column's width so the wraps agree, and to
+give the second slide its date, and neither has evidence behind it yet beyond this band's existence.
