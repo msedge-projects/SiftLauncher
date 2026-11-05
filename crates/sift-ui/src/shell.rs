@@ -2597,18 +2597,16 @@ impl Shell {
         // `--color-raised-bg` plate -- with six 36-tall pills six points in and four apart.
         // It is not a full-width strip: the reference's bar is only as wide as its pills,
         // which is why a full-width one reads as a toolbar instead of a tab bar.
-        const KINDS_PRE: [&str; 6] = [
-            "Modpacks",
-            "Mods",
-            "Resource Packs",
-            "Data Packs",
-            "Shaders",
-            "Servers",
-        ];
+        let kinds_pre: Vec<&str> = if self.install_target.is_some() {
+            vec!["Mods", "Resource Packs", "Data Packs", "Shaders"]
+        } else {
+            vec!["Modpacks", "Mods", "Resource Packs", "Data Packs", "Shaders", "Servers"]
+        };
+        let kinds_pre = kinds_pre.as_slice();
         // The plate is as wide as its pills: measure them first, then draw it, then draw
         // them. A full-width plate was the old shape and it read as a toolbar.
         let mut strip_width = 12.0;
-        for label in KINDS_PRE {
+        for label in kinds_pre.iter().copied() {
             let galley = painter.layout_no_wrap(
                 label.to_owned(),
                 crate::fonts::semibold(14.0),

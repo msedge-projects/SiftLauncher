@@ -344,6 +344,12 @@ pub fn draw(
         Tab::Logs => logs_tab(ui, body, theme, instance),
         Tab::Share => share_tab(ui, body, theme),
     }
+    // A press on "Add content" recorded by the Content tab becomes the page's browse action here: the button is
+    // painted inside a helper that cannot return one.
+    if state.browse {
+        state.browse = false;
+        return Some(InstanceAction::BrowseMods);
+    }
     if let Some(address) = state.join_request.take() {
         return Some(InstanceAction::JoinServer(address));
     }
@@ -862,7 +868,14 @@ const SHOT_TILES_DY: f32 = 144.0;
 
 /// The search row every list tab of the reference carries: a field on the left and one named
 /// button on the right (\`content/ContentPageLayout.vue\`, \`files/index.vue\`, \`logs/index.vue\`).
-fn search_row(ui: &mut Ui, body: Rect, theme: &Theme, placeholder: &str, button: &str) {
+fn search_row(
+    ui: &mut Ui,
+    body: Rect,
+    theme: &Theme,
+    placeholder: &str,
+    button: &str,
+    pressed: &mut bool,
+) {
     let painter = ui.painter().clone();
     let field = Rect::from_min_size(body.min, egui::vec2(320.0, SEARCH_ROW_H));
     painter.rect_filled(field, 8, theme.BUTTON_BG);
@@ -913,7 +926,15 @@ fn search_row(ui: &mut Ui, body: Rect, theme: &Theme, placeholder: &str, button:
         fonts::semibold(14.0),
         theme.BASE,
     );
-    let _ = (ui, button_rect);
+    // The button takes a press. It used to end in `let _ = (ui, button_rect);` -- drawn, and never asked, so the only
+    // way into the content browser did nothing at all.
+    if ui
+        .interact(button_rect, egui::Id::new("instance-add-content"), Sense::click())
+        .clicked()
+    {
+        *pressed = true;
+        ui.ctx().request_repaint();
+    }
 }
 
 /// A list section's heading inside a tab: 16 points semibold.
@@ -991,7 +1012,11 @@ fn content_tab(ui: &mut Ui, body: Rect, theme: &Theme, instance: &Instance, stat
         return;
     }
     let painter = ui.painter().clone();
-    search_row(ui, body, theme, "Search content", "Add content");
+    let mut pressed = false;
+    search_row(ui, body, theme, "Search content", "Add content", &mut pressed);
+    if pressed {
+        state.browse = true;
+    }
     let mut y = body.top() + SEARCH_ROW_H + 12.0;
     for (name, size, enabled) in mods {
         if y + ROW_H > body.bottom() {
