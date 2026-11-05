@@ -5236,3 +5236,16 @@ puts that date under the "Upgrade to Modrinth+" link, which is why its row reads
 
 Recorded rather than tuned blind: the two ways to close it are to match the copy column's width so the wraps agree, and to
 give the second slide its date, and neither has evidence behind it yet beyond this band's existence.
+
+### A negative result, kept: the copy's wrap width is not the column (2026-11-05)
+
+The band breakdown put 7 994 pixels in the news card's text block, and the obvious suspect was the wrap: the reference's
+copy ink ends at x 1413 and this build's at 1423.
+
+Narrowing the layout width by those ten points changed **nothing at all** -- the whole page read 22 351 with a 14 213
+sidebar before the change and byte-for-byte the same after it, across three samples. So the line breaks are not set by
+that argument, and the change is reverted rather than left in the source as an unexplained "−10".
+
+What that rules out is worth as much as a fix would be: the difference in that band is in the *text itself* or in how its
+galley is built, not in the width passed to it. The next attempt should start by printing the copy's galley size from
+both sides rather than guessing at which number feeds it.
