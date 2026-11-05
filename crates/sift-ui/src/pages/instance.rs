@@ -656,7 +656,9 @@ fn empty_state(
     // This drew nothing above the words, which is what made the empty state look unfinished next to the
     // reference's.
     let art = egui::Rect::from_center_size(
-        egui::pos2(body.center().x, top + EMPTY_HEADING_DY - 62.0),
+        // **33 points higher.** Measured off the two captures: the reference's art ink spans y 336..395 (centre
+        // 365.5) and ours y 378..419 (centre 398.5), with both 81 wide -- the same picture, drawn too low.
+        egui::pos2(body.center().x, top + EMPTY_HEADING_DY - 95.0),
         egui::vec2(93.0, 99.0),
     );
     crate::serverart::paint_content_empty(&painter, art);

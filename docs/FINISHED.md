@@ -331,3 +331,29 @@ So the cube is the reference's own default avatar doing its job, and the differe
 
 **The library's layout is now measured and aligned**: heading 157, toolbar 193, filter row 239, first card row 287,
 each taken from `docs/captures/ref-lib-real.png`, and the three filter chips carry the reference's glyphs.
+
+### The empty content state, compared properly (2026-11-05)
+
+With the windows on equal terms (1440x900 both) and an **empty** instance on each side -- the reference's one instance
+has no mods, and this lab's `Instance 3` has none either -- the instance page reads:
+
+| slab | pixels |
+|---|---:|
+| total | **51 526** |
+| sidebar | 32 005 |
+| content | 15 490 |
+| titlebar | 2 929 |
+| rail | 1 102 |
+
+The empty state itself matches closely: the box art, "No content installed", "Browse or upload projects to get started",
+and the "Upload files" / "Browse content" pair. Measured off the two captures, the art's ink is **81 wide and 59 tall on
+both sides**; it sat 33 points too low here and has been moved up, leaving a **9-point** residual that is recorded rather
+than silently rounded off.
+
+Two glyphs still differ by eye and are recorded as open: the reference's "Upload files" carries a box-with-arrow mark
+where this build draws a plain upload arrow, and "Browse content" carries a circular mark where this build draws a
+target. Both are icon-name questions, not layout.
+
+**And one false alarm, written down because it nearly became a bad "fix"**: our Content tab listed 26 jars that I took for
+internals (`.fabric/processedMods`, `local/crash_assistant`). Checking the folder showed **49 real mods** in
+`minecraft/mods` -- the list was right and the state was simply different from the reference's empty instance.
