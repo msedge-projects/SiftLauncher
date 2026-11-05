@@ -597,6 +597,12 @@ impl Item {
 pub struct State {
     /// The selected order. Defaults to the source's stored `newest`.
     pub sort: Sort,
+    /// The new-group dialog's name while it is open; `None` closes it.
+    pub new_group: Option<String>,
+    /// Where the toolbar's "New group" button was drawn this frame. The press is read against this at the end of
+    /// the frame with the page's own pointer, because an `interact` registered there loses to the page-wide handlers
+    /// the body registers after it -- which is why the button looked dead.
+    new_group_button: Option<Rect>,
     /// What the list is grouped by. Defaults to the source's stored `date`.
     pub group_by: GroupBy,
     /// The query the search field holds, as typed.
@@ -635,6 +641,8 @@ impl Default for State {
     fn default() -> State {
         State {
             sort: Sort::default(),
+            new_group: None,
+            new_group_button: None,
             group_by: GroupBy::default(),
             search: String::new(),
             search_focused: false,
@@ -1414,6 +1422,17 @@ pub fn draw(
     }
     state.armed_touched = false;
 
+    // **"New group" reads the page's own press.** `clicked` and `pointer` are this frame's raw input; testing the
+    // button's rect against them cannot be stolen by a later widget, which an `interact` here can.
+    if clicked
+        && state
+            .new_group_button
+            .is_some_and(|button| pointer.is_some_and(|at| button.contains(at)))
+    {
+        state.new_group = Some(String::new());
+        owed = true;
+    }
+
     owed
 }
 
@@ -1451,7 +1470,7 @@ fn heading_and_toolbar(
     painter: &egui::Painter,
     rect: Rect,
     theme: &Theme,
-    state: &State,
+    state: &mut State,
     _total: usize,
 ) -> Chrome {
     let heading_at = egui::pos2(rect.left() + PAGE_PADDING, rect.top() + PAGE_PADDING);
@@ -1484,6 +1503,7 @@ fn heading_and_toolbar(
         egui::vec2(button_width, CONTROL_HEIGHT),
     );
     text_button(painter, new_group, NEW_GROUP, Glyph::SquarePlus, theme);
+    state.new_group_button = Some(new_group);
 
     // Row 2: the sort and group Comboboxes, side by side (toolbar.vue:50-85). There is no
     // third control: this toolbar has no view toggle.
