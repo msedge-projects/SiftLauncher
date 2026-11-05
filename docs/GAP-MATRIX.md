@@ -4963,3 +4963,14 @@ record: the difference is the client, not this launcher.
 Discover 272 883. Nothing had regressed -- Minecraft's window was covering the launcher in the capture. With the game
 closed the same build measures Home **24 444** and Discover **78 987**. A capture is only a measurement of the launcher
 when the launcher is what is on screen.
+
+### Two capture names that lie, found while measuring the library
+
+- **`ref101-library.png` is the Skins page**, not the library: comparing our library against it reads 200 625, which is
+  two different pages measured against each other. The file is left where it is, with this note, rather than deleted --
+  it is a genuine reference capture of *something*, just not of the page its name claims.
+- `105-final-home.png` is the **empty-library Home** ("Welcome to Modrinth", "Create an instance", "Press N to
+  quick-create an instance"), which is the state our 24 444 reading was taken in.
+
+So the library's own number has no trustworthy reference at this moment. It is not that the page is close or far; it is
+that the pair of states does not exist yet. Naming it here is cheaper than re-learning it next week.
