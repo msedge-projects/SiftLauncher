@@ -627,6 +627,8 @@ pub struct State {
     /// The reader's own groups and their assignments, read with the screenshots. The select lists them and the grid
     /// can group by one.
     pub groups: crate::groups::Groups,
+    /// The group list a card's menu opened, while it is open.
+    group_menu: Option<GroupMenu>,
     /// The new-group dialog's name while it is open; `None` closes it.
     pub new_group: Option<String>,
     /// Where the toolbar's "New group" button was drawn this frame. The press is read against this at the end of
@@ -672,6 +674,7 @@ impl Default for State {
         State {
             sort: Sort::default(),
             groups: crate::groups::Groups::load(&crate::groups::Groups::path(&crate::data::instances_dir())),
+            group_menu: None,
             new_group: None,
             new_group_button: None,
             group_by: GroupBy::default(),
@@ -762,6 +765,15 @@ impl State {
 #[derive(Debug, Clone)]
 struct Menu {
     target: PathBuf,
+    anchor: egui::Pos2,
+}
+
+/// The list of groups a card can be put in, opened from the menu's "Add to group" row.
+#[derive(Debug, Clone)]
+struct GroupMenu {
+    /// The card this list was opened for.
+    target: PathBuf,
+    /// Where the list is drawn: the menu's own top-left, so it opens under the row that asked for it.
     anchor: egui::Pos2,
 }
 
@@ -1456,6 +1468,86 @@ pub fn draw(
 
     if let Some(menu) = state.menu.clone() {
         owed |= card_menu(ui, theme, rect, state, &menu, seconds, &visible);
+    }
+
+    // The group list a card's menu opened: one row per group, the card's own group marked, and a row to take it out.
+    if let Some(list) = state.group_menu.clone() {
+        let rows = state.groups.groups.len() + 1;
+        let plate = egui::Rect::from_min_size(
+            list.anchor,
+            egui::vec2(220.0, rows as f32 * 34.0 + 12.0),
+        );
+        crate::pages::screenshots::menu_plate(ui.painter(), plate, theme);
+        let mut chosen: Option<Option<String>> = None;
+        for index in 0..state.groups.groups.len() {
+            let row = egui::Rect::from_min_size(
+                egui::pos2(plate.left() + 6.0, plate.top() + 6.0 + index as f32 * 34.0),
+                egui::vec2(plate.width() - 12.0, 34.0),
+            );
+            let group = state.groups.groups[index].clone();
+            let is_current = state
+                .groups
+                .assignments
+                .get(&list.target.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default())
+                .is_some_and(|id| id == &group.id);
+            ui.painter().text(
+                egui::pos2(row.left() + 10.0, row.center().y),
+                Align2::LEFT_CENTER,
+                if is_current {
+                    format!("\u{2713} {}", group.name)
+                } else {
+                    group.name.clone()
+                },
+                fonts::body(13.0),
+                if is_current { theme.BRAND } else { theme.BASE },
+            );
+            if ui
+                .interact(row, egui::Id::new(("group-menu", index)), Sense::click())
+                .clicked()
+            {
+                chosen = Some(Some(group.id.clone()));
+            }
+        }
+        let none_row = egui::Rect::from_min_size(
+            egui::pos2(plate.left() + 6.0, plate.top() + 6.0 + state.groups.groups.len() as f32 * 34.0),
+            egui::vec2(plate.width() - 12.0, 34.0),
+        );
+        ui.painter().text(
+            egui::pos2(none_row.left() + 10.0, none_row.center().y),
+            Align2::LEFT_CENTER,
+            "Remove from group",
+            fonts::body(13.0),
+            theme.SECONDARY,
+        );
+        if ui
+            .interact(none_row, egui::Id::new("group-menu-none"), Sense::click())
+            .clicked()
+        {
+            chosen = Some(None);
+        }
+        if let Some(choice) = chosen {
+            let shot = list
+                .target
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            state.groups.assign(&shot, choice.as_deref());
+            let path = crate::groups::Groups::path(&crate::data::instances_dir());
+            let _ = state.groups.save(&path);
+            let name = choice
+                .as_deref()
+                .and_then(|id| state.groups.groups.iter().find(|group| group.id == id))
+                .map(|group| group.name.clone());
+            state.say(
+                seconds,
+                &match name {
+                    Some(name) => format!("Added to {name}."),
+                    None => "Removed from its group.".to_owned(),
+                },
+            );
+            state.group_menu = None;
+            owed = true;
+        }
     }
 
     // The viewer is last of all: it is a page-sized overlay, and nothing is drawn over it.
@@ -2171,25 +2263,17 @@ fn card_menu(
             true
         }
         Some(Item::AddToGroup) => {
+            // **The list, not a guess.** With one group the reference's menu offers that one; with several it offers
+            // them all, and this build used to assign to the first and say so. The list is the row's real behaviour.
+            let anchor = menu.anchor;
+            let target = menu.target.clone();
             state.menu = None;
-            // The press assigns the card to the reader's first group and says which. With one group that is the
-            // whole choice; the submenu the reference draws for several is the next slice.
-            let first = state.groups.groups.first().map(|group| (group.id.clone(), group.name.clone()));
-            match first {
-                Some((id, name)) => {
-                    let shot = menu
-                        .target
-                        .file_name()
-                        .map(|name| name.to_string_lossy().into_owned())
-                        .unwrap_or_default();
-                    state.groups.assign(&shot, Some(&id));
-                    let path = crate::groups::Groups::path(&crate::data::instances_dir());
-                    let _ = state.groups.save(&path);
-                    state.say(seconds, &format!("Added to {name}."));
-                }
-                None => state.say(seconds, "Make a group first."),
+            if state.groups.groups.is_empty() {
+                state.say(seconds, "Make a group first.");
+                return true;
             }
-            true
+            state.group_menu = Some(GroupMenu { target, anchor });
+            return true;
         }
         Some(Item::ShowInFolder) => {
             state.menu = None;
