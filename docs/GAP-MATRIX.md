@@ -4986,3 +4986,21 @@ What went wrong: the AppImage never put a window on screen. Every `ModrinthApp` 
 
 **The rule, now caught three times**: a capture is only a reference if the process that drew it is the reference. Check
 the process, not the filename -- and treat "zero differing pixels" as the loudest possible alarm, not a triumph.
+
+### The News card is a rotation, and that is most of the sidebar's difference (found 2026-11-05)
+
+Comparing the instance page against the reference's own (display :101, window owner `Modrinth App`) put **106 588**
+differing pixels in the sidebar band alone -- far more than any text rendering can account for. The reason is in the
+two captures: at the moment of the reference's capture its News card read **"Join our server"** with a "Get your next
+server on Modrinth" banner under it, where this build always draws **"Sync settings across instances"**.
+
+So the card is a **carousel**: the reference cycles articles (the same sidebar showed "Sync settings across instances"
+earlier in the session), and this build draws one fixed article. That single difference is behind a large share of the
+sidebar figure on **every** page -- Home 10 875, Discover 14 052, the instance page 10 896 -- not three separate defects.
+
+Recorded as the next feature slice: a slide list, a timer, and the same card geometry per slide. It cannot be measured
+honestly until the two sides are on the *same* slide, which means the carousel has to exist first.
+
+**What did match** on the instance page, checked in the same pair of captures: the header's icon, name, the
+"◇ Fabric 26.3 ⌄ • ⏱ Never played" line, and the Play / gear / kebab cluster; and the five tabs Content, Files, Worlds,
+Logs, Share with Content selected.
