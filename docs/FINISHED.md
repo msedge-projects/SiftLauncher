@@ -295,3 +295,22 @@ after a scroll of ~120, Syncing's centre lands at 670, inside the pane.
 
 This is also the answer to the whole class of mislabelled captures this record keeps finding: **print the rect, click the
 rect**. A probe line is worth a dozen guessed coordinates.
+
+### The rail: presses and the wheel both work, and the probe is how it was settled
+
+The `Area` that owned the wheel **swallowed every press** on the rows -- the probe reported `tab=Appearance` after
+clicking rects the same probe had printed one line earlier, in both layer orders. Removing it and reading the wheel from
+the frame's own `MouseWheel` events fixes both at once:
+
+- pressing Features reports **`tab=Features`**;
+- five notches move **Syncing from 770 to 550**, so every row is inside the pane.
+
+Measured at probed rects, with the tab confirmed in the same run:
+
+| tab | differing pixels |
+|---|---:|
+| Syncing | **46 278** |
+| Troubleshooting | **56 104** |
+| Resources | see below |
+
+Syncing's and Troubleshooting's earlier figures were right; they are now *verified* rather than lucky.

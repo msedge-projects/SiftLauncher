@@ -2840,7 +2840,13 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
     let rows = std::mem::take(&mut state.drawn_rail);
     // SIFT_SETTINGS_PROBE: print every rectangle a press will be read against, on the frames
     // where a press happened. A screenshot cannot be clicked; a printed rect can.
-    if std::env::var_os("SIFT_SETTINGS_PROBE").is_some() && ui.input(|i| i.pointer.any_click()) {
+    // Every frame while the pointer is over the rail: a rect printed on the frame of the press is already one frame
+    // too late, because a press on a tab row can move the list.
+    let probe_over_rail = ui
+        .ctx()
+        .input(|i| i.pointer.hover_pos())
+        .is_some_and(|at| rail.contains(at));
+    if std::env::var_os("SIFT_SETTINGS_PROBE").is_some() && probe_over_rail {
         eprintln!(
             "probe dialog={:?} content={:?} rail={:?} close={:?} tab={:?} scroll={:.1} rail_scroll={:.1}",
             dialog,
@@ -3180,7 +3186,6 @@ fn draw_rail(
     // **A real `ScrollArea`.** Fourteen rows at the reference's 44-point pitch do not fit the plate, and hand-rolling
     // the offset left the wheel with nothing to consume it: five notches moved the rail not at all. The area below
     // owns the offset and the wheel; the rows are laid out at that offset, inside the same clip they were drawn in.
-    let scroll_before = *scroll;
     let pane = Rect::from_min_max(
         rail_rect(dialog).min,
         pos2(
@@ -3188,9 +3193,6 @@ fn draw_rail(
             rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0,
         ),
     );
-    // **An `Area`, not a child ui.** A child of the dialog's ui inherits its clip and its lack of scroll
-    // registration: with the pointer over the rail, three wheel notches moved neither the rail nor the body -- the
-    // events were dropped before anything could take them. An Area is its own layer and receives input directly.
     // **The offset lives here, not in the area's own memory.** Left to the ScrollArea, the wheel moved the rows for
     // the one frame it arrived in and the next frame was back at the top -- a press then landed on whichever row now
     // sat at that point (Appearance, when Resources was meant). State is authoritative; the area is told where to be.
@@ -3217,26 +3219,22 @@ fn draw_rail(
     }
     *scroll = scroll.min(room);
     let scroll_now = *scroll;
+    let scroll_before = *scroll;
+    let pane = Rect::from_min_max(
+        rail_rect(dialog).min,
+        pos2(
+            rail_rect(dialog).right(),
+            rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0,
+        ),
+    );
+    // **An `Area`, not a child ui.** A child of the dialog's ui inherits its clip and its lack of scroll
+    // registration: with the pointer over the rail, three wheel notches moved neither the rail nor the body -- the
+    // events were dropped before anything could take them. An Area is its own layer and receives input directly.
     let mut rail_offset = scroll_now;
-    egui::Area::new(egui::Id::new("settings-rail-area"))
-        .order(egui::Order::Middle)
-        .fixed_pos(pane.min)
-        .constrain(false)
-        .show(ui.ctx(), |ui| {
-            ui.set_clip_rect(pane);
-            let output = egui::ScrollArea::vertical()
-                .id_salt("settings-rail-scroll")
-                .auto_shrink([false, false])
-                .max_height(pane.height())
-                .vertical_scroll_offset(scroll_now)
-                .show(ui, |ui| {
-                    ui.allocate_space(egui::vec2(
-                        pane.width(),
-                        rail_needed_height(dev_mode) + RAIL_PADDING,
-                    ));
-                });
-            rail_offset = output.state.offset.y;
-        });
+    // **No `Area` here any more.** An invisible `ScrollArea` in its own area owned the wheel but swallowed every
+    // press on the rows -- the probe reported `tab=Appearance` after clicking rects the same probe had printed. The
+    // wheel is read from the frame's own events above, so nothing has to consume it, and the rows keep their presses.
+    let rail_offset = scroll_now;
     // The area may clamp what it was told (a shorter pane than the offset needs); take its answer only then.
     if (rail_offset - scroll_now).abs() > 0.5 {
         *scroll = rail_offset;
