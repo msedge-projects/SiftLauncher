@@ -3375,7 +3375,14 @@ fn card(
                     egui::pos2(text_left, pill.center().y - CHIP_ICON / 2.0),
                     Vec2::splat(CHIP_ICON),
                 ),
-                theme.SECONDARY,
+                // **A loader's mark keeps its own colour.** The reference tints them -- Fabric's is warm, Forge's and
+                // NeoForge's their own -- where this build drew every category glyph in `SECONDARY`, which made the
+                // loader chip look like just another category.
+                if is_loader(&tag.0) {
+                    loader_tint(&tag.0)
+                } else {
+                    theme.SECONDARY
+                },
             );
             text_left += CHIP_ICON + CHIP_GAP;
         }
@@ -3635,6 +3642,21 @@ fn tag_icon(index: usize, label: &str) -> bool {
 
 /// Whether a tag names a mod loader, which the reference's own `getTagMessage(tag, 'loader')` decides and
 /// this build decides from the loader names the catalogue uses.
+/// The colour a loader's own mark is drawn in, as the reference tints it: Fabric is the warm sand of its icon,
+/// Forge and NeoForge their red-orange, Quilt purple, and anything else falls back to the muted grey a category uses.
+fn loader_tint(label: &str) -> egui::Color32 {
+    match label.to_lowercase().as_str() {
+        "fabric" => egui::Color32::from_rgb(0xdb, 0xb6, 0x9a),
+        "forge" => egui::Color32::from_rgb(0xd8, 0x8a, 0x5f),
+        "neoforge" => egui::Color32::from_rgb(0xe0, 0x9b, 0x6a),
+        "quilt" => egui::Color32::from_rgb(0xc9, 0xa2, 0xf0),
+        "liteloader" | "rift" | "modloader" | "risugami's modloader" => {
+            egui::Color32::from_rgb(0xb8, 0xb8, 0xb8)
+        }
+        _ => egui::Color32::from_rgb(0x9a, 0xa0, 0xa6),
+    }
+}
+
 fn is_loader(label: &str) -> bool {
     const LOADERS: [&str; 8] = [
         "Fabric", "Forge", "NeoForge", "Quilt", "LiteLoader", "Rift", "Modloader", "Risugami's ModLoader",
@@ -3915,6 +3937,20 @@ mod tests {
 
     /// The strip always offers the ends, the page in hand and its neighbours, and says how wide the
     /// gap is when it skips one.
+    /// **A loader's mark is tinted, a category's is not.** The reference draws Fabric's mark warm; this build drew
+    /// every glyph in the muted grey, which made the loader chip read as another category. The table is what the
+    /// card's chip colour comes from, so it is what the test reads.
+    #[test]
+    fn loaders_carry_their_own_colour_and_categories_do_not() {
+        let fabric = loader_tint("Fabric");
+        let secondary = crate::theme::dark().SECONDARY;
+        assert_ne!(fabric, secondary, "Fabric's mark must not be the category grey");
+        assert_eq!(loader_tint("Fabric"), loader_tint("fabric"), "the lookup is case-insensitive");
+        assert_ne!(loader_tint("Forge"), fabric, "two loaders do not share one tint");
+        // A name that is not a loader still gets the fallback rather than a panic.
+        assert_eq!(loader_tint("Optimization"), loader_tint("unknown-loader"));
+    }
+
     #[test]
     fn the_strip_shows_the_first_last_and_the_page_in_hand() {
         assert_eq!(pager_items(1, 9), vec![Some(1), Some(2), None, Some(9)]);
