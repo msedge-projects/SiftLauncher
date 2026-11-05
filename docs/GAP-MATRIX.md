@@ -5131,3 +5131,18 @@ row, the hover renders on both sidebars.
 So the two cards are one component in behaviour as well as in shape: same heading, same row pitch, same tick, same
 brightening under the pointer. What still differs is only who draws the sidebar's own copy, and `panel::draw` has not
 been switched over -- that swap is now a straight replacement with nothing left to reconcile.
+
+### The Skin selector had a search field the reference does not have (2026-11-05)
+
+First real comparison of the Skins page, both windows at 1440x900 with the same rail item selected (the reference's own
+tooltip names it "Skin selector", which is how the item was found after two mis-clicks):
+
+- the reference's toolbar is **Skin selector, then the Wide/Slim toggle, then Add skin** -- and **no search field**;
+- this build drew a 320-point "Search skins..." plate between the heading and the tabs.
+
+The plate is gone; the tabs now start at the row's own left edge. The source already knew -- its own comment reads "the
+reference has no skins search field" -- and the field was invented anyway.
+
+**The page still measures about 189 000**, and that figure is almost all *state*: the reference's saved-skins list is empty
+while this lab's holds three (hero, nightcap, probe-face), so the two grids are different pictures. What is comparable --
+the header, the toggle, the Add skin card, the Default skins row -- now lines up.

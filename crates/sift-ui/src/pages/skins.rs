@@ -1128,17 +1128,10 @@ fn heading_and_toolbar(ui: &mut Ui, content: Rect, theme: &Theme, state: &mut St
     let search_width = SEARCH_WIDTH
         .min((row.width() - tabs_width - upload_width - 2.0 * CONTROL_GAP).max(SEARCH_MIN_WIDTH));
 
-    let search = Rect::from_min_size(row.min, egui::vec2(search_width, CONTROL_HEIGHT));
-    search_plate(&painter, search, theme, &state.query);
-    // The plate is a field here too: this function owns the `Ui` and the state, which is exactly what
-    // the servers page's toolbar lacked when its search was inert.
-    if ui
-        .interact(search, egui::Id::new("skins-search"), Sense::click())
-        .clicked()
-    {
-        state.query_focused = true;
-        ui.ctx().request_repaint();
-    }
+    // **No search field.** The reference's Skin selector has none -- its own 1440x900 capture shows the heading,
+    // then Saved skins, with nothing between them -- and this build invented a plate for it. The query state stays
+    // for the filter the page may grow, but nothing is drawn for it.
+    let _ = search_width;
     if state.query_focused {
         for event in ui.input(|i| i.events.clone()) {
             match event {
@@ -1160,7 +1153,8 @@ fn heading_and_toolbar(ui: &mut Ui, content: Rect, theme: &Theme, state: &mut St
     model_tabs(
         ui,
         &painter,
-        egui::pos2(search.right() + CONTROL_GAP, row.top()),
+        // The tabs now start at the row's own left edge: with no search plate there is nothing to sit after.
+        egui::pos2(row.left(), row.top()),
         theme,
         state,
     );
