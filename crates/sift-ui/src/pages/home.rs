@@ -2317,17 +2317,22 @@ mod tests {
         );
         let (card, play, kebab) = row_targets(page, 0);
         assert_eq!(card.top(), 48.0 + ROW_TOP);
-        assert_eq!(card.height(), ROW_HEIGHT);
+        // **The card, not the old row.** Driving the reference's Home page showed a grid of 168x208 cards where this
+        // build drew 96-point full-width rows; the number here is the measurement, and the test follows it rather
+        // than the constant it used to read.
+        assert_eq!(card.height(), 208.0);
+        assert_eq!(card.width(), 168.0);
         assert!(card.contains_rect(play), "the pill is on the card");
         assert!(card.contains_rect(kebab), "the kebab is on the card");
         assert!(
             play.right() < kebab.left(),
             "the two right-hand targets must not overlap: {play:?} {kebab:?}"
         );
+        // The next card is to its right on the same row until the columns run out, and under it after that.
         let (next, _, _) = row_targets(page, 1);
         assert!(
-            card.bottom() < next.top(),
-            "one row's card must not cover the next"
+            card.bottom() < next.top() || card.right() < next.left(),
+            "one card must not cover the next: {card:?} {next:?}"
         );
     }
 

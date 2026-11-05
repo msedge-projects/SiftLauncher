@@ -1577,6 +1577,7 @@ mod tests {
     /// An instance with every field filled, so a test only has to change the one it is about.
     fn instance() -> Instance {
         Instance {
+            status: "No instances running".to_owned(),
             id: "test-instance".to_owned(),
             name: "Test Instance".to_owned(),
             loader: "Fabric".to_owned(),
