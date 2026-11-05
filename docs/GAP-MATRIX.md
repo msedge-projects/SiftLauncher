@@ -5072,3 +5072,28 @@ edit. The shared function now takes its **fill and ring** from the caller (the s
 the project page's a flat raised surface), which is the part of the difference that *was* mechanical and is now done.
 
 Recorded so the next attempt starts from the numbers rather than from the assumption that the two cards are the same.
+
+### The 16-point question is answered: 58, not 34, and the reference is the same on both pages (2026-11-05)
+
+Measured off the two reference captures, its sidebar card is **identical on Home and on a project page**:
+
+```
+heading ink   84..95       (both)
+first row    138..155      (both)
+second row   187..203      (both)
+```
+
+So there was never a page difference to reconcile -- only this build's own two drawings disagreeing. Our Home already
+matched; our *project* card drew its rows 24 points high because the shared function put them at `card.top + 34` where
+the measurement says `card.top + 58`.
+
+With that corrected the project card reads:
+
+```
+ours  heading 85..95   first row 138..153   second row 186..194
+```
+
+and the page measures **92 195**, down from 93 047.
+
+The sidebar's own inline drawing stays as it is: it is already within a point of the same measurement, and folding it into
+the shared function is now a straight swap rather than a decision -- which is the next step, not this round's.

@@ -409,7 +409,10 @@ pub fn getting_started_card(
     );
     for (index, label) in labels.iter().enumerate() {
         let row = Rect::from_min_size(
-            egui::pos2(card.left() + 16.0, card.top() + 34.0 + index as f32 * 44.0),
+            // **+58, not +34.** Measured off the reference: its sidebar heading's ink runs 84..95 and its first row's
+            // 138..155 -- 54 below the heading's top -- on *both* Home and a project page alike. With +34 this card
+            // drew its rows 24 points above the reference's.
+            egui::pos2(card.left() + 16.0, card.top() + 58.0 + index as f32 * 44.0),
             egui::vec2(card.width() - 32.0, 40.0),
         );
         painter.rect_filled(row, 10.0, theme.BUTTON_BG);
