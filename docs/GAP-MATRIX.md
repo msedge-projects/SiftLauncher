@@ -5358,3 +5358,19 @@ Driving our own content browser from an instance's "Browse content":
 **Not compared against the reference this round**: its "Browse content" sits at a different point than the one clicked,
 so its browser never opened. Recorded as an unfinished comparison rather than folded into a claim -- the next attempt
 should locate the button from a capture of that exact screen, as the rail item had to be.
+### The content browser's locked facets are drawn now (2026-11-05)
+
+The reference's browser, reached from an instance, carries two **locked chips** beneath its sort row: the game version
+and the loader, each with a padlock, because a browser scoped to an instance cannot offer another of either. This build
+held the values but never drew the chips.
+
+`locked_chip` draws one: a ringed pill, the padlock mark and the value, answering its right edge so a second sits beside
+it. Both facets come from the shell's own `install_version` / `install_loader`, and the row only appears when the browser
+was reached from an instance.
+
+Measured: the Mods view reads **127 436**, down from 134 286.
+
+Finding the reference's "Browse content" is what unblocked this, and it took a new tool: `tools/parity/at.py` finds the
+brand-green regions in a capture and prints their centres. It put that button at **(683, 562)** where a guess had been
+forty points away. Blind coordinates have now wasted more rounds in this session than any bug, and the fix is to aim at
+what the capture proves is there.

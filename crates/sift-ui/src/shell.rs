@@ -2987,6 +2987,19 @@ impl Shell {
         // which is the part a reader needs. Laid out from the right edge so the parts cannot run
         // into each other whatever the numbers say.
         self.draw_pager(ui, row.right(), row.center().y, "top");
+        // **The locked facets, under the sort row.** The reference's browser draws the instance's game version and
+    // loader as two chips beneath the selects -- "26.3" and "Fabric" in its own capture -- because a browser reached
+    // from an instance cannot offer another version or loader. This build had the fields but never drew the chips.
+    if self.install_target.is_some() {
+        let mut chip_x = row.left();
+        let chip_y = row.bottom() + 10.0;
+        if let Some(version) = self.install_version.clone() {
+            chip_x = locked_chip(ui.painter(), &self.theme, chip_x, chip_y, Glyph::Lock, &version) + 8.0;
+        }
+        if let Some(loader) = self.install_loader.clone() {
+            let _ = locked_chip(ui.painter(), &self.theme, chip_x, chip_y, Glyph::Lock, &loader);
+        }
+    }
 
         // The list, via fastframe's scrolling: 120 points per notch rather than egui's 40.
         // The reference's first card frame starts at y 230 where this build's started at 256, so the list begins
@@ -4225,4 +4238,46 @@ mod installed_tests {
         let entries = vec![entry("1KVo5zza", None)];
         assert_eq!(installed_for("1KVo5zza", &entries), None);
     }
+}
+
+/// One of the browser's locked facets: a chip with a mark and a value, drawn where the reference puts the instance's
+/// fixed game version and loader. It answers its right edge so two of them sit side by side without arithmetic at the
+/// call site.
+fn locked_chip(
+    painter: &egui::Painter,
+    theme: &Theme,
+    x: f32,
+    y: f32,
+    glyph: Glyph,
+    label: &str,
+) -> f32 {
+    let text = painter.layout_no_wrap(
+        label.to_owned(),
+        crate::fonts::body(12.0),
+        theme.BASE,
+    );
+    let width = 28.0 + text.size().x;
+    let chip = Rect::from_min_size(egui::pos2(x, y), egui::vec2(width, 26.0));
+    painter.rect_filled(chip, 6.0, theme.BUTTON_BG);
+    painter.rect_stroke(
+        chip,
+        6.0,
+        egui::Stroke::new(1.0, theme.SURFACE_5),
+        egui::StrokeKind::Inside,
+    );
+    crate::icons::draw(
+        painter,
+        glyph,
+        Rect::from_center_size(
+            egui::pos2(chip.left() + 14.0, chip.center().y),
+            Vec2::splat(12.0),
+        ),
+        theme.SECONDARY,
+    );
+    painter.galley(
+        egui::pos2(chip.left() + 24.0, chip.center().y - text.size().y / 2.0),
+        text,
+        theme.BASE,
+    );
+    chip.right()
 }
