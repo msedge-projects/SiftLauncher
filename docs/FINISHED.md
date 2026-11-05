@@ -127,3 +127,20 @@ readings (50 664 and 52 049) were Privacy compared against the wrong reference f
 `ref101-privacy.png` gives 53 350, which matches the workstream's own figure and confirms the capture's identity.
 
 The lesson is the one this record keeps repeating: **a number is only as good as the pair of states behind it.**
+
+### The two readings that were wrong, now measured correctly
+
+Our settings rail's rows are **45 points apart**, measured from the capture's own ink bands (`m-appearance.png`, x
+300..470): DISPLAY 220, Appearance 257, Features 302, Behavior 347, Language 392, ACCOUNT 438, Profile 477, Social
+520, Privacy 565, INSTANCE DEFAULTS 612, **Java and memory 652**, **Window 694**, Launch hooks 733.
+
+Clicking by those numbers:
+
+| tab | differing pixels | against |
+|---|---:|---|
+| Java and memory | **29 544** | `ref101-java.png` |
+| Window | **31 259** | `ref101-window.png` |
+
+Both corroborate the workstream's own figures (30 055 and 31 771) to within a few hundred pixels, which is what two
+independent drives of the same pair of states should do. The earlier 50 664 and 52 049 were Privacy compared against
+the wrong reference, caused by assuming a 44-point pitch the dialog does not have.
