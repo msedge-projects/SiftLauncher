@@ -262,3 +262,36 @@ which put the field above the words that name it. Moving it took the page from *
 What still differs there, and stays: the reference's bar is keyed **Unique / Shared / Orphaned** because it splits a
 content cache this build does not have; ours is keyed by folder and reads "Cache 2.5 MB" with a green bar, because that
 is what is actually on disk. The shape of the block matches; the state behind it does not.
+
+### The settings probe prints the rects a press is read against, and it settles the rail
+
+`SIFT_SETTINGS_PROBE=1` makes the page print every tab row's rectangle on any frame with a press. A clean run under
+Xvfb gives:
+
+```
+Appearance      272,246  218x40      Profile         272,464  218x40
+Features        272,290  218x40      Social          272,508  218x40
+Behavior        272,334  218x40      Privacy         272,552  218x40
+Language        272,378  218x40      JavaAndMemory   272,638  218x40
+                                    Window          272,682  218x40
+                                    LaunchHooks     272,726  218x40
+                                    Syncing         272,770  218x40
+                                    Resources       272,856  218x40
+                                    Troubleshooting 272,900  218x40
+```
+
+Three facts fall out of it:
+
+1. **The pitch is 44**, exactly as the reference's captured rail shows (257, 301, 348, 392...). The "30" reading is
+   dead for good.
+2. **`Syncing`'s centre is 790, and the rail's visible list ends at about 783** -- so the press test (which skips a row
+   whose centre is outside the rail) can never accept it. It is not a drawing bug: the row is drawn and correctly
+   positioned, and its centre is a few points below the scissor line.
+3. **Resources and Troubleshooting sit at 856 and 900**, 73 and 117 points below that line.
+
+So the rail needs either a taller pane or a scroll that actually holds -- the wheel moves it in some runs and not in
+others, and every tab change resets the offset. Recorded as the next thing to fix, with the numbers above as the target:
+after a scroll of ~120, Syncing's centre lands at 670, inside the pane.
+
+This is also the answer to the whole class of mislabelled captures this record keeps finding: **print the rect, click the
+rect**. A probe line is worth a dozen guessed coordinates.
