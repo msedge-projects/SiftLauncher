@@ -5097,3 +5097,20 @@ and the page measures **92 195**, down from 93 047.
 
 The sidebar's own inline drawing stays as it is: it is already within a point of the same measurement, and folding it into
 the shared function is now a straight swap rather than a decision -- which is the next step, not this round's.
+
+### The shared card's hover is wired but cannot be seen yet (2026-11-05, open)
+
+`getting_started_card` now takes the pointer and brightens a row under it by the theme's 8% step, which is what the
+sidebar's own drawing does. Driving the project page with the pointer held over a row shows **no change at all**:
+
+```
+hovered fill (39, 41, 46)   resting fill (39, 41, 46)   -- zero differing pixels down the column
+```
+
+The cause is not the tint: the card **registers no widget**, so egui has no reason to repaint when the pointer moves and
+the frame that would show the hover is never drawn. The sidebar's card gets away with it because Home repaints constantly
+for other reasons.
+
+The fix is to give `getting_started_card` the `ui` rather than a painter and `interact` each row, which is the same
+change that would let it report a pressed step and let the sidebar adopt it. Recorded as the next step and **not**
+claimed as working.

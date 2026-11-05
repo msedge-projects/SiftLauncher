@@ -387,6 +387,9 @@ pub fn getting_started_card(
     ring: egui::Color32,
     done: [bool; 3],
     labels: [&str; 3],
+    // Where the pointer is, so a row brightens under it the way the sheet's does. The sidebar's own drawing already
+    // does this; the shared card did not, which is the difference that made the two look like one component.
+    pointer: Option<egui::Pos2>,
 ) -> f32 {
     let card = Rect::from_min_size(rect.min, egui::vec2(rect.width(), 40.0 + 3.0 * 44.0));
     painter.rect_filled(card, 12, fill);
@@ -415,7 +418,16 @@ pub fn getting_started_card(
             egui::pos2(card.left() + 16.0, card.top() + 58.0 + index as f32 * 44.0),
             egui::vec2(card.width() - 32.0, 40.0),
         );
-        painter.rect_filled(row, 10.0, theme.BUTTON_BG);
+        let over = pointer.is_some_and(|at| row.contains(at));
+        painter.rect_filled(
+            row,
+            10.0,
+            if over {
+                crate::shell::tint(theme.BUTTON_BG, (255, 255, 255), 0.08)
+            } else {
+                theme.BUTTON_BG
+            },
+        );
         let ticked = done.get(index).copied().unwrap_or(false);
         if ticked {
             painter.circle_filled(egui::pos2(row.left() + 20.0, row.center().y), 8.0, theme.SECONDARY);

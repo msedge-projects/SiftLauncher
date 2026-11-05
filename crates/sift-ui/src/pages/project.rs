@@ -2404,6 +2404,9 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
             theme.SURFACE_5,
             [has_instance, false, false],
             ["Create first instance", "Sign in to Minecraft", "Sign in to Modrinth"],
+            // `ui.input`, as the sidebar's own drawing reads it: `ctx().input` answered None here, so the rows
+            // never saw the pointer.
+            ui.input(|i| i.pointer.hover_pos()),
         );
     }
     let cards = [
