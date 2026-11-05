@@ -246,7 +246,7 @@ fn hit(source: sift_net::modrinth::ModrinthSearchHit) -> Hit {
         summary: source.description,
         icon: source.icon_url,
         downloads: abbreviate(source.downloads),
-        followers: thousands(source.follows),
+        followers: abbreviate(source.follows),
         // Capitalised the same way `categories` is: the API's ids are lowercase and hyphenated, and a chip
         // that reads "challenging" is not the reference's chip.
         all_categories: {

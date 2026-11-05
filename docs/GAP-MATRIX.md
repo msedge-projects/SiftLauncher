@@ -5374,3 +5374,13 @@ Finding the reference's "Browse content" is what unblocked this, and it took a n
 brand-green regions in a capture and prints their centres. It put that button at **(683, 562)** where a guess had been
 forty points away. Blind coordinates have now wasted more rounds in this session than any bug, and the fix is to aim at
 what the capture proves is there.
+### Followers are abbreviated like downloads (2026-11-05)
+
+The browser's cards right-align two stats: downloads, then followers. Downloads read "282.77M" on both sides, but
+followers read **37,554** here where the reference reads **376K** -- this build ran the follower count through
+`thousands()`, which inserts commas, instead of `abbreviate()`, which shortens. Both stats now use the same rule.
+
+After the change the card reads "282.77M  **37.6K**".
+
+The **figures** still differ -- 37.6K against the reference's 376K -- because they were fetched at different times from a
+live API, and that is data rather than layout. The Mods view measures **127 270**.
