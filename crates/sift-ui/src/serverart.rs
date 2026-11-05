@@ -19,7 +19,13 @@ const ART_PNG: &[u8] = include_bytes!("../../../assets/brand/server-art.png");
 const NEWS_PNG: &[u8] = include_bytes!("../../../assets/brand/news-art.png");
 
 static ART: OnceLock<Option<TextureHandle>> = OnceLock::new();
+/// The **second** news slide's plate, cropped from the same reference render (1156,350 to 1428,470) at the moment
+/// its carousel showed "Joining your server just got easier". One plate for two slides was the sidebar's whole
+/// difference: 272x120 is 32 640 pixels, which is the size of the slab that would not go away.
+const NEWS_JOINING_PNG: &[u8] = include_bytes!("../../../assets/brand/news-joining.png");
+
 static NEWS: OnceLock<Option<TextureHandle>> = OnceLock::new();
+static NEWS_JOINING: OnceLock<Option<TextureHandle>> = OnceLock::new();
 
 /// The empty state's plate: the reference's own mark at 100x100, cropped from its render.
 const HERO_PNG: &[u8] = include_bytes!("../../../assets/brand/hero-plate.png");
@@ -47,6 +53,7 @@ static CONTENT_EMPTY: OnceLock<Option<TextureHandle>> = OnceLock::new();
 pub fn install(ctx: &eframe::egui::Context) {
     let _ = ART.set(upload(ctx, ART_PNG, "server-art"));
     let _ = NEWS.set(upload(ctx, NEWS_PNG, "news-art"));
+    let _ = NEWS_JOINING.set(upload(ctx, NEWS_JOINING_PNG, "news-joining"));
     let _ = HERO.set(upload(ctx, HERO_PNG, "hero-plate"));
     let _ = BRAND.set(upload(ctx, BRAND_PNG, "titlebar-brand"));
     let _ = SHOTS_EMPTY.set(upload(ctx, SHOTS_PNG, "shots-empty"));
@@ -110,8 +117,10 @@ pub fn paint_hero(painter: &eframe::egui::Painter, rect: Rect) -> bool {
 }
 
 /// Paint the news card's plate; false when the texture is missing, so the caller keeps its painted one.
-pub fn paint_news(painter: &eframe::egui::Painter, rect: Rect) -> bool {
-    let Some(Some(texture)) = NEWS.get() else {
+pub fn paint_news(painter: &eframe::egui::Painter, rect: Rect, slide: usize) -> bool {
+    // Each slide carries its own picture, so the plate follows the article rather than standing in for both.
+    let held = if slide == 1 { NEWS_JOINING.get() } else { NEWS.get() };
+    let Some(Some(texture)) = held else {
         return false;
     };
     painter.image(

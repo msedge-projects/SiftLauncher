@@ -5196,3 +5196,24 @@ art*, which is the default skin itself, not the frame around it.
 
 The content slab is therefore almost entirely **skin artwork**: four default skins drawn from different files. That is
 data, not drawing, and is recorded as such.
+
+### The sidebar's 32 000 was one missing picture (2026-11-05)
+
+The sidebar slab sat at ~32 000 on every page and would not move. It is not text and not the carousel's phase: it is the
+news plate, **272x120 = 32 640 pixels**, and this build shipped one plate for both articles while the reference draws a
+different picture for each.
+
+The second plate is now cropped from the reference's own render (1156,350 to 1428,470, the moment its card read "Joining
+your server just got easier") and the card picks the plate by slide.
+
+Measured on the Screenshots page, three samples six seconds apart:
+
+| sample | total | sidebar |
+|---|---:|---:|
+| t=0, same article | **22 351** | **14 213** |
+| t=1, same article | **22 351** | **14 213** |
+| t=2, different articles | 40 143 | 32 005 |
+
+So the ~18 000 that vanished is the plate, and what remains of the sidebar (14 213) is the card's text and the hosting
+banner. **The lesson is the same one this record keeps teaching**: a stubborn slab is worth measuring against the thing
+that occupies it, not against the number.

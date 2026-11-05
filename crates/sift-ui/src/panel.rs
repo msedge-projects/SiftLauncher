@@ -956,7 +956,11 @@ pub fn draw(
     // its own size and position (x 1156, y 349) with no stroke of ours over the top: the
     // stroke is for the painted fallback, which has no border of its own.
     let plate = Rect::from_min_size(egui::pos2(art.left() - 1.0, art.top() + 1.0), egui::vec2(272.0, 120.0));
-    if !crate::serverart::paint_news(painter, plate) {
+    let slide_index = NEWS_SLIDES
+        .iter()
+        .position(|candidate| std::ptr::eq(candidate, slide))
+        .unwrap_or(0);
+    if !crate::serverart::paint_news(painter, plate, slide_index) {
         news_art(painter, art, theme);
         painter.rect_stroke(
             art,
