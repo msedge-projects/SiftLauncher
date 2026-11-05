@@ -2389,95 +2389,20 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
 
     // Each section is a SidebarCard: flex flex-col gap-3 p-4 pt-3, card-shadow mb-4 rounded-2xl
     // bg-surface-3 border border-surface-4, h2 at text-lg font-semibold (SidebarCard.vue:11-18).
-    // **Getting started sits above the Compatibility card on this page**, as the reference's own project capture shows
-    // -- and *only* those two, with no News card and no hosting banner. The checklist is drawn here rather than
-    // reused from `panel::draw` because that function paints the whole sidebar; this is a compact copy of its card,
-    // and unifying the two is the next step rather than a thing already done.
+    // **Getting started sits above the Compatibility card on this page**, as the reference's own project capture
+    // shows -- and *only* those two, with no News card and no hosting banner. The card itself is the shared one in
+    // `panel`, so the project and Home sidebars cannot drift apart again.
     {
-        let card = Rect::from_min_size(
-            egui::pos2(rect.left(), y),
-            egui::vec2(rect.width(), 40.0 + 3.0 * 44.0),
-        );
-        painter.rect_filled(card, 12, theme.RAISED_BG);
-        painter.rect_stroke(
-            card,
-            12,
-            Stroke::new(1.0, theme.SURFACE_5),
-            egui::StrokeKind::Inside,
-        );
-        painter.text(
-            egui::pos2(card.left() + 16.0, card.top() + 14.0),
-            Align2::LEFT_TOP,
-            "Getting started",
-            fonts::semibold(15.0),
-            theme.CONTRAST,
-        );
-        crate::icons::draw(
-            &painter,
-            Glyph::ChevronUp,
-            Rect::from_center_size(
-                egui::pos2(card.right() - 24.0, card.top() + 22.0),
-                egui::Vec2::splat(14.0),
-            ),
-            theme.CONTRAST,
-        );
-        // **A done step is ticked and struck through.** The reference's own capture shows "Create first instance"
-        // completed -- a filled check and a line through the words -- because that install has an instance; this drew
-        // an empty circle for a step the library has plainly finished.
         let has_instance = std::fs::read_dir(crate::data::instances_dir())
             .map(|read| read.flatten().any(|entry| entry.path().is_dir()))
             .unwrap_or(false);
-        for (index, label) in ["Create first instance", "Sign in to Minecraft", "Sign in to Modrinth"]
-            .iter()
-            .enumerate()
-        {
-            let done = index == 0 && has_instance;
-            let row = Rect::from_min_size(
-                egui::pos2(card.left() + 16.0, card.top() + 34.0 + index as f32 * 44.0),
-                egui::vec2(card.width() - 32.0, 40.0),
-            );
-            painter.rect_filled(row, 10.0, theme.BUTTON_BG);
-            if done {
-                painter.circle_filled(egui::pos2(row.left() + 20.0, row.center().y), 8.0, theme.SECONDARY);
-                crate::icons::draw(
-                    &painter,
-                    Glyph::Check,
-                    Rect::from_center_size(
-                        egui::pos2(row.left() + 20.0, row.center().y),
-                        egui::Vec2::splat(10.0),
-                    ),
-                    theme.BUTTON_BG,
-                );
-            } else {
-                painter.circle_stroke(
-                    egui::pos2(row.left() + 20.0, row.center().y),
-                    7.0,
-                    Stroke::new(1.5, theme.SECONDARY),
-                );
-            }
-            painter.text(
-                egui::pos2(row.left() + 36.0, row.center().y),
-                Align2::LEFT_CENTER,
-                *label,
-                fonts::body(13.0),
-                if done { theme.SECONDARY } else { theme.BASE },
-            );
-            if done {
-                // The strike-through, a line through the label's own ink band.
-                let width = painter
-                    .layout_no_wrap(label.to_string(), fonts::body(13.0), theme.SECONDARY)
-                    .size()
-                    .x;
-                painter.line_segment(
-                    [
-                        egui::pos2(row.left() + 36.0, row.center().y),
-                        egui::pos2(row.left() + 36.0 + width, row.center().y),
-                    ],
-                    Stroke::new(1.0, theme.SECONDARY),
-                );
-            }
-        }
-        y += card.height() + 16.0;
+        y += crate::panel::getting_started_card(
+            &painter,
+            Rect::from_min_size(egui::pos2(rect.left(), y), egui::vec2(rect.width(), 0.0)),
+            theme,
+            [has_instance, false, false],
+            ["Create first instance", "Sign in to Minecraft", "Sign in to Modrinth"],
+        );
     }
     let cards = [
         ("Compatibility", compatibility_rows(project)),

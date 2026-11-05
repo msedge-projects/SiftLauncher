@@ -373,6 +373,91 @@ impl Step {
 /// The Minecraft row is the one that changes: the reference's checklist strikes a finished step
 /// through, and the launcher's own wording for that state is the account's name. A row that
 /// insisted `Sign in to Minecraft` after a successful sign-in would be asking again.
+/// **The Getting started card, on its own.** The sidebars of the Home and project pages both carry it, and the
+/// project page had a compact copy of it; this is the one both call. It draws the frame, the heading with its
+/// open chevron, and the three steps, and answers the height it used. `done` says which steps the library has
+/// finished, in the same order as the steps themselves.
+pub fn getting_started_card(
+    painter: &egui::Painter,
+    rect: Rect,
+    theme: &Theme,
+    done: [bool; 3],
+    labels: [&str; 3],
+) -> f32 {
+    let card = Rect::from_min_size(rect.min, egui::vec2(rect.width(), 40.0 + 3.0 * 44.0));
+    painter.rect_filled(card, 12, theme.RAISED_BG);
+    painter.rect_stroke(
+        card,
+        12,
+        Stroke::new(1.0, theme.SURFACE_5),
+        egui::StrokeKind::Inside,
+    );
+    painter.text(
+        egui::pos2(card.left() + 16.0, card.top() + 14.0),
+        Align2::LEFT_TOP,
+        GETTING_STARTED,
+        fonts::semibold(15.0),
+        theme.CONTRAST,
+    );
+    icons::draw(
+        painter,
+        Glyph::ChevronUp,
+        Rect::from_center_size(
+            egui::pos2(card.right() - 24.0, card.top() + 22.0),
+            Vec2::splat(14.0),
+        ),
+        theme.CONTRAST,
+    );
+    for (index, label) in labels.iter().enumerate() {
+        let row = Rect::from_min_size(
+            egui::pos2(card.left() + 16.0, card.top() + 34.0 + index as f32 * 44.0),
+            egui::vec2(card.width() - 32.0, 40.0),
+        );
+        painter.rect_filled(row, 10.0, theme.BUTTON_BG);
+        let ticked = done.get(index).copied().unwrap_or(false);
+        if ticked {
+            painter.circle_filled(egui::pos2(row.left() + 20.0, row.center().y), 8.0, theme.SECONDARY);
+            icons::draw(
+                painter,
+                Glyph::Check,
+                Rect::from_center_size(
+                    egui::pos2(row.left() + 20.0, row.center().y),
+                    Vec2::splat(10.0),
+                ),
+                theme.BUTTON_BG,
+            );
+        } else {
+            painter.circle_stroke(
+                egui::pos2(row.left() + 20.0, row.center().y),
+                7.0,
+                Stroke::new(1.5, theme.SECONDARY),
+            );
+        }
+        let ink = if ticked { theme.SECONDARY } else { theme.BASE };
+        painter.text(
+            egui::pos2(row.left() + 36.0, row.center().y),
+            Align2::LEFT_CENTER,
+            *label,
+            fonts::body(13.0),
+            ink,
+        );
+        if ticked {
+            let width = painter
+                .layout_no_wrap((*label).to_owned(), fonts::body(13.0), theme.SECONDARY)
+                .size()
+                .x;
+            painter.line_segment(
+                [
+                    egui::pos2(row.left() + 36.0, row.center().y),
+                    egui::pos2(row.left() + 36.0 + width, row.center().y),
+                ],
+                Stroke::new(1.0, theme.SECONDARY),
+            );
+        }
+    }
+    card.height() + 16.0
+}
+
 pub fn row_label(step: Step, account: Option<&str>) -> String {
     match (step, account) {
         (Step::Minecraft, Some(name)) => format!("Signed in as {name}"),
