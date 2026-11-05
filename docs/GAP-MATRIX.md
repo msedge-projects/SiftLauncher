@@ -5156,3 +5156,27 @@ the header, the toggle, the Add skin card, the Default skins row -- now lines up
 Page totals for this pair (both 1440x900, same rail item): **188 034 -> 189 047** across the two changes. The figure is
 dominated by what the two libraries hold -- the reference has no saved skins, this lab has three -- so it is recorded as a
 state difference and not chased.
+
+### The library, measured with matched state at last (2026-11-05)
+
+A data directory holding **exactly one instance** (`/tmp/matchdata`) against the reference's one:
+
+| slab | pixels |
+|---|---:|
+| total | **89 051** |
+| content | 53 788 |
+| sidebar | 32 005 |
+| titlebar | 2 229 |
+| rail | 1 029 |
+
+That is the first library number in this record where both sides hold the same *kind* of thing. Three defects it exposed,
+all fixed:
+
+1. **"New group" had no plus and no ring** -- the reference's pair is an outlined "+ New group" beside a filled
+   "+ New instance", and ours was two bare labels.
+2. **"New instance" had no plus** either; both buttons lead with one now.
+3. The field's width is closer (600 against the reference's ~640) but not equal -- recorded, not claimed.
+
+What still differs on this page is the instance itself: its name ("Instance 3" against "Fabric 26.3"), its loader line
+("Vanilla 26.3" against "Fabric 26.3") and its card art, which this lab's instance does not have. Those are data, and the
+record keeps them counted as data rather than chased as pixels.

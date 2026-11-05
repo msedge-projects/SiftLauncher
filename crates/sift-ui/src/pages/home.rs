@@ -1203,8 +1203,39 @@ fn list(
             egui::vec2(width, 36.0),
         );
         painter.rect_filled(button, 10.0, if brand { theme.BRAND } else { theme.BUTTON_BG });
+        // Both buttons lead with a "+", as the reference's pair does; the brand one had none.
+        if brand {
+            crate::icons::draw(
+                &painter,
+                Glyph::Plus,
+                Rect::from_center_size(
+                    egui::pos2(button.center().x - 52.0, button.center().y),
+                    egui::Vec2::splat(13.0),
+                ),
+                theme.ACCENT_CONTRAST,
+            );
+        }
+        if !brand {
+            // The reference's quiet button carries a **ring** and a leading "+", so the pair reads as one family:
+            // an outlined action beside a filled one. Ours was a flat quiet fill with a bare label.
+            painter.rect_stroke(
+                button,
+                10.0,
+                Stroke::new(1.0, theme.SURFACE_5),
+                egui::StrokeKind::Inside,
+            );
+            crate::icons::draw(
+                &painter,
+                Glyph::Plus,
+                Rect::from_center_size(
+                    egui::pos2(button.center().x - 44.0, button.center().y),
+                    egui::Vec2::splat(12.0),
+                ),
+                theme.BASE,
+            );
+        }
         painter.text(
-            button.center(),
+            egui::pos2(button.center().x + 6.0, button.center().y),
             Align2::CENTER_CENTER,
             label,
             fonts::semibold(13.0),
