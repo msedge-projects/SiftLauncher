@@ -5332,3 +5332,17 @@ it, and so that no one mistakes 14 213 for something fixable.
 
 `SIFT_NEWS_SLIDE` is now a supported affordance rather than a throwaway: measuring a rotating card against another app's
 means pinning both, and this session spent three rounds learning that.
+
+## Declined on purpose: swapping `panel::draw` to the shared checklist card (2026-11-05)
+
+It looked like a straight swap last week; measuring the two cards side by side says otherwise, and the reasons are
+recorded so the next session does not helpfully "finish" it:
+
+- the shared card frames **172** points (40 + 3x44); the sidebar's frames **191**, because its card runs from
+  `getting_started - 16` to the last row's bottom plus 13;
+- Home's sidebar is at its **rasterisation floor** (the threshold sweep: 16 324 / 11 137 / 8 173 / 5 235), so there is
+  no measurable parity left to win there;
+- a swap therefore carries a 19-point regression risk for **zero** pixel gain.
+
+The duplication stays, and this note stays above it. If the cards ever need to become one -- for a third caller, say --
+the work is to give the shared function the frame height its caller wants, not to move the caller onto today's frame.
