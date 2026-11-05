@@ -5026,3 +5026,16 @@ it is recorded that way rather than as a number to chase.
 
 **The lesson of the window size is worth more than any of the numbers**: a capture is only a measurement when the two
 windows are the same size *and* in the same state. Both halves of that rule have now been broken once in this record.
+
+### All five instance tabs now verified against the reference's own captures (2026-11-05)
+
+| tab | what was compared | result |
+|---|---|---|
+| Content | empty state: art, "No content installed", copy, both buttons | matches; art 81x59 ink on both, buttons' marks corrected |
+| Files | the root row: home, search, Refresh, split "+" | rebuilt to the reference's arrangement |
+| Worlds | empty state: art, "No servers or worlds added", copy | matches |
+| Logs | the row above the console and the console's frame | rebuilt: All chip, Live Log select, frame, rule |
+| Share | empty state: art, "No friends invited", "You can share this instance with your friends!" | matches |
+
+Each pair was taken at 1440x900 with both windows the same size and the same tab selected, which is the rule this
+record has broken twice and now states in every entry.
