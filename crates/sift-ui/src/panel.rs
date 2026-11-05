@@ -378,7 +378,7 @@ impl Step {
 /// open chevron, and the three steps, and answers the height it used. `done` says which steps the library has
 /// finished, in the same order as the steps themselves.
 pub fn getting_started_card(
-    painter: &egui::Painter,
+    ui: &mut egui::Ui,
     rect: Rect,
     theme: &Theme,
     // The card's own fill: the sidebar paints it with the gradient showing through, the project page with a flat
@@ -387,10 +387,14 @@ pub fn getting_started_card(
     ring: egui::Color32,
     done: [bool; 3],
     labels: [&str; 3],
-    // Where the pointer is, so a row brightens under it the way the sheet's does. The sidebar's own drawing already
-    // does this; the shared card did not, which is the difference that made the two look like one component.
-    pointer: Option<egui::Pos2>,
-) -> f32 {
+) -> (f32, Option<usize>) {
+    // **The rows are widgets, not paint.** A card that only paints never sees the pointer: egui has no reason to
+    // redraw when the mouse moves, so the hover frame is never drawn. `interact` also gives the press back to the
+    // caller, which is what the sidebar's own copy does by hand.
+    let painter = ui.painter().clone();
+    let painter = &painter;
+    let pointer = ui.input(|input| input.pointer.hover_pos());
+    let mut pressed = None;
     let card = Rect::from_min_size(rect.min, egui::vec2(rect.width(), 40.0 + 3.0 * 44.0));
     painter.rect_filled(card, 12, fill);
     painter.rect_stroke(card, 12, Stroke::new(1.0, ring), egui::StrokeKind::Inside);
@@ -418,7 +422,11 @@ pub fn getting_started_card(
             egui::pos2(card.left() + 16.0, card.top() + 58.0 + index as f32 * 44.0),
             egui::vec2(card.width() - 32.0, 40.0),
         );
-        let over = pointer.is_some_and(|at| row.contains(at));
+        let response = ui.interact(row, egui::Id::new(("getting-started-step", index)), egui::Sense::click());
+        if response.clicked() {
+            pressed = Some(index);
+        }
+        let over = pointer.is_some_and(|at| row.contains(at)) || response.hovered();
         painter.rect_filled(
             row,
             10.0,
@@ -469,7 +477,7 @@ pub fn getting_started_card(
             );
         }
     }
-    card.height() + 16.0
+    (card.height() + 16.0, pressed)
 }
 
 pub fn row_label(step: Step, account: Option<&str>) -> String {

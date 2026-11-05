@@ -2383,7 +2383,6 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
     // through the same cache the page filled.
     let loaded = merged(ui.ctx(), project);
     let project = &loaded;
-    let painter = ui.painter();
     let mut y = rect.top();
     let inner_width = rect.width() - 2.0 * CARD_PAD;
 
@@ -2396,19 +2395,19 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
         let has_instance = std::fs::read_dir(crate::data::instances_dir())
             .map(|read| read.flatten().any(|entry| entry.path().is_dir()))
             .unwrap_or(false);
-        y += crate::panel::getting_started_card(
-            &painter,
+        let (used, _pressed) = crate::panel::getting_started_card(
+            ui,
             Rect::from_min_size(egui::pos2(rect.left(), y), egui::vec2(rect.width(), 0.0)),
             theme,
             theme.RAISED_BG,
             theme.SURFACE_5,
             [has_instance, false, false],
             ["Create first instance", "Sign in to Minecraft", "Sign in to Modrinth"],
-            // `ui.input`, as the sidebar's own drawing reads it: `ctx().input` answered None here, so the rows
-            // never saw the pointer.
-            ui.input(|i| i.pointer.hover_pos()),
         );
+        y += used;
     }
+    let painter = ui.painter();
+    let painter = &painter;
     let cards = [
         ("Compatibility", compatibility_rows(project)),
         ("Links", links_rows(project)),

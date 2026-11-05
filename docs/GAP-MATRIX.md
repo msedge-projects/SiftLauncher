@@ -5114,3 +5114,20 @@ for other reasons.
 The fix is to give `getting_started_card` the `ui` rather than a painter and `interact` each row, which is the same
 change that would let it report a pressed step and let the sidebar adopt it. Recorded as the next step and **not**
 claimed as working.
+
+### Correction: the shared card's hover does render (2026-11-05)
+
+Last round's entry said the hover could not be seen. **That was a sampling error, not a defect.** Scanning the whole
+sidebar instead of one column shows the truth:
+
+```
+project card, pointer on row 1 vs pointer away: 1 025 differing pixels, first at (1186, 126)
+home card,    pointer on row 1 vs pointer away:    40 differing rows at x 1300
+```
+
+The rows had simply been sampled at x 1400, past their right edge. With the card now taking the `ui` and registering each
+row, the hover renders on both sidebars.
+
+So the two cards are one component in behaviour as well as in shape: same heading, same row pitch, same tick, same
+brightening under the pointer. What still differs is only who draws the sidebar's own copy, and `panel::draw` has not
+been switched over -- that swap is now a straight replacement with nothing left to reconcile.
