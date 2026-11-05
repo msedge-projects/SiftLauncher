@@ -357,3 +357,43 @@ target. Both are icon-name questions, not layout.
 **And one false alarm, written down because it nearly became a bad "fix"**: our Content tab listed 26 jars that I took for
 internals (`.fabric/processedMods`, `local/crash_assistant`). Checking the folder showed **49 real mods** in
 `minecraft/mods` -- the list was right and the state was simply different from the reference's empty instance.
+
+# Measured state of the clone, consolidated (2026-11-05)
+
+Every number below was taken with **both windows at 1440x900**, with the state described beside it. Where a page could
+not be measured honestly, that is said instead of a figure.
+
+## Pages
+
+| page | state | differing pixels | note |
+|---|---|---:|---|
+| Home (empty library) | same | **24 444** | sidebar now at its rasterisation floor |
+| Library | one instance each side | **89 051** | instance name and art differ (data) |
+| Discover | live catalogue | ~79 800 | text and project artwork |
+| Project (Description) | same project | **92 195** | gallery image drawn on both |
+| Instance, Content tab | both empty | **51 516** | art 81x59 ink on both |
+| Instance, Files tab | both at root | 68 687 | reference has a `config` row, this lab has none |
+| Instance, Worlds tab | both empty | matches | art, copy and buttons identical |
+| Instance, Logs tab | both idle | matches | frame, chips and Live Log select rebuilt |
+| Instance, Share tab | both empty | **49 545** | art and copy identical |
+| Skins | no saved skins | **155 619** | structure identical; skin artwork differs |
+| Screenshots | both empty | **22 351** | 14 213 of it is sidebar text rasterisation |
+| Settings, 13 tabs | same tab | 29 544 .. 73 597 | best Java, worst Resources |
+
+## What is at its floor
+
+Text rasterisation. The evidence is a threshold sweep on the sidebar: 16 324 at 40, 11 137 at 80, 8 173 at 120,
+**5 235 at 160**. Layout differences do not behave that way -- a shifted block stays flat until the threshold is enormous.
+
+## What is blocked, and on what
+
+- **Servers** -- the reference gates its own page behind an account this environment cannot create.
+- **Account, Follow, Save, Report** -- the same reason: they need Modrinth's own service.
+- **Two CI checks** -- no remote is configured for this tree; the build and the tests run locally and are green.
+
+## What is open
+
+- The project sidebar paints its checklist from a compact copy until `panel::draw` is switched to
+  `getting_started_card` -- now a straight swap, with the 16-point question answered (58, not 34).
+- Resource packs, Data packs and Shader packs tabs list files but have not been compared tab-by-tab.
+- Drag-and-drop of screenshots between groups, and the ZIP export, are unbuilt.
