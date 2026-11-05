@@ -596,9 +596,17 @@ pub fn draw(
     // **Which article is up.** The reference's card advances by itself; the index is derived from the frame clock so
     // nothing has to be stored or ticked, and a repaint every second keeps it moving.
     let seconds = ui.input(|input| input.time);
-    let slide = NEWS_SLIDES
-        .get((seconds / NEWS_SLIDE_SECONDS) as usize % NEWS_SLIDES.len())
-        .unwrap_or(&NEWS_SLIDES[0]);
+    // `SIFT_NEWS_SLIDE=1` pins the card to that article. Measuring a two-slide carousel against another app's means
+    // holding both on the same article deliberately; sampling and hoping wastes a session, which this one proved.
+    let pinned = std::env::var("SIFT_NEWS_SLIDE")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok());
+    let slide = match pinned {
+        Some(index) => NEWS_SLIDES.get(index).unwrap_or(&NEWS_SLIDES[0]),
+        None => NEWS_SLIDES
+            .get((seconds / NEWS_SLIDE_SECONDS) as usize % NEWS_SLIDES.len())
+            .unwrap_or(&NEWS_SLIDES[0]),
+    };
     ui.ctx().request_repaint_after(std::time::Duration::from_millis(500));
 
     // The sidebar is the surface's right column, not a panel bolted onto it: the

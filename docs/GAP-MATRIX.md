@@ -5307,3 +5307,28 @@ every matched sample means those samples simply landed on the one-line article, 
 What remains unknown is narrower than before: how the two apps read when both are on the *two-line* article, which needs
 both pinned to it rather than sampled. That is a one-line change to the slide clock when someone next wants the number --
 `ui.input().time` replaced by a fixed phase -- and until then this note stands as the honest state of it.
+
+### The sidebar's remainder is glyph rasterisation, proved by a threshold sweep (2026-11-05)
+
+With the carousel **pinned** to the two-line article (`SIFT_NEWS_SLIDE=1`), the reference caught on the same article,
+and the art regions **provably identical** (0 differing pixels in 1156..1428 x 350..470), the sidebar still reads 14 213.
+
+Sweeping the difference threshold over the sidebar column alone:
+
+| threshold | differing pixels |
+|---:|---:|
+| 40 | 16 324 |
+| 80 | 11 137 |
+| 120 | 8 173 |
+| 160 | **5 235** |
+
+A **layout** difference behaves nothing like this: a block shifted by a few points stays roughly constant until the
+threshold is enormous. A curve that halves as the tolerance doubles is two rasterisers disagreeing about glyph edges --
+which is the same floor the Home page showed at the very start of this work (31 171 at 40, 13 215 at 120, 5 549 at 160).
+
+So the sidebar is **done to its floor**, and the standing conclusion for every remaining slab of this kind is the same one:
+what is left is text, not structure. Recorded with the numbers so that the next session does not spend itself re-discovering
+it, and so that no one mistakes 14 213 for something fixable.
+
+`SIFT_NEWS_SLIDE` is now a supported affordance rather than a throwaway: measuring a rotating card against another app's
+means pinning both, and this session spent three rounds learning that.
