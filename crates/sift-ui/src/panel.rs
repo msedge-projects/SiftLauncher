@@ -452,6 +452,9 @@ pub fn draw(
     facet: Option<&str>,
     expanded: bool,
     hide_installed: bool,
+    // The game version and loader a content browser is locked to, when this page is one: the reference's sidebar
+    // shows a "Game version" block then, saying the version comes from the instance rather than from a filter.
+    locked: Option<(&str, &str)>,
 ) -> Option<Step> {
     let painter = ui.painter();
 
@@ -619,8 +622,39 @@ pub fn draw(
         // other pages give to `News`. A press reports the category, which the shell turns into
         // a facet; the chosen one is drawn in the brand colour.
         // `Hide already installed`, above the heading, with the reference's switch on the right.
+        // The reference's locked-version block, in a content browser: the label, the value, and the sentence saying
+        // where it comes from. A browser scoped to an instance cannot offer a different version, and saying so is
+        // the difference between a filter and a fact.
+        let mut switch_y = plan.news;
+        let mut locked_bottom = plan.news;
+        if let Some((version, loader)) = locked {
+            // Below the switch, as the reference orders them: the toggle, then the locked version, then the list.
+            let block = switch_y + CATEGORY_ROW + 8.0;
+            painter.text(
+                egui::pos2(column.left(), block),
+                Align2::LEFT_TOP,
+                "Game version",
+                fonts::body(13.0),
+                theme.SECONDARY,
+            );
+            painter.text(
+                egui::pos2(column.left(), block + 20.0),
+                Align2::LEFT_TOP,
+                version,
+                fonts::label(15.0),
+                theme.CONTRAST,
+            );
+            painter.text(
+                egui::pos2(column.left(), block + 44.0),
+                Align2::LEFT_TOP,
+                format!("Game version is provided by the instance ({loader})."),
+                fonts::body(11.0),
+                theme.SECONDARY,
+            );
+            locked_bottom = block + 64.0;
+        }
         let switch_row = Rect::from_min_size(
-            egui::pos2(column.left(), plan.news),
+            egui::pos2(column.left(), switch_y),
             egui::vec2(column.width(), CATEGORY_ROW),
         );
         let over_switch = pointer.is_some_and(|pointer| switch_row.contains(pointer));
@@ -664,12 +698,15 @@ pub fn draw(
             theme.ACCENT_CONTRAST,
         );
         painter.text(
-            egui::pos2(column.left(), plan.news + CATEGORY_ROW + 8.0),
+            egui::pos2(column.left(), locked_bottom.max(plan.news + CATEGORY_ROW + 8.0) + if locked.is_some() { 8.0 } else { 0.0 }),
             Align2::LEFT_TOP,
             CATEGORY,
             fonts::semibold(HEADING_SIZE),
             theme.CONTRAST,
         );
+        // Every row under the heading moves by the height of the locked block, so a browser's list starts below it
+        // instead of under it.
+        let row_shift = if locked.is_some() { 80.0 } else { 0.0 };
         let shown = if expanded {
             categories.len()
         } else {
@@ -684,7 +721,7 @@ pub fn draw(
                         + 8.0
                         + HEADING_LINE
                         + HEADING_TO_BODY
-                        + index as f32 * CATEGORY_ROW,
+                        + index as f32 * CATEGORY_ROW + row_shift,
                 ),
                 egui::vec2(column.width(), CATEGORY_ROW),
             );

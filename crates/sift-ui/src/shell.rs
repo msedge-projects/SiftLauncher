@@ -2504,6 +2504,12 @@ impl Shell {
             self.facet.as_deref(),
             self.categories_expanded,
             self.hide_installed,
+            match (&self.install_version, &self.install_loader) {
+                (Some(version), Some(loader)) if self.install_target.is_some() => {
+                    Some((version.as_str(), loader.as_str()))
+                }
+                _ => None,
+            },
         );
         let pressed = step.is_some();
         if let Some(step) = step {
