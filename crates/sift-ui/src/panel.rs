@@ -1497,7 +1497,7 @@ mod tests {
     #[test]
     fn a_third_line_of_copy_moves_everything_below_it() {
         let two = news_rows(COPY_H, TITLE_LINE);
-        let three = news_rows(COPY_H + COPY_LINE);
+        let three = news_rows(COPY_H + COPY_LINE, TITLE_LINE);
         assert_eq!(three.height - two.height, COPY_LINE);
         assert_eq!(three.art, two.art);
         assert_eq!(three.title, two.title);
@@ -1511,7 +1511,7 @@ mod tests {
     fn the_whole_panel_fits_the_window() {
         let panel = panel_rect();
         assert_eq!(panel.bottom(), g::WINDOW.1, "the panel ends at the window's edge");
-        let plan = plan_with_copy(panel, COPY_H);
+        let plan = plan_with_copy(panel, COPY_H, TITLE_LINE);
         let bottom = plan.banner + BANNER_H;
         assert!(bottom <= g::WINDOW.1, "the hosting banner ends inside the window");
         assert!(
