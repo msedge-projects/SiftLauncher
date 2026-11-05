@@ -5249,3 +5249,30 @@ that argument, and the change is reverted rather than left in the source as an u
 What that rules out is worth as much as a fix would be: the difference in that band is in the *text itself* or in how its
 galley is built, not in the width passed to it. The next attempt should start by printing the copy's galley size from
 both sides rather than guessing at which number feeds it.
+
+### The 7 994 band is an offset and one of the reference's own artefacts (2026-11-05)
+
+Following the note from the previous round, both copies were cropped at 1:1 with the same article up. They read **the
+same words with the same breaks**:
+
+```
+Share your server with friends directly
+in the app. When they accept, we'll
+create an instance for them that's
+managed by your server.
+```
+
+and their line pitch matches too (17-18 points on both, glyph ink 10-11 points). So the wrap was never the problem and the
+width change that did nothing was right to be reverted.
+
+What is left in that band is two things:
+
+1. **A vertical offset** -- the reference's copy begins about 18 points lower than this build's, because its two-line title
+   takes more room above it than the row plan reserves here.
+2. **The reference's own overlap**: its "Upgrade to Modrinth+" row sits *on top of* the copy's last line ("managed by your
+   server." runs through the link), which is a layout bug in the reference, visible in its own capture.
+
+Reproducing (2) would mean deliberately drawing text over a link. That is a choice about faithfulness, not a measurement,
+and it is recorded here rather than made silently.
+
+(1) is a real, closable difference and the next target: the row plan's title allowance against a two-line title.
