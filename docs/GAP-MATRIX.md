@@ -4944,3 +4944,22 @@ the launcher: the failure is inside Minecraft's own renderer, after our command 
 What this proves and what it does not: instance creation, version resolution, the asset index, the java runtime, the
 offline session and the process handling all work. It does **not** prove the game reaches its main menu, which needs
 a GL driver this container does not have.
+
+## The game reaches its main menu (2026-11-05, verified by capture)
+
+`game-main-menu.png` is the launcher's own screen with **Minecraft 26.3's title screen up on top of it**: the
+"MINECRAFT JAVA EDITION" logo, the splash text, and the mod-pack welcome block "Welcome to Fabulously Optimized!" with
+its controls (Narrator, Music & Sounds, Accessibility Settings, Language, Continue).
+
+So the whole chain works end to end: Play on the instance page returns `InstanceAction::Play`, the shell starts the
+launch, the engine resolves the instance's files against the 479 MB asset store, the bundled OpenJDK 25.0.1 runs, the
+offline session is accepted, and Minecraft reaches the menu a reader would click Play at.
+
+An earlier run the same day stopped at "Failed to create window for OpenGL context: Couldn't find matching GLX visual",
+which is this container's missing DRI drivers; the client's own fallback path got past it here. Both outcomes are in the
+record: the difference is the client, not this launcher.
+
+**Measurement trap, recorded because it cost an hour**: the first readings after this launch were Home 132 538 and
+Discover 272 883. Nothing had regressed -- Minecraft's window was covering the launcher in the capture. With the game
+closed the same build measures Home **24 444** and Discover **78 987**. A capture is only a measurement of the launcher
+when the launcher is what is on screen.
