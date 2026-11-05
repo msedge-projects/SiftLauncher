@@ -4056,7 +4056,17 @@ mod tests {
     /// the module note instead of being drawn dead.
     #[test]
     fn the_menu_carries_every_row_this_page_can_carry_out() {
-        assert_eq!(MENU_ITEMS, [Item::Open, Item::ShowInFolder, Item::Delete]);
+        // The group row sits second, where the reference puts it: Open, group, reveal, then the destructive one
+        // last.
+        assert_eq!(
+            MENU_ITEMS,
+            [
+                Item::Open,
+                Item::AddToGroup,
+                Item::ShowInFolder,
+                Item::Delete
+            ]
+        );
         assert!(Item::Delete.danger(), "Delete is the row drawn in red");
         assert!(!Item::Open.danger());
         assert_eq!(Item::ShowInFolder.label(), SHOW_IN_FOLDER);
