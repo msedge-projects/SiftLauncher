@@ -203,3 +203,23 @@ What changed and what it proved:
 comes back "Color theme"). So the drawn rows and the rows the press is tested against are not using the same offset.
 Until that is fixed, Resources and Troubleshooting remain **unmeasured**, and the honest count of verified Settings tabs
 stays at nine.
+
+### Fixed: the rail's offset had two owners, and the second one kept resetting it
+
+The click-path block clamped `rail_scroll` against its own overflow figure, and that figure could be zero -- so every
+frame it put the list back at the top *after* `draw_rail` had scrolled it. The rows were drawn scrolled and the press
+was tested unscrolled: pressing the row that read "Resources" selected Appearance, twice. With that block removed and
+`draw_rail` as the only owner, pressing Resources selects Resources.
+
+**Resources and Troubleshooting are now measured** against the live reference:
+
+| tab | differing pixels |
+|---|---:|
+| Resources | **73 597** |
+| Troubleshooting | **56 104** |
+
+Both replace earlier figures that came from presses landing elsewhere (93 835 and an unverified 56 104 -- the second
+turns out to have been right, which is why it is recorded as corroborated rather than as a fresh number).
+
+The Resources pane also differs in *state*, not shape: the reference's store was empty ("0 bytes stored", a grey bar)
+while this build's holds 2.5 MB ("Cache 2.5 MB", a green bar). That difference is honest and stays.

@@ -2798,25 +2798,11 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
     // The rail's rows are the only navigation. A row clipped away by the rail's overflow is
     // not a target: its centre has to be inside the rail for the click to count.
     let rail = rail_rect(dialog);
-    // The wheel over the rail moves it, clamped against how far its rows actually reach. The
-    // pane is the rail less its padding and the footer's band, which is the height the rows are
-    // clipped to; measuring the overflow against the whole rail let the list scroll past its own
-    // last row by the footer's height.
-    let rail_pane = rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0
-        - (rail.top() + RAIL_PADDING);
-    let rail_overflow = (rail_needed_height(state.dev_mode) - rail_pane).max(0.0);
-    // **Tested against the rail's own rect, not the ui's clip.** `rect_contains_pointer` answers relative to the
-    // painter's clip, and the rail sits outside it here, so the wheel never reached the list: the SYSTEM group was
-    // drawn below the plate's visible rows and could not be scrolled to.
-    let wheel = ui.ctx().input(|i| i.smooth_scroll_delta.y);
-    let over_rail = ui
-        .ctx()
-        .input(|i| i.pointer.hover_pos())
-        .is_some_and(|at| rail.contains(at));
-    if wheel != 0.0 && rail_overflow > 0.0 && over_rail {
-        state.rail_scroll = (state.rail_scroll - wheel).clamp(0.0, rail_overflow);
-    }
-    state.rail_scroll = state.rail_scroll.min(rail_overflow);
+    // **One authority for the rail's offset.** This block used to clamp `rail_scroll` against its own idea of the
+    // overflow, and that clamp could be zero -- so every frame it put the list back at the top after `draw_rail` had
+    // scrolled it. The rows were drawn scrolled and the press was tested unscrolled, which is why pressing the row
+    // that read "Resources" selected Appearance. `draw_rail` owns the offset now; nothing here touches it.
+
 
     // The footer's mark is the developer-mode button: six presses toggle it
     // (`index.vue:355-361` increments then toggles once the counter passes five).
