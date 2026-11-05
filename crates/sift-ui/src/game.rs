@@ -43,6 +43,10 @@ pub enum Status {
         done: u32,
         /// Files this phase will fetch in total.
         total: u32,
+        /// Tenths of a megabyte per second, as the downloader measured them. The reference prints a speed here
+        /// ("15.0 MB/s"), not a fraction of the file count, and that is what its title bar and its instance header
+        /// both show.
+        tenths_mbps: u32,
     },
     /// The game process exists and is still running.
     Running,
@@ -58,8 +62,14 @@ impl fmt::Display for Status {
         match self {
             Status::Idle => formatter.write_str("No instances running"),
             Status::Preparing => formatter.write_str("Preparing…"),
-            Status::Downloading { done, total } => {
-                write!(formatter, "Downloading {done}/{total}")
+            Status::Downloading { done, total, tenths_mbps } => {
+                // With a rate measured, the speed is the line the reference prints; without one (the first instant
+                // of a phase) the counts still say something true.
+                if *tenths_mbps > 0 {
+                    write!(formatter, "{}.{} MB/s", tenths_mbps / 10, tenths_mbps % 10)
+                } else {
+                    write!(formatter, "Downloading {done}/{total}")
+                }
             }
             Status::Running => formatter.write_str("Running"),
             Status::Exited(code) => write!(formatter, "Exited ({code})"),
@@ -285,6 +295,8 @@ fn launch_instance(
     let mut refusal = String::new();
     let mut last_line = String::new();
     let mut last_download: Option<(u32, u32)> = None;
+    // The rate's window: the phase's total, when it started, and the bytes it had received then.
+    let mut rate: Option<(u32, std::time::Instant, u64)> = None;
     let readiness = {
         let mut log = |line: String| {
             if line.contains("not launching") {
@@ -295,15 +307,36 @@ fn launch_instance(
         let levels = sender.clone();
         let mut progress = |level: install::Progress| {
             let counts = download_counts(&level);
+            // The rate: bytes this phase has received over the time it has been receiving them. A phase's own
+            // counter restarts at zero, which is why the window is reset when the total changes.
+            let now = std::time::Instant::now();
+            let tenths_mbps = match (&mut rate, counts) {
+                (window, Some((done, total))) => {
+                    let fresh = window.as_ref().is_none_or(|(total_seen, _, _)| *total_seen != total);
+                    if fresh {
+                        *window = Some((total, now, 0));
+                    }
+                    let (_, start, bytes_seen) = window.as_mut().unwrap();
+                    let rate_now = if level.bytes > *bytes_seen {
+                        *bytes_seen = level.bytes;
+                        let seconds = now.duration_since(*start).as_secs_f32().max(0.05);
+                        ((level.bytes as f32 / seconds) / (1_048_576.0 / 1_000_000.0) * 10.0) as u32
+                    } else {
+                        0
+                    };
+                    rate_now
+                }
+                _ => 0,
+            };
             // Progress arrives once per finishing file per phase. A report with
-            // the same counts is not a delta and would only repaint the same
+            // the same counts *and* the same rate is not a delta and would only repaint the same
             // string.
             if counts == last_download {
                 return;
             }
             last_download = counts;
             let status = match counts {
-                Some((done, total)) => Status::Downloading { done, total },
+                Some((done, total)) => Status::Downloading { done, total, tenths_mbps },
                 None => Status::Preparing,
             };
             let _ = levels.send(Reply { launch, status });
@@ -436,6 +469,20 @@ mod tests {
 
     /// `busy` is the frame loop's rule: only work that is still happening keeps
     /// the window drawing. Every terminal state must owe no frame.
+    /// **The speed, as the reference prints it.** Its title bar reads "15.0 MB/s" during a download, not a
+    /// fraction of the file count; a phase that has not measured a rate yet still says something true.
+    #[test]
+    fn a_download_prints_its_speed_when_it_has_one() {
+        assert_eq!(
+            Status::Downloading { done: 3, total: 9, tenths_mbps: 150 }.to_string(),
+            "15.0 MB/s"
+        );
+        assert_eq!(
+            Status::Downloading { done: 3, total: 9, tenths_mbps: 0 }.to_string(),
+            "Downloading 3/9"
+        );
+    }
+
     #[test]
     fn only_the_live_states_are_busy() {
         let cases = [
@@ -445,6 +492,7 @@ mod tests {
                 Status::Downloading {
                     done: 34,
                     total: 120,
+                    tenths_mbps: 150,
                 },
                 true,
             ),

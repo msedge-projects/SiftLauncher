@@ -509,6 +509,18 @@ fn header(
         label,
         theme.ACCENT_CONTRAST,
     );
+    // The launcher's own line while it works: the reference prints the speed it is downloading at ("15.0 MB/s")
+    // beside a pause control. This build has the rate now, so the header says it rather than leaving the button to
+    // carry the whole state on its own.
+    if busy {
+        painter.text(
+            egui::pos2(play.left() - 16.0, play.center().y),
+            Align2::RIGHT_CENTER,
+            instance.status.as_str(),
+            fonts::body(13.0),
+            theme.SECONDARY,
+        );
+    }
     let response = ui.interact(play, egui::Id::new("instance-play"), Sense::click());
     if response.clicked() {
         ui.ctx().request_repaint();
