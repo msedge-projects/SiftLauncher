@@ -5291,3 +5291,19 @@ apps on the two-line article deliberately (by freezing the clock) before claimin
 
 The alternative reading -- that the second slide's plate never draws -- would look the same from outside, so the same
 experiment settles both.
+
+### Resolved: the second slide's plate does draw (2026-11-05)
+
+The open alternative from last round -- that the second plate never draws, which would look identical from outside -- is
+**ruled out by measuring our own app against itself**:
+
+```
+art region (1156..1428 x 350..470) sampled 11 seconds apart: 31 762 of 32 640 pixels differ
+```
+
+Two different pictures, one per slide. So the carousel's plate selection works, and the sidebar's constant **14 213** on
+every matched sample means those samples simply landed on the one-line article, where the title-height change is a no-op.
+
+What remains unknown is narrower than before: how the two apps read when both are on the *two-line* article, which needs
+both pinned to it rather than sampled. That is a one-line change to the slide clock when someone next wants the number --
+`ui.input().time` replaced by a fixed phase -- and until then this note stands as the honest state of it.
