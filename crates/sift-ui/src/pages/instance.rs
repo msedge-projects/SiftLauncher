@@ -1373,7 +1373,9 @@ fn logs_tab(ui: &mut Ui, body: Rect, theme: &Theme, instance: &Instance) {
     search_field(
         ui,
         theme,
-        Rect::from_min_size(body.min, egui::vec2(320.0, FILE_SEARCH_H)),
+        // The reference's field spans the row: measured off its capture, it runs from the body's left edge to just
+        // before the "Live Log" select, not the 320-point stub this drew.
+        Rect::from_min_size(body.min, egui::vec2((body.width() - 150.0).max(320.0), FILE_SEARCH_H)),
         "Search logs",
     );
     let live = Rect::from_min_size(
@@ -1388,29 +1390,71 @@ fn logs_tab(ui: &mut Ui, body: Rect, theme: &Theme, instance: &Instance) {
         fonts::semibold(14.0),
         theme.BASE,
     );
+    // The reference's "Live Log" is a select: its right end carries a chevron.
+    crate::icons::draw(
+        &painter,
+        Glyph::ChevronDown,
+        Rect::from_center_size(
+            egui::pos2(live.right() - 16.0, live.center().y),
+            egui::Vec2::splat(12.0),
+        ),
+        theme.SECONDARY,
+    );
     // The filter chips: Error, Warn, Info, with a divider between each pair.
     let chips_y = body.top() + 46.0;
-    let mut x = body.left();
-    for (label, colour) in [
-        ("Error", theme.RED),
-        ("Warn", theme.ORANGE),
-        ("Info", theme.SECONDARY),
-    ] {
-        painter.circle_filled(egui::pos2(x + 4.0, chips_y + 12.0), 4.0, colour);
-        painter.text(
-            egui::pos2(x + 14.0, chips_y + 12.0),
-            Align2::LEFT_CENTER,
-            label,
-            fonts::body(14.0),
-            theme.BASE,
-        );
-        x += 92.0;
-    }
+    // **The funnel and the "All" chip come first**, as the reference's row does: the funnel is the filter's mark,
+    // "All" is the level chosen by default and is drawn as a brand chip, and Error / Warn / Info follow it.
+    crate::icons::draw(
+        &painter,
+        Glyph::Filter,
+        Rect::from_center_size(
+            egui::pos2(body.left() + 8.0, chips_y + 12.0),
+            egui::Vec2::splat(14.0),
+        ),
+        theme.BASE,
+    );
+    let all_chip = Rect::from_min_size(
+        egui::pos2(body.left() + 26.0, chips_y),
+        egui::vec2(38.0, 24.0),
+    );
+    painter.rect_filled(all_chip, 6.0, theme.BUTTON_BG_SELECTED);
     painter.text(
+        all_chip.center(),
+        Align2::CENTER_CENTER,
+        "All",
+        fonts::semibold(12.0),
+        theme.BRAND,
+    );
+    let mut x = body.left() + 78.0;
+    // **Text chips, not dots.** The reference's row reads "All  Error  Warn  Info" as four chips of the same kind;
+    // this drew coloured bullets beside three bare words, which made "All" look like a different control.
+    for label in ["Error", "Warn", "Info"] {
+        let width = 16.0 + label.len() as f32 * 7.0;
+        let chip = Rect::from_min_size(egui::pos2(x, chips_y), egui::vec2(width, 24.0));
+        painter.text(
+            chip.center(),
+            Align2::CENTER_CENTER,
+            label,
+            fonts::body(13.0),
+            theme.SECONDARY,
+        );
+        x += width + 10.0;
+    }
+    // "Expand" carries the reference's expand mark before the word.
+    let expand = painter.text(
         egui::pos2(body.right(), chips_y + 12.0),
         Align2::RIGHT_CENTER,
         "Expand",
         fonts::body(14.0),
+        theme.BASE,
+    );
+    crate::icons::draw(
+        &painter,
+        Glyph::Expand,
+        Rect::from_center_size(
+            egui::pos2(expand.left() - 12.0, chips_y + 12.0),
+            egui::Vec2::splat(12.0),
+        ),
         theme.BASE,
     );
     // The console's frame, and its contents.
