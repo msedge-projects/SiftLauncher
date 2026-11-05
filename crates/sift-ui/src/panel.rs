@@ -634,7 +634,14 @@ pub fn draw(
         theme.BASE,
         column(rect).width(),
     );
-    let plan = plan_with_copy(rect, copy.size().y.max(COPY_H));
+    // Both the copy's and the title's heights come from their own galleys, wrapped at the card's width.
+    let title_galley = painter.layout(
+        slide.title.to_owned(),
+        fonts::semibold(TITLE_SIZE),
+        theme.CONTRAST,
+        column(rect).width(),
+    );
+    let plan = plan_with_copy(rect, copy.size().y.max(COPY_H), title_galley.size().y);
     let column = plan.column;
     // The hosting banner is the promo's own 250-point image pinned to the panel's foot, so
     // everything the reference measures from it -- the upgrade link at `bottom-[250px]`, the
@@ -1245,7 +1252,7 @@ fn hosting_art(painter: &egui::Painter, rect: Rect, theme: &crate::theme::Theme)
 }
 
 /// The card's rows, given the height the copy was given.
-fn news_rows(copy_height: f32) -> NewsRows {
+fn news_rows(copy_height: f32, title_height: f32) -> NewsRows {
     // Measured against the reference's own ink: its title starts at 518, its copy at 546 and
     // its date at 606. From a card at 349 those are draw positions of 516, 540 and 603, because
     // egui puts a glyph two points into a 16-point line box where the browser puts it four, and
@@ -1253,7 +1260,10 @@ fn news_rows(copy_height: f32) -> NewsRows {
     // on the two gaps below, which are the only fudge here and are measured, not guessed.
     let art = 0.0;
     let title = art + ART_H + ART_TO_TITLE + 1.0;
-    let copy = title + TITLE_LINE + TITLE_TO_COPY - 1.0;
+    // **The title's measured height, not one line's allowance.** "Joining your server just got easier" wraps to two
+    // lines, and the reference's copy therefore begins a line lower than a one-line title's -- which is the 18-point
+    // offset the band breakdown found.
+    let copy = title + title_height.max(TITLE_LINE) + TITLE_TO_COPY - 1.0;
     let date = copy + copy_height + COPY_TO_DATE;
     NewsRows {
         art,
@@ -1288,7 +1298,7 @@ struct Plan {
 }
 
 /// The panel's plan, given the height the news copy took.
-fn plan_with_copy(panel: Rect, copy_height: f32) -> Plan {
+fn plan_with_copy(panel: Rect, copy_height: f32, title_height: f32) -> Plan {
     let column = column(panel);
     let getting_started = panel.top() + TOP_PAD;
     let steps_first = getting_started + HEADING_LINE + HEADING_TO_BODY;
@@ -1300,7 +1310,7 @@ fn plan_with_copy(panel: Rect, copy_height: f32) -> Plan {
     // build does. `news` stays where it is and the heading is drawn at `plan.news_heading`.
     let news = steps_first + stack_height(STEPS.len()) + SECTION_GAP;
     let card = news + HEADING_LINE + NEWS_HEADING_TO_CARD;
-    let rows = news_rows(copy_height);
+    let rows = news_rows(copy_height, title_height);
     // `min-h-[250px]` on the promo's own image, pinned to the foot of the sidebar: the banner
     // does not move with what is above it (the reference draws it from y 650 whatever the news
     // list did), so it is measured from the panel's bottom edge and not from the card.
@@ -1391,7 +1401,7 @@ mod tests {
 
     /// The three checklist rows' top edges, as the drawing would place them.
     fn step_tops() -> Vec<f32> {
-        let plan = plan_with_copy(panel_rect(), COPY_H);
+        let plan = plan_with_copy(panel_rect(), COPY_H, TITLE_LINE);
         (0..STEPS.len())
             .map(|index| row_top(plan.steps_first, index))
             .collect()
@@ -1454,7 +1464,7 @@ mod tests {
     #[test]
     fn a_section_heading_sits_twenty_below_the_section_above_it() {
         // 51 is what the reference's own summary wraps to here: three lines at 17 points.
-        let plan = plan_with_copy(panel_rect(), 51.0);
+        let plan = plan_with_copy(panel_rect(), 51.0, TITLE_LINE);
         let steps_bottom = plan.steps_first + stack_height(STEPS.len());
         assert_eq!(plan.news - steps_bottom, SECTION_GAP);
         // The banner is pinned to the foot at its own 250 points, so what is left between the
@@ -1473,7 +1483,7 @@ mod tests {
     /// arithmetic a re-measured gap moves, so it is the one worth pinning.
     #[test]
     fn the_news_card_stacks_downward() {
-        let rows = news_rows(COPY_H);
+        let rows = news_rows(COPY_H, TITLE_LINE);
         assert_eq!(rows.art, 0.0, "the art is the card's first row");
         assert!(rows.art < rows.title, "the title is below the art");
         assert!(rows.title < rows.copy, "the copy is below the title");
@@ -1486,7 +1496,7 @@ mod tests {
     /// the card is laid out from the copy's height rather than from a fixed total.
     #[test]
     fn a_third_line_of_copy_moves_everything_below_it() {
-        let two = news_rows(COPY_H);
+        let two = news_rows(COPY_H, TITLE_LINE);
         let three = news_rows(COPY_H + COPY_LINE);
         assert_eq!(three.height - two.height, COPY_LINE);
         assert_eq!(three.art, two.art);

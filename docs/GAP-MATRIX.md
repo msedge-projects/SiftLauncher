@@ -5276,3 +5276,18 @@ Reproducing (2) would mean deliberately drawing text over a link. That is a choi
 and it is recorded here rather than made silently.
 
 (1) is a real, closable difference and the next target: the row plan's title allowance against a two-line title.
+
+### The title's height now feeds the row plan, and why that was not observable yet (2026-11-05)
+
+`news_rows` reserved a single `TITLE_LINE` (20 points) for the title whatever it wrapped to. "Joining your server just
+got easier" is a two-line title, so the reference's copy begins a line lower than a one-line title's -- the 18-point
+offset the band breakdown found. The plan now takes the title galley's own height (`title_height.max(TITLE_LINE)`), and
+both tests that build a plan pass `TITLE_LINE`, keeping their single-line case exact.
+
+**It could not be observed in seven samples**: every sampled moment where the two carousels were on the same article read
+**14 213** for the sidebar, never another value, which means the matches landed on the one-line slide where the change is a
+no-op by construction. Recorded as *implemented and reasoned*, not as *verified* -- and the next session should hold both
+apps on the two-line article deliberately (by freezing the clock) before claiming it.
+
+The alternative reading -- that the second slide's plate never draws -- would look the same from outside, so the same
+experiment settles both.
