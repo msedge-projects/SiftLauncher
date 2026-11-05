@@ -1216,6 +1216,10 @@ const RAIL_ROW_GAP: f32 = 4.0;
 // shrinking them looked like the fix for fourteen tabs not fitting. Measured against the capture it made the
 // screen worse (151 997 -> 152 914): that capture's body has blocks this build does not have in that state, so
 // the rail was never the difference being measured. The row height stays at the value the live comparison chose.
+/// **40, and the pitch is 44.** Measured off the reference's own rail: its rows start at 257, 301, 348, 392, 438 --
+/// 44 to 46 apart, which is what 40 plus the 4-point gap gives. A reading of "30" came from the wrong element and
+/// tightening to it made the dialog measurably worse (35 231 -> 40 992). Fourteen rows at 44 do not fit the plate, so
+/// the reference's rail **scrolls**; the wheel below is what makes ours do the same.
 const RAIL_ROW_HEIGHT: f32 = 40.0;
 
 /// A rail row's corner: `rounded-[14px]` (`TabbedModal.vue:189`). 14 is not on the theme's
@@ -2553,7 +2557,21 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
     let content = content_rect(dialog);
     let pane = content.height() - 2.0 * CONTENT_PADDING;
     let limit = (body_height - pane).max(0.0);
-    let wheel = ui.ctx().input(|i| i.smooth_scroll_delta.y);
+    // The wheel arrives as events; `smooth_scroll_delta` is only filled when a scroll area consumes it, and this
+    // rail is drawn with a clip of its own rather than as one. Reading the events is what makes the wheel reach it.
+    let wheel: f32 = ui.ctx().input(|i| {
+        i.events
+            .iter()
+            .filter_map(|event| match event {
+                egui::Event::MouseWheel { unit, delta, .. } => Some(match unit {
+                    egui::MouseWheelUnit::Point => delta.y,
+                    egui::MouseWheelUnit::Line => delta.y * 40.0,
+                    egui::MouseWheelUnit::Page => delta.y * 400.0,
+                }),
+                _ => None,
+            })
+            .sum()
+    });
     if wheel != 0.0 && ui.rect_contains_pointer(content) {
         state.scroll = (state.scroll - wheel).clamp(0.0, limit);
     }
@@ -2780,8 +2798,15 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
     let rail_pane = rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0
         - (rail.top() + RAIL_PADDING);
     let rail_overflow = (rail_needed_height(state.dev_mode) - rail_pane).max(0.0);
+    // **Tested against the rail's own rect, not the ui's clip.** `rect_contains_pointer` answers relative to the
+    // painter's clip, and the rail sits outside it here, so the wheel never reached the list: the SYSTEM group was
+    // drawn below the plate's visible rows and could not be scrolled to.
     let wheel = ui.ctx().input(|i| i.smooth_scroll_delta.y);
-    if wheel != 0.0 && rail_overflow > 0.0 && ui.rect_contains_pointer(rail) {
+    let over_rail = ui
+        .ctx()
+        .input(|i| i.pointer.hover_pos())
+        .is_some_and(|at| rail.contains(at));
+    if wheel != 0.0 && rail_overflow > 0.0 && over_rail {
         state.rail_scroll = (state.rail_scroll - wheel).clamp(0.0, rail_overflow);
     }
     state.rail_scroll = state.rail_scroll.min(rail_overflow);

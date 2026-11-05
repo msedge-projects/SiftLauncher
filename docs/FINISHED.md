@@ -170,3 +170,19 @@ after). The reference's rail scrolls; this one draws the rows off the bottom and
 The four readings I took for those tabs (56 721, 46 278, 67 013, 56 104) are recorded as **unverified**, because the
 clicks that produced them could only have landed on whichever rows were visible -- the Resources capture's body was
 "App cache / App database backups / Debug info", which is not the Resources page.
+
+### The settings rail, after an attempt to fix it (open)
+
+Two measurements settled what the rail actually is, and one attempt is recorded as failed:
+
+- The reference's rail rows are **44 to 46 points apart** (its own capture: 257, 301, 348, 392, 438, 476 for
+  Appearance, Features, Behavior, Language, ACCOUNT, Profile). A "30-point pitch" reading I took earlier came from the
+  wrong element; tightening our rows to it made the dialog measurably **worse** (Appearance 35 231 -> 40 992) and is
+  reverted with that number in the source.
+- Fourteen rows at 44 cannot fit the 668-point plate, so the reference's rail scrolls. **Ours still does not**: five
+  wheel notches with the pointer over the rail leave its ink bands at 218/257/300/345/392, byte for byte where they
+  were. The handler now reads `MouseWheel` events directly instead of `smooth_scroll_delta` (which is only filled when
+  a scroll area consumes it), and that alone did not move it. The SYSTEM group -- Resources and Troubleshooting --
+  therefore remains unreachable, and those two tabs remain unmeasured.
+
+Next attempt is to give the rail a real `ScrollArea` over its clipped pane rather than hand-rolling the offset.
