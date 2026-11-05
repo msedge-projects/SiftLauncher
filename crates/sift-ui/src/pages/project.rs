@@ -3553,7 +3553,7 @@ mod tests {
     /// whole endpoint behind it draws more than the 400 points the shell gives the block, and a
     /// card-only project draws nothing rather than four empty frames.
     #[test]
-    fn the_sidebar_is_four_cards_and_claims_their_height() {
+    fn the_sidebar_draws_getting_started_and_the_cards_that_have_rows() {
         let ctx = egui::Context::default();
         crate::fonts::install(&ctx);
         let theme = crate::theme::dark();
@@ -3571,7 +3571,7 @@ mod tests {
         });
         assert!(
             drawn > 400.0,
-            "four cards is more than the shell's 400-point block: {drawn}"
+            "four cards plus Getting started is more than the shell's 400-point block: {drawn}"
         );
 
         let mut bare = sample();
@@ -3593,9 +3593,12 @@ mod tests {
                 );
             });
         });
-        assert_eq!(
-            bare_height, 0.0,
-            "a card-only project has nothing the sidebar can fill"
+        // **Getting started is there whatever the project is**, which the reference's own project capture shows: its
+        // sidebar carries the checklist above the Compatibility card, and a project with no links, creators or dates
+        // still has that card. The number is the card's own height -- heading, three steps, its gaps.
+        assert!(
+            (bare_height - 188.0).abs() < 0.5,
+            "a card-only project keeps the Getting started card: {bare_height}"
         );
     }
 }
