@@ -1181,14 +1181,57 @@ fn files_tab(
     let entries = folder_entries(&folder);
     let painter = ui.painter().clone();
     if dir.as_os_str().is_empty() {
+        // The field sits at the **right** end of the row, just before Refresh: the reference's own capture puts it
+        // there, with the home button alone at the left and the empty space between them.
         search_field(
             ui,
             theme,
-            Rect::from_min_size(egui::pos2(body.left(), body.top()), egui::vec2(320.0, FILE_SEARCH_H)),
+            Rect::from_min_size(
+                // Its right edge lands one gap before Refresh: 58 (the split button) + 8 + 88 (Refresh) + 8.
+                egui::pos2(body.right() - 422.0, body.top()),
+                egui::vec2(260.0, FILE_SEARCH_H),
+            ),
             "Search files",
         );
+        // **The reference's root row**, measured off its own capture: a home button at the far left, then the search
+        // field and Refresh and a split "+" at the right end. This build put a 320-point field at the left and Refresh
+        // beside it, leaving the row's right half empty and no way back to the root.
+        let home = Rect::from_min_size(
+            egui::pos2(body.left(), body.top()),
+            egui::vec2(FILE_SEARCH_H, FILE_SEARCH_H),
+        );
+        painter.rect_filled(home, 8, theme.BUTTON_BG);
+        icons::draw(
+            &painter,
+            Glyph::Home,
+            Rect::from_center_size(home.center(), egui::vec2(16.0, 16.0)),
+            theme.BASE,
+        );
+        let add = Rect::from_min_size(
+            egui::pos2(body.right() - FILE_SEARCH_H - 30.0, body.top()),
+            egui::vec2(FILE_SEARCH_H + 30.0, FILE_SEARCH_H),
+        );
+        painter.rect_filled(add, 8, theme.BUTTON_BG);
+        icons::draw(
+            &painter,
+            Glyph::Plus,
+            Rect::from_center_size(
+                egui::pos2(add.left() + 17.0, add.center().y),
+                egui::vec2(14.0, 14.0),
+            ),
+            theme.BASE,
+        );
+        icons::draw(
+            &painter,
+            Glyph::ChevronDown,
+            Rect::from_center_size(
+                egui::pos2(add.right() - 13.0, add.center().y),
+                egui::vec2(12.0, 12.0),
+            ),
+            theme.SECONDARY,
+        );
         let refresh = Rect::from_min_size(
-            egui::pos2(body.left() + 332.0, body.top()),
+            egui::pos2(add.left() - 8.0 - 88.0, body.top()),
             egui::vec2(88.0, FILE_SEARCH_H),
         );
         painter.rect_filled(refresh, 8, theme.BUTTON_BG);
