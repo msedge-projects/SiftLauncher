@@ -144,3 +144,29 @@ Clicking by those numbers:
 Both corroborate the workstream's own figures (30 055 and 31 771) to within a few hundred pixels, which is what two
 independent drives of the same pair of states should do. The earlier 50 664 and 52 049 were Privacy compared against
 the wrong reference, caused by assuming a 44-point pitch the dialog does not have.
+
+### All thirteen Settings tabs, and the defect that hid four of them
+
+Measured against the live reference captures (`ref101-<tab>.png`), this build, 1440x900:
+
+| tab | differing pixels |
+|---|---:|
+| Java and memory | **29 544** |
+| Window | **31 259** |
+| Profile | **33 869** |
+| Social | **35 034** |
+| Appearance | **35 231** |
+| Features | **35 971** |
+| Behavior | **40 070** |
+| Language | **55 593** |
+| Privacy | **53 350** |
+| Launch hooks, Syncing, Resources, Troubleshooting | **not trustworthily measured** |
+
+**The defect behind the last row**: our settings rail holds fourteen rows that need ~630 points, and the window's plate
+is 668 tall, so the SYSTEM group (Resources, Troubleshooting) falls below the visible list -- and **the rail does not
+scroll**. Four wheel steps over it move nothing (measured: the ink bands at x 300..470 are identical before and
+after). The reference's rail scrolls; this one draws the rows off the bottom and offers no way to reach them.
+
+The four readings I took for those tabs (56 721, 46 278, 67 013, 56 104) are recorded as **unverified**, because the
+clicks that produced them could only have landed on whichever rows were visible -- the Resources capture's body was
+"App cache / App database backups / Debug info", which is not the Resources page.
