@@ -186,3 +186,20 @@ Two measurements settled what the rail actually is, and one attempt is recorded 
   therefore remains unreachable, and those two tabs remain unmeasured.
 
 Next attempt is to give the rail a real `ScrollArea` over its clipped pane rather than hand-rolling the offset.
+
+### The settings rail scrolls now, but a press after scrolling still lands on the wrong row (open)
+
+What changed and what it proved:
+
+- The rail's offset is drawn inside an **`egui::Area`** with a real `ScrollArea`. Before that, three wheel notches
+  over the rail moved **neither the rail nor the body** -- the events were dropped, because a child ui of the dialog
+  inherits its clip and registers no scroll. With the Area, five notches bring the SYSTEM group into view:
+  `rail-area.png` shows Privacy, INSTANCE DEFAULTS, Java and memory, Window, Launch hooks, Syncing, SYSTEM, **Resources,
+  Troubleshooting**.
+- The offset is also kept in the page's state and fed back with `vertical_scroll_offset`, because left to the
+  ScrollArea's own memory the rows moved for one frame and snapped back.
+
+**Still wrong**: pressing the row that *reads* "Resources" after scrolling selects Appearance (measured twice; the pane
+comes back "Color theme"). So the drawn rows and the rows the press is tested against are not using the same offset.
+Until that is fixed, Resources and Troubleshooting remain **unmeasured**, and the honest count of verified Settings tabs
+stays at nine.

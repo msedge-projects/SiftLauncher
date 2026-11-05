@@ -2505,7 +2505,14 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
             egui::StrokeKind::Inside,
         );
         draw_header(&painter, dialog, theme);
-        draw_rail(&painter, dialog, theme, state.tab, state.rail_scroll, state.dev_mode);
+        draw_rail(
+            ui,
+            dialog,
+            theme,
+            state.tab,
+            &mut state.rail_scroll,
+            state.dev_mode,
+        );
         let (pointer, held) = ui.input(|input| {
         (
             input.pointer.interact_pos(),
@@ -3169,13 +3176,80 @@ fn draw_header(painter: &egui::Painter, dialog: Rect, theme: &theme::Theme) {
 
 /// The rail: its divider, a category heading per group, and one row per tab.
 fn draw_rail(
-    painter: &egui::Painter,
+    ui: &mut Ui,
     dialog: Rect,
     theme: &theme::Theme,
     selected: Tab,
-    scroll: f32,
+    scroll: &mut f32,
     dev_mode: bool,
 ) {
+    // **A real `ScrollArea`.** Fourteen rows at the reference's 44-point pitch do not fit the plate, and hand-rolling
+    // the offset left the wheel with nothing to consume it: five notches moved the rail not at all. The area below
+    // owns the offset and the wheel; the rows are laid out at that offset, inside the same clip they were drawn in.
+    let scroll_before = *scroll;
+    let pane = Rect::from_min_max(
+        rail_rect(dialog).min,
+        pos2(
+            rail_rect(dialog).right(),
+            rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0,
+        ),
+    );
+    // **An `Area`, not a child ui.** A child of the dialog's ui inherits its clip and its lack of scroll
+    // registration: with the pointer over the rail, three wheel notches moved neither the rail nor the body -- the
+    // events were dropped before anything could take them. An Area is its own layer and receives input directly.
+    // **The offset lives here, not in the area's own memory.** Left to the ScrollArea, the wheel moved the rows for
+    // the one frame it arrived in and the next frame was back at the top -- a press then landed on whichever row now
+    // sat at that point (Appearance, when Resources was meant). State is authoritative; the area is told where to be.
+    let wheel: f32 = ui.ctx().input(|i| {
+        i.events
+            .iter()
+            .filter_map(|event| match event {
+                egui::Event::MouseWheel { unit, delta, .. } => Some(match unit {
+                    egui::MouseWheelUnit::Point => delta.y,
+                    egui::MouseWheelUnit::Line => delta.y * 40.0,
+                    egui::MouseWheelUnit::Page => delta.y * 400.0,
+                }),
+                _ => None,
+            })
+            .sum()
+    });
+    let over = ui
+        .ctx()
+        .input(|i| i.pointer.hover_pos())
+        .is_some_and(|at| pane.contains(at));
+    let room = (rail_needed_height(dev_mode) + RAIL_PADDING - pane.height()).max(0.0);
+    if wheel != 0.0 && over && room > 0.0 {
+        *scroll = (*scroll - wheel).clamp(0.0, room);
+    }
+    *scroll = scroll.min(room);
+    let scroll_now = *scroll;
+    let mut rail_offset = scroll_now;
+    egui::Area::new(egui::Id::new("settings-rail-area"))
+        .order(egui::Order::Middle)
+        .fixed_pos(pane.min)
+        .constrain(false)
+        .show(ui.ctx(), |ui| {
+            ui.set_clip_rect(pane);
+            let output = egui::ScrollArea::vertical()
+                .id_salt("settings-rail-scroll")
+                .auto_shrink([false, false])
+                .max_height(pane.height())
+                .vertical_scroll_offset(scroll_now)
+                .show(ui, |ui| {
+                    ui.allocate_space(egui::vec2(
+                        pane.width(),
+                        rail_needed_height(dev_mode) + RAIL_PADDING,
+                    ));
+                });
+            rail_offset = output.state.offset.y;
+        });
+    // The area may clamp what it was told (a shorter pane than the offset needs); take its answer only then.
+    if (rail_offset - scroll_now).abs() > 0.5 {
+        *scroll = rail_offset;
+    }
+    let scroll = *scroll;
+    let painter = ui.painter().clone();
+    let painter = &painter;
     let rail = rail_rect(dialog);
     // The rows stop above the footer's band: the rail's own scroller ends there, so a row
     // that ran past it would be drawn over the version line. The footer keeps the rail's
