@@ -1332,6 +1332,9 @@ impl Shell {
                         self.install_loader = entry.as_ref().map(|entry| entry.loader.clone());
                         self.install_version = entry.as_ref().map(|entry| entry.version.clone());
                         self.install_target = Some(id.clone());
+                        // The reference's content browser opens on **Mods** with "Search mods": a page whose tabs are
+                        // the instance's kinds cannot be showing modpacks, and the placeholder said "Search modpacks".
+                        self.project_type = "mod";
                         self.toast = Some(format!("Installing into {}.", self.instance_name(&id)));
                         self.results.forget();
                     }
@@ -2597,6 +2600,75 @@ impl Shell {
         // `--color-raised-bg` plate -- with six 36-tall pills six points in and four apart.
         // It is not a full-width strip: the reference's bar is only as wide as its pills,
         // which is why a full-width one reads as a toolbar instead of a tab bar.
+        // **The instance bar takes its own strip out of the column.** Drawing it over the top of `content` and
+        // shifting only the tab strip left the search row and the cards underneath where they were, so the bar and
+        // the tabs overlapped. The column now starts below the bar and every control below follows it.
+        let content = if self.install_target.is_some() {
+            let bar = Rect::from_min_size(content.min, egui::vec2(content.width(), 64.0));
+            let painter = ui.painter().clone();
+            painter.rect_filled(bar, 12.0, self.theme.RAISED_BG);
+            crate::icons::draw(
+                &painter,
+                Glyph::ChevronLeft,
+                Rect::from_center_size(
+                    egui::pos2(bar.left() + 22.0, bar.center().y),
+                    egui::Vec2::splat(16.0),
+                ),
+                self.theme.BASE,
+            );
+            let target = self.install_target.clone().unwrap_or_default();
+            let entry = self.instances.iter().find(|entry| entry.id == target).cloned();
+            let tile = Rect::from_min_size(
+                egui::pos2(bar.left() + 46.0, bar.top() + 8.0),
+                Vec2::splat(48.0),
+            );
+            let icon = entry
+                .as_ref()
+                .map(|e| crate::data::instances_dir().join(&e.id))
+                .and_then(|root| {
+                    [root.join("icon.png"), root.join("minecraft").join("icon.png")]
+                        .into_iter()
+                        .find(|candidate| candidate.is_file())
+                })
+                .and_then(|path| self.icons.get_file(ui.ctx(), &path));
+            match icon {
+                Some(texture) => {
+                    painter.image(
+                        texture.id(),
+                        tile,
+                        Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                        egui::Color32::WHITE,
+                    );
+                }
+                None => {
+                    painter.rect_filled(tile, 10.0, self.theme.BUTTON_BG);
+                }
+            }
+            painter.text(
+                egui::pos2(tile.right() + 12.0, bar.top() + 12.0),
+                Align2::LEFT_TOP,
+                entry.as_ref().map(|e| e.name.clone()).unwrap_or_default(),
+                crate::fonts::semibold(16.0),
+                self.theme.CONTRAST,
+            );
+            painter.text(
+                egui::pos2(tile.right() + 12.0, bar.top() + 36.0),
+                Align2::LEFT_TOP,
+                format!(
+                    "Minecraft {}  •  {}",
+                    entry.as_ref().map(|e| e.version.clone()).unwrap_or_default(),
+                    entry.as_ref().map(|e| e.loader.clone()).unwrap_or_default()
+                ),
+                crate::fonts::body(12.0),
+                self.theme.SECONDARY,
+            );
+            Rect::from_min_max(
+                egui::pos2(content.left(), bar.bottom() + 12.0),
+                content.max,
+            )
+        } else {
+            content
+        };
         let kinds_pre: Vec<&str> = if self.install_target.is_some() {
             vec!["Mods", "Resource Packs", "Data Packs", "Shaders"]
         } else {
@@ -2637,7 +2709,14 @@ impl Shell {
             ("Shaders", "shader"),
             ("Servers", "plugin"),
         ];
-        for (index, (label, kind)) in KINDS.into_iter().enumerate() {
+        // Only the kinds this page offers: an instance cannot install a modpack and has no Servers facet, so the
+        // strip draws four pills where Discover draws six. The width above was already narrowed; this loop was not,
+        // which is why the bar and six tabs could appear at once.
+        for (index, (label, kind)) in KINDS
+            .into_iter()
+            .filter(|(label, _)| kinds_pre.contains(label))
+            .enumerate()
+        {
             let galley = painter.layout_no_wrap(
                 label.to_owned(),
                 crate::fonts::semibold(14.0),
