@@ -5004,3 +5004,25 @@ honestly until the two sides are on the *same* slide, which means the carousel h
 **What did match** on the instance page, checked in the same pair of captures: the header's icon, name, the
 "◇ Fabric 26.3 ⌄ • ⏱ Never played" line, and the Play / gear / kebab cluster; and the five tabs Content, Files, Worlds,
 Logs, Share with Content selected.
+
+### The carousel's effect, measured at last on equal terms (2026-11-05)
+
+Both windows are now 1440x900 -- the reference was running at **1280x800** for most of this session, which is why so
+many comparisons read high -- and the instance page measures:
+
+| slab | before (1280 vs 1440) | after (1440 vs 1440) |
+|---|---:|---:|
+| total | 200 965 | **128 308** |
+| sidebar | 106 588 | **32 005** |
+| titlebar | 11 650 | **2 929** |
+| rail | 7 732 | **1 102** |
+
+The sidebar's fall of 74 583 is the News carousel: one rotating card had been standing in for a whole column of defects.
+
+**The content slab (92 272) is a state difference, not a layout one**: this build's instance has a mods list -- 26 entries
+with file sizes -- while the reference's is empty and shows "No content installed. Browse or upload projects to get
+started." with its Upload files / Browse content pair. Comparing those two panes is comparing two different screens, and
+it is recorded that way rather than as a number to chase.
+
+**The lesson of the window size is worth more than any of the numbers**: a capture is only a measurement when the two
+windows are the same size *and* in the same state. Both halves of that rule have now been broken once in this record.
