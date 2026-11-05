@@ -1422,6 +1422,82 @@ pub fn draw(
     }
     state.armed_touched = false;
 
+    // The new-group dialog, over the page while it is open. Its field is a real `TextEdit` on the page's own `ui`,
+    // which is what makes it typeable; the two buttons read the page's raw press like the toolbar's does.
+    if let Some(name_now) = state.new_group.clone() {
+        let painter = ui.painter().clone();
+        painter.rect_filled(rect, 0, egui::Color32::from_black_alpha(140));
+        let plate = egui::Rect::from_center_size(rect.center(), egui::vec2(360.0, 176.0));
+        painter.rect_filled(plate, 12.0, theme.RAISED_BG);
+        painter.rect_stroke(
+            plate,
+            12.0,
+            egui::Stroke::new(1.0, theme.SURFACE_5),
+            egui::StrokeKind::Inside,
+        );
+        painter.text(
+            egui::pos2(plate.left() + 20.0, plate.top() + 18.0),
+            Align2::LEFT_TOP,
+            NEW_GROUP,
+            fonts::semibold(16.0),
+            theme.CONTRAST,
+        );
+        let field = egui::Rect::from_min_size(
+            egui::pos2(plate.left() + 20.0, plate.top() + 54.0),
+            egui::vec2(plate.width() - 40.0, 34.0),
+        );
+        let mut name = name_now;
+        ui.put(
+            field,
+            egui::TextEdit::singleline(&mut name)
+                .id(egui::Id::new("new-group-name"))
+                .hint_text("Group name")
+                .text_color(theme.CONTRAST)
+                .desired_width(field.width()),
+        );
+        if state.new_group.as_deref() != Some(name.as_str()) {
+            state.new_group = Some(name.clone());
+        }
+        let create = egui::Rect::from_min_size(
+            egui::pos2(plate.right() - 20.0 - 96.0, plate.bottom() - 20.0 - 34.0),
+            egui::vec2(96.0, 34.0),
+        );
+        painter.rect_filled(create, 10.0, theme.BRAND);
+        painter.text(
+            create.center(),
+            Align2::CENTER_CENTER,
+            "Create",
+            fonts::semibold(13.0),
+            theme.ACCENT_CONTRAST,
+        );
+        let cancel = egui::Rect::from_min_size(
+            egui::pos2(plate.left() + 20.0, plate.bottom() - 20.0 - 34.0),
+            egui::vec2(84.0, 34.0),
+        );
+        painter.rect_filled(cancel, 10.0, theme.BUTTON_BG);
+        painter.text(
+            cancel.center(),
+            Align2::CENTER_CENTER,
+            "Cancel",
+            fonts::semibold(13.0),
+            theme.BASE,
+        );
+        if clicked && pointer.is_some_and(|at| create.contains(at)) {
+            let trimmed = name.trim().to_owned();
+            if !trimmed.is_empty() {
+                let path = crate::groups::Groups::path(&crate::data::instances_dir());
+                let mut store = crate::groups::Groups::load(&path);
+                store.add(&trimmed);
+                let _ = store.save(&path);
+            }
+            state.new_group = None;
+            owed = true;
+        } else if clicked && pointer.is_some_and(|at| cancel.contains(at)) {
+            state.new_group = None;
+            owed = true;
+        }
+    }
+
     // **"New group" reads the page's own press.** `clicked` and `pointer` are this frame's raw input; testing the
     // button's rect against them cannot be stolen by a later widget, which an `interact` here can.
     if clicked
