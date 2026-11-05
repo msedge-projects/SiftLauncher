@@ -1066,7 +1066,15 @@ fn list(
                 );
             }
             None => {
+                // An instance with no icon still shows *something*: the reference draws its cube in the tile's
+                // colour, and a flat grey square read as a missing image rather than a placeholder.
                 painter.rect_filled(tile, 10.0, theme.BUTTON_BG);
+                crate::icons::draw(
+                    &painter,
+                    Glyph::Cube,
+                    Rect::from_center_size(tile.center(), Vec2::splat(tile.height() * 0.55)),
+                    theme.SECONDARY,
+                );
             }
         }
         let name = painter.text(
@@ -1081,10 +1089,26 @@ fn list(
             egui::pos2(name.right() + 8.0, strip.top() + 16.0),
             egui::vec2(96.0, 20.0),
         );
-        painter.rect_filled(badge, 10.0, theme.BUTTON_BG_SELECTED);
+        // "✧ New instance" as an **outlined** pill: the reference's badge is a ring in the brand colour with the
+        // sparkle and the words inside it, not a filled chip.
+        painter.rect_stroke(
+            badge,
+            10.0,
+            egui::Stroke::new(1.0, theme.BRAND),
+            egui::StrokeKind::Inside,
+        );
+        crate::icons::draw(
+            &painter,
+            Glyph::Sparkles,
+            Rect::from_center_size(
+                egui::pos2(badge.left() + 12.0, badge.center().y),
+                Vec2::splat(11.0),
+            ),
+            theme.BRAND,
+        );
         painter.text(
-            badge.center(),
-            Align2::CENTER_CENTER,
+            egui::pos2(badge.left() + 22.0, badge.center().y),
+            Align2::LEFT_CENTER,
             "New instance",
             fonts::body(11.0),
             theme.BRAND,
@@ -1092,12 +1116,26 @@ fn list(
         painter.text(
             egui::pos2(tile.right() + 12.0, strip.top() + 40.0),
             Align2::LEFT_TOP,
-            format!("{} • Never played", recent.loader),
+            // "Fabric 26.3 • Never played": the reference names the loader *and* the game version here. Ours printed
+            // the loader alone, which reads like a different instance than the card below it.
+            format!("{} {} • Never played", recent.loader, recent.version),
             fonts::body(12.0),
             theme.SECONDARY,
         );
+        // The strip's own kebab, beside Play: the reference's row ends with one, and ours had nothing there.
+        let kebab = Rect::from_min_size(
+            egui::pos2(strip.right() - 40.0, strip.top() + 20.0),
+            egui::vec2(28.0, 32.0),
+        );
+        for dot in 0..3 {
+            painter.circle_filled(
+                egui::pos2(kebab.center().x, kebab.center().y - 6.0 + dot as f32 * 6.0),
+                1.6,
+                theme.SECONDARY,
+            );
+        }
         let play = Rect::from_min_size(
-            egui::pos2(strip.right() - 96.0, strip.top() + 20.0),
+            egui::pos2(strip.right() - 40.0 - 8.0 - 84.0, strip.top() + 20.0),
             egui::vec2(84.0, 32.0),
         );
         painter.rect_filled(play, 10.0, theme.BRAND);
