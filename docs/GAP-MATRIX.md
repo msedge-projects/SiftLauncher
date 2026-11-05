@@ -5039,3 +5039,19 @@ windows are the same size *and* in the same state. Both halves of that rule have
 
 Each pair was taken at 1440x900 with both windows the same size and the same tab selected, which is the rule this
 record has broken twice and now states in every entry.
+
+### The project page, measured against the reference's own capture (2026-11-05)
+
+`total 90 460` -- titlebar 4 882, rail 1 242, content 47 909, sidebar 36 427.
+
+**What matched**, checked line by line in the two captures: the breadcrumb "Discover modpacks > Fabulously Optimized",
+the icon, title, "by ..." line and description, the Install and kebab controls, the meta row (downloads, followers,
+tags), the three tabs Description / Versions / Gallery, the action row ("How to install", "Discord", "Rate"), the
+description text, **the inline gallery image**, and the "Performance" section.
+
+**One difference fixed this round**: the Compatibility card's version chips drew as a run of loose words because their
+fill sits a shade off the card's own and they had no ring. They are ringed in `SURFACE_5` now, as the reference's are.
+
+**One difference found and recorded as open**: the reference's project sidebar is *Getting started* then
+*Compatibility* then the Upgrade link -- no News card. This build's sidebar shows Compatibility with no Getting started
+block above it, so the card sits higher and the panel below it shifts.

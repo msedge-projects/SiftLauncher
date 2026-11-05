@@ -2654,6 +2654,14 @@ fn chip_at(
         egui::vec2(label.size().x + glyph_width + 2.0 * TAG_PAD_X, height + 10.0),
     );
     painter.rect_filled(rect, 8, theme.SUPER_RAISED_BG);
+    // **A ring, as the reference's chips have.** Without it the fill is a shade off the card's own and the chips read
+    // as a run of loose words -- which is exactly how the Compatibility card's versions looked beside the reference's.
+    painter.rect_stroke(
+        rect,
+        8,
+        egui::Stroke::new(1.0, theme.SURFACE_5),
+        egui::StrokeKind::Inside,
+    );
     if let Some(glyph) = glyph {
         icons::draw(
             painter,
