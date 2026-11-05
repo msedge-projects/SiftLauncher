@@ -314,3 +314,20 @@ Measured at probed rects, with the tab confirmed in the same run:
 | Resources | see below |
 
 Syncing's and Troubleshooting's earlier figures were right; they are now *verified* rather than lucky.
+
+### The library card: same shape, different data (2026-11-05)
+
+Cropping the first card from the reference's own library and from ours showed a green rounded tile with a picture on
+the reference's side and a large grey cube on ours. That is **not** a shape difference: both cards draw a 152-point tile
+inset 8 points inside a 168x208 plate, and the picture is the instance's own `icon.png`. The reference's instance is a
+modpack that ships one; of this lab's eight instances only `Instance 3` has an `icon.png` on disk:
+
+```
+instances/Instance 3/icon.png     <- the only one
+```
+
+So the cube is the reference's own default avatar doing its job, and the difference is data. Recorded rather than
+"fixed" by inventing icons.
+
+**The library's layout is now measured and aligned**: heading 157, toolbar 193, filter row 239, first card row 287,
+each taken from `docs/captures/ref-lib-real.png`, and the three filter chips carry the reference's glyphs.
