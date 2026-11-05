@@ -5346,3 +5346,15 @@ recorded so the next session does not helpfully "finish" it:
 
 The duplication stays, and this note stays above it. If the cards ever need to become one -- for a third caller, say --
 the work is to give the shared function the frame height its caller wants, not to move the caller onto today's frame.
+### The content browser switches tabs and follows them with its placeholder (2026-11-05, ours only)
+
+Driving our own content browser from an instance's "Browse content":
+
+- the instance bar draws (back chevron, icon, name, "Minecraft 26.3 • Vanilla");
+- four sub-tabs: **Mods, Resource Packs, Data Packs, Shaders**;
+- pressing **Data Packs** selects it and the field's placeholder becomes "Search data packs…", so the tab and the
+  placeholder are one state rather than two.
+
+**Not compared against the reference this round**: its "Browse content" sits at a different point than the one clicked,
+so its browser never opened. Recorded as an unfinished comparison rather than folded into a claim -- the next attempt
+should locate the button from a capture of that exact screen, as the rail item had to be.
