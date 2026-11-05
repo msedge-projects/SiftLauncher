@@ -618,6 +618,8 @@ pub struct State {
     /// a short one not at all -- the reference scrolls its rail in that case, and a rail whose
     /// last tabs cannot be reached is a settings screen with unreachable settings.
     pub rail_scroll: f32,
+    /// The rows the rail drew this frame, so the press is tested against exactly what the reader sees.
+    drawn_rail: Vec<RailRow>,
     /// Whether the last frame drew the dialog. Used only to notice the open edge, which is
     /// when the scroll offsets go back to zero.
     pub was_open: bool,
@@ -2505,7 +2507,7 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
             egui::StrokeKind::Inside,
         );
         draw_header(&painter, dialog, theme);
-        draw_rail(
+        let drawn = draw_rail(
             ui,
             dialog,
             theme,
@@ -2513,6 +2515,8 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
             &mut state.rail_scroll,
             state.dev_mode,
         );
+        // `draw_rail` hands back the rows it drew; the press is tested against those, in whatever scope it runs.
+        state.drawn_rail = drawn;
         let (pointer, held) = ui.input(|input| {
         (
             input.pointer.interact_pos(),
@@ -2829,7 +2833,8 @@ pub fn draw(ui: &mut egui::Ui, screen: egui::Rect, theme: &crate::theme::Theme, 
         }
     }
 
-    let rows = rail_rows(dialog, state.rail_scroll, state.dev_mode);
+    // The rows the rail actually drew this frame, not a second computation of them.
+    let rows = std::mem::take(&mut state.drawn_rail);
     // SIFT_SETTINGS_PROBE: print every rectangle a press will be read against, on the frames
     // where a press happened. A screenshot cannot be clicked; a printed rect can.
     if std::env::var_os("SIFT_SETTINGS_PROBE").is_some() && ui.input(|i| i.pointer.any_click()) {
@@ -3168,7 +3173,7 @@ fn draw_rail(
     selected: Tab,
     scroll: &mut f32,
     dev_mode: bool,
-) {
+) -> Vec<RailRow> {
     // **A real `ScrollArea`.** Fourteen rows at the reference's 44-point pitch do not fit the plate, and hand-rolling
     // the offset left the wheel with nothing to consume it: five notches moved the rail not at all. The area below
     // owns the offset and the wheel; the rows are laid out at that offset, inside the same clip they were drawn in.
@@ -3266,7 +3271,11 @@ fn draw_rail(
         Stroke::new(RULE_STROKE, theme.SURFACE_5),
     );
 
-    for entry in rail_rows(dialog, scroll, dev_mode) {
+    // **The rows it draws are the rows it returns.** The press used to be tested against a second call to
+    // `rail_rows` with the offset as it stood at a different moment in the frame, so after any scrolling the row that
+    // read "Launch hooks" selected Troubleshooting. One list, drawn and hit-tested.
+    let drawn = rail_rows(dialog, scroll, dev_mode);
+    for entry in drawn.iter().cloned() {
         if let Some(heading) = entry.heading {
             // `uppercase text-xs font-semibold tracking-wide` in the reference: the capture's
             // group labels are DISPLAY / ACCOUNT / INSTANCE DEFAULTS / SYSTEM in 12-point
@@ -3406,6 +3415,7 @@ fn draw_rail(
             theme.SECONDARY,
         );
     }
+    drawn
 }
 
 /// How tall a standalone slider's press band is: the control's own height plus the gap under

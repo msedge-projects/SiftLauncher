@@ -223,3 +223,32 @@ turns out to have been right, which is why it is recorded as corroborated rather
 
 The Resources pane also differs in *state*, not shape: the reference's store was empty ("0 bytes stored", a grey bar)
 while this build's holds 2.5 MB ("Cache 2.5 MB", a green bar). That difference is honest and stays.
+
+### The rail's rows are now the rows it draws (fixed for good), and all thirteen tabs are measured
+
+The mismatch was structural, not arithmetic: `draw_rail` computed its rows from the offset **after** the scroll area ran,
+while the press was tested against a **second** call to `rail_rows` earlier in the frame. So the row that read "Launch
+hooks" selected Troubleshooting, and the one that read "Resources" selected Appearance. `draw_rail` now hands back the
+list it drew, the page keeps it in `state.drawn_rail`, and the press is tested against exactly that list.
+
+All thirteen tabs, this build, against the live reference captures:
+
+| tab | differing pixels |
+|---|---:|
+| Java and memory | **29 544** |
+| Window | **31 259** |
+| Profile | **33 869** |
+| Social | **35 034** |
+| Appearance | **35 231** |
+| Features | **35 971** |
+| Behavior | **40 070** |
+| Syncing | **58 876** |
+| Privacy | **53 350** |
+| Language | **55 593** |
+| Troubleshooting | **56 104** |
+| Launch hooks | **56 721** |
+| Resources | **73 597** |
+
+Each capture was checked for *identity* as well as counted: the Launch hooks pane reads "Pre-launch hook / Enter
+pre-launch command... / Wrapper hook", and the Resources pane reads "Content storage". Three earlier readings were
+replaced because their panes were the wrong page; they are noted above rather than deleted.
