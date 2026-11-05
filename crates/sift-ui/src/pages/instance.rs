@@ -1431,6 +1431,13 @@ fn logs_tab(ui: &mut Ui, body: Rect, theme: &Theme, instance: &Instance) {
     for label in ["Error", "Warn", "Info"] {
         let width = 16.0 + label.len() as f32 * 7.0;
         let chip = Rect::from_min_size(egui::pos2(x, chips_y), egui::vec2(width, 24.0));
+        // Outlined, like "All" beside them: the reference's four chips are one family, the chosen one filled.
+        painter.rect_stroke(
+            chip,
+            6.0,
+            egui::Stroke::new(1.0, theme.SURFACE_5),
+            egui::StrokeKind::Inside,
+        );
         painter.text(
             chip.center(),
             Align2::CENTER_CENTER,
@@ -1463,12 +1470,36 @@ fn logs_tab(ui: &mut Ui, body: Rect, theme: &Theme, instance: &Instance) {
         egui::pos2(body.right(), body.bottom()),
     );
     painter.rect_filled(console, 12, theme.RAISED_BG);
-    for line in ["Start your instance in the top right to start", "receiving live logs!"] {
+    // **The console's frame, as the reference draws it.** Its empty state is a two-line box drawn in the console's
+    // own characters -- `/  Start your instance in the top right to start   \\` over `|  receiving live logs!  |` --
+    // where this build printed the two sentences bare, which read as a caption rather than a terminal waiting for
+    // output.
+    // **As wide as the console.** A fixed 50 characters drew a box less than half the reference's width, because the
+    // frame is set in a proportional face: the character count has to be derived from the space it has to fill.
+    let frame_width = (((console.width() - 50.0) / 7.2).floor() as usize).max(20);
+    // The rule the reference draws above the frame's first line.
+    painter.text(
+        egui::pos2(console.left() + 26.0, console.top() + 22.0),
+        Align2::LEFT_TOP,
+        "_".repeat(frame_width.saturating_sub(4)),
+        fonts::label(14.0),
+        theme.BASE,
+    );
+    for (line, open, close) in [
+        ("Start your instance in the top right to start", '/', '\\'),
+        ("receiving live logs!", '|', '|'),
+    ] {
+        let body = format!("{open}  {line}");
+        let pad = frame_width.saturating_sub(body.chars().count());
+        let framed = format!("{body}{}{close}", " ".repeat(pad));
         painter.text(
-            egui::pos2(console.left() + 24.0, console.top() + 40.0 + 28.0 * f32::from(line.starts_with("receiving"))),
+            egui::pos2(
+                console.left() + 24.0,
+                console.top() + 40.0 + 28.0 * f32::from(line.starts_with("receiving")),
+            ),
             Align2::LEFT_TOP,
-            line,
-            fonts::body(14.0),
+            framed,
+            fonts::label(14.0),
             theme.BASE,
         );
     }
@@ -1491,7 +1522,9 @@ fn logs_tab(ui: &mut Ui, body: Rect, theme: &Theme, instance: &Instance) {
 
 /// The console frame's top, from the body's top: the capture's filter row ends at 310 and the
 /// frame begins at 350.
-const CONSOLE_DY: f32 = 120.0;
+// Measured: the reference's console top sits at y 340 in the window where this drew 373, with the chips on the
+// same row in both -- so the frame moves up 33 and nothing else does.
+const CONSOLE_DY: f32 = 87.0;
 
 
 /// The instance's screenshots, newest first: the game names them by date.
