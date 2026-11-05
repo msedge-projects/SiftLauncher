@@ -395,6 +395,34 @@ const STEPS: [&str; 3] = [
 const NEWS: &str = "News";
 
 /// The lead article's title.
+/// **One article of the reference's News carousel**, as the reference shows it. The card cycles: the same sidebar
+/// read "Sync settings across instances" on one visit and "Joining your server just got easier" on the next, so a
+/// single fixed article is not what the reference draws. Each slide was read off the reference's own capture
+/// (`docs/captures/ref-lib-real.png`, `ref-1440-now.png`).
+struct NewsSlide {
+    title: &'static str,
+    copy: &'static str,
+    /// Empty on a slide the reference shows without a date line.
+    date: &'static str,
+}
+
+const NEWS_SLIDES: &[NewsSlide] = &[
+    NewsSlide {
+        title: NEWS_TITLE,
+        copy: NEWS_COPY,
+        date: NEWS_DATE,
+    },
+    NewsSlide {
+        title: "Joining your server just got easier",
+        copy: "Share your server with friends directly in the app. When they accept, we'll create an instance for them that's managed by your server.",
+        date: "",
+    },
+];
+
+/// How long a slide stays up. The reference advances on its own; ten seconds is the interval its card was seen to
+/// hold for, and the exact number is not something a still capture can prove.
+const NEWS_SLIDE_SECONDS: f64 = 10.0;
+
 const NEWS_TITLE: &str = "Sync settings across instances";
 
 /// The lead article's summary, worded as the reference words it -- "across your instances", not "across all
@@ -458,6 +486,14 @@ pub fn draw(
 ) -> Option<Step> {
     let painter = ui.painter();
 
+    // **Which article is up.** The reference's card advances by itself; the index is derived from the frame clock so
+    // nothing has to be stored or ticked, and a repaint every second keeps it moving.
+    let seconds = ui.input(|input| input.time);
+    let slide = NEWS_SLIDES
+        .get((seconds / NEWS_SLIDE_SECONDS) as usize % NEWS_SLIDES.len())
+        .unwrap_or(&NEWS_SLIDES[0]);
+    ui.ctx().request_repaint_after(std::time::Duration::from_millis(500));
+
     // The sidebar is the surface's right column, not a panel bolted onto it: the
     // reference's `.app-sidebar` paints `--brand-gradient-bg` --
     // `linear-gradient(0deg, rgba(14,35,19,0.2) 0%, rgba(55,137,73,0.1) 100%)` -- straight
@@ -486,7 +522,7 @@ pub fn draw(
     // ends. `COPY_H` is the floor: if a future summary wraps to a third line, the date
     // moves down with it rather than being written over.
     let copy = painter.layout(
-        NEWS_COPY.to_owned(),
+        slide.copy.to_owned(),
         fonts::body(COPY_SIZE),
         theme.BASE,
         column(rect).width(),
@@ -826,7 +862,7 @@ pub fn draw(
     painter.text(
         egui::pos2(column.left() + NEWS_INSET, card + rows.title),
         Align2::LEFT_TOP,
-        NEWS_TITLE,
+        slide.title,
         fonts::semibold(TITLE_SIZE),
         theme.CONTRAST,
     );
@@ -841,7 +877,7 @@ pub fn draw(
     painter.text(
         egui::pos2(column.left() + NEWS_INSET, card + rows.date),
         Align2::LEFT_TOP,
-        NEWS_DATE,
+        slide.date,
         fonts::body(DATE_SIZE),
         theme.SECONDARY,
     );
