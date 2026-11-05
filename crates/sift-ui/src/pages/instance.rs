@@ -658,7 +658,7 @@ fn empty_state(
     let art = egui::Rect::from_center_size(
         // **33 points higher.** Measured off the two captures: the reference's art ink spans y 336..395 (centre
         // 365.5) and ours y 378..419 (centre 398.5), with both 81 wide -- the same picture, drawn too low.
-        egui::pos2(body.center().x, top + EMPTY_HEADING_DY - 95.0),
+        egui::pos2(body.center().x, top + EMPTY_HEADING_DY - 104.0),
         egui::vec2(93.0, 99.0),
     );
     crate::serverart::paint_content_empty(&painter, art);
@@ -1016,8 +1016,11 @@ fn content_tab(ui: &mut Ui, body: Rect, theme: &Theme, instance: &Instance, stat
             "No content installed",
             "Browse or upload projects to get started",
             &[
-                EmptyAction::Quiet("Upload files", Glyph::Upload),
-                EmptyAction::Brand("Browse content", Glyph::Boxes),
+                // **The reference's own marks.** Driving its instance page shows "Upload files" with a box-and-arrow
+                // going *into* the box, and "Browse content" with a compass -- not the plain upload arrow and the
+                // box stack this build drew.
+                EmptyAction::Quiet("Upload files", Glyph::BoxImport),
+                EmptyAction::Brand("Browse content", Glyph::Compass),
             ],
         );
         if pressed == Some(1) {
