@@ -108,3 +108,22 @@ Each drove the real Modrinth App on its own X display, captured it in the same s
 Every one of these came with a capture behind it, and each workstream separately reverted at least one change that
 measured worse (a filled quiet button on an empty state, a one-point border overshoot, a pager over an unanchored
 scroll list, a heading gap of 8 against 6).
+
+## Settings, re-measured with this build (2026-11-05)
+
+Against the live reference captures the Settings workstream took on display :101:
+
+| tab | differing pixels |
+|---|---:|
+| Appearance | **35 231** |
+| Features | **35 971** |
+| Privacy | **53 350** |
+| Java and memory | 30 055 (the workstream's own measurement) |
+| Window | 31 771 (same) |
+
+A trap worth writing down, because it produced two false numbers here first: the rail rows in our dialog are **not**
+44 points apart, so clicking by an assumed pitch landed on Privacy for both the "java" and the "window" attempts. Both
+readings (50 664 and 52 049) were Privacy compared against the wrong reference file. Measuring the same capture against
+`ref101-privacy.png` gives 53 350, which matches the workstream's own figure and confirms the capture's identity.
+
+The lesson is the one this record keeps repeating: **a number is only as good as the pair of states behind it.**
