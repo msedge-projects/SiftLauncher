@@ -249,23 +249,45 @@ fn hit(source: sift_net::modrinth::ModrinthSearchHit) -> Hit {
         followers: thousands(source.follows),
         // Capitalised the same way `categories` is: the API's ids are lowercase and hyphenated, and a chip
         // that reads "challenging" is not the reference's chip.
-        all_categories: source
-            .display_categories
-            .iter()
-            .chain(if source.display_categories.is_empty() {
-                source.categories.as_slice()
-            } else {
-                &[]
-            })
-            .map(|category| {
-                let spaced = category.replace('-', " ");
-                let mut letters = spaced.chars();
-                match letters.next() {
-                    Some(first) => first.to_uppercase().collect::<String>() + letters.as_str(),
-                    None => String::new(),
-                }
-            })
-            .collect(),
+        all_categories: {
+            // **The display categories *and* the loaders.** `display_categories` never contains the loader, so a card
+            // built from it alone loses the loader chip: the reference's Fabulously Optimized card ends its row with
+            // "Fabric" and this build's ended at "Optimization". `tags_in_display_order` sorts loaders last, which is
+            // where the reference puts them. When the API sends no display categories its `categories` array stands in,
+            // and that one already carries the loaders, so the two must not both contribute.
+            let mut names: Vec<String> = source
+                .display_categories
+                .iter()
+                .chain(if source.display_categories.is_empty() {
+                    source.categories.iter()
+                } else {
+                    [].iter()
+                })
+                .cloned()
+                .collect();
+            if !source.display_categories.is_empty() {
+                // The hit's loaders live in `categories` (the API tags them in the same list); `display_categories`
+                // leaves them out, so they are appended here for `tags_in_display_order` to sort last.
+                names.extend(
+                    source
+                        .categories
+                        .iter()
+                        .filter(|category| is_loader(category))
+                        .cloned(),
+                );
+            }
+            names
+                .into_iter()
+                .map(|category| {
+                    let spaced = category.replace('-', " ");
+                    let mut letters = spaced.chars();
+                    match letters.next() {
+                        Some(first) => first.to_uppercase().collect::<String>() + letters.as_str(),
+                        None => String::new(),
+                    }
+                })
+                .collect()
+        },
         client_side: source.client_side,
         server_side: source.server_side,
         updated: source.date_modified,
