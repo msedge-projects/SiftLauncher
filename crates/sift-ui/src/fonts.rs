@@ -17,7 +17,7 @@
 //! assets today; when that crate is deleted this module's `include_bytes!` paths move with
 //! them, which is why the path is written once, here.
 
-use eframe::egui::{FontData, FontDefinitions, FontFamily, FontId};
+use egui::{FontData, FontDefinitions, FontFamily, FontId};
 
 /// The weights the interface uses, as `(family name, file name)`.
 ///
@@ -35,7 +35,7 @@ const FACES: [(&str, &str); 5] = [
 ///
 /// Called once at startup from `main`. Registering rather than replacing matters: egui's
 /// own glyph fallbacks stay available, so a character Inter lacks does not become a box.
-pub fn install(ctx: &eframe::egui::Context) {
+pub fn install(ctx: &egui::Context) {
     let mut definitions = FontDefinitions::default();
 
     for (family, file) in FACES {

@@ -17,7 +17,7 @@
 //! The curve is CSS's `cubic-bezier(x1, y1, x2, y2)`: the control points are solved for
 //! x = progress, then evaluated for y, exactly as a browser does it.
 
-use eframe::egui::{self, Id};
+use egui::{self, Id};
 
 /// A tween's state, as egui memory holds it.
 #[derive(Clone, Copy, Debug)]

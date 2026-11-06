@@ -7,7 +7,7 @@
 //! It is deliberately **not** a general renderer: no perspective, no lighting but a per-face shade, no
 //! overlay layers, no animation. What it must do is put the reader's own skin on a body that turns.
 
-use eframe::egui::{Color32, Pos2, Vec2};
+use egui::{Color32, Pos2, Vec2};
 
 /// One box: how big, where it sits, and the atlas rectangle of each face.
 struct Part {

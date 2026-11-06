@@ -47,11 +47,26 @@ mod skins;
 mod skins3d;
 /// The reference's palette, geometry, type and motion as egui values.
 mod theme;
+/// The software backend: egui drawn by this crate's own rasteriser, straight into the X buffer. Chosen with
+/// SIFT_SOFT=1 in the environment, because the OpenGL path loads 53 MiB of llvmpipe to render on a machine with no GPU.
+mod soft;
 mod widgets;
 
-use eframe::egui;
+use egui;
 
+#[cfg(feature = "gl")]
 fn main() -> eframe::Result<()> {
+    // SIFT_SOFT=1 runs the software backend: this crate's own rasteriser instead of OpenGL, which on a machine with no
+    // GPU driver loads 53 MiB of llvmpipe to compile shaders for a CPU. See soft/mod.rs.
+    if std::env::var("SIFT_SOFT").is_ok() {
+        return match soft::run() {
+            Ok(()) => Ok(()),
+            Err(error) => {
+                eprintln!("software backend failed: {error}");
+                std::process::exit(1);
+            }
+        };
+    }
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([geometry::WINDOW.0, geometry::WINDOW.1])
@@ -95,11 +110,13 @@ fn main() -> eframe::Result<()> {
 }
 
 /// The application: one shell, and the frame log when somebody asked for it.
+#[cfg(feature = "gl")]
 struct App {
     shell: shell::Shell,
     log: frame_log::FrameLog,
 }
 
+#[cfg(feature = "gl")]
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
@@ -161,5 +178,16 @@ mod tests {
     fn a_fresh_shell_opens_on_home() {
         let shell = shell::Shell::default();
         assert_eq!(shell.rail, shell::Rail::Home);
+    }
+}
+
+/// **The software backend is the default.** The 20 MB gate cannot be met by OpenGL on a machine without a GPU driver --
+/// measured at 111.3 MiB, of which 53 MiB was llvmpipe's shader compiler -- and this build's own rasteriser draws the same
+/// interface in a quarter of that. Build with `--features gl` and set `SIFT_GL=1` to use the OpenGL path instead.
+#[cfg(not(feature = "gl"))]
+fn main() {
+    if let Err(error) = soft::run() {
+        eprintln!("software backend failed: {error}");
+        std::process::exit(1);
     }
 }

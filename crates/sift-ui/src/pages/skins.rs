@@ -102,7 +102,7 @@
 
 use std::path::PathBuf;
 
-use eframe::egui::{self, Align2, Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
+use egui::{self, Align2, Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
 
 use crate::fonts;
 use crate::icons::{self, Glyph};

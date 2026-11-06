@@ -67,7 +67,7 @@
 //! hover, no press animation and no `request_repaint`. The rail and the close button are the
 //! only things that move, and they move `State`.
 
-use eframe::egui::{self, pos2, vec2, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
+use egui::{self, pos2, vec2, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
 
 use crate::fonts;
 use crate::icons::{self, Glyph};

@@ -21,7 +21,7 @@
 //! and no press: a control that brightens under the pointer and does nothing when clicked
 //! is worse than one that plainly has no press state yet.
 
-use eframe::egui::{Align2, Rect, Sense, Stroke, Ui, Vec2, Color32};
+use egui::{Align2, Rect, Sense, Stroke, Ui, Vec2, Color32};
 
 use crate::fonts;
 use crate::icons::{self, Glyph};

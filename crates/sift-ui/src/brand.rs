@@ -33,7 +33,7 @@
 
 use std::sync::OnceLock;
 
-use eframe::egui::{self, ColorImage, TextureHandle};
+use egui::{self, ColorImage, TextureHandle};
 
 /// The mark, 512x512 RGBA, as `tools/gen_brand.py` writes it.
 ///
@@ -56,7 +56,7 @@ static MARK: OnceLock<Option<TextureHandle>> = OnceLock::new();
 /// Called from `main` beside [`crate::fonts::install`]: both are process-wide setup, and
 /// doing this before the first frame means the window's first paint shows the mark rather
 /// than the fallback plate. Idempotent -- a second call is a no-op through the `OnceLock`.
-pub fn install(ctx: &eframe::egui::Context) {
+pub fn install(ctx: &egui::Context) {
     // The call is the installation; its answer is what `mark` hands back later.
     let _ = mark(ctx);
 }
@@ -68,7 +68,7 @@ pub fn install(ctx: &eframe::egui::Context) {
 /// `egui::Context` belongs to that context's texture manager, so the handle is meaningful
 /// for as long as the context that produced it lives -- one window per process here, which
 /// is why this can be a `OnceLock` at all.
-pub fn mark(ctx: &eframe::egui::Context) -> Option<TextureHandle> {
+pub fn mark(ctx: &egui::Context) -> Option<TextureHandle> {
     MARK.get_or_init(|| upload(ctx)).clone()
 }
 
@@ -119,7 +119,7 @@ pub fn paint_mark(painter: &egui::Painter, ctx: &egui::Context, rect: egui::Rect
 /// plate in it, and a launcher that refuses to start over its logo would be worse than one
 /// that starts without it. The generation of the asset is gated in `tools/gen_brand.py`; a
 /// failure here means the bytes in the binary are not a PNG this build can read.
-fn upload(ctx: &eframe::egui::Context) -> Option<TextureHandle> {
+fn upload(ctx: &egui::Context) -> Option<TextureHandle> {
     let image = decode(LOGO_PNG)?;
     // `load_texture` panics on a zero-sized image; the size comes from the decoded bytes
     // rather than from a constant, so this is the one check that keeps a bad asset from

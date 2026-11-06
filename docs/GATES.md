@@ -89,3 +89,42 @@ measured floor, not an estimate: 16.7 MiB for the smallest possible app, at this
 A smaller program. The iced-era launcher was an early slice -- a few pages, no image decoders, no network stack, no
 screenshot cache -- and possibly a smaller window. 10 MB was true of *that* binary and is not a bound any version of this
 product can hold at 1440x900, whatever renders it.
+## The software backend: 113.3 MiB -> 25.8 MiB (2026-11-06)
+
+Built, and measured on the same Xvfb display as everything else:
+
+| build | idle RSS |
+|---|---:|
+| OpenGL on llvmpipe (before) | **111.3-113.3 MiB** |
+| software backend, first working version | 27.4 MiB |
+| software backend, textures shared not copied | 25.9 MiB |
+| plus eframe/glow built out of the default binary | **25.8 MiB** |
+
+It draws the whole launcher: rail, title bar, Jump in strip, library cards, news carousel with the reference's own
+artwork, hosting banner. The capture is `.scratch/cap/soft-home.png`.
+
+### What it is
+
+`crates/sift-ui/src/soft/` -- a winit window and softbuffer surface, with egui's tessellated meshes rasterised by this
+crate: barycentric fill, premultiplied source-over, nearest texture sampling. No shaders, no GL, no pixmap-then-copy:
+it writes **into the presentable buffer**, which is the 4.94 MiB the spike showed a pixmap path would waste.
+
+The backend is now the **default**; `eframe`/`glow` are behind an optional `gl` feature because the software path never
+calls them. 255 tests pass.
+
+### Where the remaining 25.8 MiB is, by mapping
+
+| mapping | RSS |
+|---|---:|
+| the SiftUi binary's own text | 9 360 kB |
+| the X shared buffer (`/dev/shm/softbuffer-...`) | 5 064 kB |
+| heap | 3 564 kB |
+| libc, libcrypto, libX11, libm, anonymous | ~5 400 kB |
+
+**So the 20 MB gate is not reachable at 1440x900 by any version of this program**: the window buffer (5.1) plus system
+libraries (5.4) are 10.5 MiB before this launcher's own code runs, which would leave under 9.5 MiB for a binary that
+currently needs 9.4 MiB of text *and* its heap. Under 20 MB needs a smaller window or a much smaller program -- not a
+better renderer, which is what the last three rounds bought.
+
+The levers left, in order of expected value: `opt-level = "z"` for the binary (at some cost to frame time), keeping the
+TLS stack out of memory until the first fetch, and trimming the heap. Recorded as the next step rather than a promise.

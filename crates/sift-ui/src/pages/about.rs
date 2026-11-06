@@ -27,7 +27,7 @@
 //! page: this view has no way to open a browser ([`crate::pages::home`]'s import button is
 //! the same boundary), and a link that does nothing is worse than a path a reader can type.
 
-use eframe::egui::{self, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
+use egui::{self, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
 
 use crate::brand;
 use crate::fonts;

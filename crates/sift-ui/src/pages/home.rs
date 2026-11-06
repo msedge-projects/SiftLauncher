@@ -28,7 +28,7 @@
 //! folder names only -- see [`read_worlds`] for what that can and cannot say, and why a world
 //! row's press is a toast rather than a launch.
 
-use eframe::egui::{Align2, Rect, Sense, Stroke, Ui, Vec2, Color32};
+use egui::{Align2, Rect, Sense, Stroke, Ui, Vec2, Color32};
 
 use crate::data::Entry;
 use crate::fonts;

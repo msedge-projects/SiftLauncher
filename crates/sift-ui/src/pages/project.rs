@@ -49,7 +49,7 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use std::time::UNIX_EPOCH;
 
-use eframe::egui::{self, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
+use egui::{self, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
 // The launcher's own paths and wire, so a project document comes through the same client,
 // cache and retry policy every other metadata question does.
 use sift_core::paths::{platform_data_root, SiftPaths, System};

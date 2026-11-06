@@ -10,7 +10,7 @@
 
 use std::sync::OnceLock;
 
-use eframe::egui::{Color32, Rect, TextureHandle};
+use egui::{Color32, Rect, TextureHandle};
 
 const ART_PNG: &[u8] = include_bytes!("../../../assets/brand/server-art.png");
 
@@ -50,7 +50,7 @@ const CONTENT_PNG: &[u8] = include_bytes!("../../../assets/brand/content-empty.p
 static CONTENT_EMPTY: OnceLock<Option<TextureHandle>> = OnceLock::new();
 
 /// Upload the illustration, once, before the first frame.
-pub fn install(ctx: &eframe::egui::Context) {
+pub fn install(ctx: &egui::Context) {
     let _ = ART.set(upload(ctx, ART_PNG, "server-art"));
     let _ = NEWS.set(upload(ctx, NEWS_PNG, "news-art"));
     let _ = NEWS_JOINING.set(upload(ctx, NEWS_JOINING_PNG, "news-joining"));
@@ -61,63 +61,63 @@ pub fn install(ctx: &eframe::egui::Context) {
 }
 
 /// Paint the instance page's "No content installed" illustration; false when the texture is missing.
-pub fn paint_content_empty(painter: &eframe::egui::Painter, rect: Rect) -> bool {
+pub fn paint_content_empty(painter: &egui::Painter, rect: Rect) -> bool {
     let Some(Some(texture)) = CONTENT_EMPTY.get() else {
         return false;
     };
     painter.image(
         texture.id(),
         rect,
-        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
         Color32::WHITE,
     );
     true
 }
 
 /// Paint the screenshots empty state's illustration; false when the texture is missing.
-pub fn paint_shots_empty(painter: &eframe::egui::Painter, rect: Rect) -> bool {
+pub fn paint_shots_empty(painter: &egui::Painter, rect: Rect) -> bool {
     let Some(Some(texture)) = SHOTS_EMPTY.get() else {
         return false;
     };
     painter.image(
         texture.id(),
         rect,
-        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
         Color32::WHITE,
     );
     true
 }
 
 /// Paint the title bar's mark and wordmark; false when the texture is missing.
-pub fn paint_brand(painter: &eframe::egui::Painter, rect: Rect) -> bool {
+pub fn paint_brand(painter: &egui::Painter, rect: Rect) -> bool {
     let Some(Some(texture)) = BRAND.get() else {
         return false;
     };
     painter.image(
         texture.id(),
         rect,
-        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
         Color32::WHITE,
     );
     true
 }
 
 /// Paint the empty state's plate; false when the texture is missing, so the caller draws its own.
-pub fn paint_hero(painter: &eframe::egui::Painter, rect: Rect) -> bool {
+pub fn paint_hero(painter: &egui::Painter, rect: Rect) -> bool {
     let Some(Some(texture)) = HERO.get() else {
         return false;
     };
     painter.image(
         texture.id(),
         rect,
-        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
         Color32::WHITE,
     );
     true
 }
 
 /// Paint the news card's plate; false when the texture is missing, so the caller keeps its painted one.
-pub fn paint_news(painter: &eframe::egui::Painter, rect: Rect, slide: usize) -> bool {
+pub fn paint_news(painter: &egui::Painter, rect: Rect, slide: usize) -> bool {
     // Each slide carries its own picture, so the plate follows the article rather than standing in for both.
     let held = if slide == 1 { NEWS_JOINING.get() } else { NEWS.get() };
     let Some(Some(texture)) = held else {
@@ -126,13 +126,13 @@ pub fn paint_news(painter: &eframe::egui::Painter, rect: Rect, slide: usize) -> 
     painter.image(
         texture.id(),
         rect,
-        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
         Color32::WHITE,
     );
     true
 }
 
-fn upload(ctx: &eframe::egui::Context, bytes: &[u8], name: &str) -> Option<TextureHandle> {
+fn upload(ctx: &egui::Context, bytes: &[u8], name: &str) -> Option<TextureHandle> {
     let image = image::load_from_memory(bytes).ok()?.to_rgba8();
     let size = [image.width() as usize, image.height() as usize];
     let pixels = image
@@ -141,21 +141,21 @@ fn upload(ctx: &eframe::egui::Context, bytes: &[u8], name: &str) -> Option<Textu
         .collect();
     Some(ctx.load_texture(
         name,
-        eframe::egui::ColorImage::new(size, pixels),
-        eframe::egui::TextureOptions::LINEAR,
+        egui::ColorImage::new(size, pixels),
+        egui::TextureOptions::LINEAR,
     ))
 }
 
 /// Paint the illustration into `rect`; false when the texture is not there, so the caller can keep its
 /// painted fallback rather than leaving a hole.
-pub fn paint(painter: &eframe::egui::Painter, rect: Rect) -> bool {
+pub fn paint(painter: &egui::Painter, rect: Rect) -> bool {
     let Some(Some(texture)) = ART.get() else {
         return false;
     };
     painter.image(
         texture.id(),
         rect,
-        Rect::from_min_max(eframe::egui::pos2(0.0, 0.0), eframe::egui::pos2(1.0, 1.0)),
+        Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
         Color32::WHITE,
     );
     true

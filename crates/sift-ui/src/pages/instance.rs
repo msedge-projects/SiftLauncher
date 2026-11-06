@@ -28,7 +28,7 @@
 //! Content, Worlds and Share, its console frame for Logs, its five-column table for Files, and
 //! its two-up grid for Screenshots.
 
-use eframe::egui::{self, Align2, Rect, Sense, Ui};
+use egui::{self, Align2, Rect, Sense, Ui};
 
 use crate::fonts;
 use crate::icons::{self, Glyph};

@@ -69,7 +69,7 @@
 //! `pages/mod.rs` yet; adding `pub mod servers;` there is the whole of the wiring, and
 //! `cargo test -p sift-ui servers` is what runs the tests below.
 
-use eframe::egui::{self, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
+use egui::{self, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
 
 use crate::fonts;
 use crate::icons::{self, Glyph};

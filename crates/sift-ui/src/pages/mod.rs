@@ -19,7 +19,7 @@ pub mod settings;
 pub mod skins;
 pub mod project;
 
-use eframe::egui::Rect;
+use egui::Rect;
 
 /// Which page the content column is showing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -69,12 +69,12 @@ impl Page {
     pub fn rect(self) -> Rect {
         use crate::geometry;
         Rect::from_min_size(
-            eframe::egui::pos2(
+            egui::pos2(
                 geometry::TEXT_LEFT,
                 // The breadcrumb lives on the title bar; every page starts below it.
                 geometry::TITLE_BAR,
             ),
-            eframe::egui::vec2(
+            egui::vec2(
                 geometry::PANEL_LEFT - geometry::CONTENT_INSET - geometry::TEXT_LEFT,
                 geometry::WINDOW.1 - geometry::TITLE_BAR,
             ),

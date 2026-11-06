@@ -92,7 +92,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-use eframe::egui::{self, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
+use egui::{self, Align2, Color32, Rect, Sense, Stroke, Ui, Vec2};
 
 use crate::fonts;
 use crate::icons::{self, Glyph};

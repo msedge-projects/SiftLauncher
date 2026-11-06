@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::time::Duration;
 
-use eframe::egui::{self, ColorImage, TextureHandle};
+use egui::{self, ColorImage, TextureHandle};
 
 /// What the cache knows about one URL.
 enum Entry {
