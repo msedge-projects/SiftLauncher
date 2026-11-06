@@ -5439,3 +5439,21 @@ about 25 000 pixels between them, and no code change bridges that.
 
 So the content slab of Home is at its floor for this pair of instances, in the same sense the sidebar is: what is left
 is not ours to draw.
+### Resources at 73 597: the structural bands are all state (2026-11-06)
+
+Sweeping the pair: content 53 123 at threshold 40, **18 816 at 160** -- the same decay profile the sidebar shows, so most
+of it is glyph rasterisation. What survives at 160 clusters in three bands:
+
+| band | pixels | what it is |
+|---|---:|---|
+| y 240 | 61 | the storage bar and its legend |
+| y 360 | 56 | "Verify and repair" / "Clear unused" |
+| y 660 | 23 | the download-concurrency slider |
+
+Each is a **state** difference, and the second names it plainly: the reference's store is empty, so its "Clear unused"
+draws **disabled** -- a muted red with dim text -- while this lab's holds 2.5 MB and draws it live, a bright pink with
+white text. Both are correct for their own state. The first is the same story (its bar is grey and empty, ours is green
+with "Cache 2.5 MB").
+
+So Resources, the worst Settings tab on paper, is not 73 597 pixels of our mistakes: it is one page's text rendering
+plus three honest differences of data.
