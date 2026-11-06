@@ -50,3 +50,42 @@ grep -E "VmRSS|RssAnon|RssFile|RssShmem" /proc/$P/status
 grep -E "^Pss|^Private_" /proc/$P/smaps_rollup
 awk '/^[0-9a-f]+-/{name=$6} /^Rss:/{rss[name]+=$2} END{for (n in rss) print rss[n], n}' /proc/$P/smaps | sort -rn | head
 ```
+## The CPU-rasteriser floor, measured (2026-11-06)
+
+The question was whether replacing OpenGL-on-llvmpipe with CPU rasterisation can reach the <=20 MB gate. To answer it with
+a number rather than an estimate, `tools/mem-spike` was built: **winit + softbuffer + tiny-skia**, one window, one filled
+rectangle, no application logic at all. Its whole purpose is to be the smallest honest example of the architecture.
+
+At 1440x900 on the same Xvfb display as the launcher:
+
+| measure | value |
+|---|---:|
+| **VmRSS** | **17 064 kB = 16.7 MiB** |
+| RssAnon (the tiny-skia pixmap + state) | 6 396 kB |
+| RssFile (binary + libs) | 5 604 kB |
+| RssShmem (the X shared buffer) | 5 064 kB |
+| threads | 1 |
+| binary on disk | 2.2 MB |
+
+Against the launcher's current **111.3 MiB** through OpenGL/llvmpipe, that is the whole 53 MiB of LLVM and gallium, plus
+the window-proportional buffers, gone.
+
+### What it says about 10 MB
+
+It says **no, not at this window size, and not for this architecture as written**:
+
+- the X shared buffer (5 064 kB) and the tiny-skia pixmap (5 200 kB) are both full-screen, so **~10 MiB is spent on two
+  copies of the same picture before any code runs**;
+- the binary and libraries keep 5 604 kB resident;
+- the remaining 6 396 kB is state.
+
+And it fingers the next lever: **rasterise straight into the presentable buffer** instead of into a pixmap that is then
+copied into one, and the second 5 MiB disappears. A real application then adds fonts, textures and its own state on top,
+which is why the honest expectation for the launcher on a CPU rasteriser is **20-30 MiB, not 10** -- but that is a
+measured floor, not an estimate: 16.7 MiB for the smallest possible app, at this resolution, in this environment.
+
+### So where does 10 MB come from?
+
+A smaller program. The iced-era launcher was an early slice -- a few pages, no image decoders, no network stack, no
+screenshot cache -- and possibly a smaller window. 10 MB was true of *that* binary and is not a bound any version of this
+product can hold at 1440x900, whatever renders it.
