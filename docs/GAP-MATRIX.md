@@ -5457,3 +5457,18 @@ with "Cache 2.5 MB").
 
 So Resources, the worst Settings tab on paper, is not 73 597 pixels of our mistakes: it is one page's text rendering
 plus three honest differences of data.
+### Keyboard shortcuts cannot be verified by capture here, and a test now says what can be (2026-11-06)
+
+Pressing **N** on Home, in both apps, with `xdotool windowfocus` set on each window first, produced **byte-identical**
+captures before and after: no dialog opened on either side. The container runs Xvfb with **no window manager**, so there
+is no focus to give a window and the keystroke never reaches either application -- the same reason every earlier
+keyboard attempt in this session came to nothing.
+
+That does not mean the shortcuts are unbuilt: `the_quick_create_key_ignores_modifiers_repeats_and_a_held_keyboard` drives
+one through egui's own event queue and checks the guards (no modifier, no repeat, no held keyboard). It is the only
+honest verifier available for keys in this environment, and the record now says so rather than implying a capture was
+attempted and passed.
+
+Everything else about presses -- buttons, tabs, rows, toggles -- **can** be driven, and has been: a pointer event needs no
+focus. So the split is: pointer behaviour is verified by capture, keyboard behaviour by test, and neither by wishful
+thinking.
