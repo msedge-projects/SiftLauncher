@@ -5384,3 +5384,15 @@ After the change the card reads "282.77M  **37.6K**".
 
 The **figures** still differ -- 37.6K against the reference's 376K -- because they were fetched at different times from a
 live API, and that is data rather than layout. The Mods view measures **127 270**.
+### The sidebar ticks a finished step, and says the reference's words (2026-11-06)
+
+Two defects the browser's sidebar exposed, both fixed:
+
+1. **"Create first instance" is ticked when the library holds one.** The sidebar drew the fresh-install state whatever
+   the folder said -- an empty ring -- where the reference shows a filled check and a line through the words. The folder
+   is read once (`library_has_instance`) rather than every frame, and the same rule the project page already used is
+   applied here.
+2. **The toggle is "Hide content already installed"**, the reference's own label, which wraps to two lines in its column.
+   This build's "Hide already installed" was the wrong words *and* the wrong shape.
+
+Verified by capture against the reference's own sidebar: the tick, the strike and the ring on the next row all match.

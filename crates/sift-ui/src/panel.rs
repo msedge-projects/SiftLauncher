@@ -87,7 +87,9 @@ const CATEGORY: &str = "Category";
 /// The link under the list, from `app.browse.see-more` and `app.browse.see-less`.
 const SEE_MORE: &str = "See more categories";
 /// The switch above the list, from `app.browse.hide-installed`.
-const HIDE_INSTALLED: &str = "Hide already installed";
+/// The reference's own label, which wraps to two lines in its column ("Hide content already" / "installed").
+/// This build's shorter "Hide already installed" fitted on one, which is the wrong words *and* the wrong shape.
+const HIDE_INSTALLED: &str = "Hide content already installed";
 const SEE_LESS: &str = "See less";
 
 /// One category row's height, and how many the panel lists before a `See more` would go.
@@ -754,15 +756,35 @@ pub fn draw(
         // `RadioButtonIcon` inherits the button's colour, and a completed step replaces it
         // with a check. The checklist's state is the shell's, so this draws the state a
         // fresh install is in -- nothing done yet.
-        icons::draw(
-            painter,
-            Glyph::RadioButton,
-            Rect::from_min_size(
-                egui::pos2(row.left() + ROW_PAD, row.center().y - RING / 2.0),
-                Vec2::splat(RING),
-            ),
-            theme.BASE,
-        );
+        // **A finished step is ticked and struck through.** The reference's own sidebar shows "Create first instance"
+        // completed whenever the library holds one; this drew the fresh-install state whatever the folder said.
+        let done = index == 0 && library_has_instance();
+        if done {
+            painter.circle_filled(
+                egui::pos2(row.left() + ROW_PAD + RING / 2.0, row.center().y),
+                RING / 2.0,
+                theme.SECONDARY,
+            );
+            icons::draw(
+                painter,
+                Glyph::Check,
+                Rect::from_center_size(
+                    egui::pos2(row.left() + ROW_PAD + RING / 2.0, row.center().y),
+                    Vec2::splat(RING * 0.7),
+                ),
+                theme.BUTTON_BG,
+            );
+        } else {
+            icons::draw(
+                painter,
+                Glyph::RadioButton,
+                Rect::from_min_size(
+                    egui::pos2(row.left() + ROW_PAD, row.center().y - RING / 2.0),
+                    Vec2::splat(RING),
+                ),
+                theme.BASE,
+            );
+        }
         // `font-medium` at `text-base`, one point above the row's own centre: the reference's
         // label ink runs 138..155 in a row whose fill is 128..166.
         painter.text(
@@ -770,8 +792,28 @@ pub fn draw(
             Align2::LEFT_CENTER,
             row_label(Step::ALL[index].clone(), account),
             fonts::label(STEP_SIZE),
-            theme.BASE,
+            if done { theme.SECONDARY } else { theme.BASE },
         );
+        if done {
+            let width = painter
+                .layout_no_wrap(
+                    row_label(Step::ALL[index].clone(), account),
+                    fonts::label(STEP_SIZE),
+                    theme.SECONDARY,
+                )
+                .size()
+                .x;
+            painter.line_segment(
+                [
+                    egui::pos2(row.left() + ROW_PAD + RING + RING_GAP, row.center().y - 1.0),
+                    egui::pos2(
+                        row.left() + ROW_PAD + RING + RING_GAP + width,
+                        row.center().y - 1.0,
+                    ),
+                ],
+                Stroke::new(1.0, theme.SECONDARY),
+            );
+        }
     }
 
     // ---- `News` --------------------------------------------------------------
@@ -1533,4 +1575,15 @@ mod tests {
             plan.banner
         );
     }
+}
+
+/// Whether the library holds any instance, read once. The checklist's first step is finished by having one, and the
+/// answer cannot change without a restart creating a folder, which the caller already handles by re-drawing.
+fn library_has_instance() -> bool {
+    static HELD: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *HELD.get_or_init(|| {
+        std::fs::read_dir(crate::data::instances_dir())
+            .map(|read| read.flatten().any(|entry| entry.path().is_dir()))
+            .unwrap_or(false)
+    })
 }
