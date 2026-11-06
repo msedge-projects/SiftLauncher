@@ -325,7 +325,36 @@ mod tests {
     /// The version the view prints is the manifest's, and it is a version: non-empty, starts
     /// with a digit and names a major and a minor. A blank or malformed `CARGO_PKG_VERSION`
     /// would render as "Sift Launcher " and look like a build that never set one.
+        /// Escape closes the modal in the same frame it is pressed -- one of seventeen Escape handlers in this build, none
+    /// of which was covered by a test. Keys cannot be driven through X here, so a test is the only honest verifier.
     #[test]
+    fn escape_closes_the_about_modal_without_drawing_it() {
+        let ctx = egui::Context::default();
+        crate::fonts::install(&ctx);
+        let theme = crate::theme::dark();
+        let screen = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1440.0, 900.0));
+        let mut open = true;
+        let mut alive = true;
+        let input = egui::RawInput {
+            events: vec![egui::Event::Key {
+                key: egui::Key::Escape,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+            ..Default::default()
+        };
+        ctx.run_ui(input, |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                alive = draw(ui, screen, &theme, &mut open);
+            });
+        });
+        assert!(!open, "Escape must close the modal");
+        assert!(!alive, "the closing frame owes no further frames");
+    }
+
+#[test]
     fn the_version_is_the_manifests_and_is_not_empty() {
         assert!(!VERSION.is_empty(), "the manifest has a version");
         assert!(

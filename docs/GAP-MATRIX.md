@@ -5472,3 +5472,15 @@ attempted and passed.
 Everything else about presses -- buttons, tabs, rows, toggles -- **can** be driven, and has been: a pointer event needs no
 focus. So the split is: pointer behaviour is verified by capture, keyboard behaviour by test, and neither by wishful
 thinking.
+### The first Escape test in the tree (2026-11-06)
+
+Seventeen places in this build handle `Key::Escape` and **none of them had a test**. Since keys cannot be driven through
+X here -- no window manager, so no focus, proved by byte-identical captures of a pressed key -- a test is the only
+honest verifier for them, and the gap was worth closing before more of them appear.
+
+`escape_closes_the_about_modal_without_drawing_it` builds a real `RawInput` carrying one Escape press, runs a frame, and
+asserts the modal is closed **and** that the closing frame owes no further frames. It passes.
+
+The other sixteen handlers are still uncovered and are listed here as work rather than as done: the settings dialog, the
+create dialog, the screenshot viewer, the context menus. Each needs the same shape of test -- a synthesised key in, a
+state assertion out.
