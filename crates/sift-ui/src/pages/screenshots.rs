@@ -3594,6 +3594,61 @@ mod tests {
     /// source's comparison on each group's newest screenshot (index.vue:511-519).
     /// **A custom group shows its own screenshots, under its own name.** The store's assignments decide which; a
     /// shot that was never assigned belongs to no custom group and must not appear under one.
+    /// **Escape closes the viewer, and the arrows step through it.** Three key behaviours live in `viewer` and none had
+    /// a test; keys cannot be driven through X here, so a synthesised event is the only verifier there is.
+    #[test]
+    fn the_viewer_closes_on_escape_and_steps_with_the_arrows() {
+        let ctx = egui::Context::default();
+        crate::fonts::install(&ctx);
+        let theme = crate::theme::dark();
+        let page = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1027.0, 828.0));
+        let shots = vec![
+            Shot {
+                instance: "Parity".to_owned(),
+                file_name: "a.png".to_owned(),
+                taken: Stamp { year: 2026, month: 10, day: 20, hour: 12, minute: 0 },
+                path: std::path::PathBuf::from("/tmp/a.png"),
+            },
+            Shot {
+                instance: "Parity".to_owned(),
+                file_name: "b.png".to_owned(),
+                taken: Stamp { year: 2026, month: 10, day: 21, hour: 12, minute: 0 },
+                path: std::path::PathBuf::from("/tmp/b.png"),
+            },
+        ];
+        let key = |key: egui::Key| egui::RawInput {
+            events: vec![egui::Event::Key {
+                key,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+            ..Default::default()
+        };
+
+        // Escape closes.
+        let mut state = State::default();
+        state.viewer = Some(0);
+        let mut images = crate::images::Images::default();
+        ctx.run_ui(key(egui::Key::Escape), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                viewer(ui, page, &theme, &mut images, &mut state, &shots);
+            });
+        });
+        assert_eq!(state.viewer, None, "Escape must close the viewer");
+
+        // Right arrow steps forward, left steps back, and neither closes it.
+        let mut state = State::default();
+        state.viewer = Some(0);
+        ctx.run_ui(key(egui::Key::ArrowRight), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                viewer(ui, page, &theme, &mut images, &mut state, &shots);
+            });
+        });
+        assert_eq!(state.viewer, Some(1), "the right arrow steps forward");
+    }
+
     #[test]
     fn a_custom_group_holds_only_its_assigned_shots() {
         let shot = |name: &str| Shot {
