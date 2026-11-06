@@ -5418,3 +5418,24 @@ its card art, which this lab's instance does not have. Recorded as data, as cons
 A note on driving the reference: it **stops rotating its card when unfocused**, so pinning ours to index 0 was wrong and
 index 1 was right -- the reference had been sitting on the second article the whole time. `SIFT_NEWS_SLIDE` makes that
 testable in one run instead of guessed at.
+### Home with the instance identity matched: the text matches, the picture cannot (2026-11-06)
+
+To prove the content slab is data and not layout, the lab's instance was rebuilt to the reference's identity: renamed
+"Fabric 26.3", and given an `mmc-pack.json` carrying `net.fabricmc.fabric-loader` beside the game component -- with the
+fields Prism's format expects (`cachedName`, `cachedVersion`); without them the profile fails to load and the loader
+falls back, which is why the first attempt still read "Vanilla".
+
+With that in place the strip and card read:
+
+```
+Fabric 26.3   [New instance]
+Fabric 26.3 . Never played
+```
+
+which is the reference's own text, character for character. The page still measures **71 393**, content **53 832** --
+because what is left there is the **instance's own artwork**: a 152-point card tile drawn from this lab's flat green
+`icon.png` against the reference's campfire pack icon, and the strip's 48-point tile beside it. Two different pictures,
+about 25 000 pixels between them, and no code change bridges that.
+
+So the content slab of Home is at its floor for this pair of instances, in the same sense the sidebar is: what is left
+is not ours to draw.
