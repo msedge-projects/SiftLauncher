@@ -24,8 +24,11 @@ use eframe::egui::{self, ColorImage, TextureHandle};
 enum Entry {
     /// A worker is fetching it.
     Loading,
-    /// The texture, uploaded, and the tick it was last asked for.
-    Ready(TextureHandle, u64),
+    /// The texture, uploaded, the tick it was last asked for, and **how many bytes it occupies**.
+    ///
+    /// The byte count is what makes the cap honest: ninety-six 96-point icons is three megabytes, but ninety-six
+    /// 1920x1080 screenshots is more than eight hundred. A cap on the *number* of entries is a cap on nothing.
+    Ready(TextureHandle, u64, usize),
     /// The fetch or the decode failed. Not retried this run.
     Failed,
 }
@@ -41,6 +44,19 @@ enum Entry {
 // handful of rows, so most of those textures were held for a screen that never draws them. Ninety-
 // six still covers several pages of re-visits.
 const CACHE_LIMIT: usize = 96;
+
+/// The cache's real budget: **64 MiB of textures**, whichever limit is reached first.
+///
+/// Sized for a screenshot library: two full-screen 1440x900 shots per megabyte each, plus a wall of icons, keeps any
+/// view the reader scrolls to resident while leaving the process's footprint predictable. Before this, the only cap was
+/// the entry count, and a reader paging through a screenshot folder could reach hundreds of megabytes without any single
+/// entry looking expensive.
+const CACHE_BYTES: usize = 64 * 1024 * 1024;
+
+/// A decoded image's size as bytes, which is what the texture will occupy once uploaded.
+fn texture_bytes(size: [usize; 2]) -> usize {
+    size[0].saturating_mul(size[1]).saturating_mul(4)
+}
 
 /// The icon cache: one entry per URL, and the channel its workers answer on.
 pub struct Images {
@@ -76,24 +92,50 @@ impl Images {
         let ready = self
             .entries
             .iter()
-            .filter(|(_, entry)| matches!(entry, Entry::Ready(_, _)))
+            .filter(|(_, entry)| matches!(entry, Entry::Ready(_, _, _)))
             .count();
-        if ready <= CACHE_LIMIT {
+        let bytes: usize = self
+            .entries
+            .values()
+            .filter_map(|entry| match entry {
+                Entry::Ready(_, _, bytes) => Some(*bytes),
+                _ => None,
+            })
+            .sum();
+        if ready <= CACHE_LIMIT && bytes <= CACHE_BYTES {
             return;
         }
+        // Whichever budget is over decides how many go; the coldest go first either way.
         let mut stamps: Vec<(u64, String)> = self
             .entries
             .iter()
             .filter_map(|(url, entry)| match entry {
-                Entry::Ready(_, last) => Some((*last, url.clone())),
+                Entry::Ready(_, last, _) => Some((*last, url.clone())),
                 _ => None,
             })
             .collect();
         // Coldest first; the count can only be over the limit by one per insert, but the
         // loop costs nothing either way.
         stamps.sort_unstable();
-        for (_, url) in stamps.into_iter().take(ready - CACHE_LIMIT) {
+        let over_entries = ready.saturating_sub(CACHE_LIMIT);
+        let mut dropped = 0;
+        let mut freed = 0;
+        let mut bytes_now = bytes;
+        for (_, url) in stamps {
+            if dropped >= over_entries && bytes_now <= CACHE_BYTES {
+                break;
+            }
+            if let Some(Entry::Ready(_, _, bytes)) = self.entries.get(&url) {
+                freed += *bytes;
+            }
+            bytes_now = bytes_now.saturating_sub(freed.min(bytes_now));
             self.entries.remove(&url);
+            dropped += 1;
+            freed = 0;
+            // One entry is never dropped: the texture on screen must stay resident this frame.
+            if self.entries.len() <= 1 {
+                break;
+            }
         }
     }
 
@@ -133,7 +175,7 @@ impl Images {
         self.tick += 1;
         let tick = self.tick;
         match self.entries.get_mut(&key) {
-            Some(Entry::Ready(texture, last)) => {
+            Some(Entry::Ready(texture, last, _)) => {
                 *last = tick;
                 return Some(texture.clone());
             }
@@ -151,7 +193,8 @@ impl Images {
         let size = [image.width() as usize, image.height() as usize];
         let pixels = egui::ColorImage::from_rgba_unmultiplied(size, image.as_raw());
         let texture = ctx.load_texture(key.clone(), pixels, options);
-        self.entries.insert(key, Entry::Ready(texture.clone(), tick));
+        let bytes = size[0].saturating_mul(size[1]).saturating_mul(4);
+        self.entries.insert(key, Entry::Ready(texture.clone(), tick, bytes));
         self.evict();
         Some(texture)
     }
@@ -166,7 +209,7 @@ impl Images {
         let tick = self.tick;
 
         match self.entries.get_mut(url) {
-            Some(Entry::Ready(texture, last)) => {
+            Some(Entry::Ready(texture, last, _)) => {
                 // A hit is a use: the entry the reader keeps looking at is the last to go.
                 *last = tick;
                 return Some(texture.clone());
@@ -213,12 +256,13 @@ impl Images {
             self.inflight = self.inflight.saturating_sub(1);
             match result {
                 Ok(image) => {
+                    let bytes = texture_bytes([image.size[0], image.size[1]]);
                     let texture = ctx.load_texture(
                         format!("icon:{url}"),
                         image,
                         egui::TextureOptions::LINEAR,
                     );
-                    self.entries.insert(url, Entry::Ready(texture, self.tick));
+                    self.entries.insert(url, Entry::Ready(texture, self.tick, bytes));
         self.evict();
                 }
                 Err(_) => {
