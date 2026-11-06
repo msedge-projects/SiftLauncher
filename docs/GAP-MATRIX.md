@@ -5396,3 +5396,25 @@ Two defects the browser's sidebar exposed, both fixed:
    This build's "Hide already installed" was the wrong words *and* the wrong shape.
 
 Verified by capture against the reference's own sidebar: the tick, the strike and the ring on the next row all match.
+### Home, measured with the carousel pinned and the states matched (2026-11-06)
+
+Both apps on Home, one instance each, the news card pinned to the same article:
+
+| slab | pixels |
+|---|---:|
+| total | **71 349** |
+| content | 53 788 |
+| sidebar | **14 303** |
+| titlebar | 2 229 |
+| rail | 1 029 |
+
+The sidebar is at its rasterisation floor (14 213 measured by the threshold sweep, plus the tick and label added this
+week). **The earlier library figure of 89 051 was inflated by a carousel phase mismatch** -- 32 005 of sidebar that was
+one article against another -- and is superseded by this one, which is why the pin exists.
+
+The content slab is the single instance's own data: its name ("Instance 3" against "Fabric 26.3"), its loader line and
+its card art, which this lab's instance does not have. Recorded as data, as consistently as the record has said it.
+
+A note on driving the reference: it **stops rotating its card when unfocused**, so pinning ours to index 0 was wrong and
+index 1 was right -- the reference had been sitting on the second article the whole time. `SIFT_NEWS_SLIDE` makes that
+testable in one run instead of guessed at.
