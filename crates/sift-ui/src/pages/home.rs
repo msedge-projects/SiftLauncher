@@ -1029,14 +1029,17 @@ fn list(
     // build had no such section at all.
     if let Some(recent) = instances.first() {
         painter.text(
-            egui::pos2(rect.left(), rect.top() + 6.0),
+            // **20 points down, measured.** The reference's heading ink starts at y 79 and this build's at 59, while the
+            // Library heading below it sits at 211 on both: the section was 20 high inside a space of the same total
+            // height, so the gap after it was 20 too wide. Found by comparing ink tops, not by eye.
+            egui::pos2(rect.left(), rect.top() + 26.0),
             Align2::LEFT_TOP,
             "Jump in",
             fonts::semibold(20.0),
             theme.CONTRAST,
         );
         let strip = Rect::from_min_size(
-            egui::pos2(rect.left(), rect.top() + 38.0),
+            egui::pos2(rect.left(), rect.top() + 58.0),
             egui::vec2((rect.width() - 240.0).min(800.0), 72.0),
         );
         // A **dashed** border, as the reference draws it, plus the heading's collapse chevron: a solid rule read as
@@ -1046,7 +1049,7 @@ fn list(
             &painter,
             Glyph::ChevronUp,
             Rect::from_center_size(
-                egui::pos2(rect.left() + 96.0, rect.top() + 18.0),
+                egui::pos2(rect.left() + 96.0, rect.top() + 38.0),
                 egui::Vec2::splat(14.0),
             ),
             theme.SECONDARY,

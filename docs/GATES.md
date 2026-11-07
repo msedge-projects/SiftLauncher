@@ -272,3 +272,32 @@ above the sampler so the experiment is not repeated.
 What remains is that this rasteriser blends in premultiplied sRGB space without the gamma correction a GPU path applies,
 so glyph edges carry slightly different values. Recorded as a known, quantified 3% difference on this page rather than a
 mystery -- and as the next thing to look at if a page's number seems inexplicably high.
+### The "Jump in" section was 20 points too high, and that was 1 435 pixels (2026-11-07)
+
+Chasing the software renderer's extra 2 300 pixels turned up something else, and something worse: a layout error that
+predates the renderer change entirely. Comparing the row where each block's ink starts:
+
+| heading | reference | this build (both backends) |
+|---|---:|---:|
+| Jump in | 79 | **59** |
+| Library | 211 | 211 |
+
+The Library heading matches, so the page is not offset -- the section above it was 20 points high inside a space of the
+same total height, which made the gap after it 20 points too wide. The heading, the dashed strip and the collapse
+chevron all move down by that measured 20.
+
+After the change both headings read **79** and **211**, and Home on the software backend measures:
+
+| | before | after |
+|---|---:|---:|
+| total | 73 660 | **72 225** |
+| content | 55 763 | **54 326** |
+| titlebar | 2 227 | 2 229 |
+| rail | 1 034 | 1 034 |
+| sidebar | 14 636 | 14 636 |
+
+The OpenGL-era figure for this page (71 349) was taken before the instance was renamed and is not comparable; 72 225 is
+the honest number for the shipped path with the layout corrected.
+
+**The lesson is the method, again**: the heat map said "text", the correlation said "maybe 7 points", and only measuring
+where each heading's ink begins named the defect and its size.
