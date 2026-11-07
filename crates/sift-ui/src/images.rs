@@ -332,6 +332,8 @@ fn trim_heap() {
 #[cfg(not(target_env = "gnu"))]
 fn trim_heap() {}
 
+
+
 /// A stable name for a URL, used for the temporary file and the texture.
 fn hash(url: &str) -> u64 {
     // FNV-1a: this is a cache key, not a security boundary, and a dependency for one 8-byte

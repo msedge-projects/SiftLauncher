@@ -1197,3 +1197,22 @@ visited Discover is at 38 MB. The remaining term is the heap the process keeps f
 The icon downscale stays even though it did not move RSS: it bounds what a remote icon can cost to 160 points, which the
 cache's own comment already assumed ("every icon is 96 points square, so this cap is a few megabytes") and was not true of
 the decodes it was holding.
+### What the 24 MB is made of, measured (2026-11-07)
+
+The gate needs 4.3 MiB off a fresh Home. Four candidates were measured rather than assumed:
+
+| term | measurement | verdict |
+|---|---:|---|
+| textures (font atlas + art plates) | **2 016 kB across 6** | not the lever |
+| a second full-size frame buffer | painter holds none; it writes into softbuffer's | not present |
+| startup transient left in the heap | `malloc_trim` after 40 frames: 24 296 -> 24 224 kB | **no change, reverted** |
+| heap kept from browsing | `malloc_trim` at fetch boundaries | 24 MiB returned (kept) |
+
+So a fresh Home is **24.2 MB** of which 2 MB is textures and 5 MB is the frame buffer the window must have; the other ~17
+matches the framework floor measured in `tools/mem-floor` (11.4 MiB for egui plus fonts with no launcher at all, 16.7 MiB
+with a window). The remainder is the launcher's own live state -- egui's galleys, the search model, the instance list --
+and shrinking it needs an allocation profile, which this container has no `heaptrack` or `valgrind` to produce.
+
+**The gate stands at 24.2 MiB against 20, and the honest reading is that the last 4.2 MiB is not in a place this session
+can measure its way into.** What it can say is that the two big memory defects it did find are fixed: a browses' worth of
+decoded icons no longer costs 38 MB, and no icon is uploaded larger than 160 points.
