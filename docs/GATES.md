@@ -813,3 +813,29 @@ in a field that no longer has focus, which is the sort of defect no capture of a
 context menu's pre-existing test. The project page's gallery viewer is the notable one still uncovered: its function takes
 a `&Project`, which has no `Default`, so a test would have to invent a dozen fields to reach the Escape branch -- worth
 doing, but worth doing deliberately rather than as a by-product.
+### Pointer motion and the wheel reach egui through the software backend (2026-11-07)
+
+The soft backend's event bridge had only been smoke-tested with one click. Two of its three input paths are now verified:
+
+| path | test | result |
+|---|---|---|
+| `CursorMoved` -> `PointerMoved` | hover the rail | **1 788 pixels changed** -- the rail reacts |
+| `MouseWheel` -> `MouseWheel` | five notches over a list | **25 760 content pixels changed** -- the list scrolled |
+
+So motion and wheel events do arrive and do drive egui. That is worth having on the record because a renderer that draws
+but never receives input would look identical in every still frame this session has taken.
+
+**What is *not* verified, and why the first attempts do not count.** Three targets were tried and three missed:
+
+- `(172, 439)` for a library card: 0 pixels changed, and the card may genuinely have no hover state -- unknown;
+- `(1017, 366)` for the New instance button: **both apps showed page background there**, so neither was hovering a button
+  and the comparison was empty;
+- `(894, 264)`, where `at.py` did find a green control: 0 pixels changed, but by then `at.py` found **no green regions at all**
+  in the reference's capture, so there was nothing to compare against.
+
+This is the fourth time this session that guessed coordinates produced a confident-looking zero. The rule the record already
+carries -- aim at what a capture proves is there -- applies to hover exactly as it applied to the "Browse content" button
+and to the settings gear, and it was broken again here.
+
+**Hover on buttons is therefore unverified, not broken.** Saying otherwise would be the same mistake in the other
+direction: a zero from a missed target is not evidence of a missing feature.
