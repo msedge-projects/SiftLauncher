@@ -161,3 +161,23 @@ The only structure that reaches 20 is moving the network stack and the image dec
 helper the UI talks to over a pipe: that removes `reqwest`/OpenSSL/`image` and their buffers from the resident set, about
 3 MiB, and would land ~20.5-21 MiB before the small trims and ~20 with them. Recorded as the next architectural step,
 with the arithmetic above rather than an assurance.
+### Subset fonts: 854 kB of glyphs nothing draws (2026-11-07)
+
+The five Inter weights were shipped whole -- 1 532 512 bytes of TTF in `.rodata` -- for an interface whose own strings
+contain **15 non-ASCII characters**. User data (instance names, project titles, descriptions) needs more than those, so
+the subset keeps a generous superset: ASCII, Latin-1, Latin Extended-A, Greek, Cyrillic, general punctuation, currency
+signs, arrows, geometric shapes and dingbats. Subset with `fonttools` (installed from the distro, since this image has
+no pip and no apt):
+
+| | bytes |
+|---|---:|
+| five full weights | 1 532 512 |
+| five subset weights | **677 888** |
+
+**Verified not to change a pixel.** The pre-subset and post-subset captures of Home differ by **0 pixels**, worst channel
+delta 0 -- the removed glyphs are ones nothing in the interface draws.
+
+Measured: binary 12.55 MB -> **11.69 MB**, idle RSS 25.2 -> **24.5 MiB**, PSS 20.2 MiB.
+
+Running total for the memory gate this session: **113.3 -> 24.5 MiB**, a 4.6x reduction, with the UI rendering
+identically throughout. The full weights are kept in `.scratch/fonts-full/` so the change is reversible.
