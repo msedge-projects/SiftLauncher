@@ -1055,7 +1055,11 @@ pub fn draw(
     // The crop is the reference's own 1px border and the picture inside it, so it is drawn at
     // its own size and position (x 1156, y 349) with no stroke of ours over the top: the
     // stroke is for the painted fallback, which has no border of its own.
-    let plate = Rect::from_min_size(egui::pos2(art.left() - 1.0, art.top() + 1.0), egui::vec2(272.0, 120.0));
+    // **266x150: the plate's own aspect, which is the reference's.** This drew a 272x120 crop -- the art was 22 points
+// short of the reference's and read 1.97:1 against its 1.78:1 (gap-matrix row 4). The crop is now taken at the
+// reference's own rectangle (x 1156..1422, y 349..499) and drawn at its own size, so nothing is resampled and the
+// picture fills the plate it is given.
+    let plate = Rect::from_min_size(egui::pos2(art.left() - 1.0, art.top()), egui::vec2(266.0, 150.0));
     let slide_index = NEWS_SLIDES
         .iter()
         .position(|candidate| std::ptr::eq(candidate, slide))

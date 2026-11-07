@@ -1809,3 +1809,22 @@ gate that is already 2.5 MiB over, and worth naming for exactly that reason.
 
 This is the fourth element this session whose missing state was invisible to every default capture, and the first where the
 fix had to change what the renderer was *given* rather than what it was asked to draw.
+### Row 4 closed: the news plate is the reference's own rectangle (2026-11-07)
+
+The plate was a **272x120** crop drawn at its own size -- the art read 1.97:1 against the reference's 1.78:1, and its bottom
+edge fell 30 points early. The crop is now taken at the reference's own rectangle and drawn at that size:
+
+| | reference | this build, before | this build, now |
+|---|---|---|---|
+| art bottom edge | y 497 | y 469 | **y 497** |
+| art size | 266 x 150 | 272 x 120 | **266 x 150** |
+| row 430 pixels | (67, 46, 3) | -- | **(67, 46, 3)** |
+| row 480 pixels | (46, 30, 3) | -- | **(46, 30, 3)** |
+
+Two rows of the picture are now identical to the pixel and the plate ends where the reference's does. Nothing is resampled:
+the crop is the size it is drawn at, which is what the previous pass chose and the only thing it got wrong was the crop's
+extent.
+
+**The lesson is about how that crop was made.** It was taken to avoid resampling -- correctly -- from a rectangle somebody
+eyeballed as the art's edge, and the eyeball was 30 points out. The fix was to read the edge out of the capture: scan a
+column for where the picture stops being the picture, which is where `y 497` came from.
