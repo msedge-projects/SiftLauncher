@@ -1734,3 +1734,21 @@ query string -- `Categories:adventure` -- because `self.facet` holds what the AP
 read; and it was 28 points tall where `TagItem.vue`'s `px-2 py-1` around a 14-point line gives 24.
 
 The chip appears only when a filter is applied, which is why seven pages of captures never showed it missing.
+### Three rows closed in the ledger, each with its drive (2026-11-07)
+
+Rows 11, 94 and 96 were flipped from OPEN to **DONE** in `docs/GAP-MATRIX.md`, each with a dated sentence naming what was
+driven and what was measured:
+
+| row | element | the evidence now in the row |
+|---|---|---|
+| 11 | toggle — Hide already installed | knob measured from captures at **12 / 14 / 10** points, 20-point travel on the press that toggles it, and the 200 ms ease settling on those values |
+| 94 | chips — row | drawn between the sort row and the list when a filter is applied; both apps filtered to 548 on **Adventure** and the pill appears in the same place |
+| 96 | chips — selected filter pill | reads `✕ Adventure` at ~120x24 from the facet's *value* (the first build printed `Categories:adventure`), and its press clears the filter |
+
+Each row keeps its residual where it has one -- row 11 records that egui tessellates the knob into an octagon -- because a
+DONE row that hides a known difference is worse than an OPEN one that states it.
+
+**A note on what these three have in common**: all three are elements that only exist in a state the default captures never
+enter. The toggle had to be hovered and pressed to show its three knob sizes; the chip only exists once a filter is applied.
+That is the shape of most of the remaining rows in this file, and the reason the last two rounds have produced more than the
+twenty before them: the ledger cites a value, and a value can be driven.
