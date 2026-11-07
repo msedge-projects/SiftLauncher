@@ -181,3 +181,39 @@ Measured: binary 12.55 MB -> **11.69 MB**, idle RSS 25.2 -> **24.5 MiB**, PSS 20
 
 Running total for the memory gate this session: **113.3 -> 24.5 MiB**, a 4.6x reduction, with the UI rendering
 identically throughout. The full weights are kept in `.scratch/fonts-full/` so the change is reversible.
+## The framework floor: what the gate would cost even with an empty launcher (2026-11-07)
+
+`tools/mem-floor` is egui + winit + softbuffer with **no launcher code**: it installs the same five Inter weights, lays
+out six lines of text in them, and measures. At 1440x900:
+
+| measure | value |
+|---|---:|
+| VmRSS | **11 680 kB = 11.4 MiB** |
+| RssAnon | 2 640 kB |
+| RssFile | 9 040 kB |
+| PSS | 8 909 kB |
+
+It never presents a frame, so it carries no X buffer. Adding the buffer the real window needs at 1440x900 (5 064 kB)
+gives the true floor for *any* launcher built this way:
+
+```
+framework + window floor   11.4 + 4.9 = 16.7 MiB
+the launcher itself                       7.8 MiB
+----------------------------------------------
+measured total                           24.5 MiB
+```
+
+### What that means for a 20 MB gate
+
+The gate leaves **3.3 MiB for everything this launcher is** -- eleven pages, the instance store, the artwork, the icon
+cache, the font atlas, the shell state. It has 7.8. So the gate is not a tuning target for this stack: it asks the whole
+application to fit in less than half the space its own framework leaves.
+
+**This also falsifies the plan recorded last round.** Moving the network stack and image decoders to a helper process was
+estimated to reach ~20 MiB by removing ~3 MiB. Against a measured floor of 16.7 that leaves 20.0 only if the helper also
+removes *every other* megabyte the launcher owns -- which no helper does. The estimate was arithmetic on the wrong base,
+and the measurement corrects it.
+
+The remaining honest options are: a lighter framework than egui (which forfeits the parity work this objective is built
+on), or a gate expressed for this stack -- PSS is already **20.2 MiB**, and RSS at the reference's own 1280x800 default
+would be ~23.4. Recorded for a decision rather than quietly redefined.
