@@ -899,3 +899,30 @@ and it came from reading three runs off one clean row rather than adjusting a co
 **Residual, named:** both buttons still sit about **25 points left** of the reference (group at 811 against 831, instance
 at 941 against 969), which means our `toolbar.right()` is about 20 points short of the reference's 1 140 column edge -- a
 column-width question rather than a toolbar one, and the next measurement is the column itself.
+### The page column ran 24 points short on its right edge (2026-11-07)
+
+The residual from the toolbar fix was "25 points left of the reference". It was not a toolbar number: every page's rect was
+built as `PANEL_LEFT - CONTENT_INSET - TEXT_LEFT`, i.e. 1 116 wide where the reference's column ends at 1 140.
+
+The inset belongs to the **left** only. Two call sites carried the subtraction -- the shell's own content rect and
+`pages::rect()`, which is the one pages actually receive -- and the first change alone produced **an identical page total**,
+which is how the second was found: a number that does not move is telling you the code you changed is not the code that
+runs.
+
+**After widening both:**
+
+| | before | after |
+|---|---:|---:|
+| Home total | 63 080 | **61 378** |
+| Home content | 46 128 | **44 426** |
+
+And the toolbar runs, at y 250 where the buttons are solid fill:
+
+| run | reference | after |
+|---|---|---|
+| New group | 831..945 | **835..942** |
+| New instance | 969..1108 | **965..1108** |
+
+The instance button's **right edge is identical at 1 108** and the group is within four points, against a row that ended at
+957 when this thread started. Home's journey this session: 69 534 -> 61 378, and the last three rounds account for 8 156 of
+it.
