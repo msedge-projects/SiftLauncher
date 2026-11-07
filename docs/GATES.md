@@ -755,3 +755,20 @@ entirely. What is left on this page:
 
 Each is now under two thousand pixels, which is the difference between a page with four unknown surfaces and a page with
 four small ones.
+### Two more Escape handlers under test (2026-11-07)
+
+The record has listed "16 of 17 Escape handlers untested" for several rounds. Two of them now have tests, both in the same
+shape as the about modal's: a synthesised `Event::Key` inside a real `Context::run_ui` frame, asserting the state after.
+
+| handler | test | what it asserts |
+|---|---|---|
+| create dialog | `escape_closes_the_create_dialog` | `shell.create_open` is false after one frame with Escape held |
+| install picker | `escape_closes_the_install_picker` | `shell.picker` is none |
+
+**257 tests pass.** The pair also documents the shape a third one takes, which matters because keys are the one class of
+behaviour this container cannot verify any other way -- `xdotool key` reaches neither window without a window manager,
+proved earlier by byte-identical captures of a pressed key.
+
+Writing the picker's test corrected a wrong assumption on the way: `shell.picker` holds a `Picker` struct (kind plus the
+time it opened), not a bare `PickerKind`. The compiler said so in one line, which is the argument for writing the test
+rather than reasoning about the field from a `match` three hundred lines away.
