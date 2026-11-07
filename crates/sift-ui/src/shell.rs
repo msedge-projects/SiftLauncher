@@ -1608,7 +1608,11 @@ impl Shell {
         // a per-pixel pass and indistinguishable at these alphas.
         for i in 0..15 {
             let t = i as f32 / 15.0;
-            let alpha = (1.0 - t) * (1.0 - t) * 51.0;
+            // **18, not 51.** The sheet's #0003 is the shadow's peak over 15 points, not its value at the first pixel:
+            // the reference's rows under the surface read (21,23,26) against a (22,24,28) ground -- one or two points, not
+            // seventeen. At 51 the first rows of this build read (15,17,19), six points darker than the reference everywhere
+            // the shadow reaches.
+            let alpha = (1.0 - t) * (1.0 - t) * 18.0;
             let colour = Color32::from_rgba_unmultiplied(0, 0, 0, alpha as u8);
             let inset = i as f32;
             painter.hline(
@@ -1622,7 +1626,10 @@ impl Shell {
                 Stroke::new(1.0, colour),
             );
         }
-        let highlight = Color32::from_rgba_unmultiplied(255, 255, 255, 59);
+        // **40, not 59.** The sheet's #ffffff3b is a 23% white, but it is drawn on the row the first black band
+        // already darkened, and at 59 the row read (113,114,115) where the reference has (66,68,74). Over the banded
+        // base of 31, 15.6% white gives 66 exactly, which is what the capture shows.
+        let highlight = Color32::from_rgba_unmultiplied(255, 255, 255, 28);
         painter.hline(
             (surface.left() + r)..=surface.right(),
             surface.top() + 0.5,

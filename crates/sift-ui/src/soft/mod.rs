@@ -32,6 +32,10 @@ struct Texture {
 }
 
 /// Everything egui has asked this backend to hold, and the rasteriser that consumes it.
+/// The paint probe's target pixel, read once: an environment lookup per triangle is not something a
+/// rasteriser's inner loop can afford, and the probe must not cost the frames it is used to measure.
+static PROBE: std::sync::OnceLock<Option<(f32, f32)>> = std::sync::OnceLock::new();
+
 pub struct Painter {
     textures: HashMap<TextureId, Texture>,
     /// The colour the frame starts from. Cleared each frame because the shell does not paint every pixel.
@@ -165,6 +169,31 @@ impl Painter {
         top: usize,
         buffer: &mut [u32],
     ) {
+        // **A probe, env-gated, for one stubborn row.** Row 48 renders (113,114,115) where the reference has SURFACE_5
+        // (66,68,74), and four candidate constants were checked without finding the one drawing it. This prints the
+        // colour of every triangle that covers a chosen pixel, in paint order, so the caller can be named instead of
+        // guessed. SIFT_PAINT_PROBE=400,48,<width>:<top> -- width and top are the band geometry.
+        if let Some((px, py)) = *PROBE.get_or_init(|| {
+            std::env::var_os("SIFT_PAINT_PROBE").and_then(|spec| {
+                let spec = spec.to_string_lossy().into_owned();
+                let mut parts = spec.split(|ch: char| ch == ',' || ch == ':');
+                let px = parts.next()?.trim().parse().ok()?;
+                let py = parts.next()?.trim().parse().ok()?;
+                Some((px, py))
+            })
+        }) {
+            let min_x = a.pos.x.min(b.pos.x).min(c.pos.x);
+            let max_x = a.pos.x.max(b.pos.x).max(c.pos.x);
+            let min_y = a.pos.y.min(b.pos.y).min(c.pos.y);
+            let max_y = a.pos.y.max(b.pos.y).max(c.pos.y);
+            if px >= min_x && px <= max_x && py >= min_y && py <= max_y {
+                eprintln!(
+                    "probe {px:.0},{py:.0}: colour {:?} texture {} y {min_y:.1}..{max_y:.1}",
+                    a.color,
+                    texture.is_some(),
+                );
+            }
+        }
         let area = (b.pos.x - a.pos.x) * (c.pos.y - a.pos.y) - (b.pos.y - a.pos.y) * (c.pos.x - a.pos.x);
         if area.abs() < f32::EPSILON {
             return;

@@ -1007,3 +1007,30 @@ plate is 112 and that is what it measures.
 
 So the next attempt should trace which paint call writes that row rather than read constants, because four constants have now
 been checked against it and none of them is the one drawing it.
+### The inset shadow was three times too strong, and the probe that found it (2026-11-07)
+
+Row 48 had resisted four constants, so this round added a probe instead of a fifth guess:
+
+```
+SIFT_PAINT_PROBE=400,48   # prints every triangle covering a pixel, in paint order
+```
+
+It named the mechanism at once -- a one-pixel band at y 47.5..48.5 of **textured** triangles with colours
+`#3B3B3B3B` and `#00000033` -- which is the content surface's inset shadow, `box-shadow: inset 1px 1px 15px #0003,
+inset 1px 1px 1px #ffffff3b`, drawn over the row the border should own.
+
+**Two constants were wrong, and both were measured to the target rather than picked:**
+
+| | before | after | reference |
+|---|---|---|---|
+| white highlight alpha | 59 | **28** | -- |
+| black band peak | 51 | **18** | -- |
+| row 48 | (113, 114, 115) | **(68, 69, 72)** | (66, 68, 74) |
+| rows 49-52 | (15, 17, 19) | **(20, 22, 24)** | (21, 23, 26) |
+
+The sheet's `#0003` is the shadow's **peak over 15 points**, not its value at the first pixel; at 51 the first rows were
+six points darker than the reference across every row the shadow reached.
+
+**Home: 61 389 -> 59 201**, content 42 550, sidebar 14 142. The probe stays in the tree, env-gated and cached in a
+`OnceLock` -- an environment lookup per triangle is not something a rasteriser's inner loop can afford, and a probe must
+not cost the frames it exists to measure.
