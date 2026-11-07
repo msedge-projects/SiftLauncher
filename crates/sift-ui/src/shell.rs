@@ -3059,8 +3059,65 @@ impl Shell {
         // The list, via fastframe's scrolling: 120 points per notch rather than egui's 40.
         // The reference's first card frame starts at y 230 where this build's started at 256, so the list begins
         // 14 points above the sort row's bottom rather than 12 below it.
+        // **The selected filter, as a chip that can be removed.** `SearchFilterControl.vue:28-36` draws a TagItem
+        // pill with an X between the sort row and the list whenever a filter is applied, and a press on it removes that
+        // filter. This build drew nothing, so a reader who picked a category had no way to see it or undo it short of
+        // picking another -- gap-matrix rows 94 and 96, confirmed by selecting "Adventure" on both apps and finding the
+        // reference's chip where this build had empty background.
+        let mut chips_below = 0.0;
+        if let Some(facet) = self.facet.clone() {
+            // 24, not 28: `TagItem.vue:18` is `px-2 py-1` around a 14-point line, and the capture's pill is 24 tall.
+            const CHIP_H: f32 = 24.0;
+            // **The facet's own name, not its query string.** `self.facet` holds what the API is asked for --
+            // `categories:adventure` -- and the chip showed that verbatim. The reference's chip reads "Adventure": the
+            // prefix is the query's, not the reader's.
+            let shown = facet
+                .split_once(':')
+                .map(|(_, value)| value.to_owned())
+                .unwrap_or_else(|| facet.clone());
+            let label = format!(" {}", crate::panel::capitalised(&shown));
+            let text = ui.painter().layout_no_wrap(
+                label.clone(),
+                crate::fonts::body(13.0),
+                self.theme.BASE,
+            );
+            let pill = Rect::from_min_size(
+                egui::pos2(content.left(), row.bottom() + 10.0),
+                egui::vec2(26.0 + text.size().x + 10.0, CHIP_H),
+            );
+            let painter = ui.painter();
+            painter.rect_filled(pill, 14.0, self.theme.SURFACE_3);
+            painter.rect_stroke(
+                pill,
+                14.0,
+                Stroke::new(1.0, self.theme.SURFACE_5),
+                egui::StrokeKind::Inside,
+            );
+            crate::icons::draw(
+                &painter,
+                Glyph::X,
+                Rect::from_center_size(
+                    egui::pos2(pill.left() + 13.0, pill.center().y),
+                    Vec2::splat(10.0),
+                ),
+                self.theme.SECONDARY,
+            );
+            painter.galley(
+                egui::pos2(pill.left() + 24.0, pill.center().y - text.size().y / 2.0),
+                text,
+                self.theme.BASE,
+            );
+            if ui
+                .interact(pill, egui::Id::new("search-chip-clear"), Sense::click())
+                .clicked()
+            {
+                self.facet = None;
+                self.results.forget();
+            }
+            chips_below = CHIP_H + 8.0;
+        }
         let list = Rect::from_min_max(
-            egui::pos2(content.left(), row.bottom() + 6.0),
+            egui::pos2(content.left(), row.bottom() + 6.0 + chips_below),
             content.max,
         );
         let mut child = ui.new_child(egui::UiBuilder::new().max_rect(list));

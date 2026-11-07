@@ -100,7 +100,7 @@ const CATEGORY_ROW: f32 = 46.0;
 const CATEGORY_ROWS: usize = 8;
 
 /// The API's category ids are lowercase; a reader sees them capitalised.
-fn capitalised(name: &str) -> String {
+pub fn capitalised(name: &str) -> String {
     let spaced = name.replace('-', " ");
     let mut letters = spaced.chars();
     match letters.next() {

@@ -1714,3 +1714,23 @@ to end in one pass: geometry, border, three knob states, travel, colour and the 
 **One residual stays open and is a renderer limitation, not a value**: our knob is faceted -- an octagon at radius 6 -- where
 the reference draws a smooth disc, because egui tessellates small circles into few segments. It is the same class as the font
 rasteriser: the shape is right and the engine drawing it is different.
+### The selected filter is now a chip you can remove (2026-11-07)
+
+Found by driving: clicking **Adventure** in the Category list on both apps filtered both lists to the same 548 projects,
+and the two pages then differed in one visible way -- the reference showed a pill under the sort row reading
+**"✕ Adventure"**, and this build showed background.
+
+That is gap-matrix rows 94 and 96 (`SearchFilterControl.vue:28-36`, `TagItem.vue:18-19`), and the element is now drawn:
+
+| | reference | this build |
+|---|---|---|
+| chip | `✕ Adventure` | **`✕ Adventure`** |
+| size | ~120 x 24 | **~120 x 24** |
+| position | under the sort row, above the list | the same, and the list shifts down by its height |
+| press | removes that filter | **clears `self.facet` and forgets the search** |
+
+**Two defects the first build of it had, both caught by the crop and neither by a number:** it labelled the chip with the
+query string -- `Categories:adventure` -- because `self.facet` holds what the API is asked for, not what a reader should
+read; and it was 28 points tall where `TagItem.vue`'s `px-2 py-1` around a 14-point line gives 24.
+
+The chip appears only when a filter is applied, which is why seven pages of captures never showed it missing.
