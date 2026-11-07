@@ -1448,7 +1448,9 @@ fn list(
         painter.rect_filled(card, 12, theme.RAISED_BG);
         // The reference's card: the pack's icon fills the top of the plate at the card's own radius, with the name
         // and the loader+version under it. This drew a 64-point tile with the rows' text beside it.
-        let tile = Rect::from_min_size(card.min + egui::vec2(8.0, 8.0), egui::vec2(152.0, 152.0));
+        // **132 at (13,15), measured off the reference's own card.** The tile was 152 at (8,8): the icon was twenty points
+        // too large and eight off in both axes, which is why the default avatar above looked right but sat wide.
+        let tile = Rect::from_min_size(card.min + egui::vec2(13.0, 15.0), egui::vec2(132.0, 132.0));
         painter.rect_filled(tile, 12, theme.BUTTON_BG);
         // **The instance's own icon.** This drew an empty plate and threw the cache away (`let _ = icons_cache`);
         // Modrinth's library shows each instance's icon, so a row without one is a library that cannot be told
@@ -1472,6 +1474,10 @@ fn list(
             // No icon: the reference's own default avatar, the twelve-segment cube from `Avatar.vue:46`, drawn
             // scaled into this tile.
             None => {
+                // **The reference's default avatar, not a wireframe cube.** Modrinth draws its campfire on the brand plate
+                // for an instance with no icon of its own; the grey cube this build invented for the same case was 17 424
+                // pixels of a bright, recognisable element being wrong.
+                if !crate::serverart::paint_instance_default(&painter, tile) {
                 let scale = tile.width() / 104.0;
                 let origin = tile.min;
                 // The cube is a path, not six independent chords: consecutive points joined trace all eleven
@@ -1487,6 +1493,7 @@ fn list(
                         ],
                         egui::Stroke::new(5.0 * scale, egui::Color32::from_rgb(0x9a, 0x9a, 0x9a)),
                     );
+                }
                 }
             }
         }

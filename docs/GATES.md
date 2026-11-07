@@ -1047,3 +1047,28 @@ here rather than refusing the branch. **Work is committed locally and not pushed
 and that gap should be closed from a session that has credentials, before any of it is treated as delivered. The rule this
 departs from is the first one in `AGENTS.md`, and the reason it exists is the one that applies here: the runner is the only
 compiler that matters, and nothing in this session has been through it.
+### The card icon was the default avatar, twenty points too large (2026-11-07)
+
+The card row carried 22 050 pixels over threshold, about one 132-point icon. Two things were wrong and one
+assumption was wrong:
+
+**The assumption: that both apps carried different data.** Both instance folders hold an `icon.png`, and both files
+are 156 bytes of a **single colour** (70,140,90) -- a flat placeholder. The reference shows a campfire anyway, because
+Modrinth's default avatar for an instance without an icon is the campfire on the brand plate. This build drew a grey
+wireframe cube in that case, which was 17 424 pixels of the most recognisable element on the page being wrong.
+
+**The fix:** `assets/brand/instance-default.png`, cropped from the reference at the card's own 132 points and
+attributed in `THIRD_PARTY_NOTICES.md`, drawn when an instance has no icon. The cube remains as the fallback when even
+that texture fails to load.
+
+**The second thing:** the tile was 152 points at (8,8) where the reference's icon is **132 at (13,15)** -- twenty too
+large and eight off in both axes, which is why the new avatar looked right and sat wide.
+
+| | before | after |
+|---|---:|---:|
+| Home total | 59 201 | **44 595** |
+| Home content | 42 550 | **27 944** |
+
+**Home's journey this session: 69 534 -> 44 595**, and 14 606 of that was this round. The measurement that started it
+was a tone histogram showing 22 050 pixels over threshold in one band -- a shape, not a colour, which is what pointed at
+an image.

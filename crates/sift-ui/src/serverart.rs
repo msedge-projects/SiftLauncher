@@ -70,6 +70,28 @@ fn lazy(
     held.as_ref()
 }
 
+/// Modrinth's **default instance avatar**: the campfire mark on the brand plate, which is what its library draws for an
+/// instance with no icon of its own. Cropped from the reference's render at the card's own 132 points, with the plate's
+/// rounded corners included so the art and the card behind it agree.
+///
+/// Taken from the reference at 1440x900 (`.scratch/cap/rb0.png`, x 101..233, y 365..497). Attribution sits with the other
+/// plates in `THIRD_PARTY_NOTICES.md`.
+pub fn paint_instance_default(painter: &egui::Painter, rect: Rect) -> bool {
+    let Some(texture) = lazy(painter, &INSTANCE_DEFAULT, INSTANCE_DEFAULT_PNG, "instance-default") else {
+        return false;
+    };
+    painter.image(
+        texture.id(),
+        rect,
+        Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+        egui::Color32::WHITE,
+    );
+    true
+}
+
+static INSTANCE_DEFAULT: OnceLock<Option<TextureHandle>> = OnceLock::new();
+const INSTANCE_DEFAULT_PNG: &[u8] = include_bytes!("../../../assets/brand/instance-default.png");
+
 /// Paint the instance page's "No content installed" illustration; false when the texture is missing.
 pub fn paint_content_empty(painter: &egui::Painter, rect: Rect) -> bool {
     let Some(texture) = lazy(painter, &CONTENT_EMPTY, CONTENT_PNG, "content-empty") else {

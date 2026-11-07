@@ -229,3 +229,14 @@ rule (attribution is a shipping condition) made the file the wrong one.
 It is an instruction set for agents rather than code that links into the launcher, so it does not
 travel in the binary or on the About page; it lives in this tree so every agent that works here
 reads the same rules about the smallest complete change.
+
+## Modrinth default instance icon — cropped from the reference render
+
+`assets/brand/instance-default.png` is a 132x132 crop of the Modrinth App 0.22.0 render at 1440x900
+(`.scratch/cap/rb0.png`, x 101..233, y 365..497): the campfire mark on the brand plate, which the
+reference draws for an instance with no icon of its own.
+
+It is a screenshot of the reference rather than a redistributed asset, taken the same way as
+`hero-plate.png`, `news-art.png`, `shots-empty.png` and `content-empty.png` in the same folder, and
+it carries the same condition as those: it is here so the port can be compared and used beside the
+original, and it identifies Modrinth as the source. It is not licensed for redistribution on its own.
