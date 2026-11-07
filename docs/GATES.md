@@ -1381,3 +1381,27 @@ next slice rather than a constant.
 list selects `BattleArmy TACZ` in the reference and `Zombie Invade 100 Days` here, because the rows are pitched 151 against
 the reference's 154 and have drifted by four rows. So the project page cannot be compared at all until the list does -- and
 the drift, not the page, is what that symptom is telling us.
+### A system-font fallback, so CJK draws where a machine can draw it (2026-11-07)
+
+Inter carries no CJK, so a modpack with a Korean description drew "?????" here where the reference drew the same text as
+tofu boxes -- and the substitutes are different widths, so every line of that description rewrapped. A CJK face in the
+binary would be several megabytes against a memory gate already 4.2 MiB over, so the face is taken **from the system at
+startup** instead: nothing is added to the executable, and a machine without one behaves exactly as before.
+
+- `FONT_DIRS`: `/usr/share/fonts`, `/usr/local/share/fonts`, `/System/Library/Fonts`, `C:\Windows\Fonts`,
+  scanned two levels deep so both `noto-cjk/NotoSansCJK-Regular.ttf` and `opentype/noto/NotoSansCJK-Regular.ttf` are found;
+- `is_cjk_font`: sixteen family names matched case-insensitively, and **`.ttc` excluded** -- a collection cannot be read by
+  the rasteriser and would panic at layout time, so the exclusion matters more than the inclusion;
+- the face is appended to both families, after Inter, so it is a *fallback* and never sets body text.
+
+**Verified here**: the matcher's own test (eight names, including the two that must be refused), and that the change is
+inert where no CJK font exists -- this container has none, and Home still measures **33 808**, pixel-identical to before,
+with RSS unchanged at 24 588 kB.
+
+**Not verified**: the rendering itself. Proving a Korean description draws correctly needs a machine with a CJK face, and
+this container has none -- the same limitation the reference is under, which is why it draws boxes. The slice is written so
+that the next session can verify it in one command rather than build it.
+
+**One residual difference the slice does not close**: with *no* font available, the reference substitutes its `.notdef`
+glyph (a box, one em wide) and this build substitutes `?` (a third of an em), so the two reflow differently. That is the
+rasteriser's choice, not a constant in this tree, and it disappears the moment a font exists.
