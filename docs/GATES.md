@@ -879,3 +879,23 @@ next step is to measure the panel boundary at a row with no cards in it, not to 
 Two of the three are safe to fix on their own terms once that is settled: the Play button should sit at the strip's right
 edge and the strip is currently `(width - 240).min(800)`, a formula rather than a measurement; and the New instance button
 should be 152 points wide to hold its label at the sheet's padding, which it is not.
+### The library toolbar is laid out from the right edge now (2026-11-07)
+
+The search field was a hard **600 points** with the two buttons following it, so the row stopped wherever that sum landed.
+Measured on a row above the labels, where the buttons are solid fill:
+
+| run at y 250 | reference | this build before | this build after |
+|---|---|---|---|
+| search field ends | 806 | 811 | 806 |
+| New group | 831..945 | (row ended at 957) | 811..918 |
+| New instance | 969..1108 | -- | 941..1084 |
+
+The row is now laid out from `toolbar.right()` with the reference's own widths: 152 for the brand button, 120 for the
+quiet one, 12 between them and 27 from the column edge, with the search taking whatever is left.
+
+**Home: content 52 572 -> 46 128 pixels, total -> 63 080.** That is the largest single parity gain since the title bar,
+and it came from reading three runs off one clean row rather than adjusting a constant by eye.
+
+**Residual, named:** both buttons still sit about **25 points left** of the reference (group at 811 against 831, instance
+at 941 against 969), which means our `toolbar.right()` is about 20 points short of the reference's 1 140 column edge -- a
+column-width question rather than a toolbar one, and the next measurement is the column itself.

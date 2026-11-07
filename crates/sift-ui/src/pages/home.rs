@@ -1183,7 +1183,22 @@ fn list(
         egui::pos2(rect.left(), rect.top() + 200.0),
         egui::vec2(rect.width(), 36.0),
     );
-    let field = Rect::from_min_size(toolbar.min, egui::vec2(600.0, 36.0));
+    // **Laid out from the right edge, as the sheet's flex row is.** The search was a hard 600 points with the buttons
+    // following it, so the whole row stopped wherever that add up landed -- measured at 957 against the reference's 1 108,
+    // 151 points short, with the search 136 early and the brand button 22 narrow. The reference's own numbers, taken from a
+    // row above the labels: search ends 806, New group 831..945, New instance 969..1108.
+    const INSTANCE_W: f32 = 152.0;
+    const GROUP_W: f32 = 120.0;
+    const RIGHT_PAD: f32 = 27.0;
+    const BETWEEN: f32 = 12.0;
+    let instance_right = toolbar.right() - RIGHT_PAD;
+    let instance_left = instance_right - INSTANCE_W;
+    let group_right = instance_left - BETWEEN;
+    let group_left = group_right - GROUP_W;
+    let field = Rect::from_min_max(
+        toolbar.min,
+        egui::pos2(group_left - BETWEEN, toolbar.top() + 36.0),
+    );
     painter.rect_filled(field, 10, theme.RAISED_BG);
     painter.rect_stroke(field, 10, Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
     crate::icons::draw(
@@ -1206,8 +1221,12 @@ fn list(
     );
     // The reference's two buttons beside the field: "New group" and the brand "New instance".
     for (index, (label, brand)) in [("New group", false), ("New instance", true)].into_iter().enumerate() {
-        let width = if brand { 132.0 } else { 118.0 };
-        let left = field.right() + 12.0 + if index == 1 { 130.0 } else { 0.0 };
+        let (width, left) = if brand {
+            (INSTANCE_W, instance_left)
+        } else {
+            (GROUP_W, group_left)
+        };
+        let _ = index;
         let button = Rect::from_min_size(
             egui::pos2(left, toolbar.top()),
             egui::vec2(width, 36.0),
