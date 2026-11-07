@@ -1624,3 +1624,22 @@ measuring have been measured.
 
 The record carries both numbers until that is decided. Nothing was changed this round: the optimisation level is back at 3
 and the tree is as it was.
+### Inventing skin detail moves away from the reference, not toward it (2026-11-07)
+
+The open question on Skins was whether the eight defaults could be drawn better without shipping anyone else's art. They are
+ASCII grids -- `head`, `body`, `arm`, `leg` rows with a per-skin palette -- so the experiment was cheap: add a hairline,
+brows, a mouth, a collar, a placket, a hem, a cuff and a trouser seam, using colours every skin already had.
+
+| | Skins total |
+|---|---:|
+| eight flat defaults | **135 728** |
+| eight defaults with invented detail | 135 876 |
+
+**148 pixels worse.** The face and the shirt now differ from a flat rectangle in a way that disagrees with the reference's
+face and shirt, and a disagreement adds pixels where a plain rectangle at least sometimes landed on the right colour.
+Reverted.
+
+That closes the last route that needed no decision. The page is blocked on **the eight real default skins**, which are
+Mojang's art: without them, every mark this tree draws is a guess that scores worse than drawing nothing. The measurement
+is now in the record, so the next pass does not spend a round rediscovering it: **135 728 is a floor for generated art, and
+the only way down is the asset**.
