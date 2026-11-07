@@ -625,3 +625,33 @@ its page and its state all survive -- verified by the window still answering to 
 
 That is how the 24-27 ms figure was obtained, and how any future one should be: **a frame time measured beside a spinning
 browser is not a frame time.**
+### Settings, measured on the shipped backend (2026-11-07)
+
+Both apps on Settings, the modal open, the carousel pinned. The page reads **34 893** (content 31 205, title bar 1 839,
+rail 353, sidebar 1 496 -- the modal hides most of the shell, which is why every band is small).
+
+Tone mean |d| over the content column is **5.58 / 6.16 / 5.94**, and the sampled frame matches exactly:
+
+| point | reference | this build |
+|---|---|---|
+| backdrop, left | (20, 30, 31) | (20, 30, 31) |
+| backdrop, top | (24, 34, 35) | (25, 35, 35) |
+| modal plate | (39, 41, 46) | (39, 41, 46) |
+| modal body | (39, 41, 46) | (39, 41, 46) |
+| nav plate | (21, 30, 32) | (22, 31, 32) |
+
+So the drift is in **components**, not the frame. `tone.py` names them by weight:
+
+| pixels | reference | this build | suspected element |
+|---:|---|---|---|
+| 7 074 | (35, 95, 64) | (36, 85, 61) | the selected nav tab's green, ten points darker here |
+| 6 773 | (39, 41, 46) | (45, 47, 50) | a surface six lighter than the plate it sits on |
+| 6 747 | (16, 16, 19) | (25, 25, 25) | a dark card, nine lighter |
+| 1 635 | (39, 41, 46) | (66, 68, 74) | a surface that should be the plate at all |
+
+That is the work list for the next visit to this page, written with pixel counts so it can be checked off rather than
+re-derived.
+
+**One difference is deliberate and stays**: the reference's About footer reads "Modrinth App 0.22.0" where this build
+reads "Sift Launcher 0.1.62". Everything else on the page is cloned; the product name is not, because this is not
+Modrinth -- and pretending otherwise would put a false claim in the product itself, not just in a capture.
