@@ -4729,15 +4729,19 @@ fn draw_body(
                         egui::Color32::from_rgb(mix(plate.r()), mix(plate.g()), mix(plate.b()))
                     };
                     let light = luma > 0.5;
-                    let window_fill = if light {
-                        towards(255.0, 0.55)
-                    } else {
-                        towards(255.0, 0.10)
+                    // **Measured per card, not mixed.** The comment above already named all three: #27292e inside a
+                    // #16181c dark card, #f8f8f8 inside #ebebeb, and **#101013 inside black** -- but the code derived
+                    // them by mixing toward white, and 10% of white over black is (25,25,25), nine points lighter than the
+                    // OLED card's real plate. 6 747 pixels of the settings page were that difference.
+                    let window_fill = match choice {
+                        ThemeChoice::Oled => egui::Color32::from_rgb(0x10, 0x10, 0x13),
+                        ThemeChoice::Light | ThemeChoice::System => egui::Color32::from_rgb(0xf8, 0xf8, 0xf8),
+                        ThemeChoice::Dark => egui::Color32::from_rgb(0x27, 0x29, 0x2e),
                     };
                     let bar_ink = if light {
-                        towards(0.0, 0.85)
+                        egui::Color32::from_rgb(0x2c, 0x2e, 0x31)
                     } else {
-                        towards(255.0, 0.62)
+                        egui::Color32::from_rgb(0xb0, 0xba, 0xc5)
                     };
                     // The capture's mock is 149x66 with a 32-point avatar plate at 573,332 and
                     // two bars to its right -- 73x8 in #b0bac5 and 43x8 in #96a2b0, which are

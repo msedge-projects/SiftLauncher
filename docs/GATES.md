@@ -720,3 +720,38 @@ moved says nothing about the component that was fixed.
 
 Four surfaces, each within nine points or so of the reference and each invisible to a 40-point threshold. They want the
 same treatment the checklist rows got: sample the element, name the token, change one constant.
+### The theme preview cards were mixed toward white instead of measured (2026-11-07)
+
+Two of the four Settings drifts were the same mistake in one function. The mock window inside each theme card was
+computed as a mix toward white -- 10% over a dark plate -- and a comment directly above it already named the values the
+reference actually uses:
+
+```
+#27292e inside a #16181c dark card,
+#f8f8f8 inside a #ebebeb light one,
+#101013 inside black
+```
+
+10% of white over black is (25,25,25), nine points lighter than the OLED card's real **#101013**. The three plates and the
+two bar inks are now constants per theme rather than mixes, exactly as that comment said. Verified by sampling the cards:
+the dark inner plate reads (39,41,46) on both sides, the OLED one black on both.
+
+**Tone, before and after the two colour fixes this round and last:**
+
+| | within 4 of the reference |
+|---|---:|
+| before the selected-row fix | 617 132 of 706 880 |
+| after both | **631 487** |
+
+and the two largest drift pairs -- 7 074 pixels of selected-row green and 6 747 of OLED plate -- are gone from the report
+entirely. What is left on this page:
+
+| pixels | reference | this build |
+|---:|---|---|
+| 1 635 | (39, 41, 46) | (66, 68, 74) |
+| 1 592 | (52, 54, 60) | (39, 41, 46) |
+| 1 116 | (52, 54, 60) | (29, 31, 35) |
+| 935 | (26, 36, 37) | (21, 30, 29) |
+
+Each is now under two thousand pixels, which is the difference between a page with four unknown surfaces and a page with
+four small ones.
