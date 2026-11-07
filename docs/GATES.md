@@ -1072,3 +1072,28 @@ large and eight off in both axes, which is why the new avatar looked right and s
 **Home's journey this session: 69 534 -> 44 595**, and 14 606 of that was this round. The measurement that started it
 was a tone histogram showing 22 050 pixels over threshold in one band -- a shape, not a colour, which is what pointed at
 an image.
+### The Jump-in strip is the column, and the card row was six points low (2026-11-07)
+
+Three constants from one band of the page, each measured against the reference:
+
+| | was | now | reference |
+|---|---|---|---|
+| Jump-in strip width | `(width - 240).min(800)` = 788 | **`width`** = 1 028 | bottom border reaches x 1 115 |
+| Play button x | 785 | **1 025** | 1 023 |
+| card row top (`ROW_TOP`) | 287 | **281** | card at y 329, ours was 335 |
+| tile offset in card | (13, 15) | **(13, 36)** | icon at y 365 inside a card at 329 |
+
+The strip's width was a formula -- `rect.width() - 240`, capped at 800 -- so the Play button at its right end sat 238
+points left of where the reference draws it. The strip is the column, full width, and with that fixed the Play button
+landed within two points.
+
+The card row then read nineteen points high, which was two separate errors compounding: the row itself was six points low
+and the tile was fifteen points below its card where the reference puts it thirty-six. Neither alone would have explained
+the number, and fixing the tile alone would have left the cards visibly off.
+
+| | before this round | after |
+|---|---:|---:|
+| Home total | 44 595 | **34 382** |
+| Home content | 27 944 | **17 731** |
+
+**Home this session: 69 534 -> 34 382 -- half the pixels it started with.** Every remaining band is under 5 000.

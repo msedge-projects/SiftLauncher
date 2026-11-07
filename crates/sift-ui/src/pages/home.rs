@@ -100,7 +100,9 @@ const MENU_DISTANCE: f32 = 8.0;
 /// Where the first card's row starts inside the page: the reference's own capture puts the first card's top at
 /// **y 335** in the window (page top 48), so 287. Driving its library (`docs/captures/ref-lib-real.png`) showed this
 /// build drawing the heading, the toolbar and the cards about 28 points higher than the reference does.
-const ROW_TOP: f32 = 287.0;
+// **Six points up.** The reference's first card starts at y 329 and this build's at 335; the icon below it was 13 points
+// high for a second reason (its own offset), and the two together made the whole card row look vertically shifted.
+const ROW_TOP: f32 = 281.0;
 
 /// The step between two rows: a 96-point card and a 12-point gap.
 const ROW_HEIGHT: f32 = 96.0;
@@ -1038,9 +1040,12 @@ fn list(
             fonts::semibold(20.0),
             theme.CONTRAST,
         );
+        // **The full column, not a formula.** This was `(rect.width() - 240).min(800)`, which made the strip 788 wide
+        // while the reference's dashed bottom border runs to x 1 115 -- the strip is the column, and the Play button at
+        // its right end sat 238 points left of the reference's because of it.
         let strip = Rect::from_min_size(
             egui::pos2(rect.left(), rect.top() + 58.0),
-            egui::vec2((rect.width() - 240.0).min(800.0), 72.0),
+            egui::vec2(rect.width(), 72.0),
         );
         // A **dashed** border, as the reference draws it, plus the heading's collapse chevron: a solid rule read as
         // another card instead of the temporary space it is.
@@ -1450,7 +1455,9 @@ fn list(
         // and the loader+version under it. This drew a 64-point tile with the rows' text beside it.
         // **132 at (13,15), measured off the reference's own card.** The tile was 152 at (8,8): the icon was twenty points
         // too large and eight off in both axes, which is why the default avatar above looked right but sat wide.
-        let tile = Rect::from_min_size(card.min + egui::vec2(13.0, 15.0), egui::vec2(132.0, 132.0));
+        // **36 down the card, not 15.** With the reference's icon spanning y 365..497 inside a card that starts at 329, the
+        // tile sits 36 points below the card's top edge and 13 in from its left.
+        let tile = Rect::from_min_size(card.min + egui::vec2(13.0, 36.0), egui::vec2(132.0, 132.0));
         painter.rect_filled(tile, 12, theme.BUTTON_BG);
         // **The instance's own icon.** This drew an empty plate and threw the cache away (`let _ = icons_cache`);
         // Modrinth's library shows each instance's icon, so a row without one is a library that cannot be told
