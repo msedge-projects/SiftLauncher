@@ -683,3 +683,40 @@ this build x 272..459   y 246..407
 Six points lower by the second row and one to the left: the rail's **row pitch** is slightly too large, the same class of
 error the Home page had at 20 points. That is now the measured reason Settings reads 37 451 rather than the 34 893 before
 the colour change -- a number that got *worse* while a colour got *right*, exactly as the checklist rows did.
+### Two corrections from re-measuring the settings rail (2026-11-07)
+
+**The selected-tab colour fix is confirmed.** The 7 074-pixel drift `ref (35,95,64) -> ours (36,85,61)` is gone from the
+tone report entirely; both sides now read (35,95,64)/(35,94,64).
+
+**Correction 1: there is no row-pitch error.** Last round claimed the rail was "six points lower by the second row" from
+a bounding box of tint-coloured pixels. Measured properly with `ink.py`, each of the five nav labels begins on the same
+row in both builds:
+
+| label | reference | this build | delta |
+|---|---:|---:|---:|
+| Appearance | 258 | 257 | -1 |
+| Features | 301 | 301 | 0 |
+| Behavior | 347 | 347 | 0 |
+| Language | 391 | 391 | 0 |
+| (fifth) | 438 | 438 | 0 |
+
+The box was measuring the tint *of labels and hover states*, not the geometry of rows. That is the second time this
+session a bounding box has been read as a layout fact -- the first was the card art at "22 points high" -- and both times
+the ink measurement, which asks where a thing *starts*, gave the honest answer.
+
+**Correction 2: the page total was never comparable.** Settings read 34 893 before the colour change and 37 451 after, and
+the difference is not the colour: diffing the two builds' own renders shows **78 037 pixels** changed across every band of
+the window, because the page *behind* the modal differed between the two captures. A total taken against a background that
+moved says nothing about the component that was fixed.
+
+**What the Settings page still differs in, by weight** (the next visit's list):
+
+| pixels | reference | this build |
+|---:|---|---|
+| 6 773 | (39, 41, 46) | (45, 47, 50) |
+| 6 747 | (16, 16, 19) | (25, 25, 25) |
+| 1 635 | (39, 41, 46) | (66, 68, 74) |
+| 1 340 | (52, 54, 60) | (39, 41, 46) |
+
+Four surfaces, each within nine points or so of the reference and each invisible to a 40-point threshold. They want the
+same treatment the checklist rows got: sample the element, name the token, change one constant.
