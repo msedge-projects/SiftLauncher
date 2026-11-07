@@ -26,6 +26,8 @@ const NEWS_JOINING_PNG: &[u8] = include_bytes!("../../../assets/brand/news-joini
 
 static NEWS: OnceLock<Option<TextureHandle>> = OnceLock::new();
 static NEWS_JOINING: OnceLock<Option<TextureHandle>> = OnceLock::new();
+static NEWS_JOINING_LIT: OnceLock<Option<TextureHandle>> = OnceLock::new();
+static NEWS_LIT: OnceLock<Option<TextureHandle>> = OnceLock::new();
 
 /// The empty state's plate: the reference's own mark at 100x100, cropped from its render.
 const HERO_PNG: &[u8] = include_bytes!("../../../assets/brand/hero-plate.png");
@@ -149,13 +151,18 @@ pub fn paint_hero(painter: &egui::Painter, rect: Rect) -> bool {
 }
 
 /// Paint the news card's plate; false when the texture is missing, so the caller keeps its painted one.
-pub fn paint_news(painter: &egui::Painter, rect: Rect, slide: usize) -> bool {
+pub fn paint_news(painter: &egui::Painter, rect: Rect, slide: usize, lit: bool) -> bool {
     // Each slide carries its own picture, so the plate follows the article rather than standing in for both.
     // The article's own plate, uploaded the first time that article is drawn.
-    let plate = if slide == 1 {
-        lazy(painter, &NEWS_JOINING, NEWS_JOINING_PNG, "news-joining")
-    } else {
-        lazy(painter, &NEWS, NEWS_PNG, "news-art")
+    // **Hovered, the plate is 25% brighter.** `NewsArticleCard.vue:23` puts `hover:brightness-125` on the whole card,
+    // and the reference's art measures 79.91 -> 99.61 in red under the pointer: a ratio of 1.246. The brightened plate is
+    // uploaded once, on the first hover, and kept.
+    let factor = 1.25;
+    let plate = match (slide == 1, lit) {
+        (true, false) => lazy(painter, &NEWS_JOINING, NEWS_JOINING_PNG, "news-joining"),
+        (true, true) => NEWS_JOINING_LIT.get_or_init(|| upload_brightened(painter.ctx(), NEWS_JOINING_PNG, "news-joining-lit", factor)).as_ref(),
+        (false, false) => lazy(painter, &NEWS, NEWS_PNG, "news-art"),
+        (false, true) => NEWS_LIT.get_or_init(|| upload_brightened(painter.ctx(), NEWS_PNG, "news-art-lit", factor)).as_ref(),
     };
     let Some(texture) = plate else {
         return false;
@@ -167,6 +174,30 @@ pub fn paint_news(painter: &egui::Painter, rect: Rect, slide: usize) -> bool {
         Color32::WHITE,
     );
     true
+}
+
+/// Upload a plate brightened by `factor`, clamped at 255 -- which is what CSS `brightness()` does, including the
+/// clipping. A tint cannot do this: `painter.image` multiplies, and no tint is brighter than white.
+fn upload_brightened(ctx: &egui::Context, bytes: &[u8], name: &str, factor: f32) -> Option<TextureHandle> {
+    let image = image::load_from_memory(bytes).ok()?.to_rgba8();
+    let size = [image.width() as usize, image.height() as usize];
+    let scale = |channel: u8| (channel as f32 * factor).round().clamp(0.0, 255.0) as u8;
+    let pixels = image
+        .pixels()
+        .map(|pixel| {
+            Color32::from_rgba_unmultiplied(
+                scale(pixel.0[0]),
+                scale(pixel.0[1]),
+                scale(pixel.0[2]),
+                pixel.0[3],
+            )
+        })
+        .collect();
+    Some(ctx.load_texture(
+        name,
+        egui::ColorImage::new(size, pixels),
+        egui::TextureOptions::LINEAR,
+    ))
 }
 
 fn upload(ctx: &egui::Context, bytes: &[u8], name: &str) -> Option<TextureHandle> {

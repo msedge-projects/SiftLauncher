@@ -1788,3 +1788,24 @@ the 150 ms the transition lasts. What is measured is the two endpoints; what is 
 sidebar toggle uses, whose intermediate values *were* observable at 200 ms and settled correctly.
 
 Saying which of the three states was verified and which was inferred is the difference between this record and a claim.
+### The news card answers the pointer, to a quarter of a point (2026-11-07)
+
+`NewsArticleCard.vue:23` puts `hover:brightness-125` on the whole card. Measured on the art (the card's dominant area), with
+the pointer parked away and then on it, in both apps:
+
+| | away | hovered | ratio |
+|---|---|---|---:|
+| reference | (79.91, 35.25, 36.12) | (99.61, 42.94, 44.49) | 1.246 |
+| this build | (79.91, 35.25, 36.12) | **(99.85, 43.18, 44.73)** | 1.249 |
+
+The rest state was already identical to four figures; what was missing was the brightening, and it is now within **0.24 per
+channel** of the reference's.
+
+**A tint cannot do this, which is why the first instinct was wrong.** `painter.image` multiplies the texel by the tint, and
+no tint is brighter than white -- so a `hover()` on the tint would have produced no change at all. The plate is instead
+uploaded a second time with every channel multiplied by 1.25 and clamped at 255, which is what CSS `brightness()` does,
+clipping included. It is decoded once, on the first hover, and costs **160 kB** while held: a real cost against a memory
+gate that is already 2.5 MiB over, and worth naming for exactly that reason.
+
+This is the fourth element this session whose missing state was invisible to every default capture, and the first where the
+fix had to change what the renderer was *given* rather than what it was asked to draw.

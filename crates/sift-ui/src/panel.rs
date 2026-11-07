@@ -1060,7 +1060,8 @@ pub fn draw(
         .iter()
         .position(|candidate| std::ptr::eq(candidate, slide))
         .unwrap_or(0);
-    if !crate::serverart::paint_news(painter, plate, slide_index) {
+    let news_hover = ui.ctx().input(|input| input.pointer.hover_pos()).is_some_and(|at| plate.contains(at));
+    if !crate::serverart::paint_news(painter, plate, slide_index, news_hover) {
         news_art(painter, art, theme);
         painter.rect_stroke(
             art,
