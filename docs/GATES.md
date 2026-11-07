@@ -1146,3 +1146,21 @@ it changes nothing because it is in the wrong place.
 So the work is not the line, it is the **pitch**: 153-point rows, no gap, divider included, which moves the card's own
 internal layout 12 points and is a change to make deliberately rather than at the end of a round. Everything above was
 reverted; `shell.rs` is as it was.
+### The Discover pitch: measured worse, reverted (2026-11-07)
+
+Following last round's own conclusion -- that the defect was the pitch, not the line -- the row was grown to the
+reference's 153 with the gap set to zero and the divider drawn, giving the measured 154 pitch:
+
+| variant | Discover total |
+|---|---:|
+| 141-point rows, 10-point gap, no divider | **81 124** |
+| 153-point rows, no gap, divider (pitch 154) | 100 075 |
+
+**Nineteen thousand pixels worse**, which is the opposite of what the pitch arithmetic predicted, and it says the rows
+carry content anchored to their **bottom** -- the Install button sits at the row's right, vertically centred -- so growing
+the row by twelve moves that content six, and the error accumulates down the list. The reference's rows are 153 tall and
+its content sits where it sits; ours cannot be stretched to match without moving everything inside them at the same time.
+
+Reverted. This page needs its row internals re-derived as a whole from the reference -- offsets, anchoring, and the
+divider together -- rather than one constant at a time, and that is a larger slice than the end of a round allows. Four
+attempts at this page now, all measured, none kept; the page still reads 81 124 and the record says why.
