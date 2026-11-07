@@ -1643,3 +1643,25 @@ That closes the last route that needed no decision. The page is blocked on **the
 Mojang's art: without them, every mark this tree draws is a guess that scores worse than drawing nothing. The measurement
 is now in the record, so the next pass does not spend a round rediscovering it: **135 728 is a floor for generated art, and
 the only way down is the asset**.
+### Every page, one table, measured on the shipped build (2026-11-07)
+
+Seven pages, all at 1440x900 with both apps in the same state -- pointer parked, carousel pinned, the same instance or the
+same absence of one. `tools/parity/compare.py`, threshold 40.
+
+| page | total | content | darkest band | note |
+|---|---:|---:|---|---|
+| **Skins** | **135 728** | 119 179 | 119 030 | **blocked on the eight default skins** (Mojang's art); generated art measured 148 px *worse* |
+| **Discover** | **80 932** | 63 265 | -- | text-dense: ink rows match, advance is 2.5% narrow, 87% of a title's ink differs |
+| Settings | 36 105 | 32 838 | -- | four tone drifts of 0.9-1.6k px, all diffuse; frame and modal plate match exactly |
+| Home | 33 806 | 17 730 | -- | was 69 534 at the start of this session |
+| Instance | 31 325 | 14 390 | -- | was 34 380 three dozen rounds ago |
+| Screenshots | 23 729 | 6 113 | -- | heading centre 602 on both; content tone mean abs delta 1.14 |
+| Servers | 20 966 | 4 225 | -- | the closest page in the product |
+
+For scale: the reference compared against **itself** differs by 1 206 pixels, so anything under about 1 200 is inside its
+own noise, and no page can reach zero while its type is set by a different rasteriser.
+
+**What the table says about where work is worth doing.** Two pages account for 216 660 of the 363 000 total -- Skins and
+Discover -- and both are at floors that are not layout: Skins needs an asset decision, Discover needs the reference's font
+engine. Everything else is under 40 000 and moving, which is why the last ten rounds have been spent on gates rather than
+on pages: the pages left are the ones where a constant cannot help.
