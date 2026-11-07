@@ -839,3 +839,22 @@ and to the settings gear, and it was broken again here.
 
 **Hover on buttons is therefore unverified, not broken.** Saying otherwise would be the same mistake in the other
 direction: a zero from a missed target is not evidence of a missing feature.
+### The toolbar buttons had no hover state at all (2026-11-07)
+
+The hover question that three missed targets left open is now answered, and the answer was a defect:
+
+| | at rest | under the pointer | area changed |
+|---|---|---|---:|
+| reference | (52, 54, 60) | (65, 67, 75) | **4 397 px** |
+| this build, before | (27, 217, 106) | (27, 217, 106) | **0 px** |
+| this build, after | (27, 217, 106) | (34, 255, 133) | **4 399 px** |
+
+The button painted its fill unconditionally -- `if brand { BRAND } else { BUTTON_BG }` -- with no hover branch at all, and
+the checklist rows and filters had the step already. It now uses `theme.hovered`, the sheet's own rule, on both buttons.
+
+**Two pixels of agreement on a 4 400-pixel change is the strongest interaction match this session has produced**, and it
+came from aiming at a control a crop proved was there rather than at a guessed coordinate.
+
+**One difference the same measurement exposed and that is *not* fixed**: at x 896 the reference's button is **grey** (52,54,60)
+where this build's is **brand green** (27,217,106). The two toolbars put a different button in the brand position -- or use
+the brand fill for a different one -- which is a parity question of its own and is now on the list.

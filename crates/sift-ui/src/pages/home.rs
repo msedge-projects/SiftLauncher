@@ -1212,7 +1212,19 @@ fn list(
             egui::pos2(left, toolbar.top()),
             egui::vec2(width, 36.0),
         );
-        painter.rect_filled(button, 10.0, if brand { theme.BRAND } else { theme.BUTTON_BG });
+        // **Hover, measured.** The reference quiet button reads (52,54,60) at rest and (65,67,75) under the pointer,
+        // and 4 397 pixels of its toolbar change when the pointer arrives -- while this build changed none, because the
+        // fill was unconditional. theme.hovered is the sheet own step, used by the checklist rows and the filters.
+        let over_button = ui
+            .ctx()
+            .input(|input| input.pointer.hover_pos())
+            .is_some_and(|at| button.contains(at));
+        let rest = if brand { theme.BRAND } else { theme.BUTTON_BG };
+        painter.rect_filled(
+            button,
+            10.0,
+            if over_button { theme.hovered(rest) } else { rest },
+        );
         // Both buttons lead with a "+", as the reference's pair does; the brand one had none.
         if brand {
             crate::icons::draw(
