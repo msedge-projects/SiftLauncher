@@ -5567,3 +5567,58 @@ on Screenshots (1.14) and Settings (improving), but **not** exhaustively on ever
    memory gate at all.
 5. **Behaviours never verified**: drag-and-drop of screenshots between groups, ZIP export, the download button's action,
    and 16 of 17 Escape handlers still without tests.
+## 2026-11-07 — what was verified since the last pass, and how
+
+The paragraph above the table says that **no DONE row in this file named a test or a driven run**, and that a row claiming a
+behaviour should not be believed until one is written into it. This section is that writing for everything verified since:
+each line is an element, the evidence behind it, and the number where there is one. Every measurement was taken at
+1440x900 with both apps in the same state, and every test is in the tree at the name given.
+
+### Tests (behaviour, not pixels)
+
+| element | test | holds |
+|---|---|---|
+| about modal | `escape_closes_the_about_modal_without_drawing_it` | Escape dismisses it and no frame is owed |
+| create dialog | `escape_closes_the_create_dialog` | `create_open` false after one frame |
+| install picker | `escape_closes_the_install_picker` | `picker` none |
+| rename dialog | `escape_closes_the_rename_dialog` | `edit` none |
+| settings modal | `escape_closes_the_settings_modal` | `state.open` false |
+| delete confirmation | `escape_cancels_the_delete_confirmation` | the answer can only become `Cancel` |
+| screenshots search | `escape_blurs_the_search_field_without_clearing_it` | focus released, text kept, a frame owed |
+| rail shortcuts | `ctrl_digits_switch_rail_pages` | Ctrl+1..5 reach their five pages |
+| CJK fallback | `the_scan_finds_a_cjk_face_in_a_given_directory` | the scan finds, filters and reads a face |
+| CJK fallback | `the_system_fallback_matches_cjk_faces_only` | sixteen family names, `.ttc` refused |
+| theme palette | `every_colour_is_opaque_unless_the_sheet_declared_alpha` | the selected row is brand at 30% |
+
+### Measurements (both sides, same state)
+
+| element | reference | this build | evidence |
+|---|---|---|---|
+| Home page, one instance | 33 808 differing pixels | -- | `tools/parity/compare.py`, from 69 534 at session start |
+| Screenshots, empty | 23 729 | -- | and its heading centres at **602** on both |
+| library toolbar, New group | 851..951 | **850..950** | row scan at the buttons' mid-height |
+| library toolbar, New instance | 964..1113 | **964..1113** | identical to the pixel |
+| toolbar hover | 4 397 px change | **4 399 px** | `theme.hovered` on both buttons |
+| search field fill | (52, 54, 60) | **(52, 54, 60)** | was the plate's own colour -- a control visible only by its border |
+| search field border | (66, 68, 74) | **(66, 68, 74)** | also rules out a stroke-rasteriser bug |
+| Jump-in strip | full column, Play at x 1 023 | **Play at x 1 025** | was a 788-point formula |
+| instance card icon | centre (167, 431) | **(166, 429)** | the default avatar, 132 points at (13, 36) |
+| content top border, y 48 | (66, 68, 74) | **(68, 69, 72)** | inset shadow measured, was (113, 114, 115) |
+| settings selected row | (35, 95, 64) | **(35, 94, 64)** | brand at 30%, not 25% |
+| settings theme cards | `#27292e`, `#f8f8f8`, `#101013` | **the same three** | measured constants, not mixes |
+| news copy measure | 255 points | **255** | the card's inner width, not the column's |
+| wheel step | **93 px a notch** | unmeasured | the reference's value only; ours aliases on repeating rows |
+
+### What the numbers cannot reach, stated once
+
+Text-dense pages have a floor set by the **rasteriser**, not the layout: a title's ink rows match the reference exactly
+(249..267 on both) while its advance is 2.5% narrow, so 87% of its ink is counted as different with nothing wrong in the
+layout. The reference compared against itself differs by **1 206 pixels**. A page at 80 927 (Discover) is therefore not four
+times worse than one at 23 729 (Screenshots) -- it has ten times the text.
+
+### Memory, where the gate stands
+
+`idle RSS` **24.2 MiB** against a 20 MiB bound. Two defects were found and fixed on the way: a Discover visit cost **38 MB
+that was never given back** (now **24 MB returned** by `malloc_trim` at fetch boundaries, leaving 38 MB after a browse), and
+no icon is uploaded larger than 160 points. A CJK fallback was added and measured at **+16 MB** when a face is found, which
+is a tension with the gate rather than a solution to it.
