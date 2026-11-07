@@ -1785,7 +1785,10 @@ impl Shell {
             egui::pos2(update.left() + 42.0, update.center().y),
             Align2::LEFT_CENTER,
             "Update",
-            crate::fonts::semibold(14.0),
+            // **Medium, not semibold.** The reference label carries 207 green pixels inside the pill; this build had 242
+            // with the semibold face -- 17% more ink for the same words at the same size, which is a weight step, not a
+            // size one.
+            crate::fonts::label(14.0),
             self.theme.BRAND,
         );
 

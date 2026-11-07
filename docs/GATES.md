@@ -420,3 +420,21 @@ Instance page: **34 421 -> 34 380**, title bar **2 332 -> 2 291**.
 One difference is left visible in the same crop and named: this build's "Update" label sets a little heavier than the
 reference's, which reads as a 500-weight text where ours may be 600. Worth a look at the weight constant rather than a
 nudge of the size.
+### The Update label was semibold where the reference sets it medium (2026-11-07)
+
+Counted, rather than eyeballed: green pixels inside the Update pill, excluding its ring.
+
+| | interior ink |
+|---|---:|
+| reference | 207 |
+| this build, `semibold` (600) | 242 |
+| this build, `label` (500) | **221** |
+
+Seventeen per cent more ink for the same words at the same size is a weight step, not a size one, and the fix is one
+font id. Title bar **2 291 -> 2 277**, instance page **34 380 -> 34 366**.
+
+The remaining 4% (221 against 207) is **not** chased further: this rasteriser draws glyph edges with different coverage
+from a browser, which inflates any ink count slightly, so the difference between 500 and 400 cannot be told apart from
+the renderer's own bias with this measurement. Recorded rather than guessed -- the way to settle it would be to count
+the same pixels in a page the *reference* renders at a known weight and compare, which is more work than 14 pixels
+warrant today.
