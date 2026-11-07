@@ -1216,3 +1216,34 @@ and shrinking it needs an allocation profile, which this container has no `heapt
 **The gate stands at 24.2 MiB against 20, and the honest reading is that the last 4.2 MiB is not in a place this session
 can measure its way into.** What it can say is that the two big memory defects it did find are fixed: a browses' worth of
 decoded icons no longer costs 38 MB, and no icon is uploaded larger than 160 points.
+### Discover: the pitch was not the cause, and a stale binary fooled two captures (2026-11-07)
+
+The record said this page needed its rows re-derived as a whole. This round tested the pitch first, on its own:
+
+| variant | Discover |
+|---|---:|
+| 141-point rows, 10-point gap (shipped) | **80 927** |
+| 153-point rows, no gap, divider | 100 075 |
+| 154-point rows, no gap, no divider | 106 068 |
+
+The pitch theory is dead: growing the row by twelve adds a band of plate the reference does not have, and the card's
+content is **already top-anchored** (`rect.top() + 17` for the button, `+ 83` for the counts), so nothing inside moves to
+compensate. Both reverted.
+
+**A measurement trap worth recording, because it produced two wrong numbers in a row.** After reverting the source the
+binary was not rebuilt, and the next two captures measured the *reverted-away* build: 103 826 and 104 933 where the tree
+actually reads 80 927. A revert is not a rebuild, and a number from a stale binary looks exactly like a number.
+
+**And a floor on what this page can be compared to.** Two captures of the reference against each other:
+
+```
+ref-disc2 vs ref-disc4: 1 206 differing pixels (content 1 206)
+```
+
+The reference does not render identically twice, so a page that reads 80 927 cannot be driven to zero, and any single
+band under about 1 200 pixels is inside its own noise.
+
+The largest band on the page is y 100..150 at 7 621 pixels -- the tab strip and the search row -- and the reference's
+capture shows a **tooltip** over the tabs that this build never draws. That is a state difference in the capture, not a
+layout defect, and the next measurement should take both captures with the pointer in the same place and no tooltip
+pending.
