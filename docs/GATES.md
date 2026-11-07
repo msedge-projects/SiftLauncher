@@ -1334,3 +1334,25 @@ reference's step as well, since 170 over three notches could be a clamp too.
 
 **The lesson is the one this round earned twice**: a measurement that returns the same number for one unit and three is
 reporting its own ceiling. The panel was chosen *because* it was static, and static turned out to be short.
+### The reference scrolls 93 points a notch; ours cannot be measured on this page (2026-11-07)
+
+With the settings modal closed on both sides and the Discover list settled, one notch, pointer pinned:
+
+| | offset | residual |
+|---|---:|---:|
+| reference | **93 px** | **0** |
+| this build, as shipped | 114 px | 388 |
+| this build, `line_scroll_speed` 98 | 196 px | 585 |
+
+The reference's 93 is the only number here with a residual of zero -- an exact match of the content above and below the
+scroll -- and it is the value a browser produces. **Everything measured on this side has a residual in the hundreds, which
+means the correlation is matching the wrong offset**: Discover's cards repeat at a fixed pitch, so a wrong shift can score
+better than the right one, and 114 then 196 from 120 then 98 is not a model of anything -- it is two guesses landing on
+different aliases of a repeating row.
+
+Reverted. The step this build uses is unmeasured, and the way to measure it is a page with **no repeating structure** -- the
+settings Troubleshooting tab has prose, not cards -- read the same way, with the reference's own residual recorded beside
+it so a clean match can be told from an alias.
+
+The reference's 93 stands on its own, though, and is worth having: a browser's wheel step is not the 120 points the
+vendored crate assumes, and not egui's default 40 either.
