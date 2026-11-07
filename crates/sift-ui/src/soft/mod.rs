@@ -100,6 +100,10 @@ impl Painter {
     }
 
     /// Draw one frame's primitives into an `0x00RRGGBB` buffer of `width` by `height` pixels.
+    ///
+    /// **Bands, one per core.** A frame at 1440x900 rasterised in one thread measured a p95 of 91 ms against a 16 ms gate;
+    /// the work is embarrassingly parallel because a triangle only ever writes the rows it covers, so the buffer is split
+    /// into horizontal strips and each thread paints every primitive clipped to its own strip.
     pub fn paint(
         &self,
         primitives: &[egui::ClippedPrimitive],
@@ -107,35 +111,46 @@ impl Painter {
         height: usize,
         buffer: &mut [u32],
     ) {
-        let clear = self.clear;
-        let packed = pack(clear, clear.a());
-        for pixel in buffer.iter_mut() {
-            *pixel = packed;
-        }
-        for clipped in primitives {
-            let egui::epaint::Primitive::Mesh(mesh) = &clipped.primitive else {
-                continue;
-            };
-            let texture = self.textures.get(&mesh.texture_id);
-            let clip = clipped.clip_rect;
-            let x0 = (clip.min.x.round().max(0.0) as usize).min(width);
-            let y0 = (clip.min.y.round().max(0.0) as usize).min(height);
-            let x1 = (clip.max.x.round().max(0.0) as usize).min(width);
-            let y1 = (clip.max.y.round().max(0.0) as usize).min(height);
-            if x0 >= x1 || y0 >= y1 {
-                continue;
+        let clear = pack(self.clear, self.clear.a());
+        let threads = std::thread::available_parallelism()
+            .map(|count| count.get())
+            .unwrap_or(4)
+            .min(8);
+        let band_rows = height.div_ceil(threads).max(1);
+        std::thread::scope(|scope| {
+            for (index, strip) in buffer.chunks_mut(band_rows * width).enumerate() {
+                let top = index * band_rows;
+                let rows = strip.len() / width;
+                scope.spawn(move || {
+                    for pixel in strip.iter_mut() {
+                        *pixel = clear;
+                    }
+                    for clipped in primitives {
+                        let egui::epaint::Primitive::Mesh(mesh) = &clipped.primitive else {
+                            continue;
+                        };
+                        let texture = self.textures.get(&mesh.texture_id);
+                        let clip = clipped.clip_rect;
+                        let x0 = (clip.min.x.round().max(0.0) as usize).min(width);
+                        let y0 = (clip.min.y.round().max(0.0) as usize).min(height).max(top);
+                        let x1 = (clip.max.x.round().max(0.0) as usize).min(width);
+                        let y1 = (clip.max.y.round().max(0.0) as usize).min(height).min(top + rows);
+                        if x0 >= x1 || y0 >= y1 {
+                            continue;
+                        }
+                        for triangle in mesh.indices.chunks_exact(3) {
+                            let (a, b, c) = (
+                                &mesh.vertices[triangle[0] as usize],
+                                &mesh.vertices[triangle[1] as usize],
+                                &mesh.vertices[triangle[2] as usize],
+                            );
+                            self.triangle(a, b, c, texture, [x0, y0, x1, y1], width, top, strip);
+                        }
+                    }
+                });
             }
-            for triangle in mesh.indices.chunks_exact(3) {
-                let (a, b, c) = (
-                    &mesh.vertices[triangle[0] as usize],
-                    &mesh.vertices[triangle[1] as usize],
-                    &mesh.vertices[triangle[2] as usize],
-                );
-                self.triangle(a, b, c, texture, [x0, y0, x1, y1], width, height, buffer);
-            }
-        }
+        });
     }
-
     /// One triangle, filled by barycentric weights. Colour, coverage and sampling all interpolate the same way, so a
     /// rounded rectangle's antialiasing, a glyph's coverage and a photograph's pixels come out of one loop.
     #[allow(clippy::too_many_arguments)]
@@ -147,21 +162,21 @@ impl Painter {
         texture: Option<&Texture>,
         clip: [usize; 4],
         width: usize,
-        height: usize,
+        top: usize,
         buffer: &mut [u32],
     ) {
         let area = (b.pos.x - a.pos.x) * (c.pos.y - a.pos.y) - (b.pos.y - a.pos.y) * (c.pos.x - a.pos.x);
         if area.abs() < f32::EPSILON {
             return;
         }
-        let min_x = a.pos.x.min(b.pos.x).min(c.pos.x).floor().max(clip[0] as f32) as isize;
-        let max_x = a.pos.x.max(b.pos.x).max(c.pos.x).ceil().min(clip[2] as f32) as isize;
-        let min_y = a.pos.y.min(b.pos.y).min(c.pos.y).floor().max(clip[1] as f32) as isize;
-        let max_y = a.pos.y.max(b.pos.y).max(c.pos.y).ceil().min(clip[3] as f32) as isize;
-        let min_x = min_x.max(0) as usize;
-        let min_y = min_y.max(0) as usize;
-        let max_x = (max_x.max(0) as usize).min(width);
-        let max_y = (max_y.max(0) as usize).min(height);
+        // Bounded by this strip's rows, not the window's: a triangle may span bands but writes only its own.
+        let rows_end = top + buffer.len() / width;
+        let min_x = (a.pos.x.min(b.pos.x).min(c.pos.x).floor().max(clip[0] as f32) as isize).max(0) as usize;
+        let max_x = (a.pos.x.max(b.pos.x).max(c.pos.x).ceil().min(clip[2] as f32) as isize)
+            .clamp(0, width as isize) as usize;
+        let min_y = (a.pos.y.min(b.pos.y).min(c.pos.y).floor().max(clip[1] as f32) as isize).max(0) as usize;
+        let max_y = (a.pos.y.max(b.pos.y).max(c.pos.y).ceil().min(clip[3] as f32) as isize)
+            .clamp(0, rows_end as isize) as usize;
         // A triangle that is one colour, fully opaque, and either untextured or over a fully opaque texel needs no
         // interpolation and no blend: it is a constant write.
         let flat_texel_alpha = texture.map(|texture| {
@@ -207,7 +222,7 @@ impl Painter {
                 // general path interpolates twelve channels, samples a texture and blends, per pixel, to arrive at exactly
                 // the colour it started with. Writing the packed constant is the same pixels for a fraction of the work.
                 if flat_opaque {
-                    buffer[y * width + x] = flat_packed;
+                    buffer[(y - top) * width + x] = flat_packed;
                     continue;
                 }
                 let mut src = [
@@ -248,7 +263,7 @@ impl Painter {
                 if alpha <= 0.0 {
                     continue;
                 }
-                let dst = buffer[y * width + x];
+                let dst = buffer[(y - top) * width + x];
                 let dr = ((dst >> 16) & 0xff) as f32;
                 let dg = ((dst >> 8) & 0xff) as f32;
                 let db = (dst & 0xff) as f32;
@@ -256,7 +271,7 @@ impl Painter {
                 let out_r = (src[0] + dr * (1.0 - alpha)).round().clamp(0.0, 255.0) as u32;
                 let out_g = (src[1] + dg * (1.0 - alpha)).round().clamp(0.0, 255.0) as u32;
                 let out_b = (src[2] + db * (1.0 - alpha)).round().clamp(0.0, 255.0) as u32;
-                buffer[y * width + x] = (out_r << 16) | (out_g << 8) | out_b;
+                buffer[(y - top) * width + x] = (out_r << 16) | (out_g << 8) | out_b;
             }
         }
     }

@@ -527,3 +527,35 @@ sampling half survived, which is why the honest figure is 9% and not 2%.
 **Two things on this box that are not this launcher:** the reference app's WebKit renderer is at **240% CPU** on its own,
 and repeated launches have left **298 zombie `SiftUi` processes** (their parent shells exit and PID 1 does not reap them).
 Neither consumes CPU, but both explain a load average that stays high while this build idles at 9%.
+## Frame time on the software backend: 91 ms, then 38 ms, against a 16 ms gate (2026-11-07)
+
+The memory gate got the attention; the frame gate had never been measured on the path that actually ships. The soft
+backend did not write a frame log at all -- `frame_log` was wired into the eframe app only -- so it could not be held to a
+p95 it never recorded. It is wired now, and the first honest reading was worse than the OpenGL path by six times:
+
+| | p95 | mean |
+|---|---:|---:|
+| OpenGL/glow (recorded) | 13.0-14.9 ms | -- |
+| software, one thread | **91.46 ms** | 64.67 ms |
+| software, parallel bands | **37.70 ms** | 26.13 ms |
+
+So the renderer swap **traded one gate for the other**: memory improved fourfold (113.3 -> 23.6 MiB) and frame time
+worsened sixfold (14.9 -> 91.5 ms). That trade had been invisible because the gate had no instrument on this path.
+
+**The parallel pass** splits the buffer into horizontal strips, one per core, and each thread paints every primitive
+clipped to its own strip -- safe because a triangle only ever writes rows it covers. Six cores gave 2.4x rather than the
+6x the arithmetic suggests, because each thread still walks the whole triangle list and most triangles are small.
+
+**Verified pixel-identical**: 0 pixels changed across all 1 296 000 of the window, and Home reads the same 69 534.
+
+### Where the two gates now stand
+
+| gate | bound | measured | verdict |
+|---|---:|---:|---|
+| idle RSS | <= 20 MB | **23.6 MiB** | **FAIL** (PSS 18.2 MiB passes) |
+| frame p95 | <= 16 ms | **37.7 ms** | **FAIL** |
+| idle CPU | not a gate, but a fan | 9% of a core | -- |
+
+Both gates now have honest instruments and both are short. The remaining frame work is span-filling opaque triangles
+rather than testing coverage per pixel, which is where the 37 ms sits; the remaining memory work is the framework floor
+already recorded at 16.7 MiB for egui plus a window.

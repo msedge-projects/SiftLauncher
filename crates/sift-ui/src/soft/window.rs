@@ -30,6 +30,9 @@ struct Soft {
     /// A frame is only run when something happened or an animation asked for one: an idle window draws nothing, which is
     /// this project's lightness rule and the reason a fan does not spin.
     dirty: bool,
+    /// Frame timing, in the same format the OpenGL path writes: the lightness gate is a p95, and a backend that never
+    /// records one cannot be held to it.
+    log: crate::frame_log::FrameLog,
     next_frame: Option<Instant>,
 }
 
@@ -52,6 +55,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         pending: Vec::new(),
         dirty: true,
         next_frame: None,
+        log: crate::frame_log::FrameLog::default(),
     };
     event_loop.run_app(&mut app)?;
     Ok(())
@@ -81,6 +85,7 @@ impl Soft {
         let events = std::mem::take(&mut self.pending);
         let raw = egui::RawInput { events, ..raw };
 
+        self.log.begin();
         let mut animating = false;
         let shell = &mut self.shell;
         let output = self.ctx.run_ui(raw, |ui| {
@@ -125,6 +130,9 @@ impl Soft {
                 .paint(&primitives, width, height, &mut buffer);
             let _ = buffer.present();
         }
+        // **After the paint, not before it.** The first wiring closed the timer here earlier and reported a p95 of 9.68 ms
+        // that quietly excluded the rasteriser -- the expensive half. The gate is about the whole frame.
+        self.log.end();
 
         if std::env::var("SIFT_SOFT_MEM").is_ok() {
             eprintln!(
