@@ -252,3 +252,23 @@ Only the title bar's mark is unconditional now; the rest upload the first time t
 
 Home still draws the news card and the hosting banner, so those two plates are still resident there -- which is why the
 saving is 290 kB rather than the 660 kB the six deferred plates add up to.
+### The software renderer measured against the OpenGL one, and against the reference (2026-11-07)
+
+Now that the software backend is the default, the parity numbers had to be re-taken through it. Home, with the carousel
+pinned to the reference's article (art diff **0**, so the comparison is honest):
+
+| path | total | titlebar | rail | content | sidebar |
+|---|---:|---:|---:|---:|---:|
+| OpenGL/glow (before) | 71 349 | 2 229 | 1 029 | 53 788 | 14 303 |
+| software rasteriser | **73 660** | 2 227 | 1 034 | 55 763 | 14 636 |
+
+So the new path is about **2 300 pixels further from the reference** on this page. The title bar is identical (2 227
+against 2 229), which locates the difference in glyph and card edges rather than in geometry or layout.
+
+**Bilinear texture sampling was tried as the suspected cause and did not help**: 73 660 against 73 662 -- two pixels --
+for four texel reads and a mix per pixel in the inner loop. It was reverted, with the measurement kept in a comment
+above the sampler so the experiment is not repeated.
+
+What remains is that this rasteriser blends in premultiplied sRGB space without the gamma correction a GPU path applies,
+so glyph edges carry slightly different values. Recorded as a known, quantified 3% difference on this page rather than a
+mystery -- and as the next thing to look at if a page's number seems inexplicably high.
