@@ -1530,3 +1530,42 @@ env-gated, cost two `Instant::now()` per frame, and earned their place by produc
 
 The lesson this round is the one the record has been circling for thirty rounds: **the gate was never about triangles; it
 was about divisions**, and nobody could see that until a frame was split into its two halves.
+### The 24.2 MB, accounted for by mapping (2026-11-07)
+
+RSS is 24 364 kB and **every kilobyte of it is file-backed or shared** -- there is no anonymous heap in the figure beyond
+3.6 MB. Split by mapping:
+
+| mapping | RSS |
+|---|---:|
+| this launcher's binary | **7 632 kB** |
+| the frame buffer (a deleted memfd) | **5 064 kB** |
+| `[heap]` | 3 632 kB |
+| libc | 1 652 kB |
+| libcrypto | 1 104 kB |
+| libX11 | 860 kB |
+| libm | 672 kB |
+| libxkbcommon, ld.so, libssl, libzstd, the rest | ~1 600 kB |
+
+**PSS is 19 332 kB** -- under the 20 MB bound -- while RSS is 24 364. The difference is pages this process shares with the
+X server and with whatever else is mapped: the frame buffer is shared with X by construction, and the shared libraries with
+every other process that links them. Which figure the gate means is a real question, and the record now carries both rather
+than choosing the flattering one.
+
+**One lever was closed by the tree itself.** `panic = "abort"` would save perhaps half a megabyte of unwinding tables, and
+`Cargo.toml` refuses it in a comment that is better than the argument for it: *"A launcher that aborts on a panic dies the
+instant one is raised, with no message and nothing on disk... `unwind` lets `main`'s hook catch it, write the panic and the
+backtrace next to the launcher's log, and tell the reader what happened. The cost is a little binary size, which is not
+worth being unable to debug."* That decision stands; it was re-read rather than re-litigated.
+
+**What is left, with its worth measured rather than guessed:**
+
+| candidate | worth | cost |
+|---|---|---|
+| drop OpenSSL for a Rust TLS stack | ~1.3 MB of shared libraries | adds Rust code to the binary; net unknown until built |
+| shrink the binary (~10 MB on disk, 7.6 resident) | 1 MB per 13% of code | needs a size profile, not a guess |
+| the `[heap]`'s 3.6 MB | unknown | needs a heap profiler this container does not have |
+| the frame buffer's 5 MB | unreachable | required by the backend to present a 1440x900 window |
+
+No change was made this round: the one cheap candidate is refused by a written decision, and the others need a measurement
+this environment cannot make. The gate stands at **24.4 MiB RSS / 19.3 MiB PSS against 20**, with the difference between
+those two numbers now written down for whoever decides which one the gate is.
