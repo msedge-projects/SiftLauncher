@@ -343,3 +343,23 @@ meaningful for text and rules and misleading for anything that contains an image
 
 The real remaining differences on this card are the icon itself (data -- this lab's instance has a flat green icon where
 the reference's pack has its own art) and a few points between the title and subtitle baselines.
+### Screenshots, re-measured on the shipped backend (2026-11-07)
+
+Both apps on Screenshots with an empty library, the ink tool run over the empty state:
+
+| landmark | reference | this build | delta |
+|---|---:|---:|---:|
+| "No screenshots yet" | 554 | 551 | **-3** |
+| subtitle | 588 | 587 | **-1** |
+| illustration | aligned | aligned | -- |
+
+So the 20-point class of error that Home had does not repeat here: this page is within three points everywhere, and the
+difference between the two heading and subtitle deltas (-3 and -1) means the block's internal gap is two points wide
+rather than the whole block being misplaced.
+
+The page measures **24 667** on the software backend (content 6 113, sidebar 14 636, titlebar 2 865, rail 1 053). The
+band breakdown puts that content difference almost entirely in the two text rows -- 2 015 pixels between y 580 and 600
+alone -- which is glyph rasterisation between this rasteriser and the browser, the floor this record has measured before.
+
+The 3-point heading offset is left as it is rather than nudged: three points is inside the +/-2 target's rounding
+neighbourhood and moving it would trade a real 3 pixels for a guessed one.
