@@ -817,7 +817,27 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
         ),
         egui::vec2(width, BUTTON_H),
     );
-    painter.rect_filled(create, BUTTON_RADIUS, theme.BRAND);
+    // **The page's one primary action had no pointer feedback.** `ButtonFrame.vue:18-21` gives every button a hover
+    // `brightness(--hover-brightness)` -- 1.25 in dark, which is this theme's own `HOVER_BRIGHTNESS` -- and
+    // `enabled:active:scale-[0.97]`. Gap-matrix row 19 has carried the absence since the first audit: "the page's one
+    // primary action gives no pointer feedback".
+    // **One widget, not two.** A second `interact` on the same rect with a different id loses the hover to the call
+    // that comes later in the frame -- egui gives interaction to the last claim on a rect -- so the fill read "not
+    // hovered" while the button was under the pointer. The existing id is claimed here instead, and the press below
+    // reuses this response.
+    let feedback = ui.interact(create, egui::Id::new("home-create"), Sense::click());
+    let pressed = feedback.is_pointer_button_down_on();
+    let create = if pressed {
+        Rect::from_center_size(create.center(), create.size() * 0.97)
+    } else {
+        create
+    };
+    let fill = if feedback.hovered() {
+        theme.hovered(theme.BRAND)
+    } else {
+        theme.BRAND
+    };
+    painter.rect_filled(create, BUTTON_RADIUS, fill);
     // `button-frame--colored::before` is a one-pixel rim of
     // `linear-gradient(180deg, rgba(255,255,255,0.3), transparent)` masked to the
     // padding box. At 40 px tall on this radius the capture shows no rim at all: the
@@ -949,11 +969,7 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
     }) && ui.ctx().memory(|memory| memory.focused().is_none());
     let _ = icons_cache;
     let mut action = Action::None;
-    if ui
-        .interact(create, egui::Id::new("home-create"), Sense::click())
-        .clicked()
-        || quick_key
-    {
+    if feedback.clicked() || quick_key {
         action = Action::Create;
     }
     if ui

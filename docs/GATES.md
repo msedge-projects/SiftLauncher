@@ -1752,3 +1752,22 @@ DONE row that hides a known difference is worse than an OPEN one that states it.
 enter. The toggle had to be hovered and pressed to show its three knob sizes; the chip only exists once a filter is applied.
 That is the shape of most of the remaining rows in this file, and the reason the last two rounds have produced more than the
 twenty before them: the ledger cites a value, and a value can be driven.
+### The hero's primary action answers the pointer (2026-11-07)
+
+Row 19: *"the page's one primary action gives no pointer feedback"*. Both feedbacks are now drawn, and measured on the running
+build in the state that shows the hero -- a fresh data directory, because a library with an instance replaces it:
+
+| state | fill | width | reference |
+|---|---|---:|---|
+| at rest | (27, 217, 106) | 206 | -- |
+| hovered | **(34, 255, 133)** | 206 | `brightness(1.25)` -- and 27x1.25 = 34, 217x1.25 = 271 clipped to 255, 106x1.25 = 133 |
+| pressed | (32, 239, 125) | **200** | `active:scale-[0.97]` -- and 206x0.97 = 200 |
+
+**Two of my own errors are worth recording, because both produced confident zeros.** The first build claimed a *second*
+`interact` on the button's rect with a new id, and egui gives interaction to the last claim -- so the fill read "not hovered"
+while the pointer was on it. The second attempt measured a **stale X frame from a process that had already exited**, and the
+third found no button at all because **my own click had created an instance** in the empty data directory and replaced the
+hero with the library.
+
+The fix for the first is one widget and one response, hoisted above the fill; the fix for the other two was clearing the
+directory and not clicking. Both are now in the record rather than in the next session's surprises.
