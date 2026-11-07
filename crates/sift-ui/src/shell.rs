@@ -3998,6 +3998,37 @@ mod tests {
     /// **A loader's mark is tinted, a category's is not.** The reference draws Fabric's mark warm; this build drew
     /// every glyph in the muted grey, which made the loader chip read as another category. The table is what the
     /// card's chip colour comes from, so it is what the test reads.
+    /// **Escape closes the rename dialog**, the third handler under test. It holds an `Option<(String, String)>` -- the
+    /// name and the plate -- so the assertion is that the option is empty afterwards, not merely that the dialog stopped
+    /// drawing.
+    #[test]
+    fn escape_closes_the_rename_dialog() {
+        let ctx = egui::Context::default();
+        crate::fonts::install(&ctx);
+        crate::serverart::install(&ctx);
+        let mut shell = Shell::default();
+        shell.edit = Some(("Instance 3".to_owned(), "Instance 3".to_owned()));
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1440.0, 900.0))),
+            events: vec![egui::Event::Key {
+                key: egui::Key::Escape,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+            ..Default::default()
+        };
+        let frame_ctx = ctx.clone();
+        let shell = &mut shell;
+        ctx.run_ui(raw, |ui| {
+            let screen = ui.max_rect();
+            if shell.edit.is_some() {
+                shell.draw_edit(&frame_ctx, screen, ui);
+            }
+        });
+        assert!(shell.edit.is_none(), "Escape must close the rename dialog");
+    }
     /// **Escape closes the install picker too**, by the same rule and the same mechanism: a synthesised key in a real
     /// frame. Written beside the create dialog's test so the pair documents the shape a third one would take.
     #[test]
