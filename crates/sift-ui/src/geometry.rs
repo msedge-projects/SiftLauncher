@@ -88,7 +88,9 @@ pub const ARROW_BUTTON: f32 = 28.0;
 pub const ARROW_GAP: f32 = 8.0;
 
 /// Where the route's own icon starts on the title bar: capture, x 262..277.
-pub const BREADCRUMB_BADGE: f32 = 262.0;
+/// **256, measured.** The reference's breadcrumb icon starts at x 256 and its name at 278; this build put the icon at 262
+/// and the name at 283. The badge is only ever drawn with the name five points to its right, so one constant moves both.
+pub const BREADCRUMB_BADGE: f32 = 256.0;
 
 /// The three window controls: two 3rem buttons and the 3.75rem close button.
 pub const WINDOW_CONTROLS: f32 = 48.0 * 2.0 + 60.0;

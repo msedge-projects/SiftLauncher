@@ -1708,7 +1708,23 @@ impl Shell {
             egui::pos2(g::BREADCRUMB_BADGE, (g::TITLE_BAR - 16.0) / 2.0),
             Vec2::splat(16.0),
         );
-        icons::draw(painter, self.rail.glyph(), badge, self.theme.SECONDARY);
+        // **The instance's own icon when one is open.** The reference's breadcrumb on an instance page carries the
+        // pack's icon, not the rail's glyph; the icon cache was already on the shell for the library cards, so this is the
+        // same lookup in a smaller rect. The rail glyph stays as the fallback for a page without an icon.
+        let instance_icon = self
+            .open_instance
+            .as_ref()
+            .and_then(|instance| self.icons.get_file(ui.ctx(), &instance.path.join("icon.png")));
+        if let Some(texture) = instance_icon {
+            painter.image(
+                texture.id(),
+                badge,
+                Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                Color32::WHITE,
+            );
+        } else {
+            icons::draw(painter, self.rail.glyph(), badge, self.theme.SECONDARY);
+        }
         // A project page's breadcrumb is \`rail > project\`, which is why the name comes
         // from the open project when there is one.
         // **An open instance replaces the rail name, and drops the prefix.** The reference's title bar on an

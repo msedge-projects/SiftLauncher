@@ -386,3 +386,21 @@ Two differences in the same strip are left open and named:
 The instance page measured 52 157 in this capture, but its sidebar read 32 423 against 14 636 on the run before: the news
 carousel had rotated between the two apps, which is the confound `SIFT_NEWS_SLIDE` exists to remove and which this
 measurement forgot to use.
+### The breadcrumb carries the instance, at the reference's own x (2026-11-07)
+
+Two changes in the title bar's route badge, both measured rather than eyeballed:
+
+1. **The instance's icon replaces the rail's glyph** when a page is open. The icon cache was already on the shell for the
+   library cards, so it is the same lookup in a 16-point rect; the rail glyph remains the fallback for a page with no icon.
+2. **The badge sits at x 256, not 262.** Edge scans across the strip: the reference's icon starts at 256, its name at 278;
+   this build had 262 and 283. One constant moves both, because the name is drawn five points right of the badge.
+
+After the change both icon edges sit at **256** and both names start at **278**.
+
+The instance page measures **34 421** (titlebar 2 332, content 16 346, sidebar 14 636) with both apps freshly driven and
+the carousel pinned -- the earlier 52 157 in this session was a phase mismatch and is superseded.
+
+What still differs in this strip is now only:
+
+- the icon's **content** (this lab's instance has a flat green icon where the reference's pack has its campfire) -- data;
+- the **download-arrow button** beside the Update pill, which this build does not draw at all.
