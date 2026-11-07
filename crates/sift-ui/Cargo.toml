@@ -36,7 +36,10 @@ gl = ["dep:eframe"]
 # rather than wgpu: it is the renderer fastframe's own apps use, and the one whose
 # per-frame cost this slice is measuring. `x11` and `wayland` are no-ops on Windows
 # and name the two Linux backends eframe otherwise refuses to choose between.
-egui = { version = "0.36.1", default-features = false, features = ["default_fonts"] }
+# **No bundled fonts.** egui ships Ubuntu-Light, Hack, NotoEmoji and an emoji icon face -- 1.38 MB of .rodata for
+# faces this interface never asks for: every string it draws is Inter, and `.monospace` appears nowhere in it.
+# `fonts::install` registers the five subset Inter weights and maps every family onto them.
+egui = { version = "0.36.1", default-features = false }
 # **Optional, and off by default.** `eframe` brings `egui_glow`, `glow` and their glue, which the software backend never
 # calls: on a machine without a GPU driver, OpenGL means llvmpipe, and llvmpipe means 53 MiB of LLVM loaded to compile
 # shaders for a CPU. Building it out of the default binary is worth megabytes of resident text pages.

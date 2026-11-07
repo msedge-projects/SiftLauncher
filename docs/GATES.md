@@ -217,3 +217,23 @@ and the measurement corrects it.
 The remaining honest options are: a lighter framework than egui (which forfeits the parity work this objective is built
 on), or a gate expressed for this stack -- PSS is already **20.2 MiB**, and RSS at the reference's own 1280x800 default
 would be ~23.4. Recorded for a decision rather than quietly redefined.
+### egui's bundled fonts: 1.41 MB of faces this interface never asks for (2026-11-07)
+
+`egui`'s `default_fonts` feature ships four faces -- Ubuntu-Light (361 676 B), NotoEmoji (418 804), an emoji icon face
+(324 132) and Hack (309 408), **1 414 020 bytes** -- and `.monospace` appears nowhere in this interface: every string is
+Inter, and the icons are drawn as vector glyphs rather than typed as characters.
+
+The feature is off. `fonts::install` now builds both generic families from our own subset weights (monospace included, so
+a widget asking for it gets Inter rather than a missing family), and nothing else changed.
+
+| | before | after |
+|---|---:|---:|
+| binary | 11.69 MB | **10.28 MB** |
+| idle RSS | 24.5 MiB | **23.8 MiB** |
+| PSS | 20.2 MiB | **18.4 MiB** |
+
+**Verified by capture**: the before-and-after renders of Home differ by **0 pixels**, worst channel delta 0. The fonts
+were not merely rarely used; nothing on that page drew a glyph from them.
+
+Session total: **113.3 -> 23.8 MiB** idle RSS. PSS -- the proportion actually attributable to this process -- is now
+**18.4 MiB**, under the gate.

@@ -55,16 +55,15 @@ pub fn install(ctx: &egui::Context) {
             .insert(FontFamily::Name(family.into()), vec![family.to_owned()]);
     }
 
-    // The default proportional family is Inter 400 with egui's own fallbacks behind it, in
-    // that order: text the interface draws without naming a weight is body text.
-    let fallbacks = definitions
+    // **Every family is Inter.** With egui's bundled faces gone there is nothing to fall back to, so the two generic
+    // families point at our own weights: body text is Inter 400, and monospace -- which this interface never uses, but
+    // which a widget could still ask for -- is Inter 400 as well rather than a missing family and a panic.
+    definitions
         .families
-        .get(&FontFamily::Proportional)
-        .cloned()
-        .unwrap_or_default();
-    let mut body = vec!["inter-400".to_owned()];
-    body.extend(fallbacks);
-    definitions.families.insert(FontFamily::Proportional, body);
+        .insert(FontFamily::Proportional, vec!["inter-400".to_owned()]);
+    definitions
+        .families
+        .insert(FontFamily::Monospace, vec!["inter-400".to_owned()]);
 
     ctx.set_fonts(definitions);
 }
