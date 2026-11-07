@@ -585,3 +585,14 @@ The same parallel build measured **37.70 ms** in one run and **23.79 ms** in ano
 is the box, not the code: the reference app's WebKit renderer sits at 240% CPU throughout, and frame timings taken under
 that load are not comparable run to run. Any future frame number should be taken with the reference stopped, and this
 record should be read as saying the software path is in the **20-38 ms** band rather than at a point inside it.
+### A stale heartbeat loop was still running (2026-11-07)
+
+`tools/parity/loop.sh` -- a 240-second heartbeat that compares two captures and appends a line to `docs/PARITY-LOG.md`
+-- had been running since long before this session and was still going: **1 680 uncommitted heartbeat lines**, the newest
+written at 09:34 today, reporting differences against captures that no longer describe the build.
+
+It is stopped, and its uncommitted output is reverted rather than committed: those numbers measure yesterday's capture
+against a build that has since changed its renderer, and putting them in the record would be worse than leaving the gap.
+The loop itself is left in the tree for whoever wants it, with the note that a heartbeat whose captures are not refreshed
+reports drift that is not there -- and, at 240 seconds, quietly kept a Python and an ImageMagick busy on a box already
+loaded by the reference's WebKit renderer.
