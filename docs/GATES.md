@@ -954,3 +954,21 @@ where its own capture puts it.
 
 A fix that improves one page and worsens another is not a fix; it is a hypothesis with a page-shaped counter-example. The
 counter-example here was an empty state, which is the one thing on a page whose position *is* its layout.
+### The toolbar now matches the reference to the pixel (2026-11-07)
+
+The last 5-9 points were a measurement artefact and a set of wrong widths, both settled by taking the runs at the
+buttons' **mid-height** instead of near their rounded corners:
+
+| run at y 258 | reference | this build |
+|---|---|---|
+| New group | 851..951 (101) | **850..950 (101)** |
+| New instance | 964..1113 (150) | **964..1113 (150)** |
+
+The widths came from that row: New group 103 points (it held 120), New instance 150 (held 152), and the right padding
+2 rather than 8 -- the column ends at 1 116 and the reference's button at 1 113, so three points, not eight.
+
+Near the corners both buttons shrink by the same two points, which is why the earlier row at y 250 read 143 against 139 and
+looked like a width error of four when it was a rounding error of two measured in the wrong place.
+
+**Home: 61 759 -> 61 439**, and the toolbar row -- search, New group, New instance -- is now within one point of the
+reference everywhere it can be measured. This thread began five rounds ago with a button that had no hover state at all.

@@ -1187,13 +1187,15 @@ fn list(
     // following it, so the whole row stopped wherever that add up landed -- measured at 957 against the reference's 1 108,
     // 151 points short, with the search 136 early and the brand button 22 narrow. The reference's own numbers, taken from a
     // row above the labels: search ends 806, New group 831..945, New instance 969..1108.
-    const INSTANCE_W: f32 = 152.0;
-    const GROUP_W: f32 = 120.0;
+    // **150 and 103, measured at the buttons' mid-height** rather than near their rounded corners, where both shrink
+    // by the same two points and hide the difference. The reference: New group 851..951, New instance 964..1113.
+    const INSTANCE_W: f32 = 150.0;
+    const GROUP_W: f32 = 103.0;
     // **8, not 27.** The column ends at 1 116 -- proved by the reference's empty state centring at 602, which is the
     // centre of 88..1116 -- and the reference's own New instance button ends at 1 108. Eight points of padding inside
     // that column, not twenty-seven from an edge the column never reaches. Assuming 27 was right only if the column ran
     // to 1 140, which widening it to would have broken every centred empty state: Screenshots went 23 729 -> 24 080.
-    const RIGHT_PAD: f32 = 8.0;
+    const RIGHT_PAD: f32 = 2.0;
     const BETWEEN: f32 = 12.0;
     let instance_right = toolbar.right() - RIGHT_PAD;
     let instance_left = instance_right - INSTANCE_W;
