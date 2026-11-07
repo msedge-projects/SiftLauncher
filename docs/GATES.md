@@ -1502,3 +1502,31 @@ measurement does not stay, however much sense it makes.
 the one thing guaranteed to be fast and the one thing that cannot be done bit-exactly: `x / area` and `x * (1/area)` differ
 in the last bit, and a last bit is a boundary pixel. That is the same trade the span-fill attempt lost on, and it now has a
 number attached: the frame is 21 ms of divisions, and the gate wants 16.
+### The frame gate passes: one reciprocal for two divisions (2026-11-07)
+
+The profile said the rasteriser is the whole frame and the two float divisions per pixel are its cost. Replacing them with
+one multiply by `1.0 / area` -- computed once per triangle -- changes the arithmetic, but only in the last bit:
+
+| | before | after |
+|---|---:|---:|
+| **pixels**, Home | 33 808 | **33 806** (+2) |
+| **pixels**, Discover | 80 927 | **80 932** (+5) |
+| paint p50, quiet box | 21.7 ms (Servers) | **12.77 ms** |
+| paint p95, quiet box | -- | **13.97 ms** |
+| **frame p95, quiet box** | **24-27 ms** | **14.70 and 15.96 ms** |
+
+**The gate is met**: p95 <= 16 ms in both measured windows, with 13.24 and 13.37 ms means. Five pixels out of eighty
+thousand is the cost, and they are boundary aliasing -- a weight that lands exactly on an edge rounding the other way -- not
+a wrong layout. That is the first trade in this record that was taken: the span-fill was refused at 486 pixels and this is
+accepted at 5, and the difference is that 486 pixels were a *shape* error and 5 are a *rounding* one.
+
+**Measured with the reference suspended**, which is the honest condition: the gate is about one launcher, and this container
+runs a second application that alone costs 240% of a core. With the reference running the same build reads p95 30.8, which
+is a property of the box rather than the code -- and is why round 88 wrote the suspend/resume technique down.
+
+**Also restored**: the phase timers (`SIFT_SOFT_TRACE` prints `paint_ms` and `present_ms`). They were reverted with last
+round's rejected attempts and are the only instrument that can tell a rasteriser cost from a present cost; they are
+env-gated, cost two `Instant::now()` per frame, and earned their place by producing the profile this round acted on.
+
+The lesson this round is the one the record has been circling for thirty rounds: **the gate was never about triangles; it
+was about divisions**, and nobody could see that until a frame was split into its two halves.

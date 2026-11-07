@@ -30,6 +30,9 @@ struct Soft {
     /// A frame is only run when something happened or an animation asked for one: an idle window draws nothing, which is
     /// this project's lightness rule and the reason a fan does not spin.
     dirty: bool,
+    /// The last frame's rasteriser and present times, for `SIFT_SOFT_TRACE`.
+    painted: std::time::Duration,
+    presented: std::time::Duration,
     /// Frame timing, in the same format the OpenGL path writes: the lightness gate is a p95, and a backend that never
     /// records one cannot be held to it.
     log: crate::frame_log::FrameLog,
@@ -54,6 +57,8 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         pointer: egui::Pos2::ZERO,
         pending: Vec::new(),
         dirty: true,
+        painted: std::time::Duration::ZERO,
+        presented: std::time::Duration::ZERO,
         next_frame: None,
         log: crate::frame_log::FrameLog::default(),
     };
@@ -126,9 +131,16 @@ impl Soft {
         if let Ok(mut buffer) = surface.buffer_mut() {
             // **Into the presentable buffer, not a pixmap that is then copied.** That is the 4.94 MiB this backend saves
             // over the spike, and the reason the launcher can sit under the gate where a pixmap-based path cannot.
+            let paint_started = Instant::now();
             self.painter
                 .paint(&primitives, width, height, &mut buffer);
+            let painted = paint_started.elapsed();
+            let present_started = Instant::now();
             let _ = buffer.present();
+            // **The two halves, timed separately.** The gate is 16 ms; without this split a frame is one opaque number, and
+            // the profile it produced says paint is 21 ms of a 22 ms frame while the present is 0.01 ms.
+            self.painted = painted;
+            self.presented = present_started.elapsed();
         }
         // **After the paint, not before it.** The first wiring closed the timer here earlier and reported a p95 of 9.68 ms
         // that quietly excluded the rasteriser -- the expensive half. The gate is about the whole frame.
@@ -142,7 +154,12 @@ impl Soft {
             );
         }
         if std::env::var("SIFT_SOFT_TRACE").is_ok() {
-            eprintln!("frame animating={animating} delay_zero={}", output.viewport_output.get(&egui::ViewportId::ROOT).map(|v| v.repaint_delay.is_zero()).unwrap_or(false));
+            eprintln!(
+                "frame animating={animating} delay_zero={} paint_ms={:.2} present_ms={:.2}",
+                output.viewport_output.get(&egui::ViewportId::ROOT).map(|v| v.repaint_delay.is_zero()).unwrap_or(false),
+                self.painted.as_secs_f64() * 1000.0,
+                self.presented.as_secs_f64() * 1000.0
+            );
         }
         self.dirty = false;
         let delay = output

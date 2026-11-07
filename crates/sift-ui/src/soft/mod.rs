@@ -237,12 +237,18 @@ impl Painter {
         } else {
             0
         };
+        // **One reciprocal instead of two divisions per pixel.** The profile says the rasteriser is the whole frame and the
+        // divisions are its cost. This is not bit-exact by construction -- `x / area` and `x * (1 / area)` differ in the
+        // last bit -- so it is on trial: the pixel count decides whether it is a trade or a regression.
+        let inv_area = 1.0 / area;
         for y in min_y..max_y {
             let py = y as f32 + 0.5;
             for x in min_x..max_x {
                 let px = x as f32 + 0.5;
                 let w0 = ((b.pos.x - px) * (c.pos.y - py) - (b.pos.y - py) * (c.pos.x - px)) / area;
                 let w1 = ((c.pos.x - px) * (a.pos.y - py) - (c.pos.y - py) * (a.pos.x - px)) / area;
+                let w0 = ((b.pos.x - px) * (c.pos.y - py) - (b.pos.y - py) * (c.pos.x - px)) * inv_area;
+                let w1 = ((c.pos.x - px) * (a.pos.y - py) - (c.pos.y - py) * (a.pos.x - px)) * inv_area;
                 let w2 = 1.0 - w0 - w1;
                 if w0 < 0.0 || w1 < 0.0 || w2 < 0.0 {
                     continue;
