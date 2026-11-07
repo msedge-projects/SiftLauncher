@@ -655,3 +655,31 @@ re-derived.
 **One difference is deliberate and stays**: the reference's About footer reads "Modrinth App 0.22.0" where this build
 reads "Sift Launcher 0.1.62". Everything else on the page is cloned; the product name is not, because this is not
 Modrinth -- and pretending otherwise would put a false claim in the product itself, not just in a capture.
+### The settings rail's selected row was brand at 25%, not 30% (2026-11-07)
+
+First item off the Settings work list, and the arithmetic was exact rather than approximate: the reference's selected
+row is `color-mix(in srgb, var(--color-brand) 30%, transparent)` over the modal plate, which is
+`0.3*(27,217,107) + 0.7*(39,41,46) = (35,94,64)` -- and its capture reads (35,95,64). This build held **25%**, painting
+(36,85,61): ten points dark in green across **7 074 pixels** of the rail.
+
+The constant is now `from_rgba_premultiplied(0x08, 0x41, 0x20, 0x4d)`, and both sides sample (35,95,64)/(35,94,64) --
+within one point.
+
+**The suite caught the change, and the suite was the stale one.** `every_colour_is_opaque_unless_the_sheet_declared_alpha`
+asserted this token's alpha was 64 because the *old constant* had it, not because the sheet did -- the sheet says 30%, and
+the reference's rendered pixel agrees. The expectation is corrected to 77 with the reasoning beside it. That is the
+record's rule applied in the direction it is usually hardest to apply: **correct the test to the measurement**, and state
+why the old number was there.
+
+### What the next visit to this page should do
+
+The colour change let a second defect be seen: the selected pill's bounding box runs
+
+```
+reference  x 273..459   y 246..401
+this build x 272..459   y 246..407
+```
+
+Six points lower by the second row and one to the left: the rail's **row pitch** is slightly too large, the same class of
+error the Home page had at 20 points. That is now the measured reason Settings reads 37 451 rather than the 34 893 before
+the colour change -- a number that got *worse* while a colour got *right*, exactly as the checklist rows did.

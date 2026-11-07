@@ -481,7 +481,10 @@ pub const DARK: Theme = Theme {
     // --color-button-border: rgba(193, 190, 209, 0.12) -- variables.scss:330; stored premultiplied, alpha 31
     BUTTON_BORDER: egui::Color32::from_rgba_premultiplied(0x17, 0x17, 0x19, 0x1f),
     // --color-button-bg-selected: rgba(27, 217, 106, 0.25) -- variables.scss:355 (via --color-brand-highlight, declared at variables.scss:376); stored premultiplied, alpha 64
-    BUTTON_BG_SELECTED: egui::Color32::from_rgba_premultiplied(0x07, 0x36, 0x1b, 0x40),
+    // **Brand at 30%, not 25%.** The reference's selected row is `color-mix(in srgb, var(--color-brand) 30%,
+    // transparent)` over the modal plate: 0.3*(27,217,107) + 0.7*(39,41,46) = (35,94,64), which is what its capture reads.
+    // This constant held 25% and painted (36,85,61) -- ten points dark in green, across 7 074 pixels of the settings rail.
+    BUTTON_BG_SELECTED: egui::Color32::from_rgba_premultiplied(0x08, 0x41, 0x20, 0x4d),
     // --color-button-text-selected: #1bd96a -- variables.scss:272 (via --color-brand -> --color-green -> --color-green-500, declared at variables.scss:377)
     BUTTON_TEXT_SELECTED: egui::Color32::from_rgb(0x1b, 0xd9, 0x6a),
     // ---- lines ----
@@ -1255,7 +1258,11 @@ mod tests {
     /// Every translucent colour, with the alpha the sheet's `rgba()` declared.
     const TRANSLUCENT: &[(&str, Color32, u8)] = &[
         ("BUTTON_BORDER (dark)", DARK.BUTTON_BORDER, 31),
-        ("BUTTON_BG_SELECTED (dark)", DARK.BUTTON_BG_SELECTED, 64),
+        // **77, not 64.** This row encoded the constant (25%) rather than the sheet, which says
+        // `color-mix(in srgb, var(--color-brand) 30%, transparent)` -- and the reference's rendered pill is (35,95,64),
+        // which is what 30% over the modal plate produces. The old 64 painted (36,85,61): ten points dark in green across
+        // 7 074 pixels of the settings rail. The test is corrected to the measurement, as the record's rule requires.
+        ("BUTTON_BG_SELECTED (dark)", DARK.BUTTON_BG_SELECTED, 77),
         ("BRAND_HIGHLIGHT (dark)", DARK.BRAND_HIGHLIGHT, 64),
         ("BRAND_SHADOW (dark)", DARK.BRAND_SHADOW, 178),
         ("RED_HIGHLIGHT (dark)", DARK.RED_HIGHLIGHT, 64),
