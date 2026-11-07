@@ -1828,3 +1828,21 @@ extent.
 **The lesson is about how that crop was made.** It was taken to avoid resampling -- correctly -- from a rectangle somebody
 eyeballed as the art's edge, and the eyeball was 30 points out. The fix was to read the edge out of the capture: scan a
 column for where the picture stops being the picture, which is where `y 497` came from.
+### Row 5 was stale, and the measurement says so (2026-11-07)
+
+The row claimed the news summary and date were one step small -- 12 against 14 -- and that it pulled the card 76 points up
+the panel. Measured against the running reference:
+
+| | reference | this build |
+|---|---|---|
+| card top | y 350 | **y 350** |
+| text block, first ink row | y 518 | **y 518** |
+| text block, last ink row | y 635 | **y 634** |
+| differing pixels in the block | -- | 8 272 against 4 277 of ink |
+
+Both claims are resolved: the block starts on the same row and ends within one point, which is what equal sizes and equal
+leading look like, and the card is not 76 points anywhere it should be. What the 8 272 pixels are is the rasteriser again --
+ink rows identical, overall advance 2.5% narrow -- the same signature Discover has.
+
+A row flipped to DONE on this evidence carries that distinction explicitly, because "the type is in the right place" and
+"the type is drawn by a different engine" are different truths and the ledger should not blur them.
