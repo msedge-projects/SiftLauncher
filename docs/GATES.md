@@ -858,3 +858,24 @@ came from aiming at a control a crop proved was there rather than at a guessed c
 **One difference the same measurement exposed and that is *not* fixed**: at x 896 the reference's button is **grey** (52,54,60)
 where this build's is **brand green** (27,217,106). The two toolbars put a different button in the brand position -- or use
 the brand fill for a different one -- which is a parity question of its own and is now on the list.
+### The library toolbar stops short of the reference's, by three measured amounts (2026-11-07)
+
+Found by asking which button carries the brand fill and aiming `at.py` at both captures:
+
+| element | reference | this build | delta |
+|---|---|---|---|
+| Play (Jump in strip) | x 1023, y 151 | x 785, y 141 | **-238, -10** |
+| New instance | x 1037, w 152 | x 894, w 130 | **-143, -22** |
+| search field, right edge | 952 | 816 | **-136** |
+
+Every one is our content column ending short of the reference's: the search field 136 points early, the buttons 143 to the
+left and 22 narrower, and the Play button 238 to the left of a strip whose width is computed rather than measured.
+
+**One contradiction is left open rather than resolved by assumption.** The reference's New instance button appears to end at
+x 1189, but a probe for the sidebar boundary put it at 1134 -- which would have the button crossing into the sidebar. Either
+the probe at y 600 caught a card edge rather than the panel edge, or the green bounding box is not the whole button. The
+next step is to measure the panel boundary at a row with no cards in it, not to move a constant and hope.
+
+Two of the three are safe to fix on their own terms once that is settled: the Play button should sit at the strip's right
+edge and the strip is currently `(width - 240).min(800)`, a formula rather than a measurement; and the New instance button
+should be 152 points wide to hold its label at the sheet's padding, which it is not.
