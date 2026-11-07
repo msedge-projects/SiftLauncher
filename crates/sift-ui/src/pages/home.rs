@@ -1173,7 +1173,10 @@ fn list(
     // left of the row and the two buttons at its right. Driving the reference's Home page showed the field
     // there, not in the heading's top-right corner where this build drew it.
     let toolbar = Rect::from_min_size(
-        egui::pos2(rect.left(), rect.top() + 193.0),
+        // **+7, measured.** The reference's search field's top border is at y 248 and its filter row's border at 294;
+        // this build put them at 241 and 291. Measured per-edge with tools/parity/ink.py and an edge scan, because the
+        // Library heading above them matched exactly (211 on both) and hid the drift.
+        egui::pos2(rect.left(), rect.top() + 200.0),
         egui::vec2(rect.width(), 36.0),
     );
     let field = Rect::from_min_size(toolbar.min, egui::vec2(600.0, 36.0));
@@ -1256,7 +1259,7 @@ fn list(
     }
     // The filter row under it: the two selects, a divider and the add-filter chip.
     let filters = Rect::from_min_size(
-        egui::pos2(rect.left(), rect.top() + 239.0),
+        egui::pos2(rect.left(), rect.top() + 242.0),
         egui::vec2(rect.width(), 32.0),
     );
     let mut filter_x = filters.left();

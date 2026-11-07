@@ -301,3 +301,27 @@ the honest number for the shipped path with the layout corrected.
 
 **The lesson is the method, again**: the heat map said "text", the correlation said "maybe 7 points", and only measuring
 where each heading's ink begins named the defect and its size.
+### Ink measurement as a tool, and two more row fixes (2026-11-07)
+
+The method that found the 20-point Jump in error is now `tools/parity/ink.py`: it reports, for any block and x range,
+the row where its ink starts in both captures and the delta. Landmarks on Home after the two fixes:
+
+| landmark | reference | this build | delta |
+|---|---:|---:|---:|
+| Jump in | 79 | 79 | 0 |
+| Library | 211 | 211 | 0 |
+| search placeholder | 258 | 260 | **+2** |
+| filter row label | 303 | 300 | **-3** |
+| card art | 367 | 345 | **-22** |
+| sidebar title | 84 | 84 | 0 |
+| sidebar rows | 138 | 138 | 0 |
+
+The search field's top border was at 241 against the reference's 248 and the filter row at 291 against 294; their
+constants moved by the measured amounts (+7 and +3). Home measures **72 225 -> 70 527**, so those two rows were worth
+**1 698 pixels** between them -- far more than the text antialiasing that started this investigation.
+
+**Two residuals are left open and named rather than tuned by eye:** the search placeholder sits 2 points low and the
+filter label 3 points high after their rows moved (sub-glyph rounding, both under a pixel of ink), and the card's art
+starts 22 points higher here than in the reference -- the reference insets its image about 38 points inside the card
+where this build insets about 10. That last one is structural and wants the card's art rect measured against the
+reference's card, not another constant nudge.
