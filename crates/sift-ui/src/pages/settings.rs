@@ -5421,6 +5421,36 @@ mod tests {
     }
 
     /// The three theme cards fit the pane, are named from the catalogue, and start on Dark.
+    /// **Escape closes the settings modal**, the fourth Escape handler under test and the largest surface in the product.
+    /// Its state lives here rather than on the shell, so this is also the first of the handlers whose own module owns the
+    /// test.
+    #[test]
+    fn escape_closes_the_settings_modal() {
+        let ctx = egui::Context::default();
+        crate::fonts::install(&ctx);
+        crate::serverart::install(&ctx);
+        let theme = crate::theme::dark();
+        let mut state = State::default();
+        state.open = true;
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1440.0, 900.0))),
+            events: vec![egui::Event::Key {
+                key: egui::Key::Escape,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+            ..Default::default()
+        };
+        let mut alive = true;
+        ctx.run_ui(raw, |ui| {
+            let screen = ui.max_rect();
+            alive = draw(ui, screen, &theme, &mut state);
+        });
+        assert!(!state.open, "Escape must close the settings modal");
+        assert!(!alive, "a closed modal owes no further frames");
+    }
     #[test]
     fn the_theme_cards_fit_and_are_named() {
         let dialog = dialog_rect(screen());
