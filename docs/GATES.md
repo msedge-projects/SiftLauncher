@@ -1356,3 +1356,28 @@ it so a clean match can be told from an alias.
 
 The reference's 93 stands on its own, though, and is worth having: a browser's wheel step is not the 120 points the
 vendored crate assumes, and not egui's default 40 either.
+### A project page exposed two things the pixel counts never did (2026-11-07)
+
+Opening a real project description showed the page in a state no previous capture had: **Korean and Chinese text**, which
+this build has never been able to draw.
+
+| | missing glyphs render as |
+|---|---|
+| reference (WebKit) | **tofu boxes**, one per character, each a full em wide |
+| this build (egui/ab_glyph) | **`?`**, one per character, a third of an em wide |
+
+Neither app has a CJK font: `fc-list` finds none in this container, and the reference is drawing its own substitute. But the
+substitutes are different widths, so **the text reflows differently** -- the reference keeps the description's line breaks
+and this build rewraps every line. That is a visible fidelity difference on any real project page, and it is invisible to
+every measurement in this record because no previous page loaded non-Latin text.
+
+**Where the fix belongs**: not in the binary. A CJK fallback is several megabytes and the memory gate is already 4.2 MiB
+over; a launcher should instead **load a system font when one exists** -- fontconfig paths, scanned once at startup,
+registered as a fallback family. On a machine with Noto CJK installed the text then draws properly; in this container it
+still shows a substitute, which is also what the reference does here. That is the honest shape of the fix, and it is the
+next slice rather than a constant.
+
+**And a second finding from the same click**: the two apps opened *different projects*. The same coordinate on the same
+list selects `BattleArmy TACZ` in the reference and `Zombie Invade 100 Days` here, because the rows are pitched 151 against
+the reference's 154 and have drifted by four rows. So the project page cannot be compared at all until the list does -- and
+the drift, not the page, is what that symptom is telling us.
