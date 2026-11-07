@@ -325,3 +325,21 @@ filter label 3 points high after their rows moved (sub-glyph rounding, both unde
 starts 22 points higher here than in the reference -- the reference insets its image about 38 points inside the card
 where this build insets about 10. That last one is structural and wants the card's art rect measured against the
 reference's card, not another constant nudge.
+### The "card art -22" was my measurement, not the card (2026-11-07)
+
+The ink tool said the card's art started 22 points higher here than in the reference, and it was right about the *ink*
+and wrong about the meaning. At 1:1 the two cards are:
+
+- **reference**: a green rounded plate inset from the card, with the pack's campfire image *centred inside it* -- so its
+  first non-background pixel is the fire, 22 points below the plate's own top edge;
+- **this build**: the same plate, holding a flat green icon -- so its first ink is the plate's top edge itself.
+
+The plate tops are 341 and 345: **four points apart**, and the card's structure matches. The 22 was the difference between
+a picture with a subject and a picture without one.
+
+Recorded because the tool now carries a trap: `ink.py` measures the first pixel above a brightness threshold, which is
+meaningful for text and rules and misleading for anything that contains an image. **Measure edges, not ink, for plates**
+-- and when a delta appears only on an element that holds artwork, suspect the artwork first.
+
+The real remaining differences on this card are the icon itself (data -- this lab's instance has a flat green icon where
+the reference's pack has its own art) and a few points between the title and subtitle baselines.
