@@ -1275,3 +1275,14 @@ page cannot be driven to the reference's noise floor (1 206 pixels) while its ty
 
 This does not excuse the layout differences that were real and were fixed -- the toolbar 151 points short, the column 24
 short, the card row six low, the missing avatar -- but it does set where this page's number stops being informative.
+### The rail shortcuts are under test (2026-11-07)
+
+`ctrl_digits_switch_rail_pages` presses Ctrl+1 through Ctrl+5, one frame each, and asserts the page after every press. The
+first *navigation* keys this tree has verified -- the Escape tests covered dismissal, not movement.
+
+It also pins the reason the handler is written the way it is: `consume_shortcut` rather than a hand-rolled modifier check,
+because an earlier probe showed the modifier already cleared on the frame the digit arrives. A future refactor to
+`key_pressed` plus a modifier read would fail this test rather than the app.
+
+**262 tests pass.** The keyboard coverage is now: five rail shortcuts, seven Escape handlers, and the context menu's arrow
+and type-ahead behaviour from its own existing tests.
