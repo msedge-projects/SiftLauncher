@@ -1097,3 +1097,22 @@ the number, and fixing the tile alone would have left the cards visibly off.
 | Home content | 27 944 | **17 731** |
 
 **Home this session: 69 534 -> 34 382 -- half the pixels it started with.** Every remaining band is under 5 000.
+### The news text measure is the card, not the column -- and a rejected title size (2026-11-07)
+
+The sidebar's largest block of difference was its news card at y 500..650. The cause was visible the moment both were
+cropped at 1:1: the reference's copy wraps a line earlier and clips, because its text runs from x 1 160 to 1 415 --
+**255 points inside a 275-point column**. This build laid the copy and the title out at the column's full width.
+
+| | before | after | reference |
+|---|---|---:|---|
+| news text measure | 275 | **255** | 1 160..1 415 |
+| sidebar | 14 142 | **13 568** | -- |
+| Home | 34 382 | **33 808** | -- |
+
+**Then a hypothesis that failed, and was reverted rather than kept.** The title still fitted one line where the reference
+wraps after "got", and the arithmetic of glyph widths suggested a title about 19% larger than the 16 points this build
+sets. Measured, 19 made the sidebar *worse* -- 13 568 to 14 675 -- so the size theory is wrong and the wrap difference has
+another cause. `TITLE_SIZE` is back at 16 with the failed attempt recorded beside it.
+
+That is two of the three explanations this card has had that were wrong, and both were caught the same way: by measuring
+the thing the change was supposed to move, in the direction it was supposed to move it.

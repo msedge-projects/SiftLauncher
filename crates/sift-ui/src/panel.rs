@@ -202,6 +202,9 @@ const ART_TO_TITLE: f32 = 16.0;
 
 /// The title's size: `text-base` (16) at the h3's semibold, measured from the reference's own
 /// ink -- 251 points wide and 16 tall where 14 points here drew 210 wide and 15 tall.
+// **16 stays.** 19 was tried, on the theory that the reference fits 26 characters where this build fitted 33 into the same
+// measure; measured, it made the sidebar worse (13 568 -> 14 675 pixels), so the theory is wrong about the size and the
+// wrap difference has another cause. Recorded in GATES.md rather than re-guessed.
 const TITLE_SIZE: f32 = 16.0;
 
 /// The title's line box. The card's `h3` is `leading-tight`
@@ -638,18 +641,22 @@ pub fn draw(
     // The copy is laid out before the plan, because the card's rows start where the copy
     // ends. `COPY_H` is the floor: if a future summary wraps to a third line, the date
     // moves down with it rather than being written over.
+    // **255, not the column's 275.** The reference's news text runs from x 1 160 to 1 415 -- twenty points narrower
+    // than the column -- and the difference is visible: its title wraps after "got" where this build fitted the whole
+    // line, and its copy clips a line earlier. The measure is the card's inner width, not the column's.
+    let measure = column(rect).width() - 20.0;
     let copy = painter.layout(
         slide.copy.to_owned(),
         fonts::body(COPY_SIZE),
         theme.BASE,
-        column(rect).width(),
+        measure,
     );
     // Both the copy's and the title's heights come from their own galleys, wrapped at the card's width.
     let title_galley = painter.layout(
         slide.title.to_owned(),
         fonts::semibold(TITLE_SIZE),
         theme.CONTRAST,
-        column(rect).width(),
+        measure,
     );
     let plan = plan_with_copy(rect, copy.size().y.max(COPY_H), title_galley.size().y);
     let column = plan.column;
