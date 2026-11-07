@@ -1771,3 +1771,20 @@ hero with the library.
 
 The fix for the first is one widget and one response, hoisted above the fill; the fix for the other two was clearing the
 directory and not clicking. Both are now in the record rather than in the next session's surprises.
+### The hero's hover now eases (2026-11-07)
+
+`ButtonFrame.vue:18-21` gives the button `transition ... duration-150` on hover and no duration on the press. The fill is now
+`animate_value_with_time(..., 0.15)` scaled by `HOVER_BRIGHTNESS` (1.25), with the 0.97 press applied without easing.
+
+| | fill |
+|---|---|
+| at rest | (27, 217, 106) |
+| hovered, settled | **(34, 255, 133)** |
+| hovered, sampled immediately | (27, 217, 106) |
+
+**The third row is not a defect and not a proof.** The sample was taken in the frame the pointer arrived, which is what the
+ease looks like at t=0; a *mid-transition* value could not be captured because a screen grab on this box takes longer than
+the 150 ms the transition lasts. What is measured is the two endpoints; what is implemented is the same animator that the
+sidebar toggle uses, whose intermediate values *were* observable at 200 ms and settled correctly.
+
+Saying which of the three states was verified and which was inferred is the difference between this record and a claim.

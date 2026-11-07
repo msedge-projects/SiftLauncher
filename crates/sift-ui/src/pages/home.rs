@@ -832,11 +832,21 @@ fn hero(ui: &mut Ui, rect: Rect, theme: &Theme, icons_cache: &mut Images) -> Act
     } else {
         create
     };
-    let fill = if feedback.hovered() {
-        theme.hovered(theme.BRAND)
-    } else {
-        theme.BRAND
-    };
+    // **150 ms of hover, on the framework's clock.** `ButtonFrame.vue:18-21` eases the brightness over `duration-150`
+    // and leaves the press instant, which is what this does: the ease is keyed on the widget and settles at 1.25, and the
+    // 0.97 press is applied without easing.
+    let eased = ui.ctx().animate_value_with_time(
+        egui::Id::new("home-create-hover"),
+        if feedback.hovered() { 1.0 } else { 0.0 },
+        0.15,
+    );
+    let scale = 1.0 + (theme.HOVER_BRIGHTNESS - 1.0) * eased;
+    let mix = |channel: u8| (channel as f32 * scale).round().clamp(0.0, 255.0) as u8;
+    let fill = egui::Color32::from_rgb(
+        mix(theme.BRAND.r()),
+        mix(theme.BRAND.g()),
+        mix(theme.BRAND.b()),
+    );
     painter.rect_filled(create, BUTTON_RADIUS, fill);
     // `button-frame--colored::before` is a one-pixel rim of
     // `linear-gradient(180deg, rgba(255,255,255,0.3), transparent)` masked to the
