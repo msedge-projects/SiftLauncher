@@ -1034,3 +1034,16 @@ six points darker than the reference across every row the shadow reached.
 **Home: 61 389 -> 59 201**, content 42 550, sidebar 14 142. The probe stays in the tree, env-gated and cached in a
 `OnceLock` -- an environment lookup per triangle is not something a rasteriser's inner loop can afford, and a probe must
 not cost the frames it exists to measure.
+### The tree could not be pushed from this session (2026-11-07)
+
+`AGENTS.md` requires every change pushed to both remotes. Both attempts failed in the same way:
+
+```
+fatal: could not read Username for https://github.com: No such device or address
+```
+
+There is no credential helper reachable in this environment and no prompt to answer, so the remote is unreachable from
+here rather than refusing the branch. **Work is committed locally and not pushed** -- 477 commits on the working branch --
+and that gap should be closed from a session that has credentials, before any of it is treated as delivered. The rule this
+departs from is the first one in `AGENTS.md`, and the reason it exists is the one that applies here: the runner is the only
+compiler that matters, and nothing in this session has been through it.
