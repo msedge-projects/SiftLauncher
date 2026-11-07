@@ -1665,3 +1665,31 @@ own noise, and no page can reach zero while its type is set by a different raste
 Discover -- and both are at floors that are not layout: Skins needs an asset decision, Discover needs the reference's font
 engine. Everything else is under 40 000 and moving, which is why the last ten rounds have been spent on gates rather than
 on pages: the pages left are the ones where a constant cannot help.
+### The toggle, from gap-matrix row 11 (2026-11-07)
+
+Row 11 has carried this control since the first audit: *"34×18 vs 40×20; knob 13 vs 12; border missing; no state
+animation"*. All but the last are now the reference's values, from `Toggle.vue:8-13` as the row cites them:
+
+| | was | now | reference |
+|---|---|---|---|
+| track | 34 × 18 | **40 × 20** | `h-5 !w-[40px]` |
+| radius | 9 | **10** | `rounded-full` |
+| border | none | **1 px SURFACE_5 inside** | `border` |
+| knob | 13, never changes | **12, 14 on hover, 10 pressed** | `:16-30` |
+| knob travel | ±9 | **left + 10 to left + 30** | `translate-x 20` |
+| knob colour | `ACCENT_CONTRAST` | **`CONTRAST`** | -- |
+
+**The knob colour was the visible defect and no number had caught it.** `ACCENT_CONTRAST` is *black* on a dark theme, so
+the off state drew a dark disc on a grey track -- the capture shows the reference with a light one. The track's edges were
+the same in both, which is why a threshold on edges never saw it and a crop at 3x did immediately.
+
+**Two residuals, named rather than hidden:**
+
+- the **200 ms morph** is not implemented; the knob changes size instantly. The value is in the row's own citation and the
+  behaviour is missing, so row 11 stays open for it;
+- our knob is **faceted** -- an octagon at radius 6 -- where the reference's is a smooth disc. That is egui tessellating a
+  small circle into few segments, and it is the same class of limitation as the font rasteriser: a different engine drawing
+  the same shape.
+
+Discover moved 80 932 -> **80 355** across this and the previous capture, which is inside the reference's own
+capture-to-capture noise (1 206) and is not claimed as the toggle's doing.

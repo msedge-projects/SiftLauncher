@@ -892,30 +892,45 @@ pub fn draw(
                 theme.BASE
             },
         );
+        // **40x20, not 34x18.** `Toggle.vue:8-13` is `h-5 !w-[40px] rounded-full p-1` with a 1px surface-5 border, and
+        // its knob is 12 points that grow to 14 on hover and shrink to 10 while pressed (`:16-30`), translating 20 points
+        // when on. This drew a 34x18 track without a border and a 13-point knob that never changed -- the sidebar row the
+        // gap matrix has carried as row 11 since the first audit.
+        let knob_pressed = over_switch && ui.ctx().input(|input| input.pointer.any_down());
+        let radius = if knob_pressed { 5.0 } else if over_switch { 7.0 } else { 6.0 };
         let track = Rect::from_center_size(
-            egui::pos2(switch_row.right() - 18.0, switch_row.center().y),
-            egui::vec2(34.0, 18.0),
+            egui::pos2(switch_row.right() - 20.0, switch_row.center().y),
+            egui::vec2(40.0, 20.0),
         );
         painter.rect_filled(
             track,
-            9,
+            10,
             if hide_installed {
                 theme.BRAND
             } else {
                 theme.BUTTON_BG
             },
         );
+        painter.rect_stroke(
+            track,
+            10,
+            Stroke::new(1.0, theme.SURFACE_5),
+            egui::StrokeKind::Inside,
+        );
         painter.circle_filled(
             egui::pos2(
                 if hide_installed {
-                    track.right() - 9.0
+                    track.left() + 30.0
                 } else {
-                    track.left() + 9.0
+                    track.left() + 10.0
                 },
                 track.center().y,
             ),
-            6.5,
-            theme.ACCENT_CONTRAST,
+            radius,
+            // **White, not the accent's contrast colour.** The reference's knob is a light disc in *both* states;
+            // `ACCENT_CONTRAST` is black on a dark theme, so the off state drew a dark knob on a grey track -- the
+            // opposite of the capture, and invisible to a threshold that only counts the track's edges.
+            theme.CONTRAST,
         );
         painter.text(
             egui::pos2(column.left(), locked_bottom.max(plan.news + CATEGORY_ROW + 8.0) + if locked.is_some() { 8.0 } else { 0.0 }),
