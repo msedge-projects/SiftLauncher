@@ -1205,7 +1205,10 @@ fn list(
         toolbar.min,
         egui::pos2(group_left - BETWEEN, toolbar.top() + 36.0),
     );
-    painter.rect_filled(field, 10, theme.RAISED_BG);
+    // **SURFACE_4, not RAISED_BG.** The reference's field reads (52,54,60) inside and (39,41,46) outside; ours painted
+    // the plate's own colour, so the field was invisible except for its border: 1 592 pixels of the page were a surface
+    // one step too dark.
+    painter.rect_filled(field, 10, theme.SURFACE_4);
     painter.rect_stroke(field, 10, Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
     crate::icons::draw(
         &painter,

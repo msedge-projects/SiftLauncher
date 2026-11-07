@@ -972,3 +972,38 @@ looked like a width error of four when it was a rounding error of two measured i
 
 **Home: 61 759 -> 61 439**, and the toolbar row -- search, New group, New instance -- is now within one point of the
 reference everywhere it can be measured. This thread began five rounds ago with a button that had no hover state at all.
+### The library search field was invisible except for its border (2026-11-07)
+
+Chasing a one-row difference at y 48 turned up a different defect: the field was filled with the plate's own colour, so
+only its 1-pixel border distinguished it from the page behind it.
+
+| | inside the field | outside |
+|---|---|---|
+| reference | (52, 54, 60) | (39, 41, 46) |
+| this build, before | (39, 41, 46) | (39, 41, 46) |
+| this build, after | **(52, 54, 60)** | (39, 41, 46) |
+
+The token was `RAISED_BG` where the sheet says `--surface-4`.
+
+**Home moved 61 439 -> 61 389, a change of fifty pixels, and that is the interesting part.** A 13-point difference is below
+the 40-point threshold `compare.py` counts, so this defect was invisible to the instrument that has been steering the last
+twenty rounds -- and it was found only because a *tone* pair listed (52,54,60) -> (39,41,46) among the commonest drifts.
+Fifty pixels of measured gain, one entirely invisible control fixed.
+
+### Still open: the one-pixel line at y 48
+
+The row that started this round is **not** fixed, and the search space is now narrower than it was:
+
+| | reference | this build |
+|---|---|---|
+| content, y 48 | (66, 68, 74) | (113, 114, 115) |
+| sidebar, y 48 | (66, 68, 74) | (114, 117, 117) |
+| content, y 49 | (21, 23, 26) | (15, 17, 19) |
+
+It spans the content surface and the sidebar but **not the rail** (x 4 and 70 are clean in both). Ruled out by measurement:
+it is not a rasteriser stroke bug -- the search field's border renders (66,68,74) in both builds, exactly; it is not
+`SURFACE_5`, which is (66,68,74) and would render as such; and it is not a missing constant, because white at 34% over the
+plate is 112 and that is what it measures.
+
+So the next attempt should trace which paint call writes that row rather than read constants, because four constants have now
+been checked against it and none of them is the one drawing it.
