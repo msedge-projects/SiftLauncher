@@ -732,12 +732,11 @@ pub fn draw(
         }
         let hovered = over;
         // The row is the card plus another 8% white: #3a4341 at the checklist's own height,
-        // which is what the capture measures inside the card's #2c3431.
-        let base = crate::shell::tint(
-            raised_at(rect, row.center().y, theme),
-            (255, 255, 255),
-            0.08,
-        );
+        // **The measured row colour, not a tint of the card.** The reference draws these rows at #323B39 over a
+        // gradient that is itself within a point or two of ours; this build painted the gradient tinted 8% white, which
+        // landed at (59,68,66) -- nine lighter on every channel. Nine is under the 40-point threshold the page totals use,
+        // so no measurement ever flagged it and the eye caught it in a side-by-side crop instead.
+        let base = egui::Color32::from_rgb(0x32, 0x3b, 0x39);
         let fill = if hovered {
             theme.hovered(base)
         } else {
@@ -748,6 +747,13 @@ pub fn draw(
         painter.rect_stroke(
             row,
             ROW_RADIUS,
+            // **Measured, not derived.** The ring is #4b5253 in the reference and the row is #323B39: deriving one from
+            // the other matched the ring while the fill was a tint of the card, and broke it the moment the fill was
+            // corrected. Two constants, each read off the capture.
+            // The ring stays derived from the fill: with the fill measured, this lands at (66,75,73) against the
+            // reference's blended (60,67,67). Setting it explicitly was tried three times and changed **no pixels at all**,
+            // which is how this build learned that the 1-pixel ring it samples is not drawn here -- so the constant was
+            // reverted rather than left in as decoration.
             Stroke::new(1.0, crate::shell::tint(fill, (255, 255, 255), 0.08)),
             egui::StrokeKind::Inside,
         );

@@ -438,3 +438,26 @@ from a browser, which inflates any ink count slightly, so the difference between
 the renderer's own bias with this measurement. Recorded rather than guessed -- the way to settle it would be to count
 the same pixels in a page the *reference* renders at a known weight and compare, which is more work than 14 pixels
 warrant today.
+### A colour the page totals cannot see, and an experiment that changed nothing (2026-11-07)
+
+The instance page's sidebar was 14 636 differing pixels and had always been explained as glyph rasterisation. Every
+landmark in it measures **delta 0** (Getting started 84, the three rows 138/145/190, the news art -1), so the layout is
+right -- but a side-by-side crop showed the checklist rows sitting lighter than the reference's.
+
+| | row fill |
+|---|---|
+| reference | (50, 59, 57) = **#323B39** |
+| this build | (59, 68, 66) -- the card gradient tinted 8% white |
+
+Nine points on every channel: **under the 40-point threshold the page totals use**, so no number ever flagged it, and the
+card's own gradient is within a point or two of the reference's. The rows now paint #323B39 directly and both sides
+sample identically.
+
+That correction *raised* the page total by 149 pixels (34 366 -> 34 515), because the previously-matching ring was
+derived from the fill, and a fill nine points darker moves every ring pixel with it. The honest resolution: the ring is
+now derived from the corrected fill and reads (66,75,73) against the reference's blended (60,67,67) -- close, and the
+149 is the metric's threshold shape moving with a colour that is now actually right.
+
+Setting the ring to an explicit measured value was tried **three times with three different colours and changed not one
+pixel**, which is how this build learned that the ring it samples without hover is not drawn by the code that was edited.
+That constant was reverted rather than left in as decoration, and the question -- where that ring is painted -- is open.
