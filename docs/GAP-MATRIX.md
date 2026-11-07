@@ -5484,3 +5484,26 @@ asserts the modal is closed **and** that the closing frame owes no further frame
 The other sixteen handlers are still uncovered and are listed here as work rather than as done: the settings dialog, the
 create dialog, the screenshot viewer, the context menus. Each needs the same shape of test -- a synthesised key in, a
 state assertion out.
+### Input works through the software backend (2026-11-07)
+
+The new default path got its first end-to-end interaction check: pressing **Discover** on the rail, through the soft
+backend's own winit-to-egui event bridge, opened the page and loaded the real catalogue -- modpack cards with icons,
+titles, descriptions, download and follower counts, tags and Install buttons. Wheel, hover and click all reach egui; the
+capture is `.scratch/cap/soft-discover.png`. That matters because every earlier measurement of this backend was a still
+frame, and a renderer that draws but does not receive input would have looked identical.
+
+### The trade the font cuts made, stated plainly
+
+egui's bundled NotoEmoji is why emoji in **user data** -- project names and descriptions from the API -- used to render.
+Removing the bundled fonts took that with it, and a card whose description contains them now shows `?` where the
+reference (a WebKit app, drawing from system fonts) shows the characters.
+
+Restoring it was measured rather than assumed: subsetting NotoEmoji to the emoji planes and dingbats still costs
+**404 792 bytes**, because the face is almost entirely emoji and there is nothing to take out. Against a gate we are
+3.6 MiB short of, 400 kB for emoji in descriptions is a bad trade, so it stays out and is recorded here as a known gap
+with its price attached: **404 kB to restore full emoji, or roughly 200 kB for the common ranges only.**
+
+CJK is a separate and older gap: neither build has ever had a CJK face, and the reference shows Japanese and Chinese
+project titles correctly because the browser finds them on the system. Covering them needs a CJK face of several
+megabytes, which cannot coexist with this memory gate at all. Written down so the conflict is a decision rather than a
+surprise.
