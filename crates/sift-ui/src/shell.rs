@@ -2561,13 +2561,13 @@ impl Shell {
         );
         let pressed = step.is_some();
         if let Some(step) = step {
-            self.panel_step(step);
+            self.panel_step(step, ui.input(|input| input.time));
         }
         pressed
     }
 
     /// Do what a checklist row asked for.
-    fn panel_step(&mut self, step: crate::panel::Step) {
+    fn panel_step(&mut self, step: crate::panel::Step, now: f64) {
         match step {
             // A category press is a filter, not a step: it replaces whatever was chosen, or
             // clears it when the same one is pressed again.
@@ -2586,7 +2586,15 @@ impl Shell {
                 self.page = 0;
                 self.results.forget();
             }
-            crate::panel::Step::CreateInstance => self.create_instance(),
+            // **The dialog, not an instance.** This called `create_instance()` and fabricated one on a single press;
+            // the reference's row opens the create flow, and the row beside it -- "Sign in to Minecraft" -- is a link,
+            // not an action with a side effect. Driven on both apps: clicking the row left the reference's library
+            // unchanged, and added "Instance 2" to this build with a "Created Instance 2" toast. It opens the same
+            // dialog the toolbar's "+ New instance" does.
+            crate::panel::Step::CreateInstance => {
+                self.create_open = true;
+                self.create_opened = now;
+            }
             crate::panel::Step::Minecraft => self.start_sign_in(),
             // Modrinth's own account is a separate service with its own flow; nothing here
             // can start it, so the row says so rather than doing nothing.

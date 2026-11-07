@@ -1846,3 +1846,25 @@ ink rows identical, overall advance 2.5% narrow -- the same signature Discover h
 
 A row flipped to DONE on this evidence carries that distinction explicitly, because "the type is in the right place" and
 "the type is drawn by a different engine" are different truths and the ledger should not blur them.
+### A checklist row was creating instances on a single press (2026-11-07)
+
+Driven, not assumed: the sidebar's checklist was clicked on both apps at the same coordinate -- y 145, where both sidebars
+show identical ink rows -- and the two did different things.
+
+| | after a press on **Create first instance** |
+|---|---|
+| reference | **nothing changed**: one instance, its dialog closed, no toast |
+| this build, before | **a second instance appeared**, with a "Created Instance 2" toast |
+| this build, now | the **Create instance dialog** opens, with its four options |
+
+`panel_step` called `create_instance()` directly for that step. The row is a *link* -- the two beside it, "Sign in to
+Minecraft" and "Sign in to Modrinth", open flows rather than performing one -- and a checklist item that fabricates an
+instance on a press is a side effect nobody asked for. It now opens the same dialog the toolbar's "+ New instance" opens,
+which is also the closest thing to what the reference does with the press (its own row did nothing in this environment,
+where the app is signed out).
+
+The change needed the frame's time: the dialog guards its first 150 ms so the press that opened it cannot also dismiss it,
+and `panel_step` had no `ui` to read. It takes the time from its caller now.
+
+**This is the first defect this session found by clicking something rather than by measuring it**, and it is the kind no
+capture of a still frame can show: both apps looked identical until one of them was pressed.
