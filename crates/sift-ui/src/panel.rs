@@ -897,7 +897,15 @@ pub fn draw(
         // when on. This drew a 34x18 track without a border and a 13-point knob that never changed -- the sidebar row the
         // gap matrix has carried as row 11 since the first audit.
         let knob_pressed = over_switch && ui.ctx().input(|input| input.pointer.any_down());
-        let radius = if knob_pressed { 5.0 } else if over_switch { 7.0 } else { 6.0 };
+        // **The 200 ms morph, on egui's own clock.** `Toggle.vue:16-30` eases the knob between 12, 14 and 10 over 200 ms;
+        // `animate_value_with_time` is the framework's animator, keyed by an id so it survives between frames, and it asks
+        // for the repaints the ease needs. The settled values are the reference's three exactly.
+        let target = if knob_pressed { 5.0 } else if over_switch { 7.0 } else { 6.0 };
+        let radius = ui.ctx().animate_value_with_time(
+            egui::Id::new("sidebar-hide-installed-knob"),
+            target,
+            0.2,
+        );
         let track = Rect::from_center_size(
             egui::pos2(switch_row.right() - 20.0, switch_row.center().y),
             egui::vec2(40.0, 20.0),

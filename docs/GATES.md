@@ -1693,3 +1693,24 @@ the same in both, which is why a threshold on edges never saw it and a crop at 3
 
 Discover moved 80 932 -> **80 355** across this and the previous capture, which is inside the reference's own
 capture-to-capture noise (1 206) and is not claimed as the toggle's doing.
+### Row 11 closed, with every state measured (2026-11-07)
+
+The toggle's three knob sizes are the reference's, measured from captures rather than asserted from the constant:
+
+| state | knob | reference | how measured |
+|---|---|---|---|
+| at rest | **12 px** (x 1392..1403) | 12 | pointer parked away, bright pixels in the knob's own area |
+| hovered | **14 px** (x 1391..1404) | 14 | pointer on the track for 2 s, so the 200 ms ease has settled |
+| pressed | **10 px** | 10 | `mousedown`, capture while still held, `mouseup` |
+| after a click | **14 px at x 1411..1424** | `translate-x 20` | the knob is 20 points right and still hovered |
+
+The 200 ms morph is `animate_value_with_time` on an id-keyed value, which is egui's own animator: it survives between
+frames, asks for the repaints the ease needs, and settles on exactly the three reference values.
+
+**What this closes.** Row 11 read *"34×18 vs 40×20; knob 13 vs 12; border missing; no state animation"* and every clause is
+now the reference's value, driven and measured rather than read off a constant. It is the first row in this ledger closed end
+to end in one pass: geometry, border, three knob states, travel, colour and the press that toggles it.
+
+**One residual stays open and is a renderer limitation, not a value**: our knob is faceted -- an octagon at radius 6 -- where
+the reference draws a smooth disc, because egui tessellates small circles into few segments. It is the same class as the font
+rasteriser: the shape is right and the engine drawing it is different.
