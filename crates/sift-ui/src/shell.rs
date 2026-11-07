@@ -1748,6 +1748,23 @@ impl Shell {
         // and fully rounded. Update is brand text on a brand ring; the status pill is
         // --color-secondary text after an 8 px dot, on a --surface-5 ring.
         let pill_top = (g::TITLE_BAR - 34.0) / 2.0;
+        // **The round download button, left of Update.** Measured off the reference's strip: its ring runs x 957..990 and
+        // y 8..42 -- a 34-point circle, the same height as the pills -- with a 16-point arrow at its centre (x 972..976).
+        // This build had no such button at all. What it *does* on a press is not recorded anywhere this session could see,
+        // so it is drawn as the affordance it is and nothing is bound to it; a control that guesses its action is worse
+        // than one that waits for the evidence.
+        let download = Rect::from_min_size(egui::pos2(957.0, pill_top), Vec2::splat(34.0));
+        painter.circle_stroke(
+            download.center(),
+            17.0,
+            Stroke::new(1.0, self.theme.SURFACE_5),
+        );
+        icons::draw(
+            painter,
+            Glyph::Download,
+            Rect::from_center_size(download.center(), Vec2::splat(16.0)),
+            self.theme.SECONDARY,
+        );
         let update = Rect::from_min_size(egui::pos2(999.0, pill_top), egui::vec2(98.0, 34.0));
         painter.rect_stroke(
             update,

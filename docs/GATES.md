@@ -404,3 +404,19 @@ What still differs in this strip is now only:
 
 - the icon's **content** (this lab's instance has a flat green icon where the reference's pack has its campfire) -- data;
 - the **download-arrow button** beside the Update pill, which this build does not draw at all.
+### The round download button, drawn at last (2026-11-07)
+
+The action bar had two of its three controls. The missing one is a 34-point ringed circle with a download arrow, which
+the reference puts immediately left of the Update pill. Measured off its strip: the ring runs **x 957..990** and
+**y 8..42**, the arrow sits at x 972..976, and the Update pill begins at 999 -- nine points to its right, as the pill
+constant already said.
+
+Drawn with a `SURFACE_5` ring and a `SECONDARY` arrow. **No action is bound to it**: what the reference's button does on
+a press is not something this session could observe, and a control that guesses its action is worse than one that waits
+for evidence. Recorded as an affordance with an unknown handler rather than a finished control.
+
+Instance page: **34 421 -> 34 380**, title bar **2 332 -> 2 291**.
+
+One difference is left visible in the same crop and named: this build's "Update" label sets a little heavier than the
+reference's, which reads as a 500-weight text where ours may be 600. Worth a look at the weight constant rather than a
+nudge of the size.
