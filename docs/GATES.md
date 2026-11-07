@@ -1436,3 +1436,38 @@ That is the discovery, the name filter and the read, all deterministic.
 **Still unverified**: that a glyph this build could not draw now draws. The visual comparison attempted was invalid -- the
 restart put the results list at a different scroll position, so the two captures showed different projects -- and saying so
 is more useful than the comparison would have been.
+### Skins is the worst page in the product, and it is assets rather than code (2026-11-07)
+
+Both pages measured for the first time on the shipped backend:
+
+| page | total | content |
+|---|---:|---:|
+| **Skins** | **135 728** | **119 030** |
+| Servers | 20 966 | 4 225 |
+
+Servers is in good shape. Skins is four times worse than anything else, and the captures show why at a glance: the
+reference draws **eight detailed Minecraft skins** -- faces, shirt folds, shading -- and this build draws **eight flat
+coloured figures**, a green shirt and blue trousers with no texture on them at all. The preview beside them is the same
+difference at full size.
+
+**It is not the renderer.** `crates/sift-ui/src/skins3d.rs` already samples an atlas texel by texel: its `PARTS` table maps
+every face of every box to a rectangle in the 64x64 skin layout, and `render(atlas, centre, scale, yaw)` returns painted
+texels. What it is handed is the problem -- the default skins in this tree are **generated flat-colour atlases**, and the
+reference's are the real ones.
+
+**Where the real ones would come from, and why this stopped here.** Three routes were checked:
+
+| route | result |
+|---|---|
+| the reference's AppImage (`/scratch/.scratch/dl/squashfs-root`, 292 MB) | no file matching `*skin*`; its assets are embedded in the frontend bundle |
+| fetching from `textures.minecraft.net` | reachable, but the hashes are not known here and guessing one returned 404 |
+| a public mirror of the defaults | not attempted |
+
+All three end in the same place: the eight default skins are **Mojang's art**, not Modrinth's. Bundling them is a licensing
+and attribution decision -- the kind this repository records in `THIRD_PARTY_NOTICES.md` and takes deliberately -- and it is
+not a decision to make silently at the end of a round. What is recorded here is the measurement, the cause, and the fact
+that **the largest single page gain available (~119 000 content pixels) is blocked on that decision rather than on work**.
+
+The alternative that needs no decision is to draw the defaults better: the eight generated atlases could carry plausible
+faces and shading rather than flat rectangles. That closes some of the gap without shipping anyone else's art, and it is
+the route this record would take next if the decision is not made.
