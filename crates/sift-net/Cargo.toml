@@ -8,7 +8,11 @@ license.workspace = true
 
 [dependencies]
 sift-core = { path = "../sift-core" }
-reqwest = { version = "0.11", features = ["blocking", "json"] }
+# **A Rust TLS stack, not the system's.** The default features pull native-tls, which links `libssl.so.3` and
+# `libcrypto.so.3` -- 1 104 + 228 kB resident in the mapping profile -- and on Windows means a vendored OpenSSL build in
+# CI. rustls has no external library to link, so the same transport costs the binary a little code and the process no
+# shared objects. Measured against the memory gate rather than assumed.
+reqwest = { version = "0.11", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"

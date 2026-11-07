@@ -1569,3 +1569,22 @@ worth being unable to debug."* That decision stands; it was re-read rather than 
 No change was made this round: the one cheap candidate is refused by a written decision, and the others need a measurement
 this environment cannot make. The gate stands at **24.4 MiB RSS / 19.3 MiB PSS against 20**, with the difference between
 those two numbers now written down for whoever decides which one the gate is.
+### Dropping OpenSSL took 1.86 MiB off the process (2026-11-07)
+
+`reqwest` was on its default features, which means **native-tls**, which means `libssl.so.3` and `libcrypto.so.3` mapped
+into the process: 1 104 + 228 kB of the mapping profile, and on Windows a vendored OpenSSL build in CI.
+
+The client now uses `rustls-tls` with `default-features = false`:
+
+| | before | after |
+|---|---:|---:|
+| **RSS** | 24 364 kB | **22 504 kB** |
+| **PSS** | 19 332 kB | **17 654 kB** |
+| `libssl`/`libcrypto` linked | yes | **no (`ldd`: zero matches)** |
+
+**1 860 kB**, for a dependency feature and no change to the app code. The gate is 20 MiB, so this is 1.86 of the 4.36 MiB
+that was missing -- and it is the first memory change this session that did not come with a caveat about what it might cost
+elsewhere.
+
+It is also the better answer for the CI target: rustls has no C library to build or ship, which is why the Windows job no
+longer needs a vendored OpenSSL.
