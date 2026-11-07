@@ -363,3 +363,26 @@ alone -- which is glyph rasterisation between this rasteriser and the browser, t
 
 The 3-point heading offset is left as it is rather than nudged: three points is inside the +/-2 target's rounding
 neighbourhood and moving it would trade a real 3 pixels for a guessed one.
+### The title bar carried two brands at once, and the breadcrumb never knew about instances (2026-11-07)
+
+Putting the two title bars side by side at 1:1 found both in one look:
+
+1. **The wordmark was drawn twice.** The plate carries the reference's mark and wordmark together, and the painted
+   fallback -- a mark rectangle plus "Sift Launcher" set in Inter -- was still being drawn underneath it, so the strip read
+   as a bitmap of "modrinth" with our own name smeared across it. The fallback now runs **only** when the plate fails to
+   upload. No measurement had caught this: both elements were "present", and only their overlap was wrong. A capture did.
+   Title bar: **2 229 -> 1 526**, Home **70 527 -> 69 824**.
+
+2. **An open instance replaces the rail name.** The breadcrumb handled the project case and printed `rail.title()`
+   otherwise, so the instance page announced "Home". It now reads the instance: **"Fabric 26.3"**, matching the reference.
+   Instance page title bar: **2 929 -> 2 281**.
+
+Two differences in the same strip are left open and named:
+
+- the reference puts **the instance's own icon** in the breadcrumb where this build still draws the rail's glyph, which
+  needs the icon cache threaded into `title_bar`;
+- the reference has a **download-arrow button** beside the Update pill that this build does not draw at all.
+
+The instance page measured 52 157 in this capture, but its sidebar read 32 423 against 14 636 on the run before: the news
+carousel had rotated between the two apps, which is the confound `SIFT_NEWS_SLIDE` exists to remove and which this
+measurement forgot to use.

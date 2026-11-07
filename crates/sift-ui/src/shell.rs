@@ -1652,26 +1652,27 @@ impl Shell {
         // \`h-7\` tall; this launcher has no wordmark asset, so the name is set in the
         // semibold face at the same height rather than stretched from the mark.
         // The reference's own mark and wordmark, cropped from its render: the block spans x 6..332, y 4..44.
-        if crate::serverart::paint_brand(
-            painter,
-            Rect::from_min_size(egui::pos2(6.0, 4.0), egui::vec2(326.0, 40.0)),
-        ) {
-            // drawn; the painted mark below is the fallback for a texture that failed to upload
+        // **One brand, not two.** The plate carries the mark and the wordmark together, as the reference draws them. The
+        // painted fallback below was still being drawn underneath it, which put "Sift Launcher" set in Inter on top of a
+        // bitmap of the reference's wordmark -- unreadable as either. The capture is what caught it; no measurement had,
+        // because both elements were "present" and only their overlap was wrong.
+        let plate = Rect::from_min_size(egui::pos2(6.0, 4.0), egui::vec2(326.0, 40.0));
+        if !crate::serverart::paint_brand(painter, plate) {
+            let mark = Rect::from_min_size(
+                egui::pos2(12.0, (g::TITLE_BAR - 28.0) / 2.0),
+                Vec2::splat(28.0),
+            );
+            if !crate::brand::paint_mark(painter, ui.ctx(), mark) {
+                painter.rect_filled(mark, 7, self.theme.BRAND);
+            }
+            painter.text(
+                egui::pos2(mark.right() + 8.0, bar.center().y),
+                Align2::LEFT_CENTER,
+                "Sift Launcher",
+                crate::fonts::semibold(16.0),
+                self.theme.CONTRAST,
+            );
         }
-        let mark = Rect::from_min_size(
-            egui::pos2(12.0, (g::TITLE_BAR - 28.0) / 2.0),
-            Vec2::splat(28.0),
-        );
-        if !crate::brand::paint_mark(painter, ui.ctx(), mark) {
-            painter.rect_filled(mark, 7, self.theme.BRAND);
-        }
-        painter.text(
-            egui::pos2(mark.right() + 8.0, bar.center().y),
-            Align2::LEFT_CENTER,
-            "Sift Launcher",
-            crate::fonts::semibold(16.0),
-            self.theme.CONTRAST,
-        );
 
         // Back and forward: \`IconButton type="outlined"\` with \`!h-7 !w-7 !border\`, which is
         // a 28 px square with a one-pixel \`--surface-4\` border and a 16 px glyph. Both are
@@ -1710,9 +1711,13 @@ impl Shell {
         icons::draw(painter, self.rail.glyph(), badge, self.theme.SECONDARY);
         // A project page's breadcrumb is \`rail > project\`, which is why the name comes
         // from the open project when there is one.
-        let crumb = match &self.open_project {
-            Some(project) => format!("{}  >  {}", self.rail.title(), project.title),
-            None => self.rail.title().to_owned(),
+        // **An open instance replaces the rail name, and drops the prefix.** The reference's title bar on an
+        // instance page reads just the instance -- its icon, then "Fabric 26.3" -- where this build kept printing "Home",
+        // because only the project case was handled. Caught by putting the two title bars side by side.
+        let crumb = match (&self.open_instance, &self.open_project) {
+            (Some(instance), _) => instance.name.clone(),
+            (None, Some(project)) => format!("{}  >  {}", self.rail.title(), project.title),
+            (None, None) => self.rail.title().to_owned(),
         };
         painter.text(
             egui::pos2(badge.right() + 5.0, bar.center().y),
