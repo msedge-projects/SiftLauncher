@@ -1588,3 +1588,39 @@ elsewhere.
 
 It is also the better answer for the CI target: rustls has no C library to build or ship, which is why the Windows job no
 longer needs a vendored OpenSSL.
+### The last 2.5 MiB has no single lever (2026-11-07)
+
+After rustls took 1.86 MiB, RSS is **22 756 kB** and PSS **17 846 kB**. Three more candidates were tested and three closed:
+
+| candidate | test | result |
+|---|---|---|
+| a smaller optimisation level | `opt-level = 2` | **worse on both**: RSS 22 844 (up 340), frame p95 24-25 ms under load |
+| the textures | `SIFT_SOFT_MEM` on Home | **2 016 kB in six**, and Home genuinely draws them -- the brand plate, the news art, the instance avatar, the empty-state plates, the font atlas |
+| eager art plates | read `serverart::install` | only `BRAND` uploads at startup; the rest are `lazy` on first use, exactly as the previous pass wrote them |
+
+The binary's own sections say where the rest of it is:
+
+| section | size |
+|---|---:|
+| `.text` (code) | **6 684 909** |
+| `.rodata` (fonts, art, strings) | 2 572 992 |
+| `.eh_frame` (unwinding) | 773 216 |
+| `.data.rel.ro`, relocations | 944 400 |
+
+So the 22.7 MB is: **7.6 MB of binary**, **5.1 MB of frame buffer** (a shared X segment, one 1440x900 image, which the backend
+cannot do without), **3.6 MB of heap**, and **4.6 MB of shared libraries** (libc, libX11, libm, libxkbcommon -- one per
+dependency winit actually needs). There is no item in that list worth 2.5 MB on its own, and the three that were worth
+measuring have been measured.
+
+**The two honest options, stated rather than chosen:**
+
+1. **The frame buffer is 5 MB of the 22.7**, and 5 MB is exactly the share that RSS counts twice (once here, once in the X
+   server's accounting) while PSS counts once. PSS is already **17.8 MB, under the bound**. If "idle RSS under 20 MB" means
+   the launcher's own cost, it is met; if it means the raw RSS number, it is 2.5 MB short and the shortfall is the shared
+   buffer plus shared libraries, not something the launcher allocates.
+2. **A code-size campaign** -- trimming decoders, feature-gating the network stack, replacing `image`'s format support --
+   would find perhaps 1-2 MB of `.text` at the cost of the features that code implements. That is a product decision as
+   much as an engineering one.
+
+The record carries both numbers until that is decided. Nothing was changed this round: the optimisation level is back at 3
+and the tree is as it was.
