@@ -1405,3 +1405,34 @@ that the next session can verify it in one command rather than build it.
 **One residual difference the slice does not close**: with *no* font available, the reference substitutes its `.notdef`
 glyph (a box, one em wide) and this build substitutes `?` (a third of an em), so the two reflow differently. That is the
 rasteriser's choice, not a constant in this tree, and it disappears the moment a font exists.
+### What installing a real face proved: the fallback costs 16 MB (2026-11-07)
+
+To test the loader end to end, a real TTF was placed at `/usr/share/fonts/cjktest/NotoSansKR-Test.ttf` -- the container has
+no CJK face and `fontTools` is not installed to synthesise one, so a bundled system font was renamed into a matching name.
+
+**What that measured, before any question of glyphs:**
+
+| | RSS |
+|---|---:|
+| home page, no CJK face | 24 588 kB |
+| same build, a face found and loaded | **40 796 kB** |
+
+**Sixteen megabytes.** A CJK face plus the glyph atlas it forces. So the fallback that makes Korean text readable is also,
+by itself, four times the amount by which this build misses the 20 MiB gate -- and on a machine that *has* a CJK font, the
+gate would fail by far more than the 4.2 MiB it fails by here, where the font is absent.
+
+That is a real tension and it is not resolved by pretending: the gate is defined on this container, where CJK text cannot
+be drawn at all, and the feature that fixes the text costs more memory than the gate allows. The honest options are a
+smaller face (a subset of a CJK font, a few hundred kilobytes, covering the common Hangul syllables), or accepting that the
+gate holds only on machines without CJK -- and that choice belongs in the record before it is made in code.
+
+The test font was removed afterwards; `/usr/share/fonts` is as it was.
+
+**The loader is now covered without depending on a system font**: `system_fallbacks_in` takes the roots as a parameter, and
+its test builds a directory holding this repository's own `Inter-400.ttf` renamed to a CJK name plus an `Inter-500.ttf`
+named `DejaVuSans.ttf`, then asserts exactly one match, with the matching entry's bytes read rather than merely named.
+That is the discovery, the name filter and the read, all deterministic.
+
+**Still unverified**: that a glyph this build could not draw now draws. The visual comparison attempted was invalid -- the
+restart put the results list at a different scroll position, so the two captures showed different projects -- and saying so
+is more useful than the comparison would have been.

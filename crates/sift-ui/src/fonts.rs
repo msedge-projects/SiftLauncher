@@ -80,8 +80,14 @@ fn is_cjk_font(file_name: &str) -> bool {
 /// One CJK face from the system, if the system has one: the first match in [`FONT_DIRS`], two levels deep, which covers
 /// `/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttf` and `/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttf` alike.
 fn system_fallbacks() -> Vec<(String, Vec<u8>)> {
+    let roots: Vec<std::path::PathBuf> = FONT_DIRS.iter().map(std::path::PathBuf::from).collect();
+    system_fallbacks_in(&roots)
+}
+
+/// The scan itself, over a given list of roots, so a test can point it at a directory it owns.
+fn system_fallbacks_in(roots: &[std::path::PathBuf]) -> Vec<(String, Vec<u8>)> {
     let mut found = Vec::new();
-    for root in FONT_DIRS {
+    for root in roots {
         let Ok(entries) = std::fs::read_dir(root) else {
             continue;
         };
@@ -207,6 +213,29 @@ mod tests {
 
     /// Every weight the helpers name must be one the installer registers, or the helper
     /// silently falls back to 400 and a heading looks like a paragraph.
+    /// The scan finds a CJK-named face, reads it, and refuses everything else -- driven through a directory the test owns,
+    /// with this repository's own Inter renamed into a CJK name so the file is a real TTF without needing a system font.
+    #[test]
+    fn the_scan_finds_a_cjk_face_in_a_given_directory() {
+        let dir = std::env::temp_dir().join("sift-font-scan-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("a temp directory");
+        std::fs::copy(
+            concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/Inter-400.ttf"),
+            dir.join("NotoSansKR-Test.ttf"),
+        )
+        .expect("the bundled Inter, renamed");
+        std::fs::copy(
+            concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/Inter-500.ttf"),
+            dir.join("DejaVuSans.ttf"),
+        )
+        .expect("a font that must not match");
+        let found = system_fallbacks_in(&[dir.clone()]);
+        assert_eq!(found.len(), 1, "exactly one CJK-named face");
+        assert_eq!(found[0].0, "system-NotoSansKR-Test.ttf");
+        assert!(found[0].1.len() > 1000, "the file is read, not merely named");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
     /// The fallback matcher: names that mean CJK, names that do not, and the collection format the rasteriser cannot read.
     #[test]
     fn the_system_fallback_matches_cjk_faces_only() {
