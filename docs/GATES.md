@@ -559,3 +559,29 @@ clipped to its own strip -- safe because a triangle only ever writes rows it cov
 Both gates now have honest instruments and both are short. The remaining frame work is span-filling opaque triangles
 rather than testing coverage per pixel, which is where the 37 ms sits; the remaining memory work is the framework floor
 already recorded at 16.7 MiB for egui plus a window.
+### The span-fill optimisation was rejected for 486 pixels (2026-11-07)
+
+Filling each row of an opaque flat triangle as one slice, instead of testing coverage pixel by pixel, is the obvious next
+step and measured well: **p95 37.70 -> 22.35 ms**. It was reverted, twice, and the numbers are the reason.
+
+| attempt | p95 | pixels that differ from the correct render |
+|---|---:|---:|
+| span fill, slope signs flipped | 22.35 ms | **262 908** |
+| span fill, signs fixed | 31.20 ms | 518 |
+| span fill, ends re-tested exactly | 26.40 ms | **486** |
+| parallel only (kept) | 37.70 ms | **0** |
+
+The first version was a sign error -- `w0`'s derivative is `(b.y - c.y)/area`, not the reverse -- and it filled mirrored
+spans. The corrected version left 518 pixels disagreeing at triangle boundaries; re-testing each span's two end pixels with
+the exact per-pixel condition brought it to 486 and no further, which means the disagreement is not only at the ends.
+
+**486 pixels is 0.04% of the window, and 11 milliseconds is 30% of the frame. It was still the wrong trade**: the
+objective counts differing pixels, and a renderer that is fast but paints the wrong picture is the failure mode this
+record has been refusing all session. `git checkout` restored the parallel version, verified at 0 differing pixels.
+
+### A caveat this round earned
+
+The same parallel build measured **37.70 ms** in one run and **23.79 ms** in another, twenty minutes apart. The difference
+is the box, not the code: the reference app's WebKit renderer sits at 240% CPU throughout, and frame timings taken under
+that load are not comparable run to run. Any future frame number should be taken with the reference stopped, and this
+record should be read as saying the software path is in the **20-38 ms** band rather than at a point inside it.
