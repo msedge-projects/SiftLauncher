@@ -613,3 +613,15 @@ the first unmeasured reading suggested. Idle CPU with the box quiet is 11% of a 
 painted 486 wrong pixels and was rejected. What remains is not an algorithmic trick but arithmetic width: the per-pixel
 coverage test is the cost, it cannot be replaced by a coarser span without changing pixels, and the honest next step is
 SIMD over the inner loop or a different rasteriser -- both bigger than a slice, and neither claimed here.
+### How a clean frame number is taken here (2026-11-07)
+
+The reference app is a WebKit browser and its renderer sits at **240% CPU** on its own, which made every frame measurement
+this session a measurement of contention as much as of code -- the same build reading 37.70 ms in one run and 23.79 ms in
+another, twenty minutes apart.
+
+The fix is to **suspend** it rather than close it: `kill -STOP <pid>`, take the measurement, `kill -CONT <pid>`. Its window,
+its page and its state all survive -- verified by the window still answering to `xdotool getwindowpid` (PID 332733, state
+`T`) and drawing again after `-CONT`. Load falls from 9 to **2.16** while it is suspended.
+
+That is how the 24-27 ms figure was obtained, and how any future one should be: **a frame time measured beside a spinning
+browser is not a frame time.**
