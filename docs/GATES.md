@@ -596,3 +596,20 @@ against a build that has since changed its renderer, and putting them in the rec
 The loop itself is left in the tree for whoever wants it, with the note that a heartbeat whose captures are not refreshed
 reports drift that is not there -- and, at 240 seconds, quietly kept a Python and an ImageMagick busy on a box already
 loaded by the reference's WebKit renderer.
+### Frame time with the box quiet: 24-27 ms, so the gate fails honestly (2026-11-07)
+
+Every frame measurement this session has been taken with the reference app's WebKit renderer at 240% CPU in the same
+container, which is why the same build read 37.70 ms once and 23.79 ms twenty minutes later. With the reference paused:
+
+| run | mean | p95 | max |
+|---|---:|---:|---:|
+| idle-ish frames | 15.26 ms | **24.40 ms** | 29.79 ms |
+| during pointer sweeps | 20.75 ms | **26.76 ms** | 29.81 ms |
+
+So the software path sits at **roughly 25 ms p95** against a **16 ms** gate: a factor of 1.6 short, not the factor of 6
+the first unmeasured reading suggested. Idle CPU with the box quiet is 11% of a core.
+
+**What has been tried and what is left.** The parallel row bands took 91 -> 38 ms; the span-fill took it to 22-26 ms but
+painted 486 wrong pixels and was rejected. What remains is not an algorithmic trick but arithmetic width: the per-pixel
+coverage test is the cost, it cannot be replaced by a coarser span without changing pixels, and the honest next step is
+SIMD over the inner loop or a different rasteriser -- both bigger than a slice, and neither claimed here.
