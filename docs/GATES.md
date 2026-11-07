@@ -1868,3 +1868,16 @@ and `panel_step` had no `ui` to read. It takes the time from its caller now.
 
 **This is the first defect this session found by clicking something rather than by measuring it**, and it is the kind no
 capture of a still frame can show: both apps looked identical until one of them was pressed.
+### Row 3's weight residual was stale, and my first attempt hit the wrong row (2026-11-07)
+
+The row carried *"the label is `body` (400) where the reference is `font-medium` (500)"*. Reading the checklist's own draw
+call, the label has been `fonts::label(STEP_SIZE)` -- inter-500 -- with a comment naming `font-medium`. The residual was
+already closed when it was written down.
+
+**And the attempt to close it changed the wrong element.** `fonts::body(STEP_SIZE)` at `panel.rs:997` draws the *category*
+row's name, not the checklist's; the checklist label is at `:807`. Measured on the checklist band, the edit was inert --
+2 537 ink pixels before and after, the same number -- which is what caught it. Reverted.
+
+**An inert measurement is evidence.** A change that produces *exactly* the same number as before is either not touching
+the element you think, or not touching anything; both are worth knowing before the next edit, and both are cheaper to learn
+than a plausible-looking improvement would have been to unlearn.
