@@ -1307,3 +1307,30 @@ scaled. That is a hypothesis, not a finding, and it is written here as one.
 **The next measurement must be on a page whose content does not change between captures** -- the settings panel is long,
 static, and scrolls the same way -- and it must pin the pointer, wait for the fetch to settle, and take both captures
 after the same pause. Comparing scroll on a list that is still loading measures the loading.
+### The scroll measurement saturated, and two fixes moved nothing (2026-11-07)
+
+On the settings panel -- static content, pointer pinned in the modal body for both sides:
+
+| notches | reference | this build |
+|---|---:|---:|
+| 1 | -- | 114 px |
+| 3 | 170 px (56.7 each) | 126 px |
+
+One notch moving 114 and three moving 126 is not a step of 42 or of 57: it is the same distance twice, which means the
+**panel ran out of scrollable content at about 120 points**. The Appearance tab is short, so every measurement past the
+first notch is clamped and says nothing about the wheel's step.
+
+Two changes were tried against that number and neither moved it, which is the same evidence read from the other side:
+
+| change | result |
+|---|---|
+| `line_scroll_speed` set to the reference's 57 in `Shell::ui` | 126, unchanged |
+| the modal's own `Line` conversion 40 -> 57, in both places it appears | 126, unchanged |
+| the modal consuming the wheel events so nothing downstream doubles them | 114, unchanged |
+
+Both reverted. Nothing is known about the step yet, and the next attempt needs a tab with **more content than one screen**
+-- Resources or Troubleshooting -- so the scroll is not clamped, and it needs to read the same two captures for the
+reference's step as well, since 170 over three notches could be a clamp too.
+
+**The lesson is the one this round earned twice**: a measurement that returns the same number for one unit and three is
+reporting its own ceiling. The panel was chosen *because* it was static, and static turned out to be short.
