@@ -1286,3 +1286,24 @@ because an earlier probe showed the modifier already cleared on the frame the di
 
 **262 tests pass.** The keyboard coverage is now: five rail shortcuts, seven Escape handlers, and the context menu's arrow
 and type-ahead behaviour from its own existing tests.
+### The wheel comparison needs a static page: a method failure, not a number (2026-11-07)
+
+Comparing how far five wheel notches scroll each app's Discover list:
+
+| | five notches | ten notches |
+|---|---:|---:|
+| reference | 464 px | -- |
+| this build | 122 px | **34 px** |
+
+Ten notches reading *less* than five is impossible, so the method is what failed, not the app. The measurement
+cross-correlates the content above and below the wheel, and Discover's content is still changing between captures -- the
+project icons are fetched asynchronously and every one that lands rewrites its card. A correlation against moving content
+finds whichever offset happens to match some of it.
+
+**What survives**: the reference's 464 for five notches was taken with its list already settled, and ours at 122 is close
+to a single notch of the vendored crate's own 120-point step, which would mean four of five presses were lost rather than
+scaled. That is a hypothesis, not a finding, and it is written here as one.
+
+**The next measurement must be on a page whose content does not change between captures** -- the settings panel is long,
+static, and scrolls the same way -- and it must pin the pointer, wait for the fetch to settle, and take both captures
+after the same pause. Comparing scroll on a list that is still loading measures the loading.
