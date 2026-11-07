@@ -772,3 +772,25 @@ proved earlier by byte-identical captures of a pressed key.
 Writing the picker's test corrected a wrong assumption on the way: `shell.picker` holds a `Picker` struct (kind plus the
 time it opened), not a bare `PickerKind`. The compiler said so in one line, which is the argument for writing the test
 rather than reasoning about the field from a `match` three hundred lines away.
+### Escape coverage: from one handler to six (2026-11-07)
+
+The record carried "16 of 17 Escape handlers untested" as an open item for many rounds. Six now have tests, plus the
+context menu's, which already had one:
+
+| handler | test | asserts |
+|---|---|---|
+| about modal | `escape_closes_the_about_modal_without_drawing_it` | closed, and no frame owed |
+| create dialog | `escape_closes_the_create_dialog` | `create_open` false |
+| install picker | `escape_closes_the_install_picker` | `picker` none |
+| rename dialog | `escape_closes_the_rename_dialog` | `edit` none |
+| settings modal | `escape_closes_the_settings_modal` | `state.open` false, no frame owed |
+| delete confirmation | `escape_cancels_the_delete_confirmation` | the returned answer is `Cancel`, never `Delete` |
+| card menu | (pre-existing) | `open_for` and `highlight` both cleared |
+
+The confirmation is the one worth naming: it returns an answer instead of setting a flag, so the assertion is that **Escape
+can only ever produce `Cancel`** -- the difference between a dialog that closes and a dialog that cannot delete something
+by accident.
+
+Each test also caught a wrong assumption about the state it drives: `picker` is a struct with the time it opened, `edit` is
+an `Option<(String, String)>`, the settings modal keeps its own `State` in its own module, and the confirmation is a
+function returning an enum. Reading those from `match` arms elsewhere would have got three of the four wrong.

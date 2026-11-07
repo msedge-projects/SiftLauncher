@@ -2234,6 +2234,31 @@ mod tests {
 
     /// The hero is the fresh-install state and the list is everything else: the dispatch is
     /// a plain `is_empty`, so this pins the decision rather than the drawing.
+    /// **Escape cancels the delete confirmation.** The dialog is drawn by `confirm_dialog`, which returns its answer,
+    /// so this asserts the answer rather than a flag: `Ask` with the key held must come back `Cancel`.
+    #[test]
+    fn escape_cancels_the_delete_confirmation() {
+        let ctx = egui::Context::default();
+        crate::fonts::install(&ctx);
+        crate::serverart::install(&ctx);
+        let theme = crate::theme::dark();
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1440.0, 900.0))),
+            events: vec![egui::Event::Key {
+                key: egui::Key::Escape,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+            ..Default::default()
+        };
+        let mut answer = ConfirmChoice::Delete;
+        ctx.run_ui(raw, |ui| {
+            answer = confirm_dialog(ui, &theme, None);
+        });
+        assert_eq!(answer, ConfirmChoice::Cancel, "Escape must cancel, never delete");
+    }
     #[test]
     fn an_empty_library_is_the_hero() {
         let none: Vec<Entry> = Vec::new();
