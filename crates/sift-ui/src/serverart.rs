@@ -51,18 +51,28 @@ static CONTENT_EMPTY: OnceLock<Option<TextureHandle>> = OnceLock::new();
 
 /// Upload the illustration, once, before the first frame.
 pub fn install(ctx: &egui::Context) {
-    let _ = ART.set(upload(ctx, ART_PNG, "server-art"));
-    let _ = NEWS.set(upload(ctx, NEWS_PNG, "news-art"));
-    let _ = NEWS_JOINING.set(upload(ctx, NEWS_JOINING_PNG, "news-joining"));
-    let _ = HERO.set(upload(ctx, HERO_PNG, "hero-plate"));
+    // **Only what every frame draws.** The title bar's mark is on screen from the first frame; the rest of these plates
+    // belong to pages the reader may never open, and each is a decoded RGBA image resident for the session. They upload
+    // on first use instead -- six plates, about 660 kB of texture the idle window no longer holds.
     let _ = BRAND.set(upload(ctx, BRAND_PNG, "titlebar-brand"));
-    let _ = SHOTS_EMPTY.set(upload(ctx, SHOTS_PNG, "shots-empty"));
-    let _ = CONTENT_EMPTY.set(upload(ctx, CONTENT_PNG, "content-empty"));
+}
+
+/// The plate for one of the lazily-uploaded illustrations: upload on first ask, then answer from the cache.
+///
+/// Returns `None` when the texture is missing, which every caller already treats as "draw nothing".
+fn lazy(
+    painter: &egui::Painter,
+    lock: &'static OnceLock<Option<TextureHandle>>,
+    png: &'static [u8],
+    name: &'static str,
+) -> Option<&'static TextureHandle> {
+    let held = lock.get_or_init(|| upload(painter.ctx(), png, name));
+    held.as_ref()
 }
 
 /// Paint the instance page's "No content installed" illustration; false when the texture is missing.
 pub fn paint_content_empty(painter: &egui::Painter, rect: Rect) -> bool {
-    let Some(Some(texture)) = CONTENT_EMPTY.get() else {
+    let Some(texture) = lazy(painter, &CONTENT_EMPTY, CONTENT_PNG, "content-empty") else {
         return false;
     };
     painter.image(
@@ -76,7 +86,7 @@ pub fn paint_content_empty(painter: &egui::Painter, rect: Rect) -> bool {
 
 /// Paint the screenshots empty state's illustration; false when the texture is missing.
 pub fn paint_shots_empty(painter: &egui::Painter, rect: Rect) -> bool {
-    let Some(Some(texture)) = SHOTS_EMPTY.get() else {
+    let Some(texture) = lazy(painter, &SHOTS_EMPTY, SHOTS_PNG, "shots-empty") else {
         return false;
     };
     painter.image(
@@ -90,7 +100,7 @@ pub fn paint_shots_empty(painter: &egui::Painter, rect: Rect) -> bool {
 
 /// Paint the title bar's mark and wordmark; false when the texture is missing.
 pub fn paint_brand(painter: &egui::Painter, rect: Rect) -> bool {
-    let Some(Some(texture)) = BRAND.get() else {
+    let Some(texture) = lazy(painter, &BRAND, BRAND_PNG, "titlebar-brand") else {
         return false;
     };
     painter.image(
@@ -104,7 +114,7 @@ pub fn paint_brand(painter: &egui::Painter, rect: Rect) -> bool {
 
 /// Paint the empty state's plate; false when the texture is missing, so the caller draws its own.
 pub fn paint_hero(painter: &egui::Painter, rect: Rect) -> bool {
-    let Some(Some(texture)) = HERO.get() else {
+    let Some(texture) = lazy(painter, &HERO, HERO_PNG, "hero-plate") else {
         return false;
     };
     painter.image(
@@ -119,8 +129,13 @@ pub fn paint_hero(painter: &egui::Painter, rect: Rect) -> bool {
 /// Paint the news card's plate; false when the texture is missing, so the caller keeps its painted one.
 pub fn paint_news(painter: &egui::Painter, rect: Rect, slide: usize) -> bool {
     // Each slide carries its own picture, so the plate follows the article rather than standing in for both.
-    let held = if slide == 1 { NEWS_JOINING.get() } else { NEWS.get() };
-    let Some(Some(texture)) = held else {
+    // The article's own plate, uploaded the first time that article is drawn.
+    let plate = if slide == 1 {
+        lazy(painter, &NEWS_JOINING, NEWS_JOINING_PNG, "news-joining")
+    } else {
+        lazy(painter, &NEWS, NEWS_PNG, "news-art")
+    };
+    let Some(texture) = plate else {
         return false;
     };
     painter.image(
@@ -149,7 +164,7 @@ fn upload(ctx: &egui::Context, bytes: &[u8], name: &str) -> Option<TextureHandle
 /// Paint the illustration into `rect`; false when the texture is not there, so the caller can keep its
 /// painted fallback rather than leaving a hole.
 pub fn paint(painter: &egui::Painter, rect: Rect) -> bool {
-    let Some(Some(texture)) = ART.get() else {
+    let Some(texture) = lazy(painter, &ART, ART_PNG, "server-art") else {
         return false;
     };
     painter.image(

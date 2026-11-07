@@ -237,3 +237,18 @@ were not merely rarely used; nothing on that page drew a glyph from them.
 
 Session total: **113.3 -> 23.8 MiB** idle RSS. PSS -- the proportion actually attributable to this process -- is now
 **18.4 MiB**, under the gate.
+### Art plates upload on first use (2026-11-07)
+
+`serverart::install` uploaded seven illustrations at startup, including the Screenshots empty state and the instance
+page's "No content installed" box -- plates a reader may never see, each a decoded RGBA image held for the session.
+Only the title bar's mark is unconditional now; the rest upload the first time their page draws them.
+
+| | before | after |
+|---|---:|---:|
+| textures held at idle | 2 254 kB (10) | **1 964 kB (6)** |
+| RssAnon | 6 220 kB | **5 928 kB** |
+| idle RSS | 23.8 MiB | **23.6 MiB** |
+| PSS | 18.4 MiB | **18.2 MiB** |
+
+Home still draws the news card and the hosting banner, so those two plates are still resident there -- which is why the
+saving is 290 kB rather than the 660 kB the six deferred plates add up to.
