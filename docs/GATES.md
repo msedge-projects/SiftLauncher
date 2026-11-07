@@ -1898,3 +1898,23 @@ fades.
 **Residual, measured rather than smoothed over:** with the pitch right, our whole block still sits **11 points lower** --
 the first label at 421 against 410 -- and the offset is in the stack above it, where the reference has text at 365 and the
 switch row and "Category" heading land differently. That is a separate defect from the pitch and is left named.
+### The pitch was right and the total got worse, so it went back (2026-11-07)
+
+With `CATEGORY_ROW` at the measured 32, the pitch matches the reference exactly -- and Discover's sidebar went from **14 075 to
+16 398**. The reason is the block's position, measured in the same captures:
+
+| | reference | this build |
+|---|---|---|
+| "Category" heading ink | y 365..378 | y 388..401 (**23 lower**) |
+| first category label | y 409 | y 421 (**12 lower**) |
+| gap, heading to first row | **31** | 20 |
+
+So the list is pitched right and placed wrong, and *more* correctly-pitched rows that are all 12 points low differ from more
+pixels than six rows that drift. Reverted.
+
+**What this pair of measurements says is that the sidebar's lower stack cannot be fixed one constant at a time** -- the same
+conclusion the Discover card rows reached from the other direction. The heading, the switch row above it and the news card
+above that all have to move together, and the news card's art changed height this session, which is very likely part of why
+the block sits low.
+
+Both numbers are now in the record so the next pass starts from them rather than from `CATEGORY_ROW` alone.
