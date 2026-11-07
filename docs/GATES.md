@@ -1471,3 +1471,34 @@ that **the largest single page gain available (~119 000 content pixels) is block
 The alternative that needs no decision is to draw the defaults better: the eight generated atlases could carry plausible
 faces and shading rather than flat rectangles. That closes some of the gap without shipping anyone else's art, and it is
 the route this record would take next if the decision is not made.
+### The frame is the rasteriser and nothing else: a profile, and two rejected attempts (2026-11-07)
+
+The frame gate has been failing for thirty rounds against a number, not a breakdown. This round added phase timers --
+paint, present, and the difference from the logged total -- and the answer is unambiguous:
+
+| page | paint | present | whole frame |
+|---|---:|---:|---:|
+| Servers, nearly empty | **21.7 ms** | **0.01 ms** | 18-27 |
+| Discover, twenty cards | **26.0-36.5 ms** | **0.01 ms** | 33-42 |
+
+**Presenting is free** and egui's layout is inside the noise: the software rasteriser is the entire frame, and even a page
+with almost nothing on it costs 21 ms. That is not scene complexity -- it is the fixed work of filling a 1440x900 window,
+which is why SIMD was the right theory. What it also shows is where the cost sits: **two float divisions per pixel** for
+the barycentric weights.
+
+**Two attempts, both bit-exact, both measured, neither kept:**
+
+| change | paint | pixels |
+|---|---:|---|
+| the loop as it was | 21.7 / 21.2 / 22.3 (Servers) | -- |
+| flat-opaque path lifted out of the pixel loop | 25.7-28.1 (Home) | **33 808, unchanged** |
+| the same, four pixels at a time | 28.9-39.0 (Home) | **33 808, unchanged** |
+
+Hoisting the branch changed nothing measurable, and four-wide lanes made it *worse* -- the compiler did not pack the
+divides, and the lane bookkeeping cost more than the divisions saved. Both were reverted: a change that does not move the
+measurement does not stay, however much sense it makes.
+
+**What the profile leaves as the real option** is replacing the two divisions with one multiply by a reciprocal, which is
+the one thing guaranteed to be fast and the one thing that cannot be done bit-exactly: `x / area` and `x * (1/area)` differ
+in the last bit, and a last bit is a boundary pixel. That is the same trade the span-fill attempt lost on, and it now has a
+number attached: the frame is 21 ms of divisions, and the gate wants 16.
