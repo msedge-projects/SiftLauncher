@@ -495,3 +495,35 @@ that the row read as active with a line through it. Both values are now measured
 
 The lesson is worth more than the 346 pixels: **a threshold hides a colour.** Any "at its floor" claim in this record
 about a region that was never run through `tone.py` is a claim about layout only.
+## The idle window was eating a third of a core (2026-11-07)
+
+Asked to check whether the work was maxing out the machine, the answer was yes: load average **9.04 on six CPUs**, and
+one of the processes was this launcher at **95.5% of a core while idle**. Three separate causes, found and fixed in order:
+
+**1. A redraw loop.** `about_to_wait` requested a redraw *and* drew a frame itself, while `RedrawRequested` set the dirty
+flag -- so every frame produced the event that asked for the next one. Draw now happens only in the redraw handler:
+95% -> **30%**.
+
+**2. Nothing bounded the frame rate.** An animating page scheduled the next frame for "now", which against a software
+rasteriser means as fast as the  machine allows. There is now a 16 ms floor (60 fps, the most a reader can see).
+
+**3. Each frame cost ~130 ms.** Tracing showed only 1.6 frames a second, so the CPU was not frequency but *cost*: every
+pixel of a 1440x900 panel went through twelve interpolated channels, a bounds-checked texture fetch and a blend to arrive
+at the colour it started with.
+
+- A **constant-UV triangle samples once** -- solid fills and their antialiasing fringes point every vertex at the same
+  texel, and those triangles cover most of the window.
+- A **flat, fully opaque triangle writes a constant**: no interpolation, no texture, no blend.
+
+**Result: idle CPU 30% -> 9% of a core, with 0 pixels changed** -- verified by diffing the frame before and after the fast
+path across all 1 296 000 pixels of the window, and Home reading the identical 69 534 against the reference.
+
+**An optimisation that was reverted, and why.** Replacing the per-pixel barycentric weights with incremental steps had a
+sign error in the edge gradients; the window rendered as green fragments on black, and the CPU reading of "2%" that came
+with it was the broken renderer drawing almost nothing. That is worth stating plainly: **a performance number measured on
+a broken render is not a performance number.** The incremental version was reverted through `git checkout` and only the
+sampling half survived, which is why the honest figure is 9% and not 2%.
+
+**Two things on this box that are not this launcher:** the reference app's WebKit renderer is at **240% CPU** on its own,
+and repeated launches have left **298 zombie `SiftUi` processes** (their parent shells exit and PID 1 does not reap them).
+Neither consumes CPU, but both explain a load average that stays high while this build idles at 9%.

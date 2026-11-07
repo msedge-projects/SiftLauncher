@@ -162,6 +162,37 @@ impl Painter {
         let min_y = min_y.max(0) as usize;
         let max_x = (max_x.max(0) as usize).min(width);
         let max_y = (max_y.max(0) as usize).min(height);
+        // A triangle that is one colour, fully opaque, and either untextured or over a fully opaque texel needs no
+        // interpolation and no blend: it is a constant write.
+        let flat_texel_alpha = texture.map(|texture| {
+            let (w, h) = (texture.image.size[0], texture.image.size[1]);
+            let u = (a.uv.x * w as f32) as isize;
+            let v = (a.uv.y * h as f32) as isize;
+            let texel = texture.image.pixels
+                [(v.clamp(0, h as isize - 1) as usize) * w + (u.clamp(0, w as isize - 1) as usize)];
+            texel
+        });
+        let flat_opaque = a.color == b.color
+            && b.color == c.color
+            && a.color.a() == 255
+            && a.uv == b.uv
+            && b.uv == c.uv
+            && flat_texel_alpha.map(|t| t.a() == 255).unwrap_or(true);
+        let flat_packed = if flat_opaque {
+            let base = a.color;
+            let texel = flat_texel_alpha;
+            let (r, g, bch) = match texel {
+                Some(t) => (
+                    (base.r() as u32 * t.r() as u32) / 255,
+                    (base.g() as u32 * t.g() as u32) / 255,
+                    (base.b() as u32 * t.b() as u32) / 255,
+                ),
+                None => (base.r() as u32, base.g() as u32, base.b() as u32),
+            };
+            (r << 16) | (g << 8) | bch
+        } else {
+            0
+        };
         for y in min_y..max_y {
             let py = y as f32 + 0.5;
             for x in min_x..max_x {
@@ -172,15 +203,33 @@ impl Painter {
                 if w0 < 0.0 || w1 < 0.0 || w2 < 0.0 {
                     continue;
                 }
+                // **The opaque flat fast path.** A panel background is one colour at full alpha over a huge area; the
+                // general path interpolates twelve channels, samples a texture and blends, per pixel, to arrive at exactly
+                // the colour it started with. Writing the packed constant is the same pixels for a fraction of the work.
+                if flat_opaque {
+                    buffer[y * width + x] = flat_packed;
+                    continue;
+                }
                 let mut src = [
                     a.color.r() as f32 * w0 + b.color.r() as f32 * w1 + c.color.r() as f32 * w2,
                     a.color.g() as f32 * w0 + b.color.g() as f32 * w1 + c.color.g() as f32 * w2,
                     a.color.b() as f32 * w0 + b.color.b() as f32 * w1 + c.color.b() as f32 * w2,
                     a.color.a() as f32 * w0 + b.color.a() as f32 * w1 + c.color.a() as f32 * w2,
                 ];
+                // **A constant-UV triangle samples once.** Solid fills and their antialiased fringes point every vertex at
+                // the same texel, and those triangles cover most of a 1440x900 window: sampling per pixel was the largest
+                // single cost in the frame. The weights are computed exactly as before -- an attempt to step them
+                // incrementally put a sign error in the barycentrics and drew the window as green fragments on black, which
+                // is why only this half of the optimisation survived.
+                let flat_uv = if a.uv == b.uv && b.uv == c.uv { Some(a.uv) } else { None };
                 if let Some(texture) = texture {
-                    let u = a.uv.x * w0 + b.uv.x * w1 + c.uv.x * w2;
-                    let v = a.uv.y * w0 + b.uv.y * w1 + c.uv.y * w2;
+                    let (u, v) = match flat_uv {
+                        Some(uv) => (uv.x, uv.y),
+                        None => (
+                            a.uv.x * w0 + b.uv.x * w1 + c.uv.x * w2,
+                            a.uv.y * w0 + b.uv.y * w1 + c.uv.y * w2,
+                        ),
+                    };
                     // **Nearest sampling.** Bilinear was tried and measured: 73 660 against 73 662 differing pixels, two
                     // pixels, for four texel reads and a mix per pixel. It did not earn its cost, so the simple sampler
                     // stays -- and the note stays with it so the experiment is not run again by accident.

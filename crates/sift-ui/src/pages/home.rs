@@ -1044,6 +1044,10 @@ fn list(
         );
         // A **dashed** border, as the reference draws it, plus the heading's collapse chevron: a solid rule read as
         // another card instead of the temporary space it is.
+        // **The strip carries a fill, not just a dashed outline.** The reference's row sits on #1D1F23 -- the theme's
+        // own SURFACE_2 -- across its whole width, and this build left the page background showing through: 63 670 pixels
+        // of ref (29,31,35) against ours (22,24,28), invisible to a 40-point threshold and obvious to the eye in a crop.
+        painter.rect_filled(strip, 12.0, theme.SURFACE_2);
         crate::pages::home::dashed_rect(&painter, strip, 12.0, theme.SURFACE_5);
         crate::icons::draw(
             &painter,

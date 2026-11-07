@@ -133,18 +133,27 @@ impl Soft {
                 self.painter.len()
             );
         }
+        if std::env::var("SIFT_SOFT_TRACE").is_ok() {
+            eprintln!("frame animating={animating} delay_zero={}", output.viewport_output.get(&egui::ViewportId::ROOT).map(|v| v.repaint_delay.is_zero()).unwrap_or(false));
+        }
         self.dirty = false;
         let delay = output
             .viewport_output
             .get(&egui::ViewportId::ROOT)
             .map(|viewport| viewport.repaint_delay)
             .unwrap_or(Duration::MAX);
+        // **Never schedule the next frame for "now".** An animating page asked for an immediate repaint every time, and with
+        // no vsync behind a software rasteriser that means re-drawing as fast as the machine can -- measured at 95% of a core
+        // for an idle launcher, on a box already at load 9. One frame per 16 ms is 60 fps: the most a reader can see, and the
+        // difference between a launcher and a space heater.
+        const FRAME_FLOOR: Duration = Duration::from_millis(16);
+        let now = Instant::now();
         self.next_frame = if animating || delay.is_zero() {
-            Some(Instant::now())
+            Some(now + FRAME_FLOOR)
         } else if delay == Duration::MAX {
             None
         } else {
-            Some(Instant::now() + delay)
+            Some(now + delay.max(FRAME_FLOOR))
         };
     }
 }
@@ -176,7 +185,15 @@ impl ApplicationHandler for Soft {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
-            WindowEvent::Resized(_) | WindowEvent::RedrawRequested => self.dirty = true,
+            WindowEvent::Resized(_) => self.dirty = true,
+            // **The frame happens here, not in `about_to_wait`.** It used to happen in both: the loop asked for a redraw,
+            // took the redraw as a change, drew, asked again. Against a software rasteriser that ran the box at 95% of a core
+            // for an idle window -- load average 9 on six CPUs -- and no amount of scheduling a later frame could break it,
+            // because `dirty` was set by the very event the redraw produced.
+            WindowEvent::RedrawRequested => {
+                self.frame();
+                self.dirty = false;
+            }
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 self.scale = scale_factor as f32;
                 self.ctx.set_pixels_per_point(self.scale);
@@ -257,7 +274,6 @@ impl ApplicationHandler for Soft {
             if let Some(window) = self.window.as_ref() {
                 window.request_redraw();
             }
-            self.frame();
             event_loop.set_control_flow(match self.next_frame {
                 Some(at) => ControlFlow::WaitUntil(at),
                 None => ControlFlow::Wait,
