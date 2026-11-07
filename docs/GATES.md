@@ -1881,3 +1881,20 @@ row's name, not the checklist's; the checklist label is at `:807`. Measured on t
 **An inert measurement is evidence.** A change that produces *exactly* the same number as before is either not touching
 the element you think, or not touching anything; both are worth knowing before the next edit, and both are cheaper to learn
 than a plausible-looking improvement would have been to unlearn.
+### The category list was pitched 46 points apart where the reference is 32 (2026-11-07)
+
+Measured from two captures of the reference, by finding the ink bands of its category labels:
+
+| | reference | this build, before | this build, now |
+|---|---|---|---|
+| label ink bands start at | 410, 442, 474, 506, 538, 570 | 410, 456, 502, 548, 594 | **421, 453, 485, 517, 549** |
+| pitch | **32** | 46 | **32** |
+
+`CATEGORY_ROW` was 46, and its comment cited "y 229, 275, 322 -- a 46-point pitch" as the measurement behind it. Those rows
+are 46 apart, but they are not this list: the category labels are 32 apart in the same capture the comment was taken from.
+At 46 the panel fitted six rows where the reference fits eight, which is why its list appeared to end where the reference
+fades.
+
+**Residual, measured rather than smoothed over:** with the pitch right, our whole block still sits **11 points lower** --
+the first label at 421 against 410 -- and the offset is in the stack above it, where the reference has text at 365 and the
+switch row and "Category" heading land differently. That is a separate defect from the pitch and is left named.

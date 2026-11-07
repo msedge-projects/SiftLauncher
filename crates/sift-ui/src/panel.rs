@@ -93,9 +93,11 @@ const HIDE_INSTALLED: &str = "Hide content already installed";
 const SEE_LESS: &str = "See less";
 
 /// One category row's height, and how many the panel lists before a `See more` would go.
-// Measured from the reference's Discover panel: its category rows sit at y 229, 275, 322 -- a 46-point pitch with
-// a 16-point glyph and 16-point text, where this drew 26-point rows of 13-point text.
-const CATEGORY_ROW: f32 = 46.0;
+// **32, measured twice.** The category labels' ink bands in the reference's Discover panel start at y 410, 442, 474,
+// 506, 538 and 570 -- a 32-point pitch -- and a second capture puts Adventure at 413 and Challenging at 445. This drew
+// them 46 apart from a citation of "y 229, 275, 322", which is 46 apart but belongs to a different list: at this pitch
+// the reference fits eight rows where this build fitted six, and its list fades at the bottom rather than ending.
+const CATEGORY_ROW: f32 = 32.0;
 // The reference lists eight before its own scroll takes over; there is no "See more" row in its capture.
 const CATEGORY_ROWS: usize = 8;
 
