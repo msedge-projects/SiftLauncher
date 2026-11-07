@@ -75,10 +75,7 @@ impl Page {
                 geometry::TITLE_BAR,
             ),
             egui::vec2(
-                // **To the panel edge.** This ran 24 points short, which is the inset the toolbar was missing: with the row
-                // laid out from the right edge, the buttons landed 25 points left of the reference's -- the same number. The
-                // inset belongs to the left only; the reference's own column ends at 1 140.
-                geometry::PANEL_LEFT - geometry::TEXT_LEFT,
+                geometry::PANEL_LEFT - geometry::CONTENT_INSET - geometry::TEXT_LEFT,
                 geometry::WINDOW.1 - geometry::TITLE_BAR,
             ),
         )

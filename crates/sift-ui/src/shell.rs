@@ -2628,10 +2628,10 @@ impl Shell {
         let content = Rect::from_min_size(
             egui::pos2(g::TEXT_LEFT, g::TITLE_BAR + g::CONTENT_INSET),
             egui::vec2(
-                // **To the panel's edge, not 24 short of it.** The toolbar laid out from this rect stopped 24 points early on
-                // every page; with the reference's buttons ending at 1113 in a column that ends at 1140, the inset is on the
-                // left only. Measured by laying the library toolbar out from the right edge and finding it 25 short.
-                g::PANEL_LEFT - g::TEXT_LEFT,
+                // **The inset is on both sides after all.** Widening this to the panel edge fixed the toolbar and broke every
+                // centred empty state: the reference's Screenshots heading centres at 602, which is the centre of 88..1116, and
+                // widening moved ours to 614. The toolbar's own padding was the thing that was wrong, not the column.
+                g::PANEL_LEFT - g::CONTENT_INSET - g::TEXT_LEFT,
                 g::WINDOW.1 - g::TITLE_BAR - 2.0 * g::CONTENT_INSET,
             ),
         );

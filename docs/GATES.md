@@ -926,3 +926,31 @@ And the toolbar runs, at y 250 where the buttons are solid fill:
 The instance button's **right edge is identical at 1 108** and the group is within four points, against a row that ended at
 957 when this thread started. Home's journey this session: 69 534 -> 61 378, and the last three rounds account for 8 156 of
 it.
+### The column was right; the toolbar's padding was wrong (2026-11-07)
+
+Last round widened the page column to the panel edge and Home improved to 61 378. This round shows that was two fixes in
+one, and one of them was wrong:
+
+| page | column 1 116 | column 1 140 |
+|---|---:|---:|
+| Home | 62 571-63 080 | **61 378** |
+| Screenshots | **23 729** | 24 080 |
+
+The reference's Screenshots heading **centres at 602**, which is the centre of 88..1116 -- so the 24-point inset is real and
+on both sides. Widening the column moved every centred empty state 12 points right, and a page measured against a heading's
+position says so immediately.
+
+The toolbar had been 25 points left for a different reason: its padding was **27**, taken from an edge the column never
+reaches. With the column back at 1 116 and padding **8**, the reference's New instance button ends at 1 108 -- which is
+where its own capture puts it.
+
+**Final state of the three numbers this thread was chasing:**
+
+| | before | after |
+|---|---:|---:|
+| Home total | 63 080 | **61 759** |
+| Screenshots total | 23 729 | **23 729** |
+| Screenshots heading centre | 602 | **602** |
+
+A fix that improves one page and worsens another is not a fix; it is a hypothesis with a page-shaped counter-example. The
+counter-example here was an empty state, which is the one thing on a page whose position *is* its layout.
