@@ -461,3 +461,37 @@ now derived from the corrected fill and reads (66,75,73) against the reference's
 Setting the ring to an explicit measured value was tried **three times with three different colours and changed not one
 pixel**, which is how this build learned that the ring it samples without hover is not drawn by the code that was edited.
 That constant was reverted rather than left in as decoration, and the question -- where that ring is painted -- is open.
+## Tone, not threshold: `tools/parity/tone.py`, and a regression it caught in my own work (2026-11-07)
+
+The page totals count pixels whose worst channel differs by more than 40, so a fill that is nine points light on every
+channel counts as **zero**. That is how the checklist rows sat wrong for dozens of rounds under a report that said the
+sidebar was "at its rasterisation floor".
+
+`tools/parity/tone.py` measures the drift instead: mean per-channel delta, a histogram of worst-channel deltas, and the
+commonest colour pairs in the 5..39 band. Run over the sidebar it immediately produced:
+
+```
+8 566 px  ref (58, 67, 65) -> ours (50, 59, 57)
+```
+
+which is the *inverse* of the "fix" made in the previous round -- and it was my mistake. I had sampled one pixel at a
+row's lower edge, read (50,59,57), and repainted every row to it, making all of them eight too dark. **The code's own
+comment, four lines away, already said `#4b5253` around `#3a4341`.** The metric had risen 149 when I made that change and
+I explained the rise away instead of investigating it; the tone tool is what settled it.
+
+Chasing the second drift then found the real structure: the reference has **two** row fills.
+
+| row | fill | label |
+|---|---|---|
+| open | `#3A4341` (58,67,65) | theme base |
+| **completed** | `#323B39` (50,59,57) | **(109,119,124)**, dimmed, not merely struck |
+
+This build had one fill for both and painted the completed label in the theme's secondary, (150,162,176) -- bright enough
+that the row read as active with a line through it. Both values are now measured constants.
+
+**Result, with both instruments agreeing for the first time this session:** instance page **34 519 -> 34 173**, sidebar
+14 789 -> 14 443, mean |d| in the sidebar 6.9 -> **5.97**, and pixels within 4 of the reference 67 374 -> **74 456** of
+87 600.
+
+The lesson is worth more than the 346 pixels: **a threshold hides a colour.** Any "at its floor" claim in this record
+about a region that was never run through `tone.py` is a claim about layout only.

@@ -731,12 +731,16 @@ pub fn draw(
             pressed = Step::ALL.get(index).cloned();
         }
         let hovered = over;
-        // The row is the card plus another 8% white: #3a4341 at the checklist's own height,
-        // **The measured row colour, not a tint of the card.** The reference draws these rows at #323B39 over a
-        // gradient that is itself within a point or two of ours; this build painted the gradient tinted 8% white, which
-        // landed at (59,68,66) -- nine lighter on every channel. Nine is under the 40-point threshold the page totals use,
-        // so no measurement ever flagged it and the eye caught it in a side-by-side crop instead.
-        let base = egui::Color32::from_rgb(0x32, 0x3b, 0x39);
+        // **Two fills, because the reference has two.** An open row is #3A4341 inside a #4b5253 ring; a **completed**
+        // row is #323B39 -- darker, the way a disabled control is. Both were read off the reference, and the road here is
+        // worth keeping: sampling a single row gave one value and sent a round chasing the other, because the one sampled
+        // happened to be the completed row. `tools/parity/tone.py` showed both drifts at once, six thousand pixels each.
+        let done_row = index == 0 && library_has_instance();
+        let base = if done_row {
+            egui::Color32::from_rgb(0x32, 0x3b, 0x39)
+        } else {
+            egui::Color32::from_rgb(0x3a, 0x43, 0x41)
+        };
         let fill = if hovered {
             theme.hovered(base)
         } else {
@@ -747,13 +751,9 @@ pub fn draw(
         painter.rect_stroke(
             row,
             ROW_RADIUS,
-            // **Measured, not derived.** The ring is #4b5253 in the reference and the row is #323B39: deriving one from
-            // the other matched the ring while the fill was a tint of the card, and broke it the moment the fill was
-            // corrected. Two constants, each read off the capture.
-            // The ring stays derived from the fill: with the fill measured, this lands at (66,75,73) against the
-            // reference's blended (60,67,67). Setting it explicitly was tried three times and changed **no pixels at all**,
-            // which is how this build learned that the 1-pixel ring it samples is not drawn here -- so the constant was
-            // reverted rather than left in as decoration.
+            // Derived, not measured: 8% white over #3A4341 is (75,82,83), which is exactly the #4b5253 the reference
+            // draws. Set explicitly three times it changed no pixel, because the ring sampled without hover is not this
+            // one -- that question is open in GATES.md.
             Stroke::new(1.0, crate::shell::tint(fill, (255, 255, 255), 0.08)),
             egui::StrokeKind::Inside,
         );
@@ -764,7 +764,7 @@ pub fn draw(
         // fresh install is in -- nothing done yet.
         // **A finished step is ticked and struck through.** The reference's own sidebar shows "Create first instance"
         // completed whenever the library holds one; this drew the fresh-install state whatever the folder said.
-        let done = index == 0 && library_has_instance();
+        let done = done_row;
         if done {
             painter.circle_filled(
                 egui::pos2(row.left() + ROW_PAD + RING / 2.0, row.center().y),
@@ -798,7 +798,14 @@ pub fn draw(
             Align2::LEFT_CENTER,
             row_label(Step::ALL[index].clone(), account),
             fonts::label(STEP_SIZE),
-            if done { theme.SECONDARY } else { theme.BASE },
+            // **A finished row is dimmed, not merely struck.** The reference's completed label peaks at (109,119,124);
+            // this build used the theme's secondary, which peaks at (150,162,176) -- bright enough that the row read as
+            // active with a line through it. Sampled from the brightest pixel of the label's own box.
+            if done {
+                egui::Color32::from_rgb(0x6d, 0x77, 0x7c)
+            } else {
+                theme.BASE
+            },
         );
         if done {
             let width = painter
