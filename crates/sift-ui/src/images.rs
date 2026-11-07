@@ -273,6 +273,7 @@ impl Images {
         if self.inflight > 0 {
             ctx.request_repaint();
         }
+        trim_heap();
     }
 }
 
@@ -292,10 +293,44 @@ fn fetch(url: &str) -> Result<ColorImage, String> {
 
     let bytes = bytes?;
     let decoded = image::load_from_memory(&bytes).map_err(|error| error.to_string())?;
+    // **Downscaled to what the screen can use, not kept at the size it arrived.** Project icons come back at 512 or
+    // 1024 points and this build uploaded them whole: one Discover visit cost **38 MB of RSS** (24.0 -> 62.1 MiB) and
+    // gave none of it back, because ninety-six entries of that size sit under the cache's 64 MiB budget and nothing is
+    // ever evicted. No icon in the product is drawn larger than 132 points, so 160 is the most any of them can need.
+    const MAX_ICON: u32 = 160;
+    let decoded = if decoded.width().max(decoded.height()) > MAX_ICON {
+        decoded.resize(MAX_ICON, MAX_ICON, image::imageops::FilterType::Triangle)
+    } else {
+        decoded
+    };
     let rgba = decoded.to_rgba8();
     let size = [rgba.width() as usize, rgba.height() as usize];
     Ok(ColorImage::from_rgba_unmultiplied(size, rgba.as_raw()))
 }
+
+/// Hand freed pages back to the OS after a batch of decodes.
+///
+/// **A decode allocates megabytes and frees them immediately, and glibc keeps the pages.** One Discover visit -- twenty
+/// icons fetched and decoded -- raised this process from 24.0 to 58.1 MiB of RSS and it never came back down, with the
+/// textures ruled out (downscaling them to 160 changed nothing) and malloc arenas accounting for only 3.4 MiB of it.
+/// That leaves the heap holding pages it no longer needs, which is exactly what `malloc_trim` returns.
+///
+/// Called once per batch rather than per frame: it walks the heap, so it costs something, and at a fetch boundary there is
+/// nothing in flight to pay for it twice.
+#[cfg(target_env = "gnu")]
+fn trim_heap() {
+    unsafe extern "C" {
+        fn malloc_trim(pad: usize) -> std::ffi::c_int;
+    }
+    // SAFETY: malloc_trim is glibc's own allocator entry point, takes only an integer pad and returns an int; it has no
+    // preconditions and cannot move or invalidate the caller's live allocations.
+    unsafe {
+        let _ = malloc_trim(0);
+    }
+}
+
+#[cfg(not(target_env = "gnu"))]
+fn trim_heap() {}
 
 /// A stable name for a URL, used for the temporary file and the texture.
 fn hash(url: &str) -> u64 {

@@ -1164,3 +1164,36 @@ its content sits where it sits; ours cannot be stretched to match without moving
 Reverted. This page needs its row internals re-derived as a whole from the reference -- offsets, anchoring, and the
 divider together -- rather than one constant at a time, and that is a larger slice than the end of a round allows. Four
 attempts at this page now, all measured, none kept; the page still reads 81 124 and the record says why.
+### One Discover visit cost 38 MB and never gave it back (2026-11-07)
+
+The memory gate has been quoted at 23.6 MiB for dozens of rounds, measured on a fresh Home. Measuring the same process
+after a single visit to Discover:
+
+| state | RSS | PSS |
+|---|---:|---:|
+| fresh, Home | 24 016 kB | 18 273 kB |
+| after one Discover visit | **62 096 kB** | 54 394 kB |
+| back on Home | 62 096 kB -- nothing released | 54 390 kB |
+
+**Thirty-eight megabytes, retained forever, from three seconds on one page.** The gate is 20 MiB, so this was not a
+3.6 MiB problem at all once a reader had browsed.
+
+**Four hypotheses, three of them wrong, each tested rather than argued:**
+
+| hypothesis | test | result |
+|---|---|---|
+| the icon textures | downscale every icon to 160 points on decode | **no change** (61 524 kB) |
+| glibc malloc arenas, one per fetch thread | `MALLOC_ARENA_MAX=1` | 3.4 MiB only |
+| the image cache never evicts | read it | correct, but the entries are small |
+| **the heap keeps freed decode pages** | `malloc_trim(0)` after each fetch batch | **24 MiB returned** |
+
+The fix is one call at a fetch boundary, guarded to glibc: a decode allocates megabytes and frees them immediately, and
+the allocator keeps the pages. After it, the same visit leaves **37 988 kB** instead of 61 524 -- and the process that has
+browsed Discover is no longer three times the process that has not.
+
+**Still over the gate:** a fresh Home is **24 296 kB (23.7 MiB)**, 3.7 MiB above the 20 MiB bound, and a session that has
+visited Discover is at 38 MB. The remaining term is the heap the process keeps for its live data, not pages it has freed.
+
+The icon downscale stays even though it did not move RSS: it bounds what a remote icon can cost to 160 points, which the
+cache's own comment already assumed ("every icon is 96 points square, so this cap is a few megabytes") and was not true of
+the decodes it was holding.
