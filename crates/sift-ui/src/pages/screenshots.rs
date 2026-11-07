@@ -3596,6 +3596,37 @@ mod tests {
     /// shot that was never assigned belongs to no custom group and must not appear under one.
     /// **Escape closes the viewer, and the arrows step through it.** Three key behaviours live in `viewer` and none had
     /// a test; keys cannot be driven through X here, so a synthesised event is the only verifier there is.
+    /// **Escape blurs the search field.** Not a dialog -- the field keeps its text and gives up focus, which is what the
+    /// reference's `onKeydown` does -- and the function reports the change so the caller knows a frame is owed.
+    #[test]
+    fn escape_blurs_the_search_field_without_clearing_it() {
+        let ctx = egui::Context::default();
+        crate::fonts::install(&ctx);
+        let theme = crate::theme::dark();
+        let _ = &theme;
+        let mut state = State::default();
+        state.search = "sunset".to_owned();
+        state.search_focused = true;
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1440.0, 900.0))),
+            events: vec![egui::Event::Key {
+                key: egui::Key::Escape,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+            ..Default::default()
+        };
+        let mut changed = false;
+        ctx.run_ui(raw, |ui| {
+            let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(260.0, 36.0));
+            changed = search_field(ui, rect, &mut state);
+        });
+        assert!(!state.search_focused, "Escape must give up focus");
+        assert_eq!(state.search, "sunset", "and must not clear what was typed");
+        assert!(changed, "the caller is told a frame is owed");
+    }
     #[test]
     fn the_viewer_closes_on_escape_and_steps_with_the_arrows() {
         let ctx = egui::Context::default();

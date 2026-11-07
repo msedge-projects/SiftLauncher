@@ -794,3 +794,22 @@ by accident.
 Each test also caught a wrong assumption about the state it drives: `picker` is a struct with the time it opened, `edit` is
 an `Option<(String, String)>`, the settings modal keeps its own `State` in its own module, and the confirmation is a
 function returning an enum. Reading those from `match` arms elsewhere would have got three of the four wrong.
+### The seventh Escape handler, and one that is not a dialog (2026-11-07)
+
+`escape_blurs_the_search_field_without_clearing_it` covers a handler of a different kind: the screenshots search field
+keeps its text and gives up focus, which is what the reference's `onKeydown` does, and the function reports the change so
+the caller knows a frame is owed. Three assertions, because three things can go wrong:
+
+```
+search_focused is false      Escape gave up focus
+search == "sunset"           and did not clear what was typed
+returned true                and told the caller a frame is owed
+```
+
+That last one is the smallest and the most useful: a field that blurs without reporting the change leaves the caret drawn
+in a field that no longer has focus, which is the sort of defect no capture of a still frame would catch.
+
+**Seven handlers are now under test** (about, create, picker, rename, settings, delete confirmation, search blur) plus the
+context menu's pre-existing test. The project page's gallery viewer is the notable one still uncovered: its function takes
+a `&Project`, which has no `Default`, so a test would have to invent a dozen fields to reach the Escape branch -- worth
+doing, but worth doing deliberately rather than as a by-product.
