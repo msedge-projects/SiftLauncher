@@ -1116,3 +1116,33 @@ another cause. `TITLE_SIZE` is back at 16 with the failed attempt recorded besid
 
 That is two of the three explanations this card has had that were wrong, and both were caught the same way: by measuring
 the thing the change was supposed to move, in the direction it was supposed to move it.
+### Discover: the dividers are real, and three attempts to draw them failed (2026-11-07)
+
+Discover reads **81 124** (content 63 456) -- the largest page difference -- but the two captures look nearly identical,
+same projects in the same order. Tone found the structural difference:
+
+```
+4 844 px   ref (52,54,60) -> ours (22,24,28)
+```
+
+confined to **single rows at y 371, 525 and 679, each 996 points wide** -- exactly 154 apart. The reference divides its
+search results with a one-point `--surface-4` rule. This build draws separated cards instead, so those rows are page
+background in ours.
+
+**Three attempts, all measured, none kept:**
+
+| variant | Discover total |
+|---|---:|
+| rounded cards, no divider (original) | **81 124** |
+| rows on the page ground + divider | 84 144 |
+| square raised rows + divider | 81 318 |
+| rounded cards + divider | 81 124 |
+
+The last one is the informative failure: the divider was drawn, `tone.py` still reported the same 4 844 pixels, and the
+threshold count did not move by one. Our cards are pitched **151** (141 tall plus a 10-point gap) against the reference's
+**154**, so a line at a card's bottom lands inside our gap while the reference's divider falls where its row ends -- drawing
+it changes nothing because it is in the wrong place.
+
+So the work is not the line, it is the **pitch**: 153-point rows, no gap, divider included, which moves the card's own
+internal layout 12 points and is a change to make deliberately rather than at the end of a round. Everything above was
+reverted; `shell.rs` is as it was.
