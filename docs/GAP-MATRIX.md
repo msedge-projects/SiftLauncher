@@ -5507,3 +5507,63 @@ CJK is a separate and older gap: neither build has ever had a CJK face, and the 
 project titles correctly because the browser finds them on the system. Covering them needs a CJK face of several
 megabytes, which cannot coexist with this memory gate at all. Written down so the conflict is a decision rather than a
 surprise.
+# State of parity, round 93 (2026-11-07)
+
+Written because the record has grown to 5 508 lines with 575 open markers, and several of its "at its floor" claims
+predate the two instruments that could test them. This section says what is measured **on the build that ships** (the
+software backend), with the date, and what is not.
+
+## The three gates
+
+| gate | bound | measured | verdict |
+|---|---:|---:|---|
+| idle RSS | <= 20 MB | **23.6 MiB** (PSS 18.2) | **FAIL** by 3.6 MiB |
+| frame p95 | <= 16 ms | **24-27 ms** | **FAIL** by ~1.6x |
+| idle CPU | not a gate | 9-11% of a core at 2 fps | -- |
+
+The memory figure is the framework floor plus 7.8 MiB of launcher: egui plus a 1440x900 window measures 16.7 MiB with no
+application code at all (`tools/mem-floor`). The frame figure is a scalar per-pixel rasteriser parallelised across six row
+bands; a span-fill that reached 22 ms was rejected for painting 486 wrong pixels.
+
+## Pages measured on the shipped backend
+
+| page | state | differing pixels | tone |
+|---|---|---:|---|
+| Home | one instance each, carousel pinned | **69 534** | -- |
+| Screenshots | both empty | **23 729** | mean abs delta **1.14** (content) |
+| Instance (Content) | both empty | **34 380** | -- |
+| Settings | modal open, same tab | **~34 900** | within-4 rose 617 132 -> **631 487** after two colour fixes |
+
+Older figures in GATES.md taken through the OpenGL path are **not** comparable and are labelled as such where they appear:
+the renderer changed, and the software path measures 1-3% further from the reference on text-heavy pages.
+
+## What "at its floor" now means
+
+The sidebar, the Home content and the Screenshots content were each called "at the rasterisation floor". That claim was
+made with a threshold count, which cannot see a colour: a fill nine points light on every channel counts as zero. Two
+defects of exactly that kind were found afterwards -- the checklist rows and the theme preview plates -- and both are now
+measured constants.
+
+So the honest restatement: **those regions are at their floor for layout and for ink**, and their tone has been checked
+on Screenshots (1.14) and Settings (improving), but **not** exhaustively on every page. A region that has not been through
+`tools/parity/tone.py` has not been checked for colour drift at all.
+
+## Instruments this session added, all in `tools/parity/`
+
+| tool | answers |
+|---|---|
+| `compare.py` | the banded differing-pixel totals (unchanged) |
+| `at.py` | where a brand-green control is, so presses are aimed rather than guessed |
+| `ink.py` | on which row a block's ink starts, in both captures |
+| `tone.py` | per-channel drift, and the commonest colour pairs under the 40-point threshold |
+| `tools/mem-spike`, `tools/mem-floor` | the CPU-rasteriser and framework memory floors |
+
+## What is open, in order of size
+
+1. **Frame gate**: needs SIMD width in the inner loop, not another algorithmic trick.
+2. **Memory gate**: needs the binary below ~9 MiB resident or a smaller window; the framework floor is measured.
+3. **Settings**: four surfaces of 900-1 600 pixels each, located and named in GATES.md.
+4. **Emoji and CJK in user data**: 404 kB to restore emoji, several MiB for CJK -- the latter cannot coexist with the
+   memory gate at all.
+5. **Behaviours never verified**: drag-and-drop of screenshots between groups, ZIP export, the download button's action,
+   and 16 of 17 Escape handlers still without tests.
