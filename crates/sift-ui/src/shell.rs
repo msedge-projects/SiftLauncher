@@ -2818,7 +2818,11 @@ impl Shell {
         // Asked up to three times, not once: the first ask happens on the page's first frame, which can be before
         // the network is ready, and a single empty answer left the panel showing News for ever where the
         // reference shows its Category list.
-        if !self.categories_asked && self.categories_tries < 3 {
+        // **Only where the list is shown.** This panel is drawn on every page, so asking for the category tags on the
+        // first frame meant every launch fetched them from the network before the reader had gone anywhere -- and a
+        // network fetch maps the system TLS library into the process (1 052 kB resident here) whether or not anything
+        // came back. Home, the instance pages and settings show no categories at all, so they now ask for nothing.
+        if self.rail == Rail::Discover && !self.categories_asked && self.categories_tries < 3 {
             self.categories_asked = true;
             self.categories_tries += 1;
             let (sender, receiver) = std::sync::mpsc::channel();

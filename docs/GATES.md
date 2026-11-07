@@ -128,3 +128,36 @@ better renderer, which is what the last three rounds bought.
 
 The levers left, in order of expected value: `opt-level = "z"` for the binary (at some cost to frame time), keeping the
 TLS stack out of memory until the first fetch, and trimming the heap. Recorded as the next step rather than a promise.
+## Round 68: two more levers pulled, and the floor named (2026-11-07)
+
+**opt-level = "z"** (was 3, chosen when the hot path was the GL driver): binary 14.2 MB -> 12.5 MB on disk, idle RSS
+25.8 -> **25.4 MiB**. 450 kB for the whole optimisation level, so the text is mostly load-bearing code rather than
+padding.
+
+**The category-tags fetch is now gated to Discover.** It sat in `content_column`, which is drawn on *every* page, so
+each launch fetched tag categories from the network before the reader had gone anywhere. It now asks only where the list
+is shown. RSS 25.4 -> **25.2 MiB**, and no page except Discover touches the network at all -- worth having on its own
+terms, even though it did not buy the megabytes hoped for.
+
+**Why it did not:** `libcrypto.so.3` (1 052 kB resident) is a *link-time* dependency of the TLS stack, mapped at exec,
+not lazily on first request. Deferring the fetch cannot remove it; only dropping OpenSSL could, and `rustls` would trade
+it for more text in our own binary.
+
+### Where the 25.2 MiB is
+
+| item | RSS |
+|---|---:|
+| our binary's text pages | ~8 600 kB |
+| the X shared buffer at 1440x900 | 5 064 kB |
+| heap (font atlas 2 254 kB of textures, state, stacks) | 6 304 kB |
+| libc, libcrypto, libX11, libm, anonymous | ~5 400 kB |
+
+**The gate is 20 MB. The fixed costs are 10.5 MiB** -- the window buffer and system libraries -- so our code and heap
+must fit in 10 MiB where they now need 14.9. Every remaining lever is about one megabyte: dropping `image`'s jpeg
+decoder (~0.4), fewer Inter weights in the atlas (~0.5), heap trims (~0.5). That is ~1.4 in total, which lands at
+**~23.8 MiB** -- short of the gate.
+
+The only structure that reaches 20 is moving the network stack and the image decoders **out of the UI process** into a
+helper the UI talks to over a pipe: that removes `reqwest`/OpenSSL/`image` and their buffers from the resident set, about
+3 MiB, and would land ~20.5-21 MiB before the small trims and ~20 with them. Recorded as the next architectural step,
+with the arithmetic above rather than an assurance.

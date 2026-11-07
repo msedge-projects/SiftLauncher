@@ -73,7 +73,7 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 # panic ends the process instead of unwinding, which is what a GUI wants and what removes the
 # landing pads this binary will never use.
 [profile.release]
-opt-level = 3
+opt-level = "z"
 lto = true
 codegen-units = 1
 strip = true
