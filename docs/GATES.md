@@ -1247,3 +1247,31 @@ The largest band on the page is y 100..150 at 7 621 pixels -- the tab strip and 
 capture shows a **tooltip** over the tabs that this build never draws. That is a state difference in the capture, not a
 layout defect, and the next measurement should take both captures with the pointer in the same place and no tooltip
 pending.
+### Why Discover plateaus at 80 927: it is the glyphs, not the layout (2026-11-07)
+
+Both captures taken with the pointer over a card, no tooltip on either side: **82 016**, against 80 927 with the pointer
+elsewhere. The page's number does not move with the state, so the state was not what was being measured.
+
+The first result's title, box-measured in both:
+
+| | reference | this build |
+|---|---|---|
+| ink rows, y | 249..267 | **249..267** |
+| ink columns, x | 218..459 | **218..453** |
+| ink pixels differing | -- | **1 095 of 1 257 (87%)** |
+
+The rows are **identical to the pixel** and the width is **six points short over 241** -- 2.5% -- so the size and the
+position are right and the glyph advance is not. At that difference nearly every stem lands one pixel off its neighbour,
+which is why 87% of the title's ink is counted as different while nothing about the layout is wrong.
+
+That is the same `Inter` at the same size, rendered by two different rasterisers, with the reference's tracking a shade
+wider. It is not reachable by any constant in this tree: egui lays text out without letter-spacing, and the reference lays
+it out in WebKit.
+
+**What that means for the numbers in this record.** Every text-dense page has a floor set by the rasteriser, not by the
+layout: Home reads 33 808 and Discover 80 927 with their geometry matching to a few points, because Discover has ten times
+the text. Bands made of glyphs should be read as "the text is in the right place" rather than as a defect count, and a
+page cannot be driven to the reference's noise floor (1 206 pixels) while its type is set by a different engine.
+
+This does not excuse the layout differences that were real and were fixed -- the toolbar 151 points short, the column 24
+short, the card row six low, the missing avatar -- but it does set where this page's number stops being informative.
