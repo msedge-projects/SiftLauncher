@@ -4214,3 +4214,22 @@ column, and it is the change the next round should make with this row as its mea
 **Three readings of one row, each narrower than the last**: "content starts 8pt low" (a guess), "the rhythm below the header is off" (a
 plausible cause that a revert disproved), and now "the header block is four points too tall, with the divider at 190 against 186". The row
 is worth more than it was because the last version of it can be acted on without measuring anything again.
+### The header\'s rule is where the reference\'s is, at no cost (2026-11-08)
+
+The four points were two things wearing one number, and separating them cost two builds to learn:
+
+| change | the rule | Project page |
+|---|---:|---:|
+| as it was | 190 | 71 398 |
+| header foot 16 -> 12 | **186** | 86 354 |
+| foot 12 **and** the strip\'s gap +4 | **186** | **71 398** |
+
+The header block was four points too tall *and* the gap between its rule and the tab strip was four points too small. Fixing either alone
+moves the strip; fixing both leaves it exactly where it was while the rule lands at 186, the reference\'s row, at the identical tone (55).
+
+**The page total does not move, and it should not**: a one-point divider moving four points is a handful of pixels either way, and the
+elements around it are unchanged. This is what a correction looks like when the compensation was already in place and only the visible
+line was wrong -- **the metric is blind to it, and the measurement is not.**
+
+Row 626 can now be closed: its inset is right (avatar within a point), its block gap is right (rule at 186 with the strip held), and the
+only thing left in its description is the title\'s three-point cap-height difference, which is type and belongs to the rasteriser.

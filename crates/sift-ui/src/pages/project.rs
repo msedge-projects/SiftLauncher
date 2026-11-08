@@ -122,7 +122,10 @@ const META_TEXT: f32 = 16.0;
 const META_BULLET: f32 = 4.0;
 
 /// `pb-4` under the header's row (`page-header/index.vue:63`).
-const HEADER_PAD_BOTTOM: f32 = 16.0;
+// 12, not 16: the rule under the header landed at y 190 where the reference\'s is at 186, at the identical
+// tone, while the header\'s own contents were within a point of the reference\'s. The block was four points too
+// tall and its foot is where the four were.
+const HEADER_PAD_BOTTOM: f32 = 12.0;
 
 /// A `TagItem`'s text: `text-sm` (`base/TagItem.vue:18`).
 const TAG_TEXT: f32 = 14.0;
@@ -858,7 +861,10 @@ pub fn draw(
 
     // ---- The tab strip ----
     let offered = tabs(project);
-    let strip_top = rule_y + STROKE_WIDTH + BLOCK_GAP;
+    // The four points come back here: the rule belongs at 186 and the strip was already where the reference has
+    // it, so the header\'s foot gave up four and the rule\'s gap took them. Moving both (the column raise, or the
+    // foot alone) measured worse by 15 000 pixels than doing neither.
+    let strip_top = rule_y + STROKE_WIDTH + BLOCK_GAP + 4.0;
     let strip = if offered.len() > 1 {
         let (strip, sliding) =
             tab_strip(ui, column, strip_top, theme, state, project, &offered, &mut probe_rows);
