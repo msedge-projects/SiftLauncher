@@ -1256,7 +1256,37 @@ pub fn vertical_gradient(painter: &egui::Painter, rect: Rect, top: Color32, bott
 impl Shell {
     /// Draw one frame. Returns whether anything is still animating, which the caller uses
     /// to decide whether to ask for another frame.
-    pub fn ui(&mut self, ui: &mut Ui) -> bool {
+        /// Whether an instance's page is open, for callers outside the shell (the window's drop handoff).
+    pub fn instance_open(&self) -> bool {
+        self.open_instance.is_some()
+    }
+
+    /// **Files the desktop dropped on the window.** The window hands them over once per event; what they were dropped
+    /// *on* is a question only the shell can answer. The reference copies them into the open instance's `mods/` folder,
+    /// which is what `drop.rs` does (and tests); a drop with no instance open says so instead of doing nothing visible.
+    pub fn dropped(&mut self, paths: Vec<std::path::PathBuf>) {
+        if paths.is_empty() {
+            return;
+        }
+        let Some(instance) = self.open_instance.as_ref() else {
+            self.toast = Some("Drop files on an instance's Files tab.".to_owned());
+            return;
+        };
+        let dir = instance.path.join("minecraft").join("mods");
+        match crate::drop::copy_into(&dir, &paths) {
+            Ok(dropped) => {
+                let count = dropped.copied.len();
+                self.toast = Some(match (count, dropped.failed.len()) {
+                    (1, 0) => "Copied 1 file.".to_owned(),
+                    (n, 0) => format!("Copied {n} files."),
+                    (n, failed) => format!("Copied {n} files; {failed} could not be read."),
+                });
+            }
+            Err(error) => self.toast = Some(format!("Could not copy: {error}")),
+        }
+    }
+
+pub fn ui(&mut self, ui: &mut Ui) -> bool {
         let ctx = ui.ctx().clone();
         if let Some(text) = self.clipboard.take() {
             ctx.copy_text(text);

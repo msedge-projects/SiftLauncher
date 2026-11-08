@@ -3078,3 +3078,26 @@ nothing else -- and `LegacyProjectCard.vue` has neither the icon nor the import 
 **An affordance the reference does not draw is a promise this build cannot keep.** The glyph said a card opens an external page;
 the card opens the project's page inside the launcher. It was removed rather than made to do something, because inventing a
 behaviour to justify a decoration is the same error in the other direction.
+### Drag-and-drop wired from the window to the disk, and driven (2026-11-08)
+
+`drop.rs` has had `copy_into` and tests for a hundred rounds, and **nothing called it**: the window ignored winit's
+`DroppedFile`, so the module was a pure function with no caller. It is now wired end to end:
+
+```
+winit DroppedFile -> Window::dropped -> Shell::dropped -> drop::copy_into(<instance>/minecraft/mods) -> toast
+```
+
+Xvfb has no file manager to drag *from*, so the same event is injected with `SIFT_DROP_PATHS` (colon-separated) and
+**both branches were driven**:
+
+| case | evidence |
+|---|---|
+| an instance page open | `drop-test.jar` appears in `instances/Fabric 26.3/minecraft/mods/`; toast reads **"Copied 1 file."** |
+| no instance open | toast reads **"Drop files on an instance's Files tab."** |
+
+The injected drop waits up to 30 s for an instance page (a real one is delivered at once); that hold exists only when the probe
+is set, so a real drop behaves like the reference's.
+
+**What this does not yet do.** The copy always goes to `mods/`, whichever Files tab is showing -- a drop onto the resource
+packs tab should land in `resourcepacks/`. The reference routes by the visible tab. Recorded here rather than claimed: the
+plumbing is what was built, and the routing is the next slice.

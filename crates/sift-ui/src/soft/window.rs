@@ -27,6 +27,10 @@ struct Soft {
     pointer: egui::Pos2,
     /// Events collected since the last frame.
     pending: Vec<egui::Event>,
+    /// Paths winit reported as dropped, handed to the shell at the start of the next frame.
+    dropped: Vec<std::path::PathBuf>,
+    /// When an *injected* drop gives up waiting for an instance page. A real one arrives whenever the reader drops it.
+    drop_deadline: Option<std::time::Instant>,
     /// A frame is only run when something happened or an animation asked for one: an idle window draws nothing, which is
     /// this project's lightness rule and the reason a fan does not spin.
     dirty: bool,
@@ -56,6 +60,20 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         modifiers: ModifiersState::empty(),
         pointer: egui::Pos2::ZERO,
         pending: Vec::new(),
+        // **A drop, injected.** Xvfb has no file manager to drag from, so the same event winit would deliver is queued
+        // from `SIFT_DROP_PATHS` (colon-separated) at start-up. Everything downstream -- `Shell::dropped`, the copy, the
+        // toast -- is the path an OS drop takes.
+        dropped: std::env::var_os("SIFT_DROP_PATHS")
+            .map(|value| {
+                value
+                    .to_string_lossy()
+                    .split(':')
+                    .filter(|part| !part.is_empty())
+                    .map(std::path::PathBuf::from)
+                    .collect()
+            })
+            .unwrap_or_default(),
+        drop_deadline: std::env::var_os("SIFT_DROP_PATHS").map(|_| std::time::Instant::now() + std::time::Duration::from_secs(30)),
         dirty: true,
         painted: std::time::Duration::ZERO,
         presented: std::time::Duration::ZERO,
@@ -99,6 +117,18 @@ impl Soft {
             egui::CentralPanel::default()
                 .frame(egui::Frame::NONE)
                 .show(ui, |ui| {
+                    // **Before the frame, the drop.** What a dropped file means depends on what is open, and
+                    // `Shell::dropped` answers that; the toast it sets is drawn by this frame.
+                    // An injected drop waits briefly for an instance page (so the copy path can be driven); a real one
+                    // is delivered at once, and with no instance open it says so.
+                    let drop_ready = match self.drop_deadline {
+                        Some(at) => shell.instance_open() || std::time::Instant::now() >= at,
+                        None => true,
+                    };
+                    if drop_ready && !self.dropped.is_empty() {
+                        let paths = std::mem::take(&mut self.dropped);
+                        shell.dropped(paths);
+                    }
                     animating = shell.ui(ui);
                     if shell.picker.is_some() {
                         ctx.request_repaint();
@@ -240,6 +270,14 @@ impl ApplicationHandler for Soft {
             WindowEvent::CursorMoved { position, .. } => {
                 self.pointer = super::point(position, self.scale);
                 self.pending.push(egui::Event::PointerMoved(self.pointer));
+                self.dirty = true;
+            }
+            // **A file dragged in from the desktop.** winit reports one per file; they are collected and handed to the shell
+            // on the next frame, which decides what they were dropped on (`Shell::dropped`). Xvfb has no file manager to drag
+            // *from*, so `SIFT_DROP_PATHS` injects the same event -- the copy, the toast and the folder are then driven the
+            // same way an OS drop drives them.
+            WindowEvent::DroppedFile(path) => {
+                self.dropped.push(path);
                 self.dirty = true;
             }
             WindowEvent::CursorLeft { .. } => {
