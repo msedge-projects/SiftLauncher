@@ -1064,6 +1064,9 @@ pub struct Shell {
     /// The rail tile whose context menu is open, and where the pointer opened it.
     /// `QuickInstanceSwitcher.vue:254-288`: Play (or Stop while running), a divider, View instance, Open folder.
     rail_menu: Option<(String, egui::Pos2)>,
+    /// Which of the open menu's rows the keyboard is on, as an index into the real rows (`0`, `2`, `3` -- the divider is
+    /// not a stop). `button-menu.ts:102-131`: arrows move and wrap, `Enter` activates, `Escape` closes.
+    rail_menu_at: usize,
     /// The Home page's own state: which row's kebab popover is open, and the `saves/` names
     /// it read. Kept here beside the other pages' states so the popover survives the frames
     /// that also draw the rail and the panel.
@@ -1172,6 +1175,7 @@ impl Default for Shell {
             rail_handle_focused: false,
             rail_drag: None,
             rail_menu: None,
+            rail_menu_at: 0,
             instances: crate::data::load().0,
             home: crate::pages::home::State::default(),
             open_project: None,
@@ -2012,6 +2016,7 @@ impl Shell {
             if hit.secondary_clicked() {
                 if let Some(at) = ui.input(|input| input.pointer.interact_pos()) {
                     self.rail_menu = Some((entry.id.clone(), at));
+                    self.rail_menu_at = 0;
                 }
             }
         }
@@ -2650,7 +2655,7 @@ impl Shell {
             }
             let row = Rect::from_min_size(egui::pos2(menu.left(), y), egui::vec2(MENU_W, ROW_H));
             let hit = ui.interact(row, egui::Id::new(("rail-menu-row", index)), Sense::click());
-            if hit.hovered() {
+            if hit.hovered() || index == self.rail_menu_at {
                 painter.rect_filled(row.shrink(4.0), 6.0, self.theme.SURFACE_4);
             }
             let ink = if index == 0 { self.theme.BRAND } else { self.theme.CONTRAST };
@@ -2681,6 +2686,25 @@ impl Shell {
                 .input(|input| input.pointer.interact_pos())
                 .is_some_and(|at| menu.contains(at));
         let escaped = ui.input(|input| input.key_pressed(egui::Key::Escape));
+        // The rows a keyboard can reach, in the order the reference moves through them.
+        const STOPS: [usize; 3] = [0, 2, 3];
+        let (down, up, enter) = ui.input(|input| {
+            (
+                input.key_pressed(egui::Key::ArrowDown),
+                input.key_pressed(egui::Key::ArrowUp),
+                input.key_pressed(egui::Key::Enter),
+            )
+        });
+        if down || up {
+            let at = STOPS.iter().position(|stop| *stop == self.rail_menu_at).unwrap_or(0);
+            let next = if down {
+                (at + 1) % STOPS.len()
+            } else {
+                (at + STOPS.len() - 1) % STOPS.len()
+            };
+            self.rail_menu_at = STOPS[next];
+        }
+        let pressed = if enter { Some(self.rail_menu_at) } else { pressed };
         match pressed {
             Some(0) => {
                 self.act(crate::pages::home::Action::Play(id.clone()));

@@ -2537,3 +2537,26 @@ which is the check that caught it. A patch that does not apply is not an error i
 
 What still differs is the menu's fill: the reference's card is darker than `RAISED_BG`. That is one colour, measured next to
 the rest of the row rather than guessed now.
+### The rail menu takes the keyboard, and the fill was never different (2026-11-07)
+
+**The fill matches.** Last round said the reference's menu card looked darker than `RAISED_BG`. Sampled at three points inside
+both menus: **exactly (39,41,46) in the reference and in this build**. The impression came from the two crops being taken at
+different offsets on the page, not from a colour.
+
+**The keyboard is new.** `button-menu.ts:102-131`: arrows move and wrap, `Enter` activates, `Escape` closes. Driven on the rail
+menu:
+
+| key | result |
+|---|---|
+| right press | menu opens with **Play** highlighted |
+| `Down` | the highlight moves (2 275 changed samples in the menu's box) |
+| `Down` again | it moves again (2 199) |
+| `Enter` on "View instance" | **navigates** -- breadcrumb "Home / Fabric 26.3" |
+| `Escape` | closes |
+
+The stops are the three real rows, not the four indices: the divider is not a keyboard target, which is how the reference's
+menu is built as well.
+
+Two small lessons, both familiar by now: a difference that survives a glance does not always survive a sample, and a highlight
+that blends into its own card cannot be found by looking for a colour that is not there -- the position of the *change* between
+two captures proved the keys worked where the colour test found nothing.
