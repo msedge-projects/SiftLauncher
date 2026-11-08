@@ -4273,3 +4273,26 @@ so it did nothing and the empty `mods/` looked like a fault. That is the fourth 
 Instance page\'s test file, a comparison across two different pages, a click three points above a trigger, and now this.
 
 The test file is deleted and `mods/` is empty again, which is the state the Instance page\'s 30 454 was measured in.
+### The Gallery tab measured, and the viewer\'s Escape driven (2026-11-08)
+
+The objective names keyboard shortcuts, and this session had not driven one. The gallery viewer\'s Escape is now evidence rather than an
+assertion:
+
+| step | capture |
+|---|---|
+| press the first picture | `viewer-open.png` -- full-size image, "Title screen · 1 of 9", a close box, the page dimmed behind |
+| press **Escape** | `viewer-escaped.png` -- back to the six-card grid, nothing else changed |
+
+The gallery grid itself had never been measured. Both clients on the same tab:
+
+| | Gallery tab |
+|---|---:|
+| differing pixels | **172 200** (content 147 745) |
+
+**Same structure, different rhythm**: three columns, the same six cards with their titles, descriptions (`Version shown in bottom right
+corner`), authors and `April 7, 2023` dates. What differs is that the reference\'s picture band is taller and its cards start at y 265 where
+ours start at 250 -- so every card and every row below it is displaced, which is most of the 172 200.
+
+This is the largest single figure in the ledger and the least actionable of them: it is not one element drawn wrong, it is a grid whose
+ratio is `0.5` here and something taller there, with a 15-point offset on top. Written down as the state rather than left to look like a
+failure of the six cards -- every one of which is drawn, labelled and dated the same way.
