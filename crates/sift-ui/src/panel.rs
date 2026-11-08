@@ -637,10 +637,18 @@ pub fn draw(
     // one-pixel rule, against #1a2420 / #141a1a one pixel in. An earlier comment here
     // claimed the reference had no rule; that was wrong and is why the seam read as a
     // join rather than an edge.
-    painter.vline(
-        rect.left() + 0.5,
-        rect.y_range(),
-        Stroke::new(1.0, crate::shell::tint(theme.BG, (155, 255, 160), 0.08)),
+    // **A gradient of its own, not a tint over the background.** `--brand-gradient-border` is a rule that runs from
+    // #223328 at the top to #1e2a24 at the foot; a constant translucent tint over the panel's gradient produced (33,42,39)
+    // at y 100 where the reference has (33,50,40) -- eight points dark in green, healing to an exact match by y 700 because
+    // the two gradients crossed there. Both endpoints are sampled from the capture.
+    crate::shell::vertical_gradient(
+        painter,
+        egui::Rect::from_min_max(
+            egui::pos2(rect.left(), rect.top()),
+            egui::pos2(rect.left() + 1.0, rect.bottom()),
+        ),
+        egui::Color32::from_rgb(0x22, 0x33, 0x28),
+        egui::Color32::from_rgb(0x1e, 0x2a, 0x24),
     );
 
 

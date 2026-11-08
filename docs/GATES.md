@@ -1975,3 +1975,24 @@ the objective and the record says so.
 
 What this page's sidebar number now is, precisely: a count of how much text is drawn, not of whether it is placed correctly.
 The placement is checked by the band positions above, which are five exact matches and one within two points.
+### The sidebar rule is a gradient, and it now tracks the reference to a point (2026-11-07)
+
+Row 8 carried the sidebar's left rule. The rule was drawn -- an earlier comment claiming the reference had none was already
+corrected -- but as a **constant translucent tint over the panel's own gradient**, which is not what
+`--brand-gradient-border` is. Measured down the column at x 1140:
+
+| y | reference | ours, tint | ours, gradient |
+|---|---|---|---|
+| 100 | (33, 50, 40) | (33, 42, 39) | **(34, 50, 40)** |
+| 300 | (32, 48, 39) | (33, 42, 39) | **(33, 48, 39)** |
+| 500 | (31, 46, 39) | (33, 42, 39) | **(32, 46, 38)** |
+| 700 | (30, 45, 37) | (30, 45, 37) | (30, 45, 37) |
+| 850 | (30, 42, 36) | (30, 42, 36) | (30, 42, 36) |
+
+Eight points dark in green at the top, healing to an exact match by y 700 -- which is what two different gradients crossing
+looks like, and why the tint was convincing: it was right in the middle of the column and wrong at both ends.
+
+**The page total did not move (82 907 before and after), and the change stays anyway.** A one-pixel column eight points out
+does not reach a threshold of 40, so the aggregate metric cannot see it. The element-level measurement above can, and the
+rule is now the reference's own value at every sample. Stating this explicitly is the point: the aggregate is an instrument
+with a blind spot for exactly the kind of defect a 1-pixel rule is.
