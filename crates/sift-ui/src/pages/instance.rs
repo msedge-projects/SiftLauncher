@@ -403,7 +403,14 @@ fn header(
                 egui::Color32::WHITE,
             );
         }
-        None => cube(&painter, avatar),
+        // **The default art first.** An instance with no `icon.png` shows Modrinth's own tile in the reference -- the
+        // campfire the rail and the cards already carry -- and this drew its placeholder cube, so the header was the last
+        // place where an instance had no picture. The cube stays for a build with no texture at all.
+        None => {
+            if !crate::serverart::paint_instance_default(&painter, avatar) {
+                cube(&painter, avatar);
+            }
+        }
     }
 
     let text_left = avatar.right() + AVATAR_GAP;

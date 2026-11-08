@@ -2939,3 +2939,22 @@ points were entirely inside the gap between them. `NEWS_HEADING_DROP` 20 -> 29.
 
 The rule held again: a standalone heading moved by its own measured offset, with nothing else in the layout depending on it,
 and 166 pixels came with it. None of the six failed attempts earlier in the week had that property.
+### The instance page's header drew the cube too -- worth 3 270 pixels (2026-11-07)
+
+Capturing the instance page on both apps found the whole page already close (header row, tabs, empty state, buttons) with one
+element wrong: the header avatar was the placeholder cube where the reference shows the instance's art.
+
+It is the **third** place the same fallback was missing -- the rail tile had it, the strip did not, and `instance.rs` had its own
+`fn cube` drawing with no art behind it:
+
+| | reference | before | after |
+|---|---|---|---|
+| instance page, total | -- | 33 920 | **30 650** |
+| its content | -- | 14 390 | **11 120** |
+
+**3 270 pixels from one 44-point tile**, which is a fifth of everything the last three rounds recovered on Home. A wrong picture is
+worth more than a wrong typeface because a picture is solid: the tile disagrees over its whole area, while a text run disagrees
+only where its glyphs land.
+
+The lesson generalises the same way it did for the strip: **any element that can be "missing" is worth auditing everywhere it
+appears**, and the fallbacks belong in one painter rather than one per page -- this crate had three, and two of them were wrong.
