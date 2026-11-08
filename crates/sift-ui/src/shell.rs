@@ -1757,7 +1757,11 @@ impl Shell {
                 Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
                 Color32::WHITE,
             );
-        } else {
+        } else if self.open_instance.is_none()
+            || !crate::serverart::paint_instance_default(painter, badge)
+        {
+            // **The default art before the rail's glyph.** The instance that has no `icon.png` was showing the rail's
+            // play triangle in its breadcrumb, which is the mark for a page rather than for this instance.
             icons::draw(painter, self.rail.glyph(), badge, self.theme.SECONDARY);
         }
         // A project page's breadcrumb is \`rail > project\`, which is why the name comes

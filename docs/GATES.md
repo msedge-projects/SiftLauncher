@@ -2958,3 +2958,20 @@ only where its glyphs land.
 
 The lesson generalises the same way it did for the strip: **any element that can be "missing" is worth auditing everywhere it
 appears**, and the fallbacks belong in one painter rather than one per page -- this crate had three, and two of them were wrong.
+### The breadcrumb badge was the rail glyph, and the crumb is drawn twice (2026-11-07)
+
+A 3x crop of the title bar on an instance page showed two defects the page total had hidden under the header avatar's 3 270:
+
+| | reference | before | after |
+|---|---|---|---|
+| breadcrumb badge | the instance's art | the **rail's play glyph** | the art |
+| breadcrumb text | "Fabric 26.3" once | **"Home" and "Fabric 26.3" overprinted** | unchanged |
+| title bar | -- | 2 268 | **2 097** |
+
+The badge was the **fourth** place the same fallback was absent: it looked up `icon.png` on disk, found none for an instance
+that has no custom icon, and fell through to the rail's glyph -- a mark that says "this is a page", not "this is Fabric 26.3".
+It now asks `serverart::paint_instance_default` first.
+
+**The overprinted name is not fixed.** Only one `painter.text` draws the crumb in `shell.rs`, so the second string comes from
+somewhere else that also writes to the title bar's left -- recorded here with the crop that shows it, because it is a
+two-string problem and the next round can find the second caller rather than re-derive the first.
