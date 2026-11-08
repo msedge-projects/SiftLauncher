@@ -2752,3 +2752,28 @@ same reason a single measured constant is not the same thing as a fix. The toolb
 time as its **offset**, in one step, so the text moves and the anchor does not.
 
 Reverted: Home is back at **32 287**, and the three measurements above are the numbers a coupled fix needs.
+### The chip was right and its contents were six points high (2026-11-07)
+
+Three attempts moved the toolbar **row** and each made the page worse. The capture comparison of two of those builds said why:
+
+| | y 300 band, differing pixels |
+|---|---:|
+| row moved +6 versus the committed build | 801 (the only band that changed) |
+| and *in that band*, distance to the reference | **row +6: 1 406, baseline: 1 488** |
+
+So the shift was **closer to the reference exactly where it acted** and worse overall -- which is only possible if it moved
+something else too. It did: the chips' *boxes* moved with their text, and six points of box on three 118-point chips costs
+more than six points of text gains.
+
+The fix is one line each, inside a chip that does not move: the glyph, the label and the chevron are drawn at
+`chip.center().y + 6.0`, the box stays at `rect.top + 242.0`.
+
+| | before | after | reference |
+|---|---|---|---|
+| "Last played" ink | 300..314 | **306..319** | 306..320 |
+| Home, total | 32 287 | **32 158** | -- |
+
+**A band-that-changed measurement is what separated the two explanations.** The page total said "worse"; only diffing the two
+builds against each other said *which* band moved and, within it, which build was nearer the truth. That is the third
+instrument this session to earn its place next to the aggregate -- after the flat-point scan and the capture-diff behind the
+card's hover.

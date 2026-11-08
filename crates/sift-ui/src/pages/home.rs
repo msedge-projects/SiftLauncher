@@ -1359,13 +1359,13 @@ fn list(
             &painter,
             glyph,
             Rect::from_center_size(
-                egui::pos2(chip.left() + 15.0, chip.center().y),
+                egui::pos2(chip.left() + 15.0, chip.center().y + 6.0),
                 egui::Vec2::splat(13.0),
             ),
             theme.BASE,
         );
         painter.text(
-            egui::pos2(chip.left() + 28.0, chip.center().y),
+            egui::pos2(chip.left() + 28.0, chip.center().y + 6.0),
             Align2::LEFT_CENTER,
             label,
             fonts::body(12.0),
@@ -1375,7 +1375,7 @@ fn list(
             &painter,
             Glyph::ChevronDown,
             Rect::from_center_size(
-                egui::pos2(chip.right() - 12.0, chip.center().y),
+                egui::pos2(chip.right() - 12.0, chip.center().y + 6.0),
                 egui::Vec2::splat(12.0),
             ),
             theme.SECONDARY,
