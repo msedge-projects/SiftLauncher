@@ -192,7 +192,14 @@ impl Soft {
                 .paint(&primitives, width, height, &mut buffer);
             let painted = paint_started.elapsed();
             let present_started = Instant::now();
-            let _ = buffer.present();
+            let presented_result = buffer.present();
+            if std::env::var_os("SIFT_SCALE_PROBE").is_some() {
+                match &presented_result {
+                    Ok(()) => eprintln!("present ok {width}x{height}"),
+                    Err(error) => eprintln!("present FAILED {width}x{height}: {error:?}"),
+                }
+            }
+            let _ = presented_result;
             // **The two halves, timed separately.** The gate is 16 ms; without this split a frame is one opaque number, and
             // the profile it produced says paint is 21 ms of a 22 ms frame while the present is 0.01 ms.
             self.painted = painted;

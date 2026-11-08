@@ -1349,6 +1349,9 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
         let window = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(g::WINDOW.0, g::WINDOW.1));
         ui.painter().rect_filled(window, 0, self.theme.BG);
 
+        if std::env::var_os("SIFT_CHROME_PROBE").is_some() {
+            eprintln!("ui rect={:?} bg={:?} rail={:?}", ui.max_rect(), self.theme.BG, self.rail);
+        }
         self.title_bar(ui);
         // The surface under every page, before the chrome that borders it.
         self.content_surface(ui);
@@ -1724,6 +1727,9 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
     /// icon starts at 262 and its name at 283; the status line ends at 1278, six pixels
     /// before the window controls, which are 48 + 48 + 60 wide.
     fn title_bar(&mut self, ui: &mut Ui) {
+        if std::env::var_os("SIFT_CHROME_PROBE").is_some() {
+            eprintln!("title_bar called, painter clip={:?}", ui.painter().clip_rect());
+        }
         let bar = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(g::WINDOW.0, g::TITLE_BAR));
         let painter = ui.painter();
         painter.rect_filled(bar, 0, self.theme.RAISED_BG);

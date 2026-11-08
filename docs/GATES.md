@@ -3595,3 +3595,27 @@ because seven mechanisms had to be eliminated first.
 
 **The cost is one screen.** The Project page cannot be measured or driven until this is fixed; every other page can, and the next
 rounds go back to them rather than to this.
+### Contradiction on the Project page: everything succeeds and the screen disagrees (2026-11-08)
+
+The half hour the quarantine asked for was spent, and it produced a contradiction rather than a cause:
+
+| probe | result, 102 frames across the navigation |
+|---|---|
+| `ui rect` | `[[0,0] - [1440,900]]` on **103 of 103** frames |
+| background colour | `#16181C` -- the theme\'s BG, not black |
+| `title_bar` called | **103 of 103** |
+| `surface.resize` | `ok 1440x900`, 105 of 105 |
+| `buffer.len()` | `1 296 000 = 1440x900` |
+| `buffer.present()` | **`ok 1440x900`, 102 of 102** |
+| window vs root capture | **byte-identical** -- the screen really does show that frame |
+
+Every step of the pipeline reports success, the chrome is drawn with the right rect and a dark background, and the screen shows a
+frame with the chrome missing and the content inset. **A capture that agrees with the screen and disagrees with the app is not a
+capture problem**; something between `present()` returning `Ok` and the window\'s pixels is not doing what its result says.
+
+**The next step is to stop the app from being the suspect at all**: restart `Xvfb :100` from scratch, run one instance, and see
+whether the inset survives. If it does, the fault is in this build\'s present path and the server is innocent; if it does not, the
+display accumulated state that no amount of client restarting clears -- and every capture on :100 since this began has been suspect.
+
+The probes stay (`SIFT_SCALE_PROBE` now covers resize, buffer length and present; `SIFT_CHROME_PROBE` covers the ui rect, the
+background and the title bar). They are the reason this is a contradiction with numbers rather than a suspicion.
