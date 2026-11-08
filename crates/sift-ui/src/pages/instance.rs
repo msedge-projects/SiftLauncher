@@ -1386,7 +1386,9 @@ fn files_tab(
             .clicked();
         icons::draw(
             &painter,
-            Glyph::MoreVertical,
+            // **Horizontal, as the reference draws it.** Its Actions cell is a `...` (row 299 of the capture), where
+            // this build drew the vertical `⋮` -- the same control in the wrong orientation.
+            Glyph::MoreHorizontal,
             Rect::from_center_size(more.center(), egui::vec2(16.0, 16.0)),
             if armed { theme.RED } else { theme.SECONDARY },
         );

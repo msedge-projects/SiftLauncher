@@ -3140,3 +3140,28 @@ removal", was set by nothing. It is a two-press delete now:
    breadcrumb, which is why (2) was visible at all instead of silently doing nothing.
 
 Renaming is still unbuilt and `State::renaming` is still unused; recorded, not claimed.
+### The Files panel, driven against the reference for the first time (2026-11-08)
+
+Comparing the two Files tabs at 1:1 (`ref-files.png` vs `our-files-mods.png`) put a number on the panel for the first time and
+listed what it lacks:
+
+| element | reference | ours |
+|---|---|---|
+| Actions glyph | horizontal `...` | **was vertical `⋮`; now horizontal** |
+| Home button | yes, left of the search row | absent |
+| Refresh | outlined button | absent |
+| `+ ⌄` | a split button beside Refresh | absent |
+| row checkboxes | one per row | absent |
+| Created / Modified | real timestamps | columns drawn, values absent |
+| breadcrumb | none in this view | `minecraft / mods /` shown |
+
+Total: **68 763** (content 29 464, sidebar 36 752). The reference and this build were showing **different folders** (its `config`
+against our `mods`), so that number is a floor on the structural difference rather than a like-for-like measurement -- recorded
+with that caveat rather than quoted as if the states matched.
+
+**The sidebar's 36 752 is the anomaly.** On Home it is 16 787 against the same panel; on this page the panel is more than twice
+as wrong, which no list-body difference can explain. It is the next thing to measure, not the table.
+
+The reference's `...` did not open a menu on a press at its measured position, so **what that cell does is still unknown** -- and
+this build's two-press delete is therefore a design of its own, not a copy. That is recorded as a divergence rather than
+claimed as parity.
