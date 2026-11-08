@@ -7,12 +7,12 @@ clients in the same state, with a capture behind every claim.
 
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
-| Home | **31 279** | `sweep-home-ref.png` vs `sweep-home-our.png` (one pass, both clients) | type: the rasteriser |
-| Discover | **78 759** | `sweep-discover-*.png` | card icons and their artwork |
+| Home | **31 349** | `sweep-home-ref.png` vs `sweep-home-our.png` (one pass, both clients) | type: the rasteriser |
+| Discover | **78 538** | `sweep-discover-*.png` | card icons and their artwork |
 | Screenshots | **23 547** | `sweep-screenshots-*.png` (both empty -- the only state the reference can be shown) | the empty state\'s illustration is larger here |
 | Instance page | **30 454** | `sweep-instance-ref.png` vs `inst-clean.png` (**mods/ emptied first**: a test file of ours had made the Content tab populate) | type |
 | Settings | **31 975** | `sweep-settings-*.png` (pinned backdrop) | the theme cards and the type |
-| Project page | **71 380** | `projL-ref.png` vs `proj-chips.png` | the header\'s control widths and the body\'s type |
+| Project page | **71 380** (Versions tab **63 692**) | `projL-ref.png` vs `proj-chips.png` | the header\'s control widths and the body\'s type |
 | Files (root, phase pinned) | **48 240** | `ref-files.png` vs `our-files-root.png` | the row data differs (its `config`, our `mods`) |
 | Skins | not comparable | `ref-skins.png` vs `ours-skins-b.png` | different states |
 | Servers | not comparable | `ref-servers.png` | the reference refuses its own page |

@@ -4102,3 +4102,19 @@ tested, not asserted**, and the evidence cell is where the drive is named.
 
 The file still holds **663 nine-cell element rows** after the edits -- the same count as before, checked with the same escape-aware parser
 that needs to write it, because a naive split has broken this table once already.
+### Three rows added for elements this session built (2026-11-08)
+
+The matrix had **no row** for three of the things this session fixed -- which is the quietest kind of hole in a ledger: an element that is
+wrong and unlisted looks exactly like an element that is right.
+
+| row | element | evidence |
+|---|---|---|
+| 816 | search card\'s environment chip glyph | `sweep-discover-ref.png` vs `disc-globe.png`, cropped at 3x |
+| 817 | library\'s "New instance" badge | `sweep-home-ref.png` vs `home-badge.png` |
+| 818 | hosting banner on a project page | `projL-ref.png` vs `proj-chips.png` |
+
+The ledger is **666 nine-cell rows** now (663 element rows plus these three), which is the number this file checks itself against with an
+escape-aware parser -- it has written a broken table once before by splitting on every pipe.
+
+FINISHED\'s table carries the session\'s latest figures: Home 31 349, Discover 78 538, Project 71 380 and its Versions tab 63 692, with
+Instance 30 454, Settings 31 975, Screenshots 23 547 and Files 48 240 unchanged.

@@ -5640,6 +5640,9 @@ Text-dense pages have a floor set by the **rasteriser**, not the layout: a title
 layout. The reference compared against itself differs by **1 206 pixels**. A page at 80 927 (Discover) is therefore not four
 times worse than one at 23 729 (Screenshots) -- it has ten times the text.
 
+| 816 | Search card — environment chip glyph | `packages/ui/src/components/project/card/ProjectCard.vue` (the tag pill\'s `getTagMessage`) | the environment chip leads with a **globe** mark | static | `crates/sift-ui/src/shell.rs:3465` drew `Glyph::Monitor` for every card | none -- a globe is drawn now | DONE | P1 |
+| 817 | Library — "New instance" badge | `packages/app-frontend/src/pages/Home.vue` (the recent instance\'s badge) | an **outlined** pill in the brand ring, holding a sparkle and the words | static | `crates/sift-ui/src/pages/home.rs:1147` was a fixed 96 points wide, so the 14-point label overran the ring | none -- the pill is sized from its label (`home.rs:1151`) | DONE | P1 |
+| 818 | Project — hosting banner on a project page | `packages/app-frontend/src/components/ui/sidebar/index.vue` | the banner stays at the sidebar\'s foot on a project page while the default stack is replaced | static | `crates/sift-ui/src/shell.rs:2817` set `shared` to `Rect::NOTHING`, which suppressed both | none -- `panel::hosting_banner` is drawn from both callers | DONE | P0 |
 ### Memory, where the gate stands
 
 `idle RSS` **24.2 MiB** against a 20 MiB bound. Two defects were found and fixed on the way: a Discover visit cost **38 MB
