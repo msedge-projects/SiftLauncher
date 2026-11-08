@@ -2862,3 +2862,29 @@ its hovered card. It lands within one point of the reference in both axes at the
 **The selection ring is not built.** The reference puts a white circle at the art's top right, which is the card-selection
 control -- a feature this build has no state for at all (there is no "selected cards" set, so there is nothing for a ring to
 show). It is recorded here rather than drawn as an ornament that does nothing.
+### Card selection, driven against the reference (2026-11-07)
+
+The ring was driven on **both** apps before anything was written, which is what made it a spec rather than a guess:
+
+| | reference |
+|---|---|
+| hovered card | an empty 22-point ring at the art's top right, and a tooltip reading **"Select instance"** |
+| press it | the ring becomes a **white disc with a brand check**, the tooltip reads **"Deselect instance"**, the plate lifts |
+| pointer leaves | **the check stays** -- that is how a reader knows what a bulk action would act on |
+
+Implemented to that: `State::selected` (a set of ids), the ring at `(card.left + 122, card.top + 59)`, the check and the lifted
+`SURFACE_4` plate. Driven:
+
+| step | ours |
+|---|---|
+| hover the card | empty ring + play disc, as the reference |
+| press the ring | white disc with a check, plate lifted |
+| move away | the check persists |
+
+**Two defects found by driving it.** The ring first followed *its own* hover rather than the card's, so it appeared only when
+the pointer was already on it -- the opposite of an affordance. And the first attempt bought `state` inside a loop that already
+held `menu`; the fix was destructuring `State { menu, selected, .. }` so two fields can be borrowed at once, which is what the
+compiler was asking for rather than a clone.
+
+**Not built:** the tooltip. This build has no tooltip system, so the words "Select instance" / "Deselect instance" have no
+delivery mechanism yet -- recorded, not faked.

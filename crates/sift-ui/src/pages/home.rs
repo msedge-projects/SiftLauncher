@@ -603,6 +603,9 @@ pub struct State {
     pub query: String,
     /// Whether that field is taking the keyboard.
     pub query_focused: bool,
+    /// The instances ticked for a bulk action. `InstanceItem.vue` puts a selection ring on the card's art, filled with a
+    /// check when the card is in this set; the reference's tooltip reads "Select instance" or "Deselect instance".
+    pub selected: std::collections::HashSet<String>,
 }
 
 impl State {
@@ -1049,7 +1052,11 @@ fn list(
     state.refresh_worlds(instances);
     // Two disjoint fields of one state: naming them separately is what lets the rows below
     // hold the world names while they open and close the menu.
-    let menu = &mut state.menu;
+    // **Two fields, borrowed apart.** The loop reads the selected set and writes it back when a ring is pressed, while the
+    // menu beside it is borrowed for the popover; destructuring lets both live at once instead of cloning a set per frame.
+    let State { menu, selected, .. } = state;
+    let selected_ids = selected.clone();
+    let mut toggled: Option<String> = None;
     let worlds = &state.worlds;
 
     let painter = ui.painter();
@@ -1483,7 +1490,13 @@ fn list(
     for (index, instance) in shown.iter().copied().take(ROWS_SHOWN).enumerate() {
         // The card, its pill and its kebab from the one function the probe and the tests read.
         let (card, play, kebab) = row_targets(rect, index);
-        painter.rect_filled(card, 12, theme.RAISED_BG);
+        let is_selected = selected_ids.contains(&instance.id);
+        // A selected card's plate lifts one step, which is what the reference's capture shows while the ring is ticked.
+        painter.rect_filled(
+            card,
+            12,
+            if is_selected { theme.SURFACE_4 } else { theme.RAISED_BG },
+        );
         // The reference's card: the pack's icon fills the top of the plate at the card's own radius, with the name
         // and the loader+version under it. This drew a 64-point tile with the rows' text beside it.
         // **132 at (13,15), measured off the reference's own card.** The tile was 152 at (8,8): the icon was twenty points
@@ -1599,6 +1612,32 @@ fn list(
         // (`InstanceItem.vue:283-314`). `EllipsisVertical` is the icon set's
         // `ellipsis-vertical.svg`, the three dots the reference's `MoreVerticalIcon` draws.
         let is_open = menu.open_for.as_deref() == Some(instance.id.as_str());
+        // **The selection ring.** `InstanceItem.vue` puts a 22-point circle on the art's top-right: an empty ring while the
+        // card is hovered, a white disc with a brand check once it is selected -- and the check stays when the pointer
+        // leaves, which is how a reader knows what a bulk action would act on.
+        {
+            let ring = Rect::from_center_size(
+                egui::pos2(card.left() + 122.0, card.top() + 59.0),
+                Vec2::splat(22.0),
+            );
+            let ring_hit = ui.interact(ring, egui::Id::new(("select", &instance.id)), Sense::click());
+            if is_selected {
+                painter.circle_filled(ring.center(), 11.0, theme.CONTRAST);
+                crate::icons::draw(
+                    painter,
+                    Glyph::Check,
+                    Rect::from_center_size(ring.center(), Vec2::splat(14.0)),
+                    theme.BRAND,
+                );
+            } else if ui.rect_contains_pointer(card) {
+                // The empty ring follows the **card's** hover, not the ring's: the reference shows it as soon as the pointer
+                // is anywhere on the card, which is what tells a reader the card can be selected before they aim at it.
+                painter.circle_stroke(ring.center(), 10.0, Stroke::new(2.0, theme.CONTRAST));
+            }
+            if ring_hit.clicked() {
+                toggled = Some(instance.id.clone());
+            }
+        }
         let kebab_response = ui.interact(
             kebab,
             egui::Id::new(("row-menu", &instance.id)),
@@ -1705,6 +1744,14 @@ fn list(
     // press to the widget registered last, which is what makes a menu row take the click
     // instead of the card's pill underneath it.
     let mut pressed: Option<(String, MenuItem)> = None;
+    // **The ring's press, applied once the loop is done.** The rows read a copy of the set; the write lands here, and the
+    // frame after this one draws the check.
+    if let Some(id) = toggled {
+        if !selected.insert(id.clone()) {
+            selected.remove(&id);
+        }
+        ui.ctx().request_repaint();
+    }
     if let Some((id, kebab)) = anchored {
         if let Some(item) = menu_popover(ui, theme, &id, kebab, rect, menu) {
             menu.close();
