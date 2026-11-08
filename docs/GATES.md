@@ -4084,3 +4084,21 @@ reference\'s. A narrower pill put less green ink where the reference has some.
 That is the sharpest example this session of why the pixel count is a diagnostic and not a target. The badge keeps the width that shows
 the words inside the ring, the +70 is recorded rather than hidden, and the 19-point guess was reverted when it measured worse than the
 11-point one -- **a crop read at 3x is not a measurement**.
+### Four matrix rows that were stale claims, now closed with their captures (2026-11-08)
+
+The matrix carried five rows about the Project page whose `gap` cells described a page that no longer exists. Reading them against today\'s
+captures:
+
+| row | the row said | now |
+|---|---|---|
+| 636 Tab strip | "no rounded track around the tabs" | **DONE** -- the track and the green pill are in both clients |
+| 641 Versions: structure | "no table, no header, no columns, no pagination" | **DONE** -- header, five columns, `1 2 ... 24 >` |
+| 642 Versions: filters and paging | "nothing between the card top and the first row" | **DONE** -- two comboboxes, driven, filtering the table |
+| 648 Sidebar default content | "we show the project\'s sections plus getting-started/news/hosting" | **DONE** -- project column plus the hosting banner, as the reference |
+| 626 Page frame inset | "content starts 8pt below the title bar where the reference starts 24" | **OPEN, re-measured**: first ink at y 77 against the reference\'s 74 -- 3 points, not 16 |
+
+Every DONE row now names the captures behind it, because that is what this file\'s own rules require of the status: **DONE means driven or
+tested, not asserted**, and the evidence cell is where the drive is named.
+
+The file still holds **663 nine-cell element rows** after the edits -- the same count as before, checked with the same escape-aware parser
+that needs to write it, because a naive split has broken this table once already.
