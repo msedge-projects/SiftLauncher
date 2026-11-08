@@ -3673,15 +3673,9 @@ fn card(
     );
     let by_at = egui::pos2(title_at.x + title.size().x + 10.0, title_at.y + 2.0);
     painter.galley(by_at, by.clone(), theme.SECONDARY);
-    icons::draw(
-        painter,
-        Glyph::External,
-        Rect::from_min_size(
-            egui::pos2(by_at.x + by.size().x + 8.0, by_at.y + 2.0),
-            Vec2::splat(12.0),
-        ),
-        theme.SECONDARY,
-    );
+    // **No external-link glyph.** This drew one after the author, and the reference's card has neither the icon nor the
+    // import for it: `LegacyProjectCard.vue` prints `by {author}` and nothing else. An affordance the reference does not
+    // draw is a promise this build cannot keep.
 
     // The summary's measure is the reference's, not the space the button leaves: at 2.2x
     // its first card breaks after "in a", which is a ~440-point line, so the second line

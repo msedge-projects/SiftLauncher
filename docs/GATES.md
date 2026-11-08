@@ -3065,3 +3065,16 @@ The card now prints `2,141` against the reference's `2,115`, differing in the la
 
 The download string is the search API's own (`7.20M` against the reference's `7.38M`), not a formatting choice, and is left alone:
 a live number that differs is not a parity defect, and rewriting it would be inventing data.
+### An external-link glyph the reference never draws (2026-11-08)
+
+The card's author line printed `by LUMYVERSE` followed by a 12-point arrow-out-of-a-box. The reference prints the words and
+nothing else -- and `LegacyProjectCard.vue` has neither the icon nor the import for it:
+
+| | reference | before | after |
+|---|---|---|---|
+| author line | `by LUMYVERSE` | `by LUMYVERSE [external]` | `by LUMYVERSE` |
+| Discover total | -- | 81 267 | **81 107** |
+
+**An affordance the reference does not draw is a promise this build cannot keep.** The glyph said a card opens an external page;
+the card opens the project's page inside the launcher. It was removed rather than made to do something, because inventing a
+behaviour to justify a decoration is the same error in the other direction.
