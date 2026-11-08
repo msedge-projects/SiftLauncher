@@ -2587,9 +2587,13 @@ mod tests {
         assert_eq!(card.width(), 168.0);
         assert!(card.contains_rect(play), "the pill is on the card");
         assert!(card.contains_rect(kebab), "the kebab is on the card");
+        // **Diagonal, not side by side.** The play disc sits on the art's lower right (x 185..227) and the kebab at the
+        // card's foot (x 222..250), so they share five columns but no rows -- which is how the reference draws them. The
+        // invariant that matters is that their *areas* are disjoint, not that one is left of the other; the old assertion
+        // was written for the pill this build used to draw at the card's left.
         assert!(
-            play.right() < kebab.left(),
-            "the two right-hand targets must not overlap: {play:?} {kebab:?}"
+            !play.intersects(kebab),
+            "the two targets must not overlap: {play:?} {kebab:?}"
         );
         // The next card is to its right on the same row until the columns run out, and under it after that.
         let (next, _, _) = row_targets(page, 1);
