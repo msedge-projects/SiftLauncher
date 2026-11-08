@@ -1835,6 +1835,9 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
     // and off (`ProjectPageVersions.vue:2-28`, the `VersionFilterControl` above the table), with
     // the reference's own `Pagination` at its right-hand end.
     let mut filter_row = Rect::from_min_size(inner.min, egui::vec2(inner.width(), FILTER_HEIGHT));
+    // Hoisted: the open menu is drawn after the table, so its anchors outlive the block that drew the triggers.
+    let mut channel_rect = Rect::NOTHING;
+    let mut version_rect = Rect::NOTHING;
     {
         let painter = ui.painter();
         // **Two comboboxes, as the reference has them** (`ProjectPageVersions.vue:2-28`): `Channel`, with the filter
@@ -1847,7 +1850,7 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
             1 => state.channels[0].label().to_owned(),
             count => format!("{count} channels"),
         };
-        let channel_rect = filter_trigger(
+        channel_rect = filter_trigger(
             painter,
             egui::pos2(x, chip_y),
             theme,
@@ -1870,7 +1873,7 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
             .game_version
             .clone()
             .unwrap_or_else(|| "Game version".to_owned());
-        let version_rect = filter_trigger(
+        version_rect = filter_trigger(
             painter,
             egui::pos2(x, chip_y),
             theme,
@@ -1887,54 +1890,6 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
                 _ => Some(FilterKind::Version),
             };
             ui.ctx().request_repaint();
-        }
-        // The open menu: the same toggles the chips carried, and none of them until it is opened.
-        if let Some(open) = state.open_filter {
-            let anchor = match open {
-                FilterKind::Channel => channel_rect,
-                FilterKind::Version => version_rect,
-            };
-            let items: Vec<String> = match open {
-                FilterKind::Channel => ["All", "Release", "Beta", "Alpha"]
-                    .iter()
-                    .map(|name| (*name).to_owned())
-                    .collect(),
-                FilterKind::Version => {
-                    let mut names: Vec<String> = Vec::new();
-                    for version in &project.versions {
-                        for name in &version.game_versions {
-                            if !names.contains(name) {
-                                names.push(name.clone());
-                            }
-                        }
-                    }
-                    names.sort_by(|a, b| b.cmp(a));
-                    let mut all = vec!["All".to_owned()];
-                    all.extend(names);
-                    all
-                }
-            };
-            if let Some(picked) = filter_menu(ui, anchor, inner, theme, &items) {
-                match open {
-                    FilterKind::Channel => match picked.as_str() {
-                        "All" => state.channels.clear(),
-                        name => {
-                            state.channels.clear();
-                            if let Some(channel) = [Channel::Release, Channel::Beta, Channel::Alpha]
-                                .into_iter()
-                                .find(|channel| channel.label() == name)
-                            {
-                                state.channels.push(channel);
-                            }
-                        }
-                    },
-                    FilterKind::Version => {
-                        state.game_version = if picked == "All" { None } else { Some(picked) };
-                    }
-                }
-                state.open_filter = None;
-                ui.ctx().request_repaint();
-            }
         }
         filter_row = Rect::from_min_size(
             egui::pos2(inner.left(), inner.top()),
@@ -2146,6 +2101,55 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
                 );
             }
         });
+        // The open menu: the same toggles the chips carried, and none of them until it is opened.
+        if let Some(open) = state.open_filter {
+            let anchor = match open {
+                FilterKind::Channel => channel_rect,
+                FilterKind::Version => version_rect,
+            };
+            let items: Vec<String> = match open {
+                FilterKind::Channel => ["All", "Release", "Beta", "Alpha"]
+                    .iter()
+                    .map(|name| (*name).to_owned())
+                    .collect(),
+                FilterKind::Version => {
+                    let mut names: Vec<String> = Vec::new();
+                    for version in &project.versions {
+                        for name in &version.game_versions {
+                            if !names.contains(name) {
+                                names.push(name.clone());
+                            }
+                        }
+                    }
+                    names.sort_by(|a, b| b.cmp(a));
+                    let mut all = vec!["All".to_owned()];
+                    all.extend(names);
+                    all
+                }
+            };
+            if let Some(picked) = filter_menu(ui, anchor, inner, theme, &items) {
+                match open {
+                    FilterKind::Channel => match picked.as_str() {
+                        "All" => state.channels.clear(),
+                        name => {
+                            state.channels.clear();
+                            if let Some(channel) = [Channel::Release, Channel::Beta, Channel::Alpha]
+                                .into_iter()
+                                .find(|channel| channel.label() == name)
+                            {
+                                state.channels.push(channel);
+                            }
+                        }
+                    },
+                    FilterKind::Version => {
+                        state.game_version = if picked == "All" { None } else { Some(picked) };
+                    }
+                }
+                state.open_filter = None;
+                ui.ctx().request_repaint();
+            }
+        }
+
 }
 
 /// A run of `TagItem` chips, one row, clipped to the column they are given.

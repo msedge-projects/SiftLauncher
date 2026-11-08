@@ -4030,3 +4030,22 @@ order even when the next commit repairs it.
 
 The rule the objective already states is the one to keep: **tree building and tests green** is a precondition of the commit, not a
 check afterwards. A signature change is exactly the kind of edit that needs both.
+### The Versions comboboxes driven: open, choose, filter (2026-11-08)
+
+The objective asks for interactions behind a capture, not just controls that exist. Both were driven on the running build:
+
+| step | what the capture shows |
+|---|---|
+| press `Channel` | the trigger lights in the brand tone and the menu opens under it: **All, Release, Beta, Alpha** |
+| press `Alpha` | the trigger reads **`Alpha`**, the menu closes, and the table lists only alpha versions -- `15.0.0-alpha.5`, `.4`, `.3` -- each with its red channel dot |
+| press `All` | the table returns to every version |
+
+Evidence: `menu-open3.png` (open), `menu-beta.png` (filtered -- the press landed on Alpha, four rows down, and the capture says so),
+`ver-reset.png` (back to All).
+
+**A paint-order defect was found by driving it and not by looking at it**: the menu was drawn *before* the table and the table\'s rows
+painted over it, so the first three attempts to open it looked like a dead control. The menu is drawn after the table now, and the two
+trigger rects are hoisted out of the block that draws them so the menu can find its anchor there.
+
+That is worth writing down twice: **a control that draws in the wrong order is indistinguishable from a control that does not work**
+-- and only pressing it tells you which. The same lesson as the checkbox three hundred rounds ago, in a different part of the frame.
