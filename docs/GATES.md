@@ -4142,3 +4142,34 @@ the change is reverted so the deliberate `opt-level = 3` and its reasoning stay 
 So the clause\'s honest state: **22.6 MB, of which 5.0 is the framebuffer and 7.5 is our own image; the gate needs 2.6 MB and the heap has
 3.4 MB in total.** Reaching 20 MB means either a smaller binary (a build-system question this round could not even get a rebuild out of)
 or a window buffer that is not a full screen of pixels (a renderer question already recorded as RENDERER-RISK).
+### Correction: the profile was never the problem -- this crate is already built for size (2026-11-08)
+
+Last round recorded that "the profile setting does not reach this build" and left it as a build-system finding. It is wrong, and the truth
+is more useful:
+
+```toml
+# crates/sift-ui/Cargo.toml:78
+[profile.release]
+opt-level = "z"
+lto = true
+```
+
+**`sift-ui` is its own workspace** -- deliberately, so its dependency set can differ from the iced launcher\'s -- and it already carries its
+own release profile, set to the *smallest* setting with link-time optimisation. The root manifest\'s `opt-level = 3` never applied to it, and
+neither did my edits to it. The byte-identical binary was not a broken build: **it was a build already doing what I was trying to ask for.**
+
+That closes the last memory avenue with a number:
+
+| part | resident | can it shrink? |
+|---|---|---|
+| the window\'s pixel buffer | 5 064 kB | no -- it is the frame |
+| this build\'s code and rodata | 7 508 kB | **already `-Oz` with LTO**; `.text` 6.71 MB, `.rodata` 2.57 MB |
+| heap | 3 368 kB | the only part 22 rounds of trimming could reach, and it is 3.4 MB in total |
+| libc | 1 280 kB | no |
+
+**A software-presented 1440x900 window costs 5 MB before this program draws anything, and the program itself is 7.5 MB of genuinely
+size-optimised code.** 20 MB is not reachable by allocation discipline, and the record now says so with the three numbers that prove it
+rather than the twenty-two rounds that suggested it.
+
+The lesson is the one this file keeps earning: **a no-op build looks exactly like a broken knob**, and the difference is one `grep` in the
+manifest the build actually reads. I recorded a defect in the tooling that was a defect in my reading of it.
