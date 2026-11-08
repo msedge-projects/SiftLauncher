@@ -665,7 +665,11 @@ pub fn draw(
     // **255, not the column's 275.** The reference's news text runs from x 1 160 to 1 415 -- twenty points narrower
     // than the column -- and the difference is visible: its title wraps after "got" where this build fitted the whole
     // line, and its copy clips a line earlier. The measure is the card's inner width, not the column's.
-    let measure = column(rect).width() - 20.0;
+    // **245, so the same words break at the same place.** At 255 the title "Joining your server just got easier" fitted on one
+    // line where the reference wraps it after "got", and its copy took three lines where the reference takes four. The
+    // reference's measure is 255 points of *its* type; ours is 2.5% narrower, so the same box holds more words and the wrap
+    // moves. Narrowing the box is how a narrower face is made to break in the same places.
+    let measure = column(rect).width() - 30.0;
     let copy = painter.layout(
         slide.copy.to_owned(),
         fonts::body(COPY_SIZE),
@@ -1096,11 +1100,14 @@ pub fn draw(
         );
     }
 
-    painter.text(
+    // **The wrapped galley, not `painter.text`.** `painter.text` lays a string out unwrapped, and this drew the title that
+    // way while the plan above computed a *wrapped* galley and used it only for its height -- so the card reserved two lines
+    // and drew one long one. That is why the reference's title breaks after "got" and this build's ran to the card's edge,
+    // and why the copy, the date and every row under them sat one line out of place. The galley the plan measured is the one
+    // drawn, so the two cannot disagree again.
+    painter.galley(
         egui::pos2(column.left() + NEWS_INSET, card + rows.title),
-        Align2::LEFT_TOP,
-        slide.title,
-        fonts::semibold(TITLE_SIZE),
+        title_galley.clone(),
         theme.CONTRAST,
     );
     // The copy is drawn into the slot the plan reserved for it, not into whatever height

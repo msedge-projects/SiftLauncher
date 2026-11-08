@@ -2080,3 +2080,27 @@ wraps.
 
 That defect is now named rather than papered over, and it is the same shape as the category list: a constant tuned to a
 symptom reads as correct until the cause is measured.
+### The news title was drawn unwrapped while the plan measured it wrapped (2026-11-07)
+
+`painter.text` lays a string out **unwrapped**, and the news card drew its title with it -- while the plan above computed a
+*wrapped* galley at the card's measure and used it only for its height. So the card reserved two lines of space and painted
+one long line into it, which is why the title ran to the card's edge where the reference breaks it after "got", and why the
+copy, the date and everything under them sat one line out of place.
+
+The galley the plan measured is now the galley drawn, so the two cannot disagree:
+
+| | reference | before | now |
+|---|---|---|---|
+| title line 1 | 519..533 | 518..533 | **519..533** |
+| title line 2 | 542..550 | -- (unwrapped) | **541..549** |
+| copy line 1 | 566..576 | 564..574 | **564..574** |
+| copy line 2 | 583..596 | 581..594 | **581..594** |
+| copy line 3 | 600..610 | 598..608 | **598..608** |
+| copy line 4 | 619..635 | 615..634 | **615..634** |
+
+Home: **37 166 to 36 875**. Six bands, five of them within two points of the reference's and one within four.
+
+**The lesson is about two sources of truth.** The plan and the painter had different ideas of the title -- one wrapped, one
+not -- and every constant tuned in between (the 8-point copy gap kept last round, the 24-point art gap) was compensation for
+a disagreement that only showed as text landing in the wrong rows. A layout that measures one string and paints another will
+always need a fudge factor, and the fudge will always be right for exactly one article.
