@@ -2926,3 +2926,16 @@ than the previous six rounds combined.
 
 That is the strongest confirmation yet of the distinction: six attempts on text *inside* boxes lost, and these two, with no box
 anywhere near them, won by margins an order of magnitude larger.
+### The sidebar's "News" heading was nine points high (2026-11-07)
+
+| | reference | before | after |
+|---|---|---|---|
+| "News" ink rows | 317..326 | 308..318 | **317..327** |
+| Home sidebar | -- | 16 953 | **16 787** |
+| Home total | -- | 31 215 | **31 049** |
+
+The heading was the only thing out of place: the card under it -- art, title, copy, date -- was already aligned, so the nine
+points were entirely inside the gap between them. `NEWS_HEADING_DROP` 20 -> 29.
+
+The rule held again: a standalone heading moved by its own measured offset, with nothing else in the layout depending on it,
+and 166 pixels came with it. None of the six failed attempts earlier in the week had that property.

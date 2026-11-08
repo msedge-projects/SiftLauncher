@@ -196,7 +196,9 @@ const NEWS_HEADING_TO_CARD: f32 = 33.0;
 /// The gap above the news section, which is **twenty points wider than the one above it**: the reference's "News"
 /// ink sits at 315..326 where this build's sat at 295..306, and its getting-started rows end at the same 251 as
 /// ours, so the difference is the boundary and not the type.
-const NEWS_HEADING_DROP: f32 = 20.0;
+// **29, measured.** The reference's "News" ink runs 317..326 and this build's 308..318: the heading sat nine points high
+// while the card under it was aligned, so the gap between them was nine too wide.
+const NEWS_HEADING_DROP: f32 = 29.0;
 
 /// The gap between the card's art and its title: the card's own stack is `gap-4`
 /// (`ui/components/content/NewsArticleCard.vue:25`), 16 points.
