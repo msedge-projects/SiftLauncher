@@ -2369,3 +2369,25 @@ Both constants are back at 9 and 21. Home reads 36 886 either way, tests green a
 draw are reading different numbers for it -- the same shape of bug as the news title measured wrapped and painted unwrapped,
 one element down. That is the next thing to read in the source, and it is a smaller question than it was an hour ago: the
 third term is not a constant, it is a second place the date is computed.
+### Keyboard shortcuts work; the harness had never sent them (2026-11-07)
+
+**The harness bug first, because it invalidated the first three attempts.** There is no window manager on these displays, so
+no window holds X focus: `xdotool key` sends every keystroke to the root and the app never sees it. Escape appeared to do
+nothing, `Ctrl+2` appeared to do nothing, and `n` appeared to do nothing -- three behaviours reported as inert by an
+instrument that was not delivering input at all. `xdotool getwindowfocus getwindowname` returns nothing, which is the tell.
+
+The fix is one call: `xdotool windowfocus 2097154` (this build's window, named "Sift Launcher") before any key. With it:
+
+| key | result | verified by |
+|---|---|---|
+| `Escape` | closes the Settings modal | the modal's plate at (300,200) reads (39,41,46) before and (22,24,28) after |
+| `Ctrl+2` | **Discover modpacks** | the title bar's breadcrumb |
+| `Ctrl+1` | **Home** | the title bar's breadcrumb |
+| `n` | nothing, on the library page | correct: the shortcut belongs to the welcome screen (`pages/home.rs`), which shows when no instance is installed. The reference behaves the same way. |
+
+**Every keyboard result recorded before this entry is void**, including any that said a shortcut "does nothing". The three
+above are the first keyboard verifications in this file that actually reached the application.
+
+The lesson is the sharpest version of this session's recurring one: an instrument that returns "no change" is not evidence of
+no change until it has been shown to be capable of returning anything else. Escape failing twice was not the app's fault, and
+a harness check -- one command, one line of output -- would have said so before the first capture.
