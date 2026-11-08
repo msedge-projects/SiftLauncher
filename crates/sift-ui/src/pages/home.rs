@@ -173,9 +173,11 @@ fn row_targets(rect: Rect, index: usize) -> (Rect, Rect, Rect) {
     // The old row's constants are still what `ROWS_SHOWN` and the tests read; the grid card is the shape the
     // reference draws, and the plate below uses this rect.
     // The two actions sit over the card's foot, where a card of this size can carry them.
+    // **A circle over the art's bottom-right, not a pill at the card's foot.** The reference's hovered card shows a
+    // 30-point green disc on the picture itself; this drew a rounded pill at the card's foot, where it sat over the name.
     let play = Rect::from_center_size(
-        egui::pos2(card.left() + 28.0, card.bottom() - 24.0),
-        Vec2::splat(32.0),
+        egui::pos2(card.right() - 50.0, card.top() + 142.0),
+        Vec2::splat(42.0),
     );
     let kebab = Rect::from_center_size(
         egui::pos2(card.right() - 20.0, card.bottom() - 24.0),
@@ -1571,12 +1573,12 @@ fn list(
         // nothing else; this drew a green pill at the card's foot always, where it sat over the name. It appears under the
         // pointer, which is also when it is a target.
         if ui.rect_contains_pointer(card) {
-            painter.rect_filled(play, 8, theme.BUTTON_BG_SELECTED);
+            painter.circle_filled(play.center(), 21.0, theme.BRAND);
             icons::draw(
                 painter,
                 Glyph::Play,
                 Rect::from_center_size(play.center(), Vec2::splat(18.0)),
-                theme.BUTTON_TEXT_SELECTED,
+                theme.ACCENT_CONTRAST,
             );
         }
         // The pill is a target now: a launcher whose play button is a drawing is not a

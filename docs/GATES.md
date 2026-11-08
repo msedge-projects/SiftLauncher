@@ -2845,3 +2845,20 @@ the pill and the kebab keep their `interact` rects whether or not they are paint
 
 **The engine of this round was a behaviour test.** Verifying Duplicate produced the capture that showed the two defects; no band
 count would have pointed at them, because a pill drawn over text and a text run differing look identical in a difference map.
+### The card's play control is a 42-point disc on the picture (2026-11-07)
+
+Hovering the first card in both apps -- a state no static capture had compared -- showed three differences, and one of them was
+a control in the wrong shape and place:
+
+| | reference, hovered | before | after |
+|---|---|---|---|
+| play control | a **42-point disc** at the art's lower right | a 30-point pill at the card's foot, over the name | **42-point disc at (205, 471)** |
+| measured disc | x 185..226, y 451..492 | x 217..246, y 430..459 | **x 185..226, y 450..491** |
+| selection ring | a white ring at the art's top right | **absent** | still absent -- see below |
+
+The disc's rect is now `centre (card.right - 50, card.top + 142)`, radius 21, glyph 18: the reference's own numbers, read off
+its hovered card. It lands within one point of the reference in both axes at the size the reference draws.
+
+**The selection ring is not built.** The reference puts a white circle at the art's top right, which is the card-selection
+control -- a feature this build has no state for at all (there is no "selected cards" set, so there is nothing for a ring to
+show). It is recorded here rather than drawn as an ornament that does nothing.
