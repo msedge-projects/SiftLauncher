@@ -2642,3 +2642,16 @@ first put inside `draw_create`, which only runs when the dialog is already open 
 was put in `main.rs`, which is the **GL** path: this build runs the software backend, which draws its own dialog in
 `soft/window.rs`, so the fix sat in a file the running binary never executes. Neither failure changed a single pixel, and both
 builds succeeded.
+### Both hero paths open the dialog, and Escape returns to the hero (2026-11-07)
+
+The button and the key land on the same `Action::Create`, so the button was driven too rather than assumed:
+
+| step | pixel at (600,450) | what it is |
+|---|---|---|
+| welcome screen | (22,24,28) | the page |
+| press **Create an instance** (centre 600,542) | **(39,41,46)** | the dialog's plate |
+| press `Escape` | (22,24,28) | the page again, with the button still brand green at (600,542) |
+
+So the hero's two routes to creation now agree with each other and with the reference, and the dialog is dismissable back to
+the state it opened from -- which is the property the earlier `create_instance()` path could not have, because it left the hero
+for the library as a side effect.
