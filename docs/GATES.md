@@ -2791,3 +2791,23 @@ three were tried, and only one survived:
 So the name was **one point** small and the bullet was already right; a 2x crop makes every difference look like a defect, and
 the two changes bundled together hid which one mattered. Separating them cost one extra build and turned a 36-point regression
 into a 26-point gain.
+### Three changes tried on the strip and the toolbar, all worse, all reverted (2026-11-07)
+
+The method that worked for the strip's name and the toolbar's contents was applied to the next two bands. It produced three
+reverts:
+
+| change | Home total | verdict |
+|---|---:|---|
+| toolbar label 12 -> 14 (retested after the contents moved) | 32 260 | worse |
+| strip meta line up 5 points | 32 251 | worse |
+| (for reference) the committed build | **32 132** | -- |
+
+Together with last round's 14-point attempt, the toolbar label has now been measured at 14 in **both** vertical positions and
+lost both times, and the strip's meta line loses at two positions. What that says is the same thing the Discover card rows said
+three hundred rounds ago and the toolbar's chips said last round: **the difference in these bands is the glyphs, not the
+geometry.** This build's face advances differently from the reference's, so at any size a text run covers a different set of
+pixels, and moving or enlarging it only moves the disagreement.
+
+That is now measured often enough to stop treating these bands as open work. The honest statement of the remaining gap on
+Home is: **position and structure match; the type does not, and cannot without the reference's font.** The bands at y 135, 260
+and 310 are that fact, not three separate defects.
