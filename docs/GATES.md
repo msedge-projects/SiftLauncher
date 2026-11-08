@@ -2703,3 +2703,25 @@ moved with it -- the icon, the name, the badge, the meta line, the Play pill -- 
 
 **The heading below it did not move**, which was the risk worth checking: the `Library` section is positioned from its own
 anchor rather than from the strip's bottom, so the fix did not cascade. Measured before and after rather than assumed.
+### The toolbar rework measured 239 worse, and was reverted (2026-11-07)
+
+The Home content's worst band (y 300, 3 095 pixels) was the library toolbar, and comparing it with the reference's showed
+three real differences: the chips were 118 and 164 wide against 165 and 187, their labels 12 points against 16, and "Add
+filter" was a filled select with a funnel and a chevron where the reference draws an **outlined** "+ Add filter" button, with a
+1-point rule between the groups.
+
+All of that was rebuilt to the measured values -- widths, 34-point height, 16-point labels, the outline, the plus glyph, the
+rule -- and measured:
+
+| | Home total | content |
+|---|---:|---:|
+| before the rework | **32 287** | 13 449 |
+| after it | 32 514 | 13 676 |
+| after fixing the rule's position (it was drawn at an absolute x with the column offset added twice) | 32 526 | 13 688 |
+
+**Every change was right and the page got worse.** Reverted to the previous chips; Home is back at 32 287.
+
+What that says is that the ink inside those chips is what differs, not their geometry: a 16-point label in this build's face
+draws more pixels than the reference's 16-pixel one, and widening the chip to hold it only adds more text to disagree about.
+The correct next measurement is the *label's* ink -- its cap height and advance -- rather than the chip that contains it, which
+is the same lesson the Discover card rows produced: a container is the last place to look for a text problem.

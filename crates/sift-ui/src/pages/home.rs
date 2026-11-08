@@ -1371,8 +1371,6 @@ fn list(
             fonts::body(12.0),
             theme.BASE,
         );
-        // Every chip the reference draws ends in a chevron: the two selects open a menu and "Add filter" opens
-        // one too.
         crate::icons::draw(
             &painter,
             Glyph::ChevronDown,
