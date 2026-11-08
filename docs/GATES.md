@@ -3264,3 +3264,23 @@ rather than with the names at 173 -- and pressing one ticks it:
 
 That is the same lesson the header recorded when the rename control was parked as impossible: the problem was never egui, it was
 two rects claiming one press. **Do not order overlapping targets -- separate them.**
+### Renaming a file, and the click that needed a frame between its halves (2026-11-08)
+
+`rename_entry` has carried its rules and four tests since it was written and **no caller** -- its own comment says the control
+"never arrived". Narrowing the row's press rect (last round) gave it somewhere to live:
+
+| | result | disk |
+|---|---|---|
+| double press the name | an inline field opens over the row, focused | unchanged |
+| type `renamed.jar`, Enter | the row redraws with the new name | **`renamed.jar`** (was `old-name.jar`) |
+| Escape | the field closes | unchanged |
+| a bad name (`..`, a path, an existing name) | the rule refuses it and the reason lands in the panel's error line | unchanged |
+
+**The one thing that stopped it working was the double press itself.** Two `xdotool` clicks 80 ms apart never opened the field;
+the same two clicks 150 ms apart did. This build repaints on demand, so a pair of clicks can arrive inside one input batch, and
+egui counts a double press across *frames*. **A gesture on a renderer that draws on demand has to allow it to draw.** That is a
+harness fact worth as much as the feature: the same will apply to double-click-to-open and to drag thresholds.
+
+The trigger is **this build's choice, not parity**: the reference routes renaming through its table component, whose trigger is
+not in this tree (the ui package ships only as source-less output). Double press is recorded as a decision to revisit if the
+reference is ever seen doing something else.

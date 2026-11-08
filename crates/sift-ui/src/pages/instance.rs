@@ -1395,6 +1395,7 @@ fn files_tab(
     }
     for (index, (name, is_dir, size)) in entries.iter().take(24).enumerate() {
         let top = body.top() + FILE_FIRST_ROW_DY + index as f32 * FILE_ROW_PITCH;
+        let renaming_this = state.renaming.as_ref().map(|(from, _)| from == name).unwrap_or(false);
         if top + FILE_ROW_PITCH > body.bottom() {
             break;
         }
@@ -1428,6 +1429,7 @@ fn files_tab(
             ),
             theme.SECONDARY,
         );
+        if !renaming_this {
         painter.text(
             egui::pos2(FILE_COL_NAME + 8.0, top + 20.0),
             Align2::LEFT_CENTER,
@@ -1435,6 +1437,7 @@ fn files_tab(
             fonts::semibold(14.0),
             theme.CONTRAST,
         );
+        }
         painter.text(
             egui::pos2(FILE_COL_SIZE, top + 20.0),
             Align2::LEFT_CENTER,
@@ -1455,6 +1458,52 @@ fn files_tab(
                     fonts::body(14.0),
                     theme.SECONDARY,
                 );
+            }
+        }
+        // **Rename, on a double press of the name.** `rename_entry` has had its rules and tests for a hundred rounds and no
+        // way to reach it -- the second control inside this loop never received a press. Narrowing the row's rect fixed
+        // that, so the name is its own target now. The reference routes a rename through its table component and its
+        // trigger is not visible in this tree; a double press is recorded as this build's choice, not as parity.
+        let name_rect = Rect::from_min_max(
+            egui::pos2(FILE_COL_NAME - 34.0, top),
+            egui::pos2(FILE_COL_NAME + 240.0, top + FILE_ROW_PITCH),
+        );
+        if !*is_dir
+            && !renaming_this
+            && ui
+                .interact(name_rect, egui::Id::new(("file-rename", name.as_str())), Sense::click())
+                .double_clicked()
+        {
+            state.renaming = Some((name.clone(), name.clone()));
+        }
+        if renaming_this {
+            let (from, buffer) = state.renaming.clone().unwrap_or_default();
+            let mut text = buffer;
+            let editor = Rect::from_min_size(
+                egui::pos2(FILE_COL_NAME + 6.0, top + 4.0),
+                egui::vec2(240.0, FILE_ROW_PITCH - 8.0),
+            );
+            let response = ui.put(
+                editor,
+                egui::TextEdit::singleline(&mut text)
+                    .font(egui::FontId::proportional(14.0))
+                    .margin(egui::Margin::symmetric(6, 4)),
+            );
+            response.request_focus();
+            let done = ui.input(|input| input.key_pressed(egui::Key::Enter));
+            let cancelled = ui.input(|input| input.key_pressed(egui::Key::Escape));
+            if cancelled {
+                state.renaming = None;
+            } else if done {
+                match rename_entry(&folder, &from, text.trim()) {
+                    Ok(()) => {
+                        state.renaming = None;
+                        state.error = None;
+                    }
+                    Err(message) => state.error = Some(message),
+                }
+            } else {
+                state.renaming = Some((from, text));
             }
         }
         // **The row starts after the checkbox.** Two interactive rects over one press is a contest egui resolved against the
