@@ -7,15 +7,25 @@ clients in the same state, with a capture behind every claim.
 
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
-| Home, empty | **31 171** | `ab-ref-home.png` vs `ours-home-a.png` | of which only **5 549** survive at a threshold of 160 |
-| Discover | **134 450** | `ref-discover-fresh.png` vs `ours-discover25.png` | card icons and their artwork |
-| Skins | 185 090 -- **not comparable** | `ref-skins.png` vs `ours-skins-b.png` | the reference's capture has no saved skins and no search row; the two are in different states |
+| Home | **31 049** | `ji-ref.png` vs `ji-our25.png` (1:1, pointer parked at 700,30) | type: both headings are now the reference's sizes, and the rest is glyph coverage |
+| Discover | **81 267** | `ref-discover.png` vs `disc-final.png` | card icons and their artwork; the type is the rasteriser |
+| Instance page | **30 479** | `inst-ref.png` vs `inst-our4.png` | the tabs and the empty state match; the type is the rasteriser |
+| Settings | **32 252** | `set2-ref.png` vs `set2-our.png` (**pinned backdrop**: both captured over Home) | the theme cards and the type |
+| Skins | not comparable | `ref-skins.png` vs `ours-skins-b.png` | the reference's capture has no saved skins and no search row; the two are in different states |
 | Screenshots | not measured | -- | needs a fresh capture in the same state |
-| Servers | **not comparable** | `ref-servers.png` | the reference refuses its own page: "Modrinth App update required" |
-| Settings, 13 tabs | not measured | `ref-settings*.png` | needs one A/B per tab |
-| Instance page, 5 tabs | not measured | -- | |
-| Project page | not measured | -- | versions pager also unbuilt |
+| Servers | not comparable | `ref-servers.png` | the reference refuses its own page: "Modrinth App update required" |
 
+**Home, by threshold**: 31 049 at 40, and the gradient below it is in `GATES.md`. The 3.6% global type scale was measured as a
+wash and reverted; what moved the number since was **geometry and standalone type**, not a knob:
+
+| change | Home |
+|---|---:|
+| round 180 baseline | 36 196 |
+| the jump-in strip's icon, then its 8-point offset | 36 196 -> 32 287 |
+| the toolbar chips' contents (not their boxes) | 32 287 -> 32 158 |
+| the strip's name, then its badge and meta | 32 158 -> 31 949 |
+| both page headings, each measured against its own ink | 31 949 -> 31 215 |
+| the sidebar's "News" heading | 31 215 -> 31 049 |
 ## The floor on text, measured rather than asserted
 
 Home's difference by threshold: 31 171 at 40, 26 340 at 60, 22 656 at 80, 13 215 at 120, **5 549 at 160**. The
