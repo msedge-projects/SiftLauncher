@@ -2194,7 +2194,7 @@ and honouring the answer -- which is a behaviour, not a layout, and is the hones
 
 | | reference | this build |
 |---|---|---|
-| what is drawn | a **separate OS window** titled "Settings" (its own frame, its own close button, the app visible behind it) | an **in-window overlay** on a dimmed app |
+| what is drawn | a **modal styled as a window** -- its own title bar with "Settings" and a close button, over the dimmed app -- inside the *same* window | an in-window overlay on a dimmed app, without that title bar |
 | version line | "Modrinth App 0.22.0 / Lunar 20261025.0.616925" | "Sift Launcher 0.6.2 / 0.x" |
 | sections | Display, Account, Instance defaults (Appearance open) | the same -- and **the "Advanced rendering" row I first recorded as ours alone is the reference's too**: it carries the citation `settings.display.sidebar.advanced-rendering.title (ui :6260)` in `crates/sift-ui/src/pages/settings.rs:897`, and the reference's shorter window simply ends above it |
 
@@ -2208,3 +2208,12 @@ row. It does: `settings.rs:897` cites it from the reference's own source (`ui :6
 reference's *capture* only because its Settings window is shorter than this build's overlay and ends above that row. A
 missing row in a capture is not a missing row in the product -- the same distinction this file draws between "not reached"
 and "absent", applied to my own reading.
+**Correction, from asking the window manager instead of the capture.** The Settings comparison above calls the reference's
+settings a "separate OS window". It is not: `xdotool search` on display :101 lists **one** application window, 1440x900 at
+0,0, and nothing else. The reference's Settings is a modal drawn inside that window, styled to look like one -- its title bar,
+its close button, its rounded frame and its own rect (top-left (256,114), a (66,68,74) border, its plate running to y 785 at
+x 700).
+
+So this build and the reference use the same window model, and the difference is the modal's chrome and geometry rather than
+a missing OS feature. That is a much smaller and much more fixable gap than the one I wrote down an hour ago -- and it took one
+command to tell the difference between a window and a picture of one.
