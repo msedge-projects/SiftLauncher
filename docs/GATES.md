@@ -3101,3 +3101,20 @@ is set, so a real drop behaves like the reference's.
 **What this does not yet do.** The copy always goes to `mods/`, whichever Files tab is showing -- a drop onto the resource
 packs tab should land in `resourcepacks/`. The reference routes by the visible tab. Recorded here rather than claimed: the
 plumbing is what was built, and the routing is the next slice.
+### A drop lands in the folder the Files panel is showing (2026-11-08)
+
+Last round's wiring always copied into `mods/`, which is wrong for every other Files view. The page already carries the answer --
+`instance::State::files_dir`, the folder the Files tab has walked into -- so the shell routes by it:
+
+| Files panel at | drop lands in | evidence |
+|---|---|---|
+| the game directory (its first view) | `<instance>/minecraft/` | `find` returns **one** path, `minecraft/drop-test.jar` |
+| `mods/` (any other tab open) | `<instance>/minecraft/mods/` | round 201: `mods/drop-test.jar` + toast "Copied 1 file." |
+
+The first attempt at this measurement was **wrong twice and both times for aiming reasons**: the click went to y 100, which is the
+header row rather than the tab strip (y 172..205), and the drop had already been delivered before the tab could be pressed. The
+second was fixed by making the *injected* drop wait for the Files panel (`Shell::files_open`), which also models the reader who
+navigates before dragging; the first by measuring the tab row off a crop instead of a band scan that was picking up the header.
+
+A clean run -- both copies deleted first, then one drop -- leaves exactly one file, in the folder the panel is showing. The
+earlier run that showed two was the leftover of the round before, which is why the clean run was worth its own minute.

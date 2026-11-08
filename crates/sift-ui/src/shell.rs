@@ -1261,6 +1261,11 @@ impl Shell {
         self.open_instance.is_some()
     }
 
+    /// Whether the open instance is showing its Files panel -- the one page a drop has a folder to route to.
+    pub fn files_open(&self) -> bool {
+        self.open_instance.is_some() && self.instance_state.tab == crate::pages::instance::Tab::Files
+    }
+
     /// **Files the desktop dropped on the window.** The window hands them over once per event; what they were dropped
     /// *on* is a question only the shell can answer. The reference copies them into the open instance's `mods/` folder,
     /// which is what `drop.rs` does (and tests); a drop with no instance open says so instead of doing nothing visible.
@@ -1272,7 +1277,16 @@ impl Shell {
             self.toast = Some("Drop files on an instance's Files tab.".to_owned());
             return;
         };
-        let dir = instance.path.join("minecraft").join("mods");
+        // **The folder the Files panel is showing**, which is what the reference routes by: a drop onto the resource
+        // packs tab lands in `resourcepacks/`. With any other tab open there is no folder to route by, and `mods/` is
+        // what a launcher's drop means.
+        let base = instance.path.join("minecraft");
+        let relative = if self.instance_state.tab == crate::pages::instance::Tab::Files {
+            self.instance_state.files_dir.clone()
+        } else {
+            std::path::PathBuf::from("mods")
+        };
+        let dir = if relative.as_os_str().is_empty() { base } else { base.join(&relative) };
         match crate::drop::copy_into(&dir, &paths) {
             Ok(dropped) => {
                 let count = dropped.copied.len();

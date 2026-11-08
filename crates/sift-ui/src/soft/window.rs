@@ -122,7 +122,7 @@ impl Soft {
                     // An injected drop waits briefly for an instance page (so the copy path can be driven); a real one
                     // is delivered at once, and with no instance open it says so.
                     let drop_ready = match self.drop_deadline {
-                        Some(at) => shell.instance_open() || std::time::Instant::now() >= at,
+                        Some(at) => shell.files_open() || std::time::Instant::now() >= at,
                         None => true,
                     };
                     if drop_ready && !self.dropped.is_empty() {
