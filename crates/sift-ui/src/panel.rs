@@ -228,7 +228,9 @@ const TITLE_LINE: f32 = 20.0;
 // aligned with the reference's copy. Dropping this to 1 moved the copy to 557 and made the page 1 450 pixels worse: the
 // 8 here is compensating for a missing line, and the real defect is that our title's measure lets it fit where the
 // reference's wraps.
-const TITLE_TO_COPY: f32 = 8.0;
+// **10: the reference's copy starts at 566 and this build's at 564.** With the title drawn wrapped the gap no longer
+// compensates for anything -- it is the gap, measured, and the rows below it follow by the same two points.
+const TITLE_TO_COPY: f32 = 10.0;
 
 /// The copy's size: 12 points, from the reference's measurement.
 const COPY_SIZE: f32 = 14.0;
@@ -669,7 +671,10 @@ pub fn draw(
     // line where the reference wraps it after "got", and its copy took three lines where the reference takes four. The
     // reference's measure is 255 points of *its* type; ours is 2.5% narrower, so the same box holds more words and the wrap
     // moves. Narrowing the box is how a narrower face is made to break in the same places.
-    let measure = column(rect).width() - 30.0;
+    // **255: the reference's own measure, now that the title wraps.** The 30-point narrowing was applied when the title was
+    // drawn unwrapped and never broke at all; with the galley drawn, the reference's measure gives the reference's breaks
+    // and a wider box no longer means fewer lines.
+    let measure = column(rect).width() - 20.0;
     let copy = painter.layout(
         slide.copy.to_owned(),
         fonts::body(COPY_SIZE),

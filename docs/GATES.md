@@ -2104,3 +2104,27 @@ Home: **37 166 to 36 875**. Six bands, five of them within two points of the ref
 not -- and every constant tuned in between (the 8-point copy gap kept last round, the 24-point art gap) was compensation for
 a disagreement that only showed as text landing in the wrong rows. A layout that measures one string and paints another will
 always need a fudge factor, and the fudge will always be right for exactly one article.
+### The news card's text is now the reference's, row for row (2026-11-07)
+
+With the wrapped galley drawn, the measure and the gap were no longer compensating for anything and could be set to what the
+reference measures:
+
+| constant | before | now | why |
+|---|---:|---:|---|
+| the text measure | 245 | **255** | the widening was a workaround for a title that never wrapped; at 255 the page reads the same (36 886 against 36 875) and the value is the reference's |
+| `TITLE_TO_COPY` | 8 | **10** | the copy starts at 566 in the reference and this build's started at 564 |
+
+| | reference | this build |
+|---|---|---|
+| title line 1 | 519..533 | **519..533** |
+| title line 2 | 542..550 | 541..549 |
+| copy line 1 | 566..576 | **566..576** |
+| copy line 2 | 583..596 | **583..596** |
+| copy line 3 | 600..610 | **600..610** |
+| copy line 4 | 619..635 | 617..634 |
+
+**Four of the six bands are now identical**, and the two that are not are within two points. Home: 36 886 to **36 196**.
+
+Two constants that had been fudges in the previous round became measurements in this one, because the thing they were
+compensating for -- a title measured wrapped and painted unwrapped -- was fixed. That is the pattern worth keeping: a
+constant that only works for one article is a bug report about the code above it.
