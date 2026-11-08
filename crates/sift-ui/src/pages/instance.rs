@@ -301,6 +301,9 @@ pub struct State {
     pub browse: bool,
     /// The last file action that failed, printed under the Files breadcrumb until the next one succeeds.
     pub error: Option<String>,
+    /// Files ticked in the Files table. The reference puts a checkbox on every row and one in the header; the set is what
+    /// those boxes mean, and it is empty until a reader ticks one.
+    pub files_selected: std::collections::HashSet<String>,
 }
 
 /// What the page asks the shell to do.
@@ -1327,6 +1330,41 @@ fn files_tab(
 
     // The column headings, at the capture's own x.
     let head_y = body.top() + FILE_HEAD_DY;
+    // **The header's checkbox, which ticks every row.** The reference puts one beside "Name"; pressing it with any row
+    // unticked selects them all, which is what a header box means in every table a reader has met.
+    {
+        let names: Vec<String> = entries.iter().map(|entry| entry.0.clone()).collect();
+        let all = !names.is_empty() && names.iter().all(|name| state.files_selected.contains(name.as_str()));
+        let head_box = Rect::from_min_size(egui::pos2(100.0, head_y - 2.0), egui::vec2(20.0, 20.0));
+        if ui
+            .interact(head_box, egui::Id::new("files-tick-all"), Sense::click())
+            .clicked()
+        {
+            if all {
+                state.files_selected.clear();
+            } else {
+                for name in &names {
+                    state.files_selected.insert(name.clone());
+                }
+            }
+        }
+        if all {
+            painter.rect_filled(head_box, 5.0, theme.BRAND);
+            icons::draw(
+                &painter,
+                Glyph::Check,
+                Rect::from_center_size(head_box.center(), egui::vec2(12.0, 12.0)),
+                theme.ACCENT_CONTRAST,
+            );
+        } else {
+            painter.rect_stroke(
+                head_box,
+                5.0,
+                egui::Stroke::new(1.5, theme.SURFACE_5),
+                egui::StrokeKind::Inside,
+            );
+        }
+    }
     for (label, x, right) in [
         ("Name", FILE_COL_NAME, false),
         ("Size", FILE_COL_SIZE, false),
@@ -1336,7 +1374,7 @@ fn files_tab(
     ] {
         let _ = right;
         painter.text(
-            egui::pos2(x, head_y),
+            egui::pos2(if label == "Name" { x - 32.0 } else { x }, head_y),
             Align2::LEFT_TOP,
             label,
             fonts::semibold(14.0),
@@ -1360,17 +1398,38 @@ fn files_tab(
         if top + FILE_ROW_PITCH > body.bottom() {
             break;
         }
+        // **The row's checkbox.** `20x20` at x 100 -- the reference's own geometry, read off a 3x crop of its table -- with
+        // the folder icon 33 points after it. Ticking one fills the box and adds the name to the set.
+        let box_rect = Rect::from_min_size(egui::pos2(100.0, top + 10.0), egui::vec2(20.0, 20.0));
+        let ticked = state.files_selected.contains(name.as_str());
+
+        if ticked {
+            painter.rect_filled(box_rect, 5.0, theme.BRAND);
+            icons::draw(
+                &painter,
+                Glyph::Check,
+                Rect::from_center_size(box_rect.center(), egui::vec2(12.0, 12.0)),
+                theme.ACCENT_CONTRAST,
+            );
+        } else {
+            painter.rect_stroke(
+                box_rect,
+                5.0,
+                egui::Stroke::new(1.5, theme.SURFACE_5),
+                egui::StrokeKind::Inside,
+            );
+        }
         icons::draw(
             &painter,
             if *is_dir { Glyph::Folder } else { Glyph::File },
             Rect::from_center_size(
-                egui::pos2(FILE_COL_NAME - 16.0, top + 20.0),
+                egui::pos2(FILE_COL_NAME - 32.0, top + 20.0),
                 egui::vec2(16.0, 16.0),
             ),
             theme.SECONDARY,
         );
         painter.text(
-            egui::pos2(FILE_COL_NAME, top + 20.0),
+            egui::pos2(FILE_COL_NAME + 8.0, top + 20.0),
             Align2::LEFT_CENTER,
             name,
             fonts::semibold(14.0),
@@ -1398,9 +1457,11 @@ fn files_tab(
                 );
             }
         }
+        // **The row starts after the checkbox.** Two interactive rects over one press is a contest egui resolved against the
+        // box however the calls were ordered, so the row simply does not own the checkbox\'s 42 columns.
         let row = Rect::from_min_size(
-            egui::pos2(body.left(), top),
-            egui::vec2(body.width(), FILE_ROW_PITCH),
+            egui::pos2(body.left() + 42.0, top),
+            egui::vec2(body.width() - 42.0, FILE_ROW_PITCH),
         );
         if *is_dir
             && ui
@@ -1408,6 +1469,18 @@ fn files_tab(
                 .clicked()
         {
             descend = Some(dir.join(name.as_str()));
+        }
+        // **Registered after the row.** The row\'s own press covers the whole line, so a control inside it is only reachable
+        // if it is registered later -- which is the note this panel has carried since the rename control was parked.
+        if ui
+            .interact(box_rect, egui::Id::new(("file-tick", name.as_str())), Sense::click())
+            .clicked()
+        {
+            if ticked {
+                state.files_selected.remove(name.as_str());
+            } else {
+                state.files_selected.insert(name.clone());
+            }
         }
         // **The kebab is a two-press delete, not an ornament.** It was drawn with no `interact` at all, so the
         // Actions column promised an action the panel did not have; `State::pending_delete` -- documented for exactly

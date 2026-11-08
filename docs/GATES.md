@@ -3241,3 +3241,26 @@ So the aggregate rose because the element became *correct and non-identical*, wh
 cannot judge. The evidence that it is right is the format comparison and the test, not the number -- and the number is recorded
 beside it rather than hidden. **A metric that rewards absence is not a parity metric**; that is worth knowing before the next
 data-bearing element (checkboxes, file names, counts) is judged by it.
+### The Files table's checkboxes, and the press that would not arrive (2026-11-08)
+
+The reference puts a checkbox in the header and one on every row; this build had neither. Both are drawn now, at the reference's
+own geometry read off a 3x crop -- **20x20 at x 100**, the folder icon 33 after it, the header label aligned with the icons at 133
+rather than with the names at 173 -- and pressing one ticks it:
+
+| | evidence |
+|---|---|
+| row tick | 182 green pixels in the box after one press; the row does **not** open |
+| header tick | selects every row when any is unticked, clears them when all are |
+| Files at root | 49 253 |
+
+**Three attempts were needed, and the first two failed the same way the parked rename control had:**
+
+1. The checkbox was registered *before* the row, and the row -- which spans the whole line -- won the press: the click opened
+   the folder instead of ticking it.
+2. Registered *after* the row, it still lost. `grep` confirms the call order (row at 1466, tick at 1474), so egui was resolving
+   overlapping rects in a way that does not match "last one wins" as this file assumed.
+3. **The row's rect now starts after the checkbox.** Two interactive rects over one press cannot be made to cooperate by
+   ordering; giving the press to exactly one widget fixed it in a line.
+
+That is the same lesson the header recorded when the rename control was parked as impossible: the problem was never egui, it was
+two rects claiming one press. **Do not order overlapping targets -- separate them.**
