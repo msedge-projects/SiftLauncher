@@ -3938,3 +3938,23 @@ one clause more than it had: **leave the lab as you found it.** A file written t
 contamination afterwards.
 
 The sweep itself is the useful artefact: five pages captured from both clients in one pass, so the numbers share a state and a moment.
+### A measurement across two different pages, caught by looking at it (2026-11-08)
+
+Driving both clients to the project\'s **Versions** tab gave **198 109** -- a number so large it accused the tab. It was not the tab: the
+reference was on the **instance page** (Fabric 26.3, Content tab) and this build was on the **project page** (Fabulously Optimized). The
+card click at (300, 330) opened the project here and missed there, and the script never checked.
+
+**A comparison of two different screens is not a measurement, and this file has now recorded five ways that happens:**
+
+| how the state diverged | round |
+|---|---|
+| the two clients were on different *screens* | **this one** |
+| a test file of ours populated the Content tab | 231 |
+| the news carousel was on a different article | earlier |
+| the Settings rail had a different tab count | earlier |
+| the Files panel was at a different folder depth | earlier |
+
+The cheap check that catches all five is the same one every time: **capture both, look at both, and only then measure.** The numbers
+cannot tell you they are comparing different things; the pictures can, and they take one look.
+
+The 198 109 is struck out and not carried anywhere. The Versions tab of both clients is still unmeasured.
