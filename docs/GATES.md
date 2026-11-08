@@ -4257,3 +4257,19 @@ drawn badly -- and the metric caught it in one measurement (64 288 against 63 69
 the two clients fetched the project minutes apart. That is not a rendering fault, it is roughly 400 pixels of the tab\'s difference that no
 amount of drawing will remove -- worth writing down, because the Versions tab\'s number is inflated by a quantity that belongs to the API\'s
 clock rather than to this build.
+### Regression check after the renderer work: the drop still lands (2026-11-08)
+
+The session changed the rasteriser, the image cache and the panel signature. The behaviours that depend on none of those still have to
+work, so one was re-driven rather than assumed:
+
+| step | result |
+|---|---|
+| start with `SIFT_DROP_PATHS=/tmp/drop-files.jar`, instance open, **Files** tab | -- |
+| the probe waits for the Files tab, then drops | `drop-files.jar` is in `mods/` |
+| the panel lists it | `drop-files.png`, cropped at 1:1 |
+
+**No regression.** The first attempt was a wrong drive, not a break -- the probe waits for the Files tab and I had opened the Instance page,
+so it did nothing and the empty `mods/` looked like a fault. That is the fourth time this session a "regression" was the harness: the
+Instance page\'s test file, a comparison across two different pages, a click three points above a trigger, and now this.
+
+The test file is deleted and `mods/` is empty again, which is the state the Instance page\'s 30 454 was measured in.
