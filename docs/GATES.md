@@ -2260,3 +2260,32 @@ was measuring the backdrop, not the dialog.
 
 **A modal page can only be compared when the backdrop is pinned.** That is a new rule for this harness and it invalidates any
 Settings number measured without one -- including the ones earlier in this file.
+### The pinned-backdrop protocol, and the first Settings number measured under it (2026-11-07)
+
+Both apps were taken to Home, then to Settings, so the app behind the modal is the same in both captures. The pointer parks at
+(700,30). Under that protocol:
+
+| region | differing pixels |
+|---|---:|
+| Settings, total | **36 205** |
+| titlebar | 1 726 |
+| rail | 344 |
+| content (the modal's own pane) | **32 323** |
+| sidebar | 1 812 |
+
+That is the number to compare against from now on; the 48 538 and 50 267 recorded before it were measuring whichever page
+happened to be behind the dialog.
+
+**The scrim is not a defect.** Sampling it looked like a three-point difference (ref (20,26,29) against (17,23,26)), but the
+points that differ most are inside the *news card and hosting banner* behind it -- (1250,700) is (25,33,35) against (14,22,25)
+because one app's banner is there and the other's is somewhere else. The scrim itself is documented as
+`rgba(29,48,43,0.52)` and matches where the backdrop matches.
+
+**Two interior differences, both visible in one crop:**
+
+- the **Light theme card's preview square** is white in the reference and grey in this build -- the middle card in the
+  "Choose theme" row draws its motif with the wrong fill;
+- the **"Sync theme across devices" row sits 2-3 points lower** here than in the reference, which moves its toggle with it.
+
+Neither is a constant I could set without looking: both came out of the crop, and the bands that found them (y 320 at 4 045
+pixels, y 680 at 4 275) only said *where* to look.
