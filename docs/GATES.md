@@ -3284,3 +3284,26 @@ harness fact worth as much as the feature: the same will apply to double-click-t
 The trigger is **this build's choice, not parity**: the reference routes renaming through its table component, whose trigger is
 not in this tree (the ui package ships only as source-less output). Double press is recorded as a decision to revisit if the
 reference is ever seen doing something else.
+### Auditing the matrix for DONE rows with nothing behind them (2026-11-08)
+
+The objective asks for "a capture behind every done", so the ledger was audited against its own definition. **25 of 115 DONE rows
+carried no drive, test or measurement** -- only a `file:line` or the word "none" -- which this file defines as VERIFIED, not DONE:
+
+| | before | after |
+|---|---:|---:|
+| element rows | 679 | **679** |
+| DONE | 115 | **90** |
+| VERIFIED | 21 | **46** |
+
+Each moved row now carries "code read only; no drive recorded (audit 2026-11-08)" in its gap cell, so the claim it makes is the
+claim its evidence supports. **Nothing was deleted and no row was rewritten**: the same 679 claims are there, 25 of them told
+more accurately.
+
+**Two mechanical lessons, both from the first attempt at this edit:**
+
+1. The matrix's element column contains escaped pipes (`Shell \| sidebar`), so splitting a row on `|` yields more cells than
+   there are columns and every index after the first escaped pipe is wrong. The first pass wrote 24 malformed rows; the file was
+   restored from git and redone with an escape-aware split.
+2. Verifying the second pass with `awk -F'|'` reported 11 fields for a 9-column row -- **also** because of the escapes. The
+   check had to be done with the same parser that wrote the file, which is the general form of a rule this session keeps
+   meeting: an instrument that does not understand the data will happily confirm anything.
