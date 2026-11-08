@@ -3118,3 +3118,25 @@ navigates before dragging; the first by measuring the tab row off a crop instead
 
 A clean run -- both copies deleted first, then one drop -- leaves exactly one file, in the folder the panel is showing. The
 earlier run that showed two was the leftover of the round before, which is why the clean run was worth its own minute.
+### The Files panel's kebab does what its column promised (2026-11-08)
+
+The Actions column drew a `MoreVertical` glyph per row with **no `interact` at all** -- an ornament whose column header said
+"Actions" -- and `State::pending_delete`, documented since the panel was written as "the file a first press has armed for
+removal", was set by nothing. It is a two-press delete now:
+
+| press | disk | state |
+|---|---|---|
+| first | `mods/` still holds `aaa-test.jar` (1 file) | the row arms, the glyph turns `--color-red` |
+| second | `mods/` holds **0 files** | the arm clears |
+
+**Three defects were found by driving it, and two were mine:**
+
+1. The clicks went to y 330 and the kebab is centred at **y 344** -- measured off the capture after two failed presses, the
+   same "ask where it is" lesson as round 187.
+2. The delete used `dir.join(name)` -- the *relative* path the panel is looking at (`mods`) -- and the process cannot unlink
+   that from its own working directory. `folder` is the game directory joined with it; the error path is what surfaced it,
+   because the arm cleared and the row stayed.
+3. The failure had nowhere to go: `State` had no field for it. It has `error` now, printed in `--color-red` under the
+   breadcrumb, which is why (2) was visible at all instead of silently doing nothing.
+
+Renaming is still unbuilt and `State::renaming` is still unused; recorded, not claimed.

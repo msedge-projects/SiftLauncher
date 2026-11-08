@@ -299,6 +299,8 @@ pub struct State {
     pub join_request: Option<String>,
     /// Set by the Browse press and taken by `draw`, which returns it as an action.
     pub browse: bool,
+    /// The last file action that failed, printed under the Files breadcrumb until the next one succeeds.
+    pub error: Option<String>,
 }
 
 /// What the page asks the shell to do.
@@ -335,7 +337,8 @@ pub fn draw(
     match state.tab {
         Tab::Content => content_tab(ui, body, theme, instance, state),
         Tab::Files => {
-            if let Some(next) = files_tab(ui, body, theme, instance, &state.files_dir) {
+            let looking = state.files_dir.clone();
+            if let Some(next) = files_tab(ui, body, theme, instance, &looking, state) {
                 state.files_dir = next;
             }
         }
@@ -1182,6 +1185,7 @@ fn files_tab(
     theme: &Theme,
     instance: &Instance,
     dir: &std::path::Path,
+    state: &mut State,
 ) -> Option<std::path::PathBuf> {
     let mut descend: Option<std::path::PathBuf> = None;
     let folder = instance.path.join("minecraft").join(dir);
@@ -1318,6 +1322,15 @@ fn files_tab(
             theme.BASE,
         );
     }
+    if let Some(message) = &state.error {
+        painter.text(
+            egui::pos2(body.left(), body.top() + 6.0),
+            Align2::LEFT_TOP,
+            message.as_str(),
+            fonts::body(13.0),
+            theme.RED,
+        );
+    }
     if entries.is_empty() {
         return None;
     }
@@ -1360,15 +1373,39 @@ fn files_tab(
         {
             descend = Some(dir.join(name.as_str()));
         }
+        // **The kebab is a two-press delete, not an ornament.** It was drawn with no `interact` at all, so the
+        // Actions column promised an action the panel did not have; `State::pending_delete` -- documented for exactly
+        // this -- was never set by anything. One press arms the row (the glyph turns critical), the second removes it.
+        let armed = state.pending_delete.as_deref() == Some(name.as_str());
+        let more = Rect::from_center_size(
+            egui::pos2(FILE_COL_ACTIONS + 8.0, top + 20.0),
+            egui::vec2(20.0, 20.0),
+        );
+        let pressed = ui
+            .interact(more, egui::Id::new(("file-more", name.as_str())), Sense::click())
+            .clicked();
         icons::draw(
             &painter,
             Glyph::MoreVertical,
-            Rect::from_center_size(
-                egui::pos2(FILE_COL_ACTIONS + 8.0, top + 20.0),
-                egui::vec2(16.0, 16.0),
-            ),
-            theme.SECONDARY,
+            Rect::from_center_size(more.center(), egui::vec2(16.0, 16.0)),
+            if armed { theme.RED } else { theme.SECONDARY },
         );
+        if pressed {
+            if armed {
+                // **The absolute folder, not the relative one.** `dir` is where the panel is *looking* (`mods`), and the
+                // path the process can actually unlink is `folder` -- the game directory joined with it.
+                let target = folder.join(name.as_str());
+                match std::fs::remove_file(&target) {
+                    Ok(()) => state.pending_delete = None,
+                    Err(error) => {
+                        state.pending_delete = None;
+                        state.error = Some(format!("Could not remove {}: {error}", target.display()));
+                    }
+                }
+            } else {
+                state.pending_delete = Some(name.clone());
+            }
+        }
     }
     descend
 }
