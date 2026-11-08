@@ -3371,3 +3371,28 @@ distinction matters, because the first invites a capture attempt every few round
 
 The measurement of the empty state stands: **23 547** total, **4 224** in the content pane, with this build's illustration the
 larger of the two.
+### Two numbers that measured nothing: a dead client still has a window (2026-11-08)
+
+The Project page was measured twice this round and both numbers were meaningless:
+
+| capture | total | what it actually was |
+|---|---:|---|
+| first | 212 131 | our client dead; the X root still held its last frame, on the **Screenshots** page |
+| second | 411 113 | our client restarted at a different position; the frame was offset inside the 1440x900 window |
+
+The first was found by looking at the image: the reference showed "Fabulously Optimized" and this build showed a Screenshots page
+whose file had been deleted a round earlier. The second by noticing that the *title bar* alone scored 69 120 -- a number no
+chrome can reach unless it is entirely misplaced. `pgrep` then showed **every client process defunct**:
+
+```
+67546 [SiftUi] <defunct>   101560 [ModrinthApp] <defunct>
+```
+
+An X window outlives a killed client until the server destroys it, and `import -window root` reads whatever the server holds. So a
+capture of a dead app is not empty and not an error -- it is a **photograph of the last frame**, which compares and scores like any
+other. Both clients were restarted and verified alive by PID before anything else was measured.
+
+**What this file should carry from it**: three separate instruments in this session have now returned confident nonsense -- the
+stale news phase, the subfolder comparison, and this -- and the common shape is that each was a *state* problem invisible in the
+number. The cheapest guard is the one that costs a second: **before comparing, confirm both clients are running and both windows are
+at 0,0 1440x900.** `pgrep` and `getwindowgeometry` say so in one command; a difference map cannot say it at all.
