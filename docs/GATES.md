@@ -3190,3 +3190,31 @@ band-analyse -- which is the cheapest way to find out that a card has two articl
 
 The Files tab's remaining 48 798 still holds the reference's `config` against our `mods`, so it is a floor rather than a
 like-for-like figure until both are looking at the same folder.
+### Correcting last round: three "missing" controls were a subfolder against a root (2026-11-08)
+
+The list of what the Files panel "lacks" was wrong in three of its six rows. The controls exist -- they are drawn only when the
+panel is at the game directory's **root**, and last round's capture had this build inside `mods/` while the reference was at its
+root. Root against root, with the news phase pinned:
+
+| element | reference | ours at root |
+|---|---|---|
+| Home button | yes | **yes** |
+| Refresh | yes | **yes** |
+| `+ ⌄` split button | yes | **yes** |
+| row checkboxes | header + per row | **absent** |
+| Created / Modified | timestamps | **empty** |
+| Actions `...` | horizontal | horizontal (fixed last round) |
+
+| | Files tab |
+|---|---:|
+| subfolder against root (last round) | 48 798 |
+| root against root, phase pinned | **48 240** |
+
+So the remaining real gaps at the root are **checkboxes and timestamps**, and the two numbers are close enough that the
+subfolder mistake was not worth much in pixels -- but it was worth three false rows in a ledger, which is worse than a wrong
+number because it sends the next round to build what already exists.
+
+This is the **third** state mismatch this session (the Settings rail's 14 tabs, the news carousel's phase, and now the folder
+depth). All three produced a plausible number and a false conclusion. The rule this file should carry into the next session is
+narrower than "compare like with like": **before cataloguing a missing element, prove the two clients are on the same screen** --
+and the cheapest proof is the first thing the eye checks, not the number.
