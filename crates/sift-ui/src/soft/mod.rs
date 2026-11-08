@@ -143,6 +143,9 @@ impl Painter {
                                 let (mut amin, mut amax) = (255u8, 0u8);
                                 let (mut x0, mut y0, mut x1, mut y1) = (f32::MAX, f32::MAX, f32::MIN, f32::MIN);
                                 for v in &mesh.vertices {
+                                    if !v.pos.x.is_finite() || !v.pos.y.is_finite() {
+                                        continue;
+                                    }
                                     let a = v.color.a();
                                     amin = amin.min(a);
                                     amax = amax.max(a);
