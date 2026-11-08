@@ -2560,3 +2560,24 @@ menu is built as well.
 Two small lessons, both familiar by now: a difference that survives a glance does not always survive a sample, and a highlight
 that blends into its own card cannot be found by looking for a colour that is not there -- the position of the *change* between
 two captures proved the keys worked where the colour test found nothing.
+### The memory gate, re-measured, and an idle trim that did nothing (2026-11-07)
+
+| | value |
+|---|---:|
+| RSS, idle, window open | **22 752 kB (22.2 MiB)** |
+| PSS | 17 187 kB (16.8 MiB) |
+| of which private anonymous | 5 800 kB |
+| shared (X shm + libraries) | 2 532 + 8 855 kB |
+
+The goal asks for **idle RSS under 20 MB**, so this misses by about 2.2 MiB. The composition says where it is and is not:
+the 7.6 MB binary and the **5.06 MB X shm frame buffer** are both counted in RSS, and the buffer is shared with the X server --
+PSS counts only 2.5 MB of it. Neither is a policy that can be trimmed without changing what the renderer is.
+
+**A trim was tried and reverted.** `malloc_trim` already runs after every image-fetch batch; the idea was to run it once more on
+the transition into idleness, where the freed pages would be returned. Measured: **22 836 kB against 22 752** -- inside the
+noise, because at idle the heap holds almost nothing that is free. Reverted, since a change that does not move the measurement
+does not stay.
+
+What the number would actually need is one of: a smaller frame buffer (not possible at this window size through this path), a
+smaller binary (already `lto`, `strip`, `codegen-units = 1`), or presenting without a full-window shm segment (which would cost
+the frame gate that is currently met). The gate is recorded as **met on PSS, missed on RSS**, with the reason.
