@@ -3022,3 +3022,23 @@ capture; the number is not, and this entry says so rather than quoting one that 
 
 **A bitmap is a widget that cannot be grepped.** Every grep and probe was correct and every one of them was looking at the
 wrong layer; the app was drawing a picture of another app's controls.
+### Auditing every embedded bitmap, because one of them lied (2026-11-07)
+
+The brand plate's bug was a *class*: a PNG that is a screenshot of the reference rather than an asset. The seven assets were
+audited the same way -- a contact sheet at native size, checked for content that is not the asset's subject:
+
+| asset | size | verdict |
+|---|---|---|
+| `titlebar-brand.png` | 326x40 -> **160x40** | **carried the nav buttons and the word "Home"** -- cropped |
+| `instance-default.png` | 132x132 | the campfire tile, nothing else |
+| `news-art.png` | 272x120 | gradient + glyph |
+| `news-joining.png` | 266x150 | gradient + glyph |
+| `server-art.png` | 300x200 | **baked headline** -- and the reference's own ad art has the same headline, so it is correct |
+| `content-empty.png`, `hero-plate.png`, `shots-empty.png` | -- | plates, nothing stray |
+
+`server-art.png` is the interesting one: a doubled headline was suspected, and a 1:1 crop of the reference's hosting card showed
+the same text baked into the same art. **An asset is allowed to contain type when the reference's own asset does**; the test is
+not "does it look like UI" but "does the reference have it there too".
+
+That distinction is what the brand plate failed: its wordmark sits beside the reference's *live* breadcrumb, so cropping it was
+right, while cropping the hosting ad would have deleted a picture the reference draws.
