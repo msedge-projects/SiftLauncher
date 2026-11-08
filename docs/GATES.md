@@ -3740,3 +3740,28 @@ built from a label size that came out infinite. A guard at the renderer stops th
 
 The 222 886 is the first Project-page number this file has ever recorded and it is **not yet like-for-like** -- the two captures were
 taken minutes apart and the reference may not have loaded the same artwork. It is a floor, and it is written down as one.
+### The Project page is measurable, and its difference is the body image (2026-11-08)
+
+With the finite-triangle guard in place, both clients were driven to the same project from Home in one script and captured:
+
+| | value |
+|---|---:|
+| Project page, like-for-like | **222 886** |
+| title bar | 4 011 |
+| rail | 640 |
+| content | **180 072** |
+| sidebar | 38 163 |
+
+It reproduced **exactly** across two independent capture pairs, so the number is stable and the page is now measurable -- which is
+the first time that has been true.
+
+A 1:1 comparison names the dominant difference: **the reference draws the project body\'s picture at roughly 400x300 and this build
+draws it at about 100x75**, in the same place, with the text laid out around it. That single element is most of the 180 072.
+
+The sizing code scales a picture **down** to `inner.width()` but never up, so a picture that arrives smaller than its natural size
+stays small. Whether that is our texture being fetched at a reduced size or the layout measuring before the texture lands is the next
+question, and it is a narrow one: one `Block::Image` draw, one rect, both sizes known.
+
+**Also owed**: the four infinite vertices are still in that mesh -- the renderer now refuses to draw them, which is correct and
+universal, but the layout that produced them is unfound. It is invisible in every capture, so it is now a robustness debt rather
+than a symptom.
