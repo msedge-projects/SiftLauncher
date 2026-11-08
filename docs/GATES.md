@@ -3569,3 +3569,29 @@ Two things were found while checking that contradiction, and both belong in the 
 **The investigation is paused, not closed.** The next step is to capture with `floor` destroyed and, if the frame is still
 chrome-less, to instrument `Shell::ui` to print whether the title bar and rail are being drawn on that frame. Everything else in this
 build renders correctly under the same capture path, so the scope is one page.
+### QUARANTINED: the Project page renders offset and chrome-less (2026-11-08)
+
+Eight rounds went into this and it is now closed for the session, with everything established written down so it is not re-derived.
+
+**What is certain:**
+
+| fact | how it is known |
+|---|---|
+| the app is alive and responsive on that page | clicking Home returns a correct full frame (a different file, byte for byte) |
+| every other page renders correctly under the same capture path | Home, Discover, Instance, Settings, Screenshots all measured |
+| the frame contains the project content at its normal coordinates | header, tabs and body are drawn where they belong |
+| the title bar, rail and sidebar are **absent**, not dark | the regions are (0,0,0), and this build's background is not black |
+| it is **not** a scale mismatch | `inner=1440x900 scale=1 ppp=1` on all 119 probed frames |
+| it is **not** `surface.resize` | `resize ok 1440x900`, 105 of 105 |
+| it is **not** the buffer | `buffer.len() = 1 296 000 = 1440x900`, cleared and painted |
+| it is **not** a stale or duplicate window | one window on the display; destroying the stray `floor` window changed nothing |
+| it is **not** the gallery scrim | Escape leaves the page entirely and lands on a correct Home |
+| it is **not** a zoom factor | `zoom_factor` appears nowhere in the crate |
+
+**What that leaves** is a page whose draw call is reached and whose chrome is skipped, inside a frame that the rasteriser fills
+correctly. The next step is not a guess: instrument `Shell::ui` to print, per frame, whether `title_bar` and the rail were called, and
+compare that line on Home against the same line on the project page. That is half an hour of work and it was not done this session
+because seven mechanisms had to be eliminated first.
+
+**The cost is one screen.** The Project page cannot be measured or driven until this is fixed; every other page can, and the next
+rounds go back to them rather than to this.
