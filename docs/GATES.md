@@ -4193,3 +4193,24 @@ reverted **with a comment in the code saying so**: the next person to notice the
 
 Row 626 is upgraded from `OPEN` to `OPEN-WITH-CAUSE`: the gap is real, the cause is the rhythm below the header rather than the inset,
 and the fix is to correct that rhythm -- after which the inset returns to 24 and both the first ink and the page agree.
+### The header\'s divider is four points low, and that is the whole of row 626 (2026-11-08)
+
+Three measurements settle what "the page starts low" actually is:
+
+| element | reference | ours | delta |
+|---|---:|---:|---:|
+| the avatar\'s top edge -- **controlled by the layout** | 73 | 72 | **-1** |
+| the title\'s first ink -- **type** | 74 | 77 | +3 |
+| the divider rule under the header -- **the block gap** | **186** | **190** | **+4** |
+
+So the inset is right (the avatar proves it), the title\'s three points are the type (a different cap height), and the real defect is the
+**header block being four points too tall**: its rule lands at 190 where the reference\'s is at 186, at the identical tone (55).
+
+**And the two experiments together say why this row has been so slippery.** Raising the column by three moved the rule to 187 -- closer --
+and the page from 71 398 to 80 122, because the raise moved *everything* including the parts that were already aligned. The rule needs to
+come up four; the elements below it must not move at all. That is a change to the header\'s own height and its foot padding, not to the
+column, and it is the change the next round should make with this row as its measurement.
+
+**Three readings of one row, each narrower than the last**: "content starts 8pt low" (a guess), "the rhythm below the header is off" (a
+plausible cause that a revert disproved), and now "the header block is four points too tall, with the divider at 190 against 186". The row
+is worth more than it was because the last version of it can be acted on without measuring anything again.
