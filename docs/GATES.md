@@ -4296,3 +4296,19 @@ ours start at 250 -- so every card and every row below it is displaced, which is
 This is the largest single figure in the ledger and the least actionable of them: it is not one element drawn wrong, it is a grid whose
 ratio is `0.5` here and something taller there, with a 15-point offset on top. Written down as the state rather than left to look like a
 failure of the six cards -- every one of which is drawn, labelled and dated the same way.
+### The gallery stopped being chased, deliberately (2026-11-08)
+
+Two attempts to measure the picture band inside a gallery card failed: the sample span ran past the card\'s right edge once, and the
+tone test matched a flat patch inside a Minecraft screenshot the second time. Both readings were wrong in a way that looked like data.
+
+The certain facts are recorded and the rest is left alone:
+
+| | reference | ours |
+|---|---:|---:|
+| first card\'s top edge | **265** | **250** |
+| cards in the grid, same six, same titles, descriptions, authors and dates | yes | yes |
+
+**A 15-point offset with an unmeasured ratio underneath it, in a tab whose figure is dominated by both.** The honest next step is a
+measurement of the card\'s own geometry -- the `SIFT_PROJECT_PROBE` rows already emit `gallery` and `gallery-picture` rects, which is the
+instrument that would settle it without reading pixels at all. That is what the next reader of this row should use; guessing at tone
+boundaries cost two attempts and produced nothing.
