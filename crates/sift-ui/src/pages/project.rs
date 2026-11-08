@@ -757,7 +757,7 @@ fn today() -> Date {
 }
 
 /// Hinnant's civil_from_days, the inverse of [Date::day_number].
-fn civil_from_days(days: i64) -> Date {
+pub(crate) fn civil_from_days(days: i64) -> Date {
     let shifted = days + 719_468;
     let era = if shifted >= 0 { shifted } else { shifted - 146_096 } / 146_097;
     let day_of_era = shifted - era * 146_097;

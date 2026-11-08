@@ -3218,3 +3218,26 @@ This is the **third** state mismatch this session (the Settings rail's 14 tabs, 
 depth). All three produced a plausible number and a false conclusion. The rule this file should carry into the next session is
 narrower than "compare like with like": **before cataloguing a missing element, prove the two clients are on the same screen** --
 and the cheapest proof is the first thing the eye checks, not the number.
+### The Files table's two stamp columns, and a metric that got worse for being right (2026-11-08)
+
+Created and Modified were drawn as headings with nothing under them. They now read the file's own metadata and print it in the
+reference's format -- month/day/two-digit year, twelve-hour clock:
+
+| | reference | ours |
+|---|---|---|
+| `config` / `mods` row | `11/03/26, 5:58 PM` | **`11/08/26, 5:14 PM`** |
+| Modified | `11/03/26, 5:58 PM` | **`11/08/26, 6:26 PM`** |
+
+The format is locked by a test: `11/03/26, 5:58 PM` exactly, plus the two cases a twelve-hour clock gets wrong (midnight is
+`12:00 AM`, noon is `12:00 PM`). **264 tests**, one of them new.
+
+**And the page measured worse: 48 240 -> 49 284.** The rule in this file says a change that moves the measurement the wrong way
+does not stay; this one stays, and the reason has to be explicit:
+
+- Before, the cells were **blank**; the reference's hold timestamps. Background against text disagrees over the glyph shapes.
+- Now ours holds **different digits** -- a different folder with a different date. Text against text disagrees over more of them.
+
+So the aggregate rose because the element became *correct and non-identical*, which is the one situation a pixel difference
+cannot judge. The evidence that it is right is the format comparison and the test, not the number -- and the number is recorded
+beside it rather than hidden. **A metric that rewards absence is not a parity metric**; that is worth knowing before the next
+data-bearing element (checkboxes, file names, counts) is judged by it.

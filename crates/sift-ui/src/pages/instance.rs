@@ -961,6 +961,27 @@ fn search_row(
     }
 }
 
+/// **The reference's file stamp**: `11/03/26, 5:58 PM` -- month/day/two-digit-year, a twelve-hour clock with `AM`/`PM`.
+/// The table's Created and Modified columns were drawn empty, which is why the panel measured 48 240 against the reference
+/// with two of its five columns blank.
+fn file_stamp(time: std::time::SystemTime) -> String {
+    let secs = time
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|since| since.as_secs() as i64)
+        .unwrap_or(0);
+    let date = crate::pages::project::civil_from_days(secs / 86_400);
+    let rem = secs % 86_400;
+    let hour24 = rem / 3_600;
+    let minute = (rem % 3_600) / 60;
+    let (hour, suffix) = match hour24 {
+        0 => (12, "AM"),
+        1..=11 => (hour24, "AM"),
+        12 => (12, "PM"),
+        _ => (hour24 - 12, "PM"),
+    };
+    format!("{:02}/{:02}/{:02}, {}:{:02} {}", date.month, date.day, date.year % 100, hour, minute, suffix)
+}
+
 /// A list section's heading inside a tab: 16 points semibold.
 const SECTION_SIZE: f32 = 16.0;
 
@@ -1362,6 +1383,21 @@ fn files_tab(
             fonts::body(14.0),
             theme.SECONDARY,
         );
+        // **The two stamp columns.** Read from the file itself, in the reference's own format.
+        let meta = std::fs::metadata(folder.join(name.as_str())).ok();
+        let created = meta.as_ref().and_then(|m| m.created().ok()).map(file_stamp).unwrap_or_default();
+        let modified = meta.as_ref().and_then(|m| m.modified().ok()).map(file_stamp).unwrap_or_default();
+        for (x, value) in [(FILE_COL_CREATED, &created), (FILE_COL_MODIFIED, &modified)] {
+            if !value.is_empty() {
+                painter.text(
+                    egui::pos2(x, top + 20.0),
+                    Align2::LEFT_CENTER,
+                    value.as_str(),
+                    fonts::body(14.0),
+                    theme.SECONDARY,
+                );
+            }
+        }
         let row = Rect::from_min_size(
             egui::pos2(body.left(), top),
             egui::vec2(body.width(), FILE_ROW_PITCH),
@@ -1859,6 +1895,21 @@ mod rename_tests {
     }
 
     #[test]
+    /// The table's stamp, in the reference's own format: `11/03/26, 5:58 PM`.
+    #[test]
+    fn the_file_stamp_reads_as_the_reference_prints_it() {
+        use super::file_stamp;
+        use std::time::{Duration, UNIX_EPOCH};
+        // 2026-11-03 17:58 UTC -- the reference's `config` row.
+        let stamp = file_stamp(UNIX_EPOCH + Duration::from_secs(1_793_728_680));
+        assert_eq!(stamp, "11/03/26, 5:58 PM");
+        // Midnight is twelve AM, noon is twelve PM: the two the twelve-hour clock gets wrong.
+        let midnight = file_stamp(UNIX_EPOCH + Duration::from_secs(1_793_664_000));
+        assert_eq!(midnight, "11/03/26, 12:00 AM");
+        let noon = file_stamp(UNIX_EPOCH + Duration::from_secs(1_793_707_200));
+        assert_eq!(noon, "11/03/26, 12:00 PM");
+    }
+
     fn an_empty_name_is_refused() {
         let dir = scratch("empty-name");
         std::fs::write(dir.join("a.txt"), b"x").expect("write");
