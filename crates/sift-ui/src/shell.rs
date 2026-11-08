@@ -2811,6 +2811,10 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
                 egui::vec2(g::PANEL - 48.0, 400.0),
             );
             let used = crate::pages::project::panel(ui, block, &self.theme, &project);
+            // **The banner is chrome, not stack.** The reference hides its default sidebar on a project page and keeps
+            // the hosting banner at the foot; setting `shared` to NOTHING suppressed both, which is why this page had no
+            // banner at all. It is drawn here, over the project column, and nowhere else.
+            let _ = crate::panel::hosting_banner(ui, panel, &self.theme);
             // The reference hides the default sidebar on a project page (`sidebar/index.vue:165-167`):
             // the project's own column is the whole of it, so nothing is left for the shared stack.
             let _ = used;

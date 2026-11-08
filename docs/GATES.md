@@ -3874,3 +3874,27 @@ extraction, and it is not one to start with ten minutes left in a round.
 **Recorded with the plan, not just the symptom**: extract `panel::hosting_banner(ui, rect, theme)`, call it at the end of
 `panel::draw`, and call it from `right_panel`\'s project branch after `project::panel`. The measurement that judges it is bands 840 and
 865 -- 9 700 pixels between them -- against the Project page\'s current 90 727.
+### The banner drawn from both paths: Project page 90 727 -> 72 350 (2026-11-08)
+
+The extraction landed. `panel::hosting_banner(ui, rect, theme)` is the banner on its own -- gradient, art, mark, wordmark, heading
+and accent line -- and both callers use it:
+
+| caller | before | after |
+|---|---|---|
+| `panel::draw` (every page but the project) | inline, at the end | `hosting_banner(ui, rect, theme)` |
+| `shell::right_panel`\'s project branch | **nothing** | **`hosting_banner(ui, panel, &self.theme)`** |
+
+| | before | after |
+|---|---:|---:|
+| Project page | 90 727 | **72 350** |
+| its sidebar | 38 163 | **19 786** |
+
+**18 377 pixels**, where the two worst bands had predicted 9 700 -- the banner brought its CTA and link with it, which the bands did
+not separate.
+
+**Three failures on the way, all mechanical and all mine**: the marker surgery swallowed `draw()`\'s closing brace; the moved segment
+carried `draw()`\'s tail expression (`pressed`) into a function that had no such variable; and the seam replacement that should have
+fixed the first failed on an exact-match anchor. Each was one build. The lesson is the one this file keeps meeting from the other side:
+**a hundred-line move in a 1 300-line file is surgery, and surgery wants the file open, not a script.**
+
+Home was re-measured after the change to be sure the extraction did not disturb the path that already worked.

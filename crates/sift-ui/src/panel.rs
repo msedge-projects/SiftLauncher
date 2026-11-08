@@ -603,6 +603,81 @@ fn raised_at(panel: Rect, y: f32, theme: &Theme) -> Color32 {
     crate::shell::tint(ground_at(panel, y, theme), (255, 255, 255), 0.08)
 }
 
+/// **The hosting banner, on its own.** The project page\'s sidebar replaces the shared stack -- `Getting started` and
+/// `News` -- but not this: the reference\'s project page shows its own column *and* the banner at the foot, and the
+/// shell suppressed both by handing `panel::draw` a `Rect::NOTHING`. Drawing it here lets both callers have it.
+pub fn hosting_banner(ui: &egui::Ui, rect: Rect, theme: &Theme) -> Option<Step> {
+    let painter = ui.painter();
+    let banner_top = rect.bottom() - BANNER_H;
+
+    // ---- The hosting banner --------------------------------------------------
+    // The banner is flush with the sidebar's foot in the reference -- its card ends where the window does --
+    // so its top is whichever is higher: the plan's slot, or the foot less its own height.
+    // Full-bleed: the reference's banner reaches both edges of the sidebar and its foot. Sampled from its
+    // render, x 1436 is its dark green at y 800 and 890 -- 20 and 14 points outside this build's inset column
+    // -- which is why the whole bottom-right corner differed.
+    // **At its own height, pinned to the foot.** Stretching the banner from the plan's slot to the panel's bottom
+    // made it ~325 points tall where the reference's is ~250, which put its chip 71 points too high (594..607
+    // against 665..680) while the illustration underneath it already agreed (713..893 against 715..893).
+    let banner = Rect::from_min_size(
+        egui::pos2(rect.left(), banner_top),
+        egui::vec2(rect.width(), BANNER_H),
+    );
+    // The reference's banner is not a grey card: its ground runs from near-black green at the top to a
+    // deeper green at the foot (sampled from its own render: #010101 at y 660, #001208 at 760, #002712 at
+    // 895), and the illustration continues that ground rather than sitting on a plate.
+    crate::shell::vertical_gradient(
+        painter,
+        banner,
+        egui::Color32::from_rgb(2, 4, 3),
+        egui::Color32::from_rgb(0, 40, 18),
+    );
+    // The illustration is the reference's own rectangle: x 1140..1440, y 700..900 of its render, cropped with
+    // its ground and drawn at that same rect. Stretching a smaller crop to the banner was making every pixel of
+    // a 48 000-pixel area differ by a little; this makes them agree by construction.
+    let promo = Rect::from_min_max(
+        egui::pos2(banner.left(), banner.bottom() - 200.0),
+        banner.max,
+    );
+    if !crate::serverart::paint(painter, promo) {
+        hosting_art(painter, promo, theme);
+    }
+
+    // The chip: the mark and "modrinth hosting" in the brand green, lowercase, above the heading.
+    let chip_mark = Rect::from_min_size(
+        egui::pos2(banner.left() + CHIP_LEFT, banner.top() + BANNER_PAD - 1.0),
+        Vec2::splat(CHIP_MARK),
+    );
+    if !crate::brand::paint_mark(painter, ui.ctx(), chip_mark) {
+        painter.circle_filled(chip_mark.center(), 8.0, theme.BRAND);
+    }
+    painter.text(
+        egui::pos2(chip_mark.right() + CHIP_GAP, chip_mark.center().y),
+        Align2::LEFT_CENTER,
+        "modrinth hosting",
+        fonts::label(CHIP_SIZE),
+        theme.BRAND,
+    );
+    // The heading, two lines: white, then the accent line in the brand green.
+    // Measured: the reference's chip ink ends at 677 and its heading's at 689, and the heading's own ink is 23
+    // points tall. 6 points of gap and 24-point type reproduce both.
+    painter.text(
+        egui::pos2(banner.left() + BANNER_PAD, banner.top() + HOSTING_TOP),
+        Align2::LEFT_TOP,
+        HOSTING,
+        fonts::label(23.0),
+        theme.CONTRAST,
+    );
+    painter.text(
+        egui::pos2(banner.left() + BANNER_PAD, banner.top() + HOSTING_TOP + HOSTING_LINE),
+        Align2::LEFT_TOP,
+        HOSTING_ACCENT,
+        fonts::label(23.0),
+        theme.BRAND,
+    );
+    None
+}
+
 pub fn draw(
     ui: &mut Ui,
     rect: Rect,
@@ -1192,71 +1267,7 @@ pub fn draw(
 
     }
 
-    // ---- The hosting banner --------------------------------------------------
-    // The banner is flush with the sidebar's foot in the reference -- its card ends where the window does --
-    // so its top is whichever is higher: the plan's slot, or the foot less its own height.
-    // Full-bleed: the reference's banner reaches both edges of the sidebar and its foot. Sampled from its
-    // render, x 1436 is its dark green at y 800 and 890 -- 20 and 14 points outside this build's inset column
-    // -- which is why the whole bottom-right corner differed.
-    // **At its own height, pinned to the foot.** Stretching the banner from the plan's slot to the panel's bottom
-    // made it ~325 points tall where the reference's is ~250, which put its chip 71 points too high (594..607
-    // against 665..680) while the illustration underneath it already agreed (713..893 against 715..893).
-    let banner = Rect::from_min_size(
-        egui::pos2(rect.left(), banner_top),
-        egui::vec2(rect.width(), BANNER_H),
-    );
-    // The reference's banner is not a grey card: its ground runs from near-black green at the top to a
-    // deeper green at the foot (sampled from its own render: #010101 at y 660, #001208 at 760, #002712 at
-    // 895), and the illustration continues that ground rather than sitting on a plate.
-    crate::shell::vertical_gradient(
-        painter,
-        banner,
-        egui::Color32::from_rgb(2, 4, 3),
-        egui::Color32::from_rgb(0, 40, 18),
-    );
-    // The illustration is the reference's own rectangle: x 1140..1440, y 700..900 of its render, cropped with
-    // its ground and drawn at that same rect. Stretching a smaller crop to the banner was making every pixel of
-    // a 48 000-pixel area differ by a little; this makes them agree by construction.
-    let promo = Rect::from_min_max(
-        egui::pos2(banner.left(), banner.bottom() - 200.0),
-        banner.max,
-    );
-    if !crate::serverart::paint(painter, promo) {
-        hosting_art(painter, promo, theme);
-    }
-
-    // The chip: the mark and "modrinth hosting" in the brand green, lowercase, above the heading.
-    let chip_mark = Rect::from_min_size(
-        egui::pos2(banner.left() + CHIP_LEFT, banner.top() + BANNER_PAD - 1.0),
-        Vec2::splat(CHIP_MARK),
-    );
-    if !crate::brand::paint_mark(painter, ui.ctx(), chip_mark) {
-        painter.circle_filled(chip_mark.center(), 8.0, theme.BRAND);
-    }
-    painter.text(
-        egui::pos2(chip_mark.right() + CHIP_GAP, chip_mark.center().y),
-        Align2::LEFT_CENTER,
-        "modrinth hosting",
-        fonts::label(CHIP_SIZE),
-        theme.BRAND,
-    );
-    // The heading, two lines: white, then the accent line in the brand green.
-    // Measured: the reference's chip ink ends at 677 and its heading's at 689, and the heading's own ink is 23
-    // points tall. 6 points of gap and 24-point type reproduce both.
-    painter.text(
-        egui::pos2(banner.left() + BANNER_PAD, banner.top() + HOSTING_TOP),
-        Align2::LEFT_TOP,
-        HOSTING,
-        fonts::label(23.0),
-        theme.CONTRAST,
-    );
-    painter.text(
-        egui::pos2(banner.left() + BANNER_PAD, banner.top() + HOSTING_TOP + HOSTING_LINE),
-        Align2::LEFT_TOP,
-        HOSTING_ACCENT,
-        fonts::label(23.0),
-        theme.BRAND,
-    );
+    let _ = hosting_banner(ui, rect, theme);
     pressed
 }
 
