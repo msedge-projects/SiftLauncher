@@ -2128,3 +2128,51 @@ reference measures:
 Two constants that had been fudges in the previous round became measurements in this one, because the thing they were
 compensating for -- a title measured wrapped and painted unwrapped -- was fixed. That is the pattern worth keeping: a
 constant that only works for one article is a bug report about the code above it.
+### The rail's coordinates were guessed for five pages, and the earlier totals are mislabelled (2026-11-07)
+
+Every page total in this file before today was measured by clicking the rail at y 94, 126, 158, 190, 222, 866 -- six numbers
+guessed from an old capture. The rail was read properly today, by clicking each position and reading the page name out of the
+title bar's breadcrumb:
+
+| rail y | icon band | page |
+|---:|---|---|
+| 71 | 62..80 | Home |
+| 123 | 113..134 | Discover modpacks |
+| 175 | 165..186 | Skin selector |
+| 227 | 218..237 | Screenshots |
+| 279 | 269..290 | Servers |
+| 352 | 339..366 | an instance |
+| 815 | 804..827 | Settings |
+
+**So the old numbers were not where their labels say.** A sweep that clicks 94, 126, 158, 190, 222 lands between icons and on the
+wrong ones: 126 is Discover, 222 is Screenshots, and 94 is between Home and Discover. The totals recorded as "Skins 135 728",
+"Servers 20 966" and "Settings 36 105" were each measured on a page that may not have been the one named.
+
+**Re-measured with the real coordinates and the pointer parked at (700,30) so no widget is hovered:**
+
+| page | total | content |
+|---|---:|---:|
+| Home | 36 196 | 17 424 |
+| Discover | 80 075 | 59 433 |
+| Skins | 138 441 | 119 048 |
+| Screenshots | 23 660 | 4 224 |
+| Servers | 98 853 | 79 424 |
+| Settings | 48 538 | 44 369 |
+
+**The reference had also drifted**, through a day of clicks, into a state where its rail no longer matched; it was restarted
+from the recipe below and is now on Home with one instance, as this build is. Servers and Settings read worse than their old
+labels say for the same reason the old labels were wrong -- and until each is compared with both apps on the same sub-state,
+those two numbers are not yet findings.
+
+### The reference's restart recipe, for whoever needs it next
+
+```
+tr "\0" "\n" < /proc/<pid>/environ > /tmp/ref-env.txt      # while it is running
+#!/bin/bash
+set -a; . /tmp/ref-env.txt; set +a
+cd /scratch/.scratch/dl/squashfs-root/usr                  # the app resolves ./lib from here
+exec ./bin/ModrinthApp
+```
+
+Then: `xdotool windowmove <win> 0 0; xdotool windowsize <win> 1440 900` -- it comes back at 1280x800, which silently breaks
+every 1:1 comparison until it is resized.
