@@ -1948,3 +1948,30 @@ more pixels than fewer rows that drift.
 
 The tree is restored to the 46-point state, which is the best measurement on record for this page even though it is not the
 reference's value -- and the four numbers above are what the next attempt needs to land together.
+### The category list now matches the reference row for row, and the total rose anyway (2026-11-07)
+
+Four numbers were measured last round and all four are now landed:
+
+| | reference | before | now |
+|---|---|---|---|
+| "Category" heading ink | y 367 | 338 | **369** |
+| first category label | y 410 | 389 | **410** |
+| second label | y 442 | 456 | **442** |
+| third label | y 474 | 502 | **474** |
+| pitch | 32 | 46 | **32** |
+| rows visible | 8 | 6 | **8** |
+
+Four consecutive row starts are now identical to the reference's, and the heading is within two points. **And the sidebar's
+count went up, from 14 075 to 17 085.**
+
+That is not a regression and it is worth being precise about why: the old build drew six rows where the reference draws eight,
+and every row's glyphs differ from the reference's because they are set by a different rasteriser. Drawing the two missing
+rows adds their text -- roughly 2 000 differing pixels per row -- and no amount of positional accuracy removes that. The
+metric is **monotonic in ink**, so on a text-dense block it penalises drawing the right number of rows.
+
+**The geometry is kept.** The alternative -- six rows at the wrong pitch, 3 000 pixels "better" -- is a build that agrees
+with the reference about a list it is drawing the wrong length. Where the metric and the reference disagree, the reference is
+the objective and the record says so.
+
+What this page's sidebar number now is, precisely: a count of how much text is drawn, not of whether it is placed correctly.
+The placement is checked by the band positions above, which are five exact matches and one within two points.

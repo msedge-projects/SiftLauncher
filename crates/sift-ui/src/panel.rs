@@ -95,7 +95,10 @@ const SEE_LESS: &str = "See less";
 /// One category row's height, and how many the panel lists before a `See more` would go.
 // Measured from the reference's Discover panel: its category rows sit at y 229, 275, 322 -- a 46-point pitch with
 // a 16-point glyph and 16-point text, where this drew 26-point rows of 13-point text.
-const CATEGORY_ROW: f32 = 46.0;
+// **32, measured twice.** The category labels' ink bands in the reference start at y 410, 442, 474, 506, 538 and 570 --
+// a 32-point pitch -- and a second capture puts Adventure at 413 and Challenging at 445. The 46 this held came from a
+// citation of "y 229, 275, 322", which is 46 apart but belongs to a different list.
+const CATEGORY_ROW: f32 = 32.0;
 // The reference lists eight before its own scroll takes over; there is no "See more" row in its capture.
 const CATEGORY_ROWS: usize = 8;
 
@@ -126,7 +129,10 @@ const HEADING_LINE: f32 = 24.0;
 /// accordion's content, which is padded `p-3` (`ui/onboarding-checklist/index.vue:94`).
 // The capture puts the first row's top edge at y 128, which is 23 below the heading's 24
 // point line box (81 + 24).
-const HEADING_TO_BODY: f32 = 23.0;
+// **15: the reference's heading-to-row gap is 43 points.** Its "Category" ink starts at y 367 and its first label at 410;
+// this build drew 338 and 389 -- the block 29 high and the gap 51 wide. With the block moved and the pitch at 32, the gap
+// has to shrink by the same 8 points the pitch did, or the rows land under the wrong row of the reference.
+const HEADING_TO_BODY: f32 = 15.0;
 
 /// The disclosure chevron on the `Getting started` heading: `DropdownIcon` at `size-5`
 /// (`ui/components/base/Accordion.vue:36`), 20 points.
@@ -941,7 +947,7 @@ pub fn draw(
             theme.CONTRAST,
         );
         painter.text(
-            egui::pos2(column.left(), locked_bottom.max(plan.news + CATEGORY_ROW + 8.0) + if locked.is_some() { 8.0 } else { 0.0 }),
+            egui::pos2(column.left(), locked_bottom.max(plan.news + CATEGORY_ROW + 47.0) + if locked.is_some() { 8.0 } else { 0.0 }),
             Align2::LEFT_TOP,
             CATEGORY,
             fonts::semibold(HEADING_SIZE),
@@ -961,7 +967,7 @@ pub fn draw(
                     column.left(),
                     plan.news
                         + CATEGORY_ROW
-                        + 8.0
+                        + 13.0
                         + HEADING_LINE
                         + HEADING_TO_BODY
                         + index as f32 * CATEGORY_ROW + row_shift,
