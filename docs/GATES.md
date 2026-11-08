@@ -2176,3 +2176,30 @@ exec ./bin/ModrinthApp
 
 Then: `xdotool windowmove <win> 0 0; xdotool windowsize <win> 1440 900` -- it comes back at 1280x800, which silently breaks
 every 1:1 comparison until it is resized.
+### Two pages are not the same page, and the settings difference is a window (2026-11-07)
+
+Both apps were driven to the same rail positions and captured at 1440x900 with the pointer parked at (700,30).
+
+**Servers / Hosting.** The reference does not show a server list at all:
+
+| | reference | this build |
+|---|---|---|
+| what is drawn | "**Modrinth App update required** -- You need to update to use Modrinth Hosting through the Modrinth App", with one "Download to update" button | a "Modrinth Hosting / Servers" page: a search field, a "New server" button, and a list -- All the Mods 10, Modrinth SMP, Create: Astral, Vanilla+ Survival, Better MC [FABRIC] |
+
+Its page is **gated** by a remote version check that this 0.22.0 build fails, so its state cannot be reproduced by drawing:
+the gate is the service telling the app it is too old. Reproducing the notice would mean asking the service the same question
+and honouring the answer -- which is a behaviour, not a layout, and is the honest way to close the row.
+
+**Settings is a separate window in the reference.**
+
+| | reference | this build |
+|---|---|---|
+| what is drawn | a **separate OS window** titled "Settings" (its own frame, its own close button, the app visible behind it) | an **in-window overlay** on a dimmed app |
+| version line | "Modrinth App 0.22.0 / Lunar 20261025.0.616925" | "Sift Launcher 0.6.2 / 0.x" |
+| sections | Display, Account, Instance defaults (Appearance open) | the same, plus an "Advanced rendering" row the reference does not have |
+
+The window is the significant one and it is a renderer question, not a constant: this build draws into one winit window, and
+a second OS window is a feature with its own event loop, sizing and close semantics. The version line is an identity
+question -- a clone that calls itself "Sift Launcher 0.6.2" is telling the truth and failing the comparison at the same time.
+
+**Neither is a pixel defect, and both were recorded as if they were** until the two captures were put side by side.
