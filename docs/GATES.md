@@ -3331,3 +3331,22 @@ BLOCKED are all counted from rows whose status is one of those words.
 
 The lesson is the same one the escaped pipes taught, one step further in: **a parser that counts rows is not a parser that
 understands them.** The header check was in the data all along and only appeared when a status tally was asked for by name.
+### The Screenshots page, measured for the first time in this state (2026-11-08)
+
+Both clients were empty in this lab, which makes the comparison clean for once:
+
+| | value |
+|---|---:|
+| Screenshots, total | **23 547** |
+| of which the content pane | **4 224** |
+| sidebar | 16 787 (the same panel as every other page) |
+
+The two empty states are the same three things -- the illustration, "No screenshots yet", "Screenshots you take in-game will
+appear here." -- and a 1:1 crop of the block shows one difference worth naming: **this build's illustration is slightly larger**.
+The block's ink starts at y 401 here against 387 in the reference and they end together at 601, which is what a larger picture
+above a fixed footer looks like.
+
+Rows 283 (the page root) is driven and now DONE. **Rows 286 (the toolbar's second row), 290 (group collapse), 296-303 (select
+mode, its toolbox, the card overlay, the context menu, delete, bulk delete) and 586 (show in folder) all need screenshots that do
+not exist in this lab** -- the empty state is the only state the reference and this build can currently share. They stay VERIFIED,
+which is the honest status: the code is read, the behaviour has never been seen on either side.
