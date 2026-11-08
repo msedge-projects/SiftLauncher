@@ -1144,9 +1144,17 @@ fn list(
             theme.CONTRAST,
         );
         // The badge the reference shows beside a freshly-made instance.
+        // **As wide as its words.** This was a fixed 96 points while the 14-point label starting 25 points in needed
+        // more, so "New instance" ran past the ring and through the card\'s own edge -- the pill every card showed was
+        // too small for the one string it ever holds.
+        let badge_label = painter.layout_no_wrap(
+            "New instance".to_owned(),
+            fonts::body(14.0),
+            theme.BRAND,
+        );
         let badge = Rect::from_min_size(
             egui::pos2(name.right() + 8.0, strip.top() + 16.0),
-            egui::vec2(96.0, 20.0),
+            egui::vec2(25.0 + badge_label.size().x + 11.0, 20.0),
         );
         // "✧ New instance" as an **outlined** pill: the reference's badge is a ring in the brand colour with the
         // sparkle and the words inside it, not a filled chip.

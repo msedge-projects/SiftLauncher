@@ -4066,3 +4066,21 @@ of repeated cards. The crop of two cards settled it in one look.
 **What is left on Discover is text, not decisions**: our summary truncates a word earlier than the reference\'s on the same line, and our
 chip labels sit a few points apart. Both are the rasteriser\'s metrics, which this file has recorded as the remaining cause on every page
 it has measured. That is the honest summary of Discover: **no known element-level faults left, and a page whose remainder is type.**
+### The "New instance" badge was narrower than its own words (2026-11-08)
+
+A fixed 96-point pill held a 14-point label that starts 25 points in and needs more than 71, so **"New instance" ran past the ring and
+through the card\'s edge** on the one card that carries it. The badge is sized from its label now.
+
+| badge | Home |
+|---|---:|
+| fixed 96, text overflowing | **31 279** |
+| sized from the label, +11 right | 31 349 |
+| sized from the label, +19 right | 31 376 |
+
+**The metric preferred the broken one.** 31 279 is the best number and the worst picture: the overflowing text happened to sit closer to
+where the reference\'s ink falls than the correctly-sized pill does, because this build\'s 14-point label is a few points wider than the
+reference\'s. A narrower pill put less green ink where the reference has some.
+
+That is the sharpest example this session of why the pixel count is a diagnostic and not a target. The badge keeps the width that shows
+the words inside the ring, the +70 is recorded rather than hidden, and the 19-point guess was reverted when it measured worse than the
+11-point one -- **a crop read at 3x is not a measurement**.
