@@ -3252,7 +3252,11 @@ fn draw_rail(
     // scroller's own tail.
     let scrollable = Rect::from_min_max(
         rail.min,
-        pos2(rail.right(), rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0),
+        // **694, the measured line, not the footer's top minus a gap.** The comment above says the rows stop at the
+        // reference's y 694; the arithmetic said `footer.top - 8` = 721, which let one more row through -- and that row is
+        // "Window", drawn at 694..709 where the reference has no ink until its footer at 740. The clip is now the number the
+        // comment describes.
+        pos2(rail.right(), rail_footer_rect(dialog).top() - 35.0),
     );
     let clipped = painter.with_clip_rect(scrollable);
 

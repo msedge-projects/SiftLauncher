@@ -2240,3 +2240,23 @@ reason is identity: the layout, type and position of that line are the reference
 
 What remains as real work on this page is the interior spacing -- one measurement (`Settings: 48 538`) that the geometry
 finding says is not about where the modal sits.
+### One row was drawn past the rail's clip, and the page number moved for a different reason (2026-11-07)
+
+The Settings rail's clip had a comment saying the rows stop at the reference's **y 694**, and arithmetic that said
+`footer.top - 8` = **721**. The comment was right: 721 let one more row through, and that row is "Window", drawn at 694..709
+where the reference has no ink at all between its last tab (649..665) and its footer (733..763). The clip is now the number
+the comment describes.
+
+| | reference | before | now |
+|---|---|---|---|
+| last tab | 649..665 | 649..665 | **649..665** |
+| the row past the clip | none | "Window" at 694..709 | **none** |
+| footer | 733..763 | 694..709 (the row was read as the footer) | **732..761** |
+
+**The page total went up, 48 538 to 50 267, and the change is still right.** Comparing this build against itself, the change
+is confined to the rail -- 293 differing sample points inside it, **0 in the content pane** -- and 6 336 points *outside the
+modal*, which is the app behind it: those two captures were taken with different pages underneath, so the page-level number
+was measuring the backdrop, not the dialog.
+
+**A modal page can only be compared when the backdrop is pinned.** That is a new rule for this harness and it invalidates any
+Settings number measured without one -- including the ones earlier in this file.
