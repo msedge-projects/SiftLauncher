@@ -204,7 +204,9 @@ const NEWS_HEADING_DROP: f32 = 20.0;
 /// 518..531, but widening this gap grows the card, which moves the banner under it and the whole foot with it --
 /// measured 17 291 -> 18 443. The 28 points belong to whatever separates the card's text from its art in the
 /// reference, and moving this number is not it.
-const ART_TO_TITLE: f32 = 16.0;
+// **24: the reference puts its title's ink at 519..533, 20 points under a plate that ends at 499.** This drew the ink at
+// 510..525 with the gap at 16 -- nine points high, measured from the two captures' text bands.
+const ART_TO_TITLE: f32 = 24.0;
 
 /// The title's size: `text-base` (16) at the h3's semibold, measured from the reference's own
 /// ink -- 251 points wide and 16 tall where 14 points here drew 210 wide and 15 tall.
@@ -221,6 +223,11 @@ const TITLE_LINE: f32 = 20.0;
 /// (`ui/components/content/NewsArticleCard.vue:30`), 8 points.
 // Measured: the reference's title ink starts at 518 and its copy's at 546 -- 28 points, which is
 // this gap plus the two line boxes' own bearings.
+// **8, and the reason is the title's wrap, not the gap.** The reference's title is TWO lines -- its bands are 519..533 and
+// 542..550 -- and its copy begins at 566. This build's title fits on one line (518..533), so its copy at 564 is already
+// aligned with the reference's copy. Dropping this to 1 moved the copy to 557 and made the page 1 450 pixels worse: the
+// 8 here is compensating for a missing line, and the real defect is that our title's measure lets it fit where the
+// reference's wraps.
 const TITLE_TO_COPY: f32 = 8.0;
 
 /// The copy's size: 12 points, from the reference's measurement.

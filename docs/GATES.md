@@ -2062,3 +2062,21 @@ a per-element state.
 
 The aggregate total now reads 81 111, 54 below where it stood before the hover existed -- and it is the *only* number here
 that would have called the wrong fix better.
+### The pointer was parking on a card, and the news title was nine points high (2026-11-07)
+
+**The parking point was inside a widget.** Every capture this session parked the pointer at (700,870) so it would not hover
+anything -- and that point is inside Discover's last card, whose rect runs to y 987. Every Discover capture has therefore
+carried one hovered card. Parked at (700,30), in the title bar's empty middle, the last card reads its plain fill and the page
+measures **80 259** instead of 81 111.
+
+**The news title was nine points high.** Its ink sat at 510..525 where the reference's is 519..533; `ART_TO_TITLE` was 16
+against a measured 24. With it corrected the ink lands at **518..533**, and Home's sidebar went from 19 414 to **17 244**.
+
+**One change was tried and taken back.** `TITLE_TO_COPY` was dropped from 8 to 1 to bring the copy's first band from 564 to
+542 -- and the page went from 37 177 to 38 627. The reason is in the reference's own bands: its title occupies **two** lines
+(519..533 and 542..550) where this build's fits on one, so its copy begins at 566 and this build's 564 was already aligned.
+The 8 was compensating for a missing line, and the real defect is that our title's measure lets it fit where the reference's
+wraps.
+
+That defect is now named rather than papered over, and it is the same shape as the category list: a constant tuned to a
+symptom reads as correct until the cause is measured.
