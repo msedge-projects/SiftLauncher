@@ -1158,16 +1158,16 @@ fn list(
             &painter,
             Glyph::Sparkles,
             Rect::from_center_size(
-                egui::pos2(badge.left() + 12.0, badge.center().y),
-                Vec2::splat(11.0),
+                egui::pos2(badge.left() + 13.0, badge.center().y),
+                Vec2::splat(13.0),
             ),
             theme.BRAND,
         );
         painter.text(
-            egui::pos2(badge.left() + 22.0, badge.center().y),
+            egui::pos2(badge.left() + 25.0, badge.center().y),
             Align2::LEFT_CENTER,
             "New instance",
-            fonts::body(11.0),
+            fonts::body(14.0),
             theme.BRAND,
         );
         painter.text(
@@ -1176,7 +1176,7 @@ fn list(
             // "Fabric 26.3 • Never played": the reference names the loader *and* the game version here. Ours printed
             // the loader alone, which reads like a different instance than the card below it.
             format!("{} {} • Never played", recent.loader, recent.version),
-            fonts::body(12.0),
+            fonts::body(13.0),
             theme.SECONDARY,
         );
         // The strip's own kebab, beside Play: the reference's row ends with one, and ours had nothing there.

@@ -2888,3 +2888,25 @@ compiler was asking for rather than a clone.
 
 **Not built:** the tooltip. This build has no tooltip system, so the words "Select instance" / "Deselect instance" have no
 delivery mechanism yet -- recorded, not faked.
+### The strip's badge and meta were both one step small (2026-11-07)
+
+A 3x crop of the strip, taken from a freshly captured reference, showed two type sizes that differ -- and unlike the toolbar's
+chips, both of these are *bounded* elements whose size is their own:
+
+| | reference | before | after |
+|---|---|---|---|
+| "New instance" badge width | ~128 | 95 | **~125** |
+| meta line width | ~187 | 153 | **~170** |
+| Home total | -- | 32 060 | **31 949** |
+
+The badge's label went 11 -> 14 with its sparkle 11 -> 13, and the meta line 12 -> 13. Each was measured alone: the badge was worth
+59 pixels and the meta 52.
+
+**Why these two worked where the toolbar's labels did not.** A badge and a meta line are measured against nothing but their own
+ink: making them the reference's size puts the same amount of type in the same place. A chip is a *box* holding a label, and
+enlarging the label inside a box whose width is also a constant moves the text relative to an edge that did not move. The
+distinction is worth keeping: **text in a container is a geometry problem; text on its own is a type problem.**
+
+Selection was recorded this round too: the reference's `use-library.ts` shows the selected set feeding **drag** and group
+operations, so this build's selection currently has the right state and no consumer -- which is the next feature for it, not a
+defect in what exists.
