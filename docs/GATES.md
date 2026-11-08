@@ -3424,3 +3424,26 @@ do it first thing next.
 **Two process guards came out of the same hour:** two windows with the same name can exist (one from a dead client) and the older
 one can sit on top -- `xdotool search --name` returning two ids is now a stop sign; and a second instance of the *reference*
 refuses to start while the first holds its data directory, showing an error dialog rather than a window.
+### CORRECTION: the resize "defect" is not a defect (2026-11-08)
+
+Last round this file recorded that `WindowEvent::Resized(_) => self.dirty = true` discards the new size and that the app draws
+forever at its launch size. **That is wrong, and the record above it should be read with this entry beside it.**
+
+The evidence that settles it:
+
+| check | result |
+|---|---|
+| does the event arrive? | `SIFT_RESIZE_PROBE` printed **both**: `1200x760`, then `1440x900` |
+| does the app follow it? | after the cycle the capture fills all 1440x900 -- the pixel at (1439,899) is content, not the black band |
+| why is the `Resized` arm so thin? | it does not need to do more: `Soft::frame` re-reads `window.inner_size()` **every frame**, and the surface and `screen_rect` are built from it |
+
+The black bands in the four bad captures came from a **second window of the same name** left by a dead client and sitting on top --
+the guard this file added in the same hour found it (`xdotool search` returned two ids). The app was never drawing small; the screen
+was showing an older window's frame.
+
+**A product defect was recorded from a harness artefact**, and the only thing that caught it was testing the mechanism rather than
+reading the line: an arm that "discards" a value is not discarding anything if the value is re-read per frame. The lesson joins the
+others in this file: **a line of code is evidence about the code, not about the product.**
+
+The `SIFT_RESIZE_PROBE` stays -- it is env-gated, it prints on every resize, and it is what turned this from an inference into a
+fact.

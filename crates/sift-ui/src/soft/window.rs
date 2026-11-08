@@ -250,7 +250,12 @@ impl ApplicationHandler for Soft {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
-            WindowEvent::Resized(_) => self.dirty = true,
+            WindowEvent::Resized(size) => {
+                if std::env::var_os("SIFT_RESIZE_PROBE").is_some() {
+                    eprintln!("resized to {size:?}");
+                }
+                self.dirty = true;
+            }
             // **The frame happens here, not in `about_to_wait`.** It used to happen in both: the loop asked for a redraw,
             // took the redraw as a change, drew, asked again. Against a software rasteriser that ran the box at 95% of a core
             // for an idle window -- load average 9 on six CPUs -- and no amount of scheduling a later frame could break it,
