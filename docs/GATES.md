@@ -3447,3 +3447,28 @@ others in this file: **a line of code is evidence about the code, not about the 
 
 The `SIFT_RESIZE_PROBE` stays -- it is env-gated, it prints on every resize, and it is what turned this from an inference into a
 fact.
+### The project page renders into 1280x800 of a 1440x900 window (2026-11-08)
+
+Reproducible, and the receipt is a byte comparison: a **fresh instance draws Home correctly** (`fresh-home.png`), then two presses --
+Discover, then the first card -- and the next capture is **byte-identical to a capture taken forty minutes earlier**
+(`ead9a382...`), an inset project page. The screen\'s content occupies exactly **1280x800 in the top-left of a 1440x900 window**.
+
+| check | value |
+|---|---|
+| window geometry | 1440x900 at 0,0 |
+| screen | `1440x900 pixels` |
+| rendered area | 1280x800 |
+| ratio | **0.8889 = 1 / 1.125** |
+
+A ratio of exactly 1/1.125 is a **scale factor**, not a layout mistake: 1.125 is a common X11 DPI scale (96 -> 108 dpi). So the
+likeliest cause is that `self.scale` -- which divides the window size to produce egui\'s logical `screen_rect` -- changes when the
+project page opens, while the painter still lays out at logical coordinates 1:1 with physical pixels. The UI then believes the
+window is 1280x800 and draws into that corner of a larger buffer.
+
+**Not fixed this round.** The round spent itself on the harness: three separate false signals (a dead client, a duplicate window, a
+stale frame) were each eliminated by a measurement before this one remained, and the remaining one is a real rendering bug that
+deserves a round where it is the first thing touched.
+
+The `SIFT_RESIZE_PROBE` added this round prints `resized to ...` on every resize and is what proved the app *receives* and *acts on*
+those events, which is why the earlier "the app does not follow a resize" entry was wrong. Both entries stand, in order, with this
+one last -- the file is a log, not a claim.
