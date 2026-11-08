@@ -2725,3 +2725,30 @@ What that says is that the ink inside those chips is what differs, not their geo
 draws more pixels than the reference's 16-pixel one, and widening the chip to hold it only adds more text to disagree about.
 The correct next measurement is the *label's* ink -- its cap height and advance -- rather than the chip that contains it, which
 is the same lesson the Discover card rows produced: a container is the last place to look for a text problem.
+### The toolbar row needed six points, and moving it cost the grid (2026-11-07)
+
+Last round concluded that the toolbar's problem was its *labels*, not its chips. Measuring them:
+
+| | reference | ours |
+|---|---|---|
+| "Last played" ink | 15 rows, 112 columns | 13 rows, 93 columns |
+| its ink top | y 306 | y 300 |
+
+So the label was both **smaller** (12 against ~14) and **six points high**. Each was tried alone:
+
+| change | Home total | ink top |
+|---|---:|---:|
+| none (committed state) | **32 287** | 300 |
+| label 12 -> 14 | 32 434 | 300 |
+| row +13 | 32 489 | 313 |
+| row +6 | 32 428 | **306** -- matching the reference |
+
+**The last row is the important one: the ink lands exactly where the reference's does and the page is 141 pixels worse.**
+The row's bottom is what the library grid below is anchored to, so moving the toolbar's text moves every card with it, and
+the cards were aligned only because the row was high.
+
+That is the same coupling the category list had -- a heading, a switch and a card that all had to move together -- and the
+same reason a single measured constant is not the same thing as a fix. The toolbar's **row height** has to change at the same
+time as its **offset**, in one step, so the text moves and the anchor does not.
+
+Reverted: Home is back at **32 287**, and the three measurements above are the numbers a coupled fix needs.
