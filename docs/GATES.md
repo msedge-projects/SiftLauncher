@@ -2777,3 +2777,17 @@ The fix is one line each, inside a chip that does not move: the glyph, the label
 builds against each other said *which* band moved and, within it, which build was nearer the truth. That is the third
 instrument this session to earn its place next to the aggregate -- after the flat-point scan and the capture-diff behind the
 card's hover.
+### The strip's name was one point small, and the bullet was fine (2026-11-07)
+
+The 2x crop of the strip showed our name and badge smaller than the reference's and its bullet tight against the words. All
+three were tried, and only one survived:
+
+| change | Home total |
+|---|---:|
+| none (committed) | 32 158 |
+| name 15 -> 17, bullet double-spaced | 32 194 |
+| name 15 -> 16, bullet unchanged | **32 132** |
+
+So the name was **one point** small and the bullet was already right; a 2x crop makes every difference look like a defect, and
+the two changes bundled together hid which one mattered. Separating them cost one extra build and turned a 36-point regression
+into a 26-point gain.

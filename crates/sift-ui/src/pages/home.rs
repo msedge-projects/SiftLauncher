@@ -1126,7 +1126,10 @@ fn list(
             egui::pos2(tile.right() + 12.0, strip.top() + 16.0),
             Align2::LEFT_TOP,
             recent.name.as_str(),
-            fonts::semibold(15.0),
+            // **16, and the size was the only thing wrong.** The reference's "Fabric 26.3" ink is 24 rows tall with its badge
+            // beside it where this drew 20. 17 overshot and 17-plus-a-spaced-bullet was worse than either; 16 alone is the one
+            // that measures better, and the bullet's single space is the reference's own.
+            fonts::semibold(16.0),
             theme.CONTRAST,
         );
         // The badge the reference shows beside a freshly-made instance.
