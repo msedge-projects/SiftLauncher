@@ -2196,10 +2196,15 @@ and honouring the answer -- which is a behaviour, not a layout, and is the hones
 |---|---|---|
 | what is drawn | a **separate OS window** titled "Settings" (its own frame, its own close button, the app visible behind it) | an **in-window overlay** on a dimmed app |
 | version line | "Modrinth App 0.22.0 / Lunar 20261025.0.616925" | "Sift Launcher 0.6.2 / 0.x" |
-| sections | Display, Account, Instance defaults (Appearance open) | the same, plus an "Advanced rendering" row the reference does not have |
+| sections | Display, Account, Instance defaults (Appearance open) | the same -- and **the "Advanced rendering" row I first recorded as ours alone is the reference's too**: it carries the citation `settings.display.sidebar.advanced-rendering.title (ui :6260)` in `crates/sift-ui/src/pages/settings.rs:897`, and the reference's shorter window simply ends above it |
 
 The window is the significant one and it is a renderer question, not a constant: this build draws into one winit window, and
 a second OS window is a feature with its own event loop, sizing and close semantics. The version line is an identity
 question -- a clone that calls itself "Sift Launcher 0.6.2" is telling the truth and failing the comparison at the same time.
 
 **Neither is a pixel defect, and both were recorded as if they were** until the two captures were put side by side.
+**Correction, made the same day it was written.** The Settings comparison above says the reference has no "Advanced rendering"
+row. It does: `settings.rs:897` cites it from the reference's own source (`ui :6260`), and the row is absent from the
+reference's *capture* only because its Settings window is shorter than this build's overlay and ends above that row. A
+missing row in a capture is not a missing row in the product -- the same distinction this file draws between "not reached"
+and "absent", applied to my own reading.
