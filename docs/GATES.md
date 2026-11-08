@@ -2504,3 +2504,16 @@ harness limitation has looked exactly like a product defect.
 
 `Sense::click_and_drag` was needed before any of it worked: with `Sense::click` the handle reports `hovered` and `clicked` but
 never a drag.
+### The rail tile's context menu, with the z-order lesson in it (2026-11-07)
+
+`QuickInstanceSwitcher.vue:254-288` gives the switcher row a context menu: Play (or Stop while running), a divider, View
+instance, Open folder. Drawn here with the same rows in the same order, opened by a right press and anchored to the pointer.
+
+**Its first version was invisible for a reason worth keeping.** The menu was drawn inside `rail_column`, which runs before the
+page -- so the content painted straight over it and the menu could only be seen in the strip beside the sidebar. The fix is not
+a colour or a width: it is `draw_rail_menu`, called after the page draws and before the modals, so the order is
+rail < page < menu < modal. A floating element belongs to the *last* pass that can cover what it overlaps, not to the pass
+that owns its anchor.
+
+Driven: a right press on the tile opens it over the page, and a press on **View instance** navigates -- the breadcrumb reads
+"Home / Fabric 26.3" afterwards. Row 500 in the ledger is closed with that evidence.

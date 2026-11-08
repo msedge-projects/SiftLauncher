@@ -1061,6 +1061,9 @@ pub struct Shell {
     /// A drag in progress on the switcher's handle: the pointer's y when it started and the count then showing.
     /// `QuickInstanceSwitcher.vue:145-157`: `target = startCount + round((y - startY) / ITEM_SIZE)`, clamped on the way in.
     rail_drag: Option<(f32, usize)>,
+    /// The rail tile whose context menu is open, and where the pointer opened it.
+    /// `QuickInstanceSwitcher.vue:254-288`: Play (or Stop while running), a divider, View instance, Open folder.
+    rail_menu: Option<(String, egui::Pos2)>,
     /// The Home page's own state: which row's kebab popover is open, and the `saves/` names
     /// it read. Kept here beside the other pages' states so the popover survives the frames
     /// that also draw the rail and the panel.
@@ -1168,6 +1171,7 @@ impl Default for Shell {
             rail_shown: None,
             rail_handle_focused: false,
             rail_drag: None,
+            rail_menu: None,
             instances: crate::data::load().0,
             home: crate::pages::home::State::default(),
             open_project: None,
@@ -1459,6 +1463,8 @@ impl Shell {
         } else {
             self.content_column(ui)
         };
+        // Over the page, under the modals.
+        self.draw_rail_menu(ui);
 
         // The About modal is drawn over the whole window, last, so nothing paints on top of
         // it. It is static while open -- no tween, no hover -- so it owes no frame debt: an
@@ -2002,6 +2008,11 @@ impl Shell {
             }
             if hit.clicked() {
                 rail_opened = Some(entry.id.clone());
+            }
+            if hit.secondary_clicked() {
+                if let Some(at) = ui.input(|input| input.pointer.interact_pos()) {
+                    self.rail_menu = Some((entry.id.clone(), at));
+                }
             }
         }
         if let Some(id) = rail_opened {
@@ -2598,6 +2609,82 @@ impl Shell {
     /// to="#sidebar-teleport-target">`), which is why the page draws first and the shared
     /// stack is then painted into whatever rect is left: a panel with one implementation and a
     /// hole at the top for the page, rather than a second copy of the shared sections per page.
+    /// The rail tile's context menu, drawn **after** the page: it is anchored to a point over the rail and the page paints
+    /// over anything the rail draws, so a menu in the rail pass is a menu under the content -- which is where the first
+    /// version of this one lived, visible only in the strip beside the sidebar.
+    fn draw_rail_menu(&mut self, ui: &mut Ui) {
+        let painter = ui.painter().clone();
+        let painter = &painter;
+    // **The tile's context menu**, as the reference has it. Three rows and a divider, opened by a right press on the
+    // tile and anchored to the pointer: Play, the rule, View instance, Open folder (`QuickInstanceSwitcher.vue:254-288`).
+    if let Some((id, at)) = self.rail_menu.clone() {
+        const MENU_W: f32 = 176.0;
+        const ROW_H: f32 = 32.0;
+        let rows = 4usize;
+        let menu = Rect::from_min_size(at, egui::vec2(MENU_W, ROW_H * rows as f32 + 8.0));
+        painter.rect_filled(menu, 8.0, self.theme.RAISED_BG);
+        painter.rect_stroke(
+            menu,
+            8.0,
+            Stroke::new(1.0, self.theme.SURFACE_4),
+            egui::StrokeKind::Inside,
+        );
+        let labels = ["Play", "", "View instance", "Open folder"];
+        let mut pressed: Option<usize> = None;
+        for (index, label) in labels.iter().enumerate() {
+            let y = menu.top() + 4.0 + index as f32 * ROW_H;
+            if label.is_empty() {
+                painter.hline(
+                    (menu.left() + 8.0)..=(menu.right() - 8.0),
+                    y + ROW_H / 2.0,
+                    Stroke::new(1.0, self.theme.SURFACE_4),
+                );
+                continue;
+            }
+            let row = Rect::from_min_size(egui::pos2(menu.left(), y), egui::vec2(MENU_W, ROW_H));
+            let hit = ui.interact(row, egui::Id::new(("rail-menu-row", index)), Sense::click());
+            if hit.hovered() {
+                painter.rect_filled(row.shrink(4.0), 6.0, self.theme.SURFACE_4);
+            }
+            painter.text(
+                egui::pos2(row.left() + 12.0, row.center().y),
+                Align2::LEFT_CENTER,
+                *label,
+                crate::fonts::body(14.0),
+                if index == 0 { self.theme.BRAND } else { self.theme.BASE },
+            );
+            if hit.clicked() {
+                pressed = Some(index);
+            }
+        }
+        let dismiss = ui.input(|input| input.pointer.any_click())
+            && !ui
+                .input(|input| input.pointer.interact_pos())
+                .is_some_and(|at| menu.contains(at));
+        let escaped = ui.input(|input| input.key_pressed(egui::Key::Escape));
+        match pressed {
+            Some(0) => {
+                self.act(crate::pages::home::Action::Play(id.clone()));
+                self.rail_menu = None;
+            }
+            Some(2) => {
+                self.open_instance_page(&id);
+                self.rail = Rail::Home;
+                self.rail_menu = None;
+            }
+            Some(3) => {
+                self.open_instance_folder(&id);
+                self.rail_menu = None;
+            }
+            _ => {
+                if dismiss || escaped {
+                    self.rail_menu = None;
+                }
+            }
+        }
+    }
+
+    }
     fn right_panel(&mut self, ui: &mut Ui) -> bool {
         let panel = Rect::from_min_size(
             egui::pos2(g::PANEL_LEFT, g::TITLE_BAR),
