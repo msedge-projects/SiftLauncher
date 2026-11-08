@@ -2581,3 +2581,25 @@ does not stay.
 What the number would actually need is one of: a smaller frame buffer (not possible at this window size through this path), a
 smaller binary (already `lto`, `strip`, `codegen-units = 1`), or presenting without a full-window shm segment (which would cost
 the frame gate that is currently met). The gate is recorded as **met on PSS, missed on RSS**, with the reason.
+### Two attempts at the memory gate, and what their failure locates (2026-11-07)
+
+The gate is idle RSS under 20 MB; the build sits at **22.75 MB**. Two levers were tried, both reverted because neither moved
+the number:
+
+| attempt | what it should have freed | measured RSS |
+|---|---|---:|
+| `malloc_trim` on the transition into idleness | the heap's free pages | 22 836 (from 22 752 -- noise) |
+| `madvise(MADV_DONTNEED)` on the binary's `r-xp` segments | resident text, re-faulted on use | 22 740, `Pss_File` unchanged at 8 923 |
+
+**Their failure is the useful part.** Neither a heap trim nor a text drop changed anything, and the second one did not even
+change `Pss_File` -- so the resident set is not made of reclaimable pages that a policy can return. It is:
+
+| | kB | can a policy return it? |
+|---|---:|---|
+| private anonymous (heap, stack, egui state) | 5 800 | only by holding less |
+| file-backed (binary + libraries, `Pss_File`) | 8 923 | no -- evicting it re-faults on the next frame |
+| shared (the 5.06 MB X shm frame buffer) | 2 532 in PSS, **5 060 in RSS** | no, at this window size through this path |
+
+The gate would need about 2.2 MB from the first row, which is the only row a change can move -- a smaller heap means fewer
+textures held rather than pages returned. That is a real piece of work and it has not been done; the memory clause is
+**missed on RSS, met on PSS (17.2 MB)**, and it is recorded as missed rather than reframed.
