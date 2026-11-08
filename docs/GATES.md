@@ -2655,3 +2655,20 @@ The button and the key land on the same `Action::Create`, so the button was driv
 So the hero's two routes to creation now agree with each other and with the reference, and the dialog is dismissable back to
 the state it opened from -- which is the property the earlier `create_instance()` path could not have, because it left the hero
 for the library as a side effect.
+### The text-page drop, measured properly, is 116 kB (2026-11-07)
+
+The first attempt at `madvise(MADV_DONTNEED)` on the binary's `r-xp` segments reported no change, and the measurement was at
+fault: it moved the pointer and took a screenshot **after** the drop, and every X event runs a frame that re-faults exactly the
+pages that were just released. Measured with no input at all after the process goes idle:
+
+| | before | after the drop |
+|---|---:|---:|
+| RSS | 22 752 kB | **22 636 kB** |
+| `Pss_File` | 8 923 kB | **8 789 kB** |
+
+**116 kB, not 2.2 MB.** Real, repeatable, and an order of magnitude short of the gate -- in exchange for re-faulting the
+dropped pages the next time any of that code runs, which for a launcher means the first click after every idle period. Reverted
+again, this time with a number rather than an impression.
+
+The methodology lesson is the one this file keeps relearning: **a measurement that touches the thing it measures cannot see
+what it changed.** Two rounds ago the same mistake produced a confident "no effect" from a change that had one.
