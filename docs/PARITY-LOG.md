@@ -1759,3 +1759,27 @@ above says so now.
 - 2026-11-02 17:07:21 heartbeat: 61228.4 (0.0472442) pixels differ (ImageMagick AE, 15% fuzz)
 - 2026-11-02 17:11:22 heartbeat: 62105.1 (0.0479206) pixels differ (ImageMagick AE, 15% fuzz)
 - 2026-11-02 17:15:22 heartbeat: 62105.1 (0.0479206) pixels differ (ImageMagick AE, 15% fuzz)
+
+## 2026-11-08 -- measured state after the geometry pass
+
+| screen | differing pixels | capture pair |
+|---|---:|---|
+| Home | 31 049 | `ji-ref.png` / `ji-our25.png` |
+| Discover | 81 267 | `ref-discover.png` / `disc-final.png` |
+| Instance page | 30 479 | `inst-ref.png` / `inst-our4.png` |
+| Settings (pinned backdrop) | 32 252 | `set2-ref.png` / `set2-our.png` |
+
+Idle memory: **RSS 22 636-22 752 kB, PSS 17 129-17 255 kB.** The gate (RSS < 20 MB) is **missed**; the PSS figure is inside it.
+Three attempts were measured and reverted: idle `malloc_trim` (0 kB), `madvise` on the binary's text pages (116 kB, at the cost of
+re-faults), and a composition study showing the remainder is the X shm frame buffer (5.06 MB in RSS) and live state -- neither of
+which a policy can return.
+
+Rules derived from the measurements, each with the rounds that produced it:
+
+1. **Text in a container is a geometry problem; text on its own is a type problem.** Six losses on toolbar labels (12/14/16, two
+   vertical positions), then wins on the strip's badge and meta and on both page headings.
+2. **A bitmap is a widget that cannot be grepped.** The brand plate carried the reference's nav buttons and the word "Home".
+3. **A wrong picture is worth more than a wrong typeface.** One 44-point avatar was 3 270 pixels; a heading was 527.
+4. **Before aiming at anything, ask the program where it is** -- `SIFT_HOME_PROBE` prints the card, play and kebab rects.
+5. **A measurement that touches the thing it measures cannot see what it changed** (the text-page drop read as 0 until measured
+   with no input at all, where it was 116 kB).

@@ -55,7 +55,10 @@ version faceted (956 -> 39 modpacks, 3 898 -> 478 mods); the "Installed" state; 
 screenshot page's grid, sorting and search; the skins page's saved/default cards and its 3D preview; the instance
 page's five tabs including file rename.
 
-323+ commits, 249 tests green, a heartbeat measuring the screen every four minutes in the lab container.
+**579 commits, 263 tests green** (2026-11-08). A heartbeat measures the screen every four minutes in the lab container.
+
+**The tables from here down are dated logs from 2026-11-02 and are kept for history. The current measurements are the table at
+the top of this file.**
 
 ## Screens measured this pass (2026-11-02, late)
 
