@@ -4013,3 +4013,20 @@ combobox and the table agree.
 
 The number rose by 263 and the control is right. The chips were never going to be tuned to look like comboboxes -- that is the
 distinction this file keeps drawing: **a measurement that rewards a wrong control looking close is not a parity metric.**
+### A green `cargo build` and a broken test build (2026-11-08)
+
+The combobox round shipped with the release binary building, the page measured and the number committed -- and **seven compile errors
+in the test build**, all of them the same mistake: `filtered_versions` grew a fourth argument (the game version) and its seven test
+call sites still passed three.
+
+```
+error[E0061]: this function takes 4 arguments but 3 arguments were supplied   x7
+```
+
+**`cargo build` green does not mean `cargo test` green**, because the tests are a separate compilation of the same code and only one
+of them is run by default when a slice is verified. Every round in this file that says "264 tests green" ran `cargo test`; this one
+ran it late, found the failure, and fixed it in the same round -- but the commit that introduced it went in first, which is the wrong
+order even when the next commit repairs it.
+
+The rule the objective already states is the one to keep: **tree building and tests green** is a precondition of the commit, not a
+check afterwards. A signature change is exactly the kind of edit that needs both.

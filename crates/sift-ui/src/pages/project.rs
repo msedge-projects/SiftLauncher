@@ -3618,26 +3618,26 @@ mod tests {
     #[test]
     fn the_version_chips_filter_one_dimension_at_a_time() {
         let project = sample();
-        let all = filtered_versions(&project.versions, &[], &[]);
+        let all = filtered_versions(&project.versions, &[], &[], None);
         assert_eq!(all.len(), project.versions.len(), "no chip is the whole table");
 
-        let betas = filtered_versions(&project.versions, &[Channel::Beta], &[]);
+        let betas = filtered_versions(&project.versions, &[Channel::Beta], &[], None);
         assert_eq!(betas.len(), 2, "the sample has two betas");
         assert!(betas.iter().all(|version| version.channel == Channel::Beta));
 
-        let releases = filtered_versions(&project.versions, &[Channel::Release], &[]);
+        let releases = filtered_versions(&project.versions, &[Channel::Release], &[], None);
         assert_eq!(releases.len(), 2);
 
-        let none = filtered_versions(&project.versions, &[Channel::Alpha], &[]);
+        let none = filtered_versions(&project.versions, &[Channel::Alpha], &[], None);
         assert!(none.is_empty(), "a channel with no versions leaves an empty table");
 
-        let fabric = filtered_versions(&project.versions, &[], &["fabric"]);
+        let fabric = filtered_versions(&project.versions, &[], &["fabric"], None);
         assert_eq!(fabric.len(), project.versions.len(), "every sample version is Fabric");
 
-        let forge = filtered_versions(&project.versions, &[], &["forge"]);
+        let forge = filtered_versions(&project.versions, &[], &["forge"], None);
         assert!(forge.is_empty(), "a loader the project does not ship leaves nothing");
 
-        let beta_and_fabric = filtered_versions(&project.versions, &[Channel::Beta], &["fabric"]);
+        let beta_and_fabric = filtered_versions(&project.versions, &[Channel::Beta], &["fabric"], None);
         assert_eq!(
             beta_and_fabric.len(),
             2,
