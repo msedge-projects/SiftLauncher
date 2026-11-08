@@ -2910,3 +2910,19 @@ distinction is worth keeping: **text in a container is a geometry problem; text 
 Selection was recorded this round too: the reference's `use-library.ts` shows the selected set feeding **drag** and group
 operations, so this build's selection currently has the right state and no consumer -- which is the next feature for it, not a
 defect in what exists.
+### Both page headings were the wrong size, in opposite directions (2026-11-07)
+
+The rule from last round -- standalone text is a type problem, text in a container is a geometry problem -- says where to look
+next, and the two headings are the purest examples of it:
+
+| heading | reference ink | before | after | Home |
+|---|---|---|---|---:|
+| "Jump in" | 22 rows, 110 wide | 19, 91 at 20 pt | **24 pt** | 31 949 -> 31 742 |
+| "Library" | 23 rows, 73 wide | 25, 83 at 26 pt | **24 pt** | 31 742 -> **31 215** |
+
+**They were wrong in opposite directions** -- one too small, one too large -- which is why no single "the type is off by a step"
+story would have found both, and why measuring each against its own ink mattered. Together they were worth 734 pixels, more
+than the previous six rounds combined.
+
+That is the strongest confirmation yet of the distinction: six attempts on text *inside* boxes lost, and these two, with no box
+anywhere near them, won by margins an order of magnitude larger.

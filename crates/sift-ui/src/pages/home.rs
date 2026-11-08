@@ -1072,7 +1072,9 @@ fn list(
             egui::pos2(rect.left(), rect.top() + 26.0),
             Align2::LEFT_TOP,
             "Jump in",
-            fonts::semibold(20.0),
+            // **24, measured.** The reference's ink is 22 rows tall and 110 columns wide; 20 drew 19 and 91. This heading is
+            // standalone text -- no box constrains it -- which is the kind that responds to size.
+            fonts::semibold(24.0),
             theme.CONTRAST,
         );
         // **The full column, not a formula.** This was `(rect.width() - 240).min(800)`, which made the strip 788 wide
@@ -1214,7 +1216,8 @@ fn list(
         // string this heading used to print, `Jump back in`, is not in the locale at all;
         // the `Jump in` section is the worlds below (`pages/Index.vue:99-103`).
         "Library",
-        fonts::heading(26.0),
+        // **24, measured.** The reference's ink is 23 rows tall and 73 wide; 26 drew 25 and 83.
+        fonts::heading(24.0),
         theme.CONTRAST,
     );
 
