@@ -3396,3 +3396,31 @@ other. Both clients were restarted and verified alive by PID before anything els
 stale news phase, the subfolder comparison, and this -- and the common shape is that each was a *state* problem invisible in the
 number. The cheapest guard is the one that costs a second: **before comparing, confirm both clients are running and both windows are
 at 0,0 1440x900.** `pgrep` and `getwindowgeometry` say so in one command; a difference map cannot say it at all.
+### This build does not follow an external resize (2026-11-08)
+
+Four captures on the Project page scored 411 113 and the reason was not the page:
+
+**The window was 1440x900 and the app was drawing into a 1280x800 surface in its top-left corner.** A shrink to 1200x760 and a
+grow back to 1440x900 changed nothing at all -- the two captures are byte-identical -- so the client never follows a resize it did
+not initiate.
+
+The code says why. `crates/sift-ui/src/soft/window.rs:253`:
+
+```rust
+WindowEvent::Resized(_) => self.dirty = true,
+```
+
+The new size is **discarded**. The surface and egui's screen rect are fixed at launch, so every capture taken after a external
+resize is of a correctly-drawn UI in the wrong rectangle -- which compares, and scores, as if the whole page were wrong.
+
+**This is a product defect, not only a harness one.** A reader who resizes the window gets a launcher that keeps drawing at its old
+size, and it has been that way for as long as this file records -- it was invisible because the harness normally starts the client
+at the size it wants and never resizes it.
+
+The fix is mechanical: keep the new size, resize the softbuffer surface and the egui screen rect with it. It was not made this
+round, which had already spent itself establishing that the number was not about the Project page; the record is precise enough to
+do it first thing next.
+
+**Two process guards came out of the same hour:** two windows with the same name can exist (one from a dead client) and the older
+one can sit on top -- `xdotool search --name` returning two ids is now a stop sign; and a second instance of the *reference*
+refuses to start while the first holds its data directory, showing an error dialog rather than a window.
