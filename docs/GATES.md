@@ -2037,3 +2037,28 @@ that is drawn with its fill clipped one row below it is a **clip rect**, not a l
 then cut by a rectangle 1 800 pixels too short, which my own probe says is *not* the list rect (that now runs to 889). The
 next pass should print the ScrollArea's `clip_rect` rather than its `max_rect` -- they are different things and only one of
 them paints.
+### The 24-point band was the card's hover state, and the wrong fix improved the number (2026-11-07)
+
+The flat-point scan flagged 816 agreeing samples where the two builds disagreed by 11: a card's body reading (49,51,57) in
+the reference and (39,41,46) here. The obvious conclusion -- our card fill is too dark -- was made, and **it improved the
+page**: 81 165 to 80 492, because the pointer is parked over the last card in that capture and the last card was exactly the
+part that matched.
+
+**Then a second card was sampled.** At (560,300), nowhere near the pointer, the reference still read (39,41,46) -- `RAISED_BG`
+exactly -- and the "fix" read (49,51,57). The band was never a wrong fill; it was a **missing hover state**, and the capture
+had the pointer on the very card whose hover the reference was showing.
+
+Corrected: the fill is `RAISED_BG` again, and a card under the pointer is drawn (49,51,57). Both states now agree exactly:
+
+| | reference | ours |
+|---|---|---|
+| card under the pointer, (560,860) | (49, 51, 57) | **(49, 51, 57)** |
+| card away from it, (560,300) | (39, 41, 46) | **(39, 41, 46)** |
+
+**The lesson is about where the pointer is.** Every capture in this session has the pointer parked at (700,870) so it does not
+hover anything -- and that point is *inside the last card on Discover*, which is why one card in every capture has been in a
+state no other card was in. Sampling two cards, one under the pointer and one not, is what separated a global fill error from
+a per-element state.
+
+The aggregate total now reads 81 111, 54 below where it stood before the hover existed -- and it is the *only* number here
+that would have called the wrong fix better.

@@ -3139,6 +3139,9 @@ impl Shell {
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(&mut child, |ui| {
+                if std::env::var_os("SIFT_CARD_PROBE").is_some() {
+                    eprintln!("scroll clip={:?} max={:?}", ui.clip_rect(), ui.max_rect());
+                }
                 // The reference's own six results first, then repeats so the list is long
                 // enough to scroll: a capture compares anatomy, not the catalogue.
                 // Real results when the search has them; the reference's own six cards while
@@ -3357,7 +3360,24 @@ fn card(
     let width = ui.available_width();
     let (rect, _) = ui.allocate_exact_size(egui::vec2(width, g::CARD), Sense::hover());
     let painter = ui.painter();
-    painter.rect_filled(rect, 12, theme.RAISED_BG);
+    // **The card answers the pointer, and that is what the band was.** `(49,51,57)` is the reference's *hovered* card body:
+    // its unhovered card reads `(39,41,46)`, which is `RAISED_BG` exactly. The flat-point scan found 816 samples where the two
+    // builds disagreed, so the fill was changed -- and the pointer happened to be parked over the last card, which is why the
+    // page number improved. At y 300, a card nowhere near the pointer, the reference still read (39,41,46) and the "fix" read
+    // (49,51,57): the wrong change, caught by sampling a second card. The fill is `RAISED_BG` and the hover is the reference's.
+    let card_hover = ui
+        .ctx()
+        .input(|input| input.pointer.hover_pos())
+        .is_some_and(|at| rect.contains(at));
+    painter.rect_filled(
+        rect,
+        12,
+        if card_hover {
+            egui::Color32::from_rgb(0x31, 0x33, 0x39)
+        } else {
+            theme.RAISED_BG
+        },
+    );
 
     // The icon tile. The reference draws the project's icon here; until images load, a
     // plate in the accent carries the same weight and the same 12-point radius.
