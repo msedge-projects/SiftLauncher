@@ -2391,3 +2391,28 @@ above are the first keyboard verifications in this file that actually reached th
 The lesson is the sharpest version of this session's recurring one: an instrument that returns "no change" is not evidence of
 no change until it has been shown to be capable of returning anything else. Escape failing twice was not the app's fault, and
 a harness check -- one command, one line of output -- would have said so before the first capture.
+### The reference's shortcuts, probed for the first time (2026-11-07)
+
+With the focus bug fixed, the same keys were sent to both apps, each with X focus confirmed and a click inside the window
+first (the reference's webview must consider itself focused too, and it dims and blurs itself when it does not).
+
+| key | reference | this build |
+|---|---|---|
+| `Escape` over the Settings modal | **closes it** -- plate (39,41,46) to (22,24,28) | **closes it**, same measurement |
+| `Ctrl+2` | **stays on Home** | **Discover modpacks** |
+| `Ctrl+1` | stays on Home | **Home** |
+| `Ctrl+,` | **no settings** -- page background unchanged | not implemented |
+| `Ctrl+F` on Home | no focus change | not implemented |
+
+**So Escape is shared and the rail shortcuts are ours alone.** `Ctrl+1..5` were implemented with a test of our own making
+(`ctrl_digits_switch_rail_pages`) and a row in this file that cited that test rather than the reference's source -- the only
+row in the ledger whose "cit" is our own code. The reference does not switch rails on a digit, in this environment, with
+focus and a click inside.
+
+That makes them a **deliberate extra**, and it is worth naming as one: a 1:1 clone with a convenience the original lacks is
+a deviation however useful it is. The options are to remove them or to record them as an addition; what is not acceptable is
+to leave a test named as though the reference had them.
+
+**Two harness facts fell out of this and belong in the recipe:** a window must be focused with `xdotool windowfocus` before
+any key, and the reference dims and blurs its whole window until its webview is focused, so a blurred capture is the sign
+that a keystroke will be ignored rather than evidence about the app.
