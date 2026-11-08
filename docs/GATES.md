@@ -2482,3 +2482,25 @@ binding the keys to the div.
 
 That is the fourth time this session that a *renderer assumption* -- frames come when you ask, focus persists, a clip covers
 what you drew -- has been the thing that did not hold in a window that only paints when asked.
+### The switcher's handle drags, and a jump-move is not a drag (2026-11-07)
+
+`QuickInstanceSwitcher.vue:145-157` turns a vertical drag on the divider into a count:
+`target = dragStartCount + round((clientY - dragStartY) / ITEM_SIZE)`, clamped, with an overdrag flash when it would go past
+either end. Implemented the same way, over this build's 48-point rail pitch, and driven:
+
+| pointer | rail |
+|---|---|
+| press at y 389, move to 330 in one jump | **no change** -- `drag_started=false` in every frame |
+| press at y 389, move 375 -> 360 -> 345 -> 330 | **the tile disappears**, `dragging=true`, `shown=0`, and it stays gone after release |
+
+**The first row is not a defect in the handler and it is worth naming.** This window paints when something happens: a frame is
+drawn per input event, and egui needs a second frame *while the button is still down* to call a press a drag. A single warp
+from y 389 to y 330 was delivered as one event pair that the app saw after the release, so no frame ever existed with
+`down=true` and the pointer moved. Four small moves produce four frames and the drag begins on the second.
+
+A real hand always moves through intermediate points, so the behaviour a person experiences is the second row. The first row is
+a fact about `xdotool mousemove` and about a renderer that only paints on demand -- and it is the fifth time this session that a
+harness limitation has looked exactly like a product defect.
+
+`Sense::click_and_drag` was needed before any of it worked: with `Sense::click` the handle reports `hovered` and `clicked` but
+never a drag.

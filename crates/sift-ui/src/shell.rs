@@ -1058,6 +1058,9 @@ pub struct Shell {
     /// when something is in flight, and a focus flag that depends on frame-to-frame continuity was dropped after the first
     /// keypress -- `Up` hid the instances and `Down` then did nothing until the handle was clicked again.
     rail_handle_focused: bool,
+    /// A drag in progress on the switcher's handle: the pointer's y when it started and the count then showing.
+    /// `QuickInstanceSwitcher.vue:145-157`: `target = startCount + round((y - startY) / ITEM_SIZE)`, clamped on the way in.
+    rail_drag: Option<(f32, usize)>,
     /// The Home page's own state: which row's kebab popover is open, and the `saves/` names
     /// it read. Kept here beside the other pages' states so the popover survives the frames
     /// that also draw the rail and the panel.
@@ -1164,6 +1167,7 @@ impl Default for Shell {
             install: crate::install::Install::default(),
             rail_shown: None,
             rail_handle_focused: false,
+            rail_drag: None,
             instances: crate::data::load().0,
             home: crate::pages::home::State::default(),
             open_project: None,
@@ -2011,7 +2015,40 @@ impl Shell {
             egui::pos2(0.0, 380.0),
             egui::pos2(g::RAIL, 398.0),
         );
-        let handle_hit = ui.interact(handle, egui::Id::new("rail-switcher-handle"), Sense::click());
+        // `click_and_drag`, not `click`: the reference's handle is a drag handle first (`cursor-ns-resize`, pointer capture on
+        // down) and a focus target second. With `Sense::click` alone `drag_started()` never fires and the drag does nothing.
+        let handle_hit =
+            ui.interact(handle, egui::Id::new("rail-switcher-handle"), Sense::click_and_drag());
+        if std::env::var_os("SIFT_RAIL_PROBE").is_some() {
+            eprintln!(
+                "rail handle hovered={} drag_started={} dragging={} down={} pos={:?} shown={}",
+                handle_hit.hovered(),
+                handle_hit.drag_started(),
+                handle_hit.dragged(),
+                ui.input(|input| input.pointer.any_down()),
+                ui.input(|input| input.pointer.interact_pos()),
+                shown
+            );
+        }
+        if handle_hit.drag_started() {
+            if let Some(at) = ui.input(|input| input.pointer.interact_pos()) {
+                self.rail_drag = Some((at.y, shown));
+            }
+        }
+        if let Some((start_y, start_count)) = self.rail_drag {
+            let pointer = ui.input(|input| input.pointer.interact_pos());
+            let down = ui.input(|input| input.pointer.any_down());
+            if down {
+                if let Some(at) = pointer {
+                    let steps = ((at.y - start_y) / g::RAIL_PITCH).round() as i64;
+                    let target = start_count as i64 + steps;
+                    self.rail_shown =
+                        Some(target.clamp(0, self.instances.len() as i64) as usize);
+                }
+            } else {
+                self.rail_drag = None;
+            }
+        }
         if handle_hit.clicked() {
             self.rail_handle_focused = true;
         } else if ui.input(|input| input.pointer.any_click())
