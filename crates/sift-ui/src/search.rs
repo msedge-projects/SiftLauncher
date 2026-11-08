@@ -354,6 +354,20 @@ pub fn thousands(count: u64) -> String {
 
 /// A download count, abbreviated where the reference abbreviates.
 pub fn abbreviate(count: u64) -> String {
+    // **Grouped below ten thousand, like the reference.** `formatCompactNumber` leaves `2,115` alone rather than turning it
+    // into `2.1K` -- the same rule the project page's versions column already used -- and the card printed `2.1k` against the
+    // reference's `2,115` beside it.
+    if count < 10_000 {
+        let digits = count.to_string();
+        let mut out = String::new();
+        for (index, digit) in digits.chars().enumerate() {
+            if index > 0 && (digits.len() - index) % 3 == 0 {
+                out.push(',');
+            }
+            out.push(digit);
+        }
+        return out;
+    }
     match count {
         0..=999 => count.to_string(),
         1_000..=999_999 => format!("{:.1}K", count as f64 / 1_000.0),

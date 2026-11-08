@@ -3042,3 +3042,20 @@ not "does it look like UI" but "does the reference have it there too".
 
 That distinction is what the brand plate failed: its wordmark sits beside the reference's *live* breadcrumb, so cropping it was
 right, while cropping the hosting ad would have deleted a picture the reference draws.
+### The card printed "2.1k" where the reference prints "2,115" (2026-11-07)
+
+A 1:1 crop of Discover's bottom row showed the two counts side by side and only one of them wrong:
+
+| | reference | before | after |
+|---|---|---|---|
+| followers | `2,115` | `2.1k` | **`2,141`** |
+| downloads | `7.38M` | `7.20M` (the live API's own string) | unchanged |
+| Discover total | -- | 81 617 | **81 267** |
+
+`search::abbreviate` compacted at **1 000**; the reference's `formatCompactNumber` leaves anything under **ten thousand**
+grouped -- the same rule this build already had in `project::compact` for the versions table, which is why the two pages
+disagreed with each other as well as with the reference. The card now groups below ten thousand: `2,141` against the reference's
+`2,115`, differing in the last two digits only because the number is live and 26 followers arrived between the two captures.
+
+The download string is the search API's own (`7.20M` against the reference's `7.38M`), not a formatting choice, and is left alone:
+a live number that differs is not a parity defect, and rewriting it would be inventing data.
