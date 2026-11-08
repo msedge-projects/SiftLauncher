@@ -2603,3 +2603,21 @@ change `Pss_File` -- so the resident set is not made of reclaimable pages that a
 The gate would need about 2.2 MB from the first row, which is the only row a change can move -- a smaller heap means fewer
 textures held rather than pages returned. That is a real piece of work and it has not been done; the memory clause is
 **missed on RSS, met on PSS (17.2 MB)**, and it is recorded as missed rather than reframed.
+### "Open folder" driven, including the branch where there is no file manager (2026-11-07)
+
+The rail menu's Open folder is the first file-management action driven end to end in this session that does not depend on a
+game:
+
+| step | result |
+|---|---|
+| right press on the rail tile | the menu opens |
+| press **Open folder** | `xdg-open /tmp/matchdata/SiftLauncher/instances/Fabric 26.3` is spawned |
+| the spawn | **fails** -- there is no `xdg-open` in this container (`os error 2`) |
+| what the reader sees | **"…os error 2). Copied /tmp/matchdata/SiftLauncher/instances/Fabric 26.3 instead."** |
+
+That is the fallback working rather than the action failing: a folder that cannot be shown is a path that can at least be
+pasted, and the toast says which happened. It is also the only way this environment can exercise the branch -- a container has
+no file manager, so the *success* path of `Open folder` is unobservable here and is recorded as such.
+
+The same limit applies to the reference: its `showInstanceInFolder` goes through Tauri's `openPath`, which would fail the same
+way on this display, so no side-by-side comparison of the spawned window exists to make.
