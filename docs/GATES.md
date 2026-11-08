@@ -3898,3 +3898,24 @@ fixed the first failed on an exact-match anchor. Each was one build. The lesson 
 **a hundred-line move in a 1 300-line file is surgery, and surgery wants the file open, not a script.**
 
 Home was re-measured after the change to be sure the extraction did not disturb the path that already worked.
+### The header showed five tags where the reference shows three (2026-11-08)
+
+A 1:1 crop of the project header named three differences, and the largest was a whole category of element:
+
+| | reference | before | after |
+|---|---|---|---|
+| header chips | **Lightweight, Multiplayer, Optimization** | those three **plus Client and Fabric** | the three |
+| Install button | 92 wide | 107 | unchanged (next) |
+| subtitle wrap | after "Wilderness" | after "package." | unchanged (a measure) |
+
+| | before | after |
+|---|---:|---:|
+| Project page | 72 350 | **71 380** |
+
+The reference puts loaders and environments in the sidebar\'s `Platforms` and `Supported environments` rows -- which this build
+already has, and which is why Fabric and Client appeared twice in two places. The header is for categories, so it now filters the
+six names that are not: fabric, forge, neoforge, quilt, client, server.
+
+**The filter is a name list, and that is a weakness worth stating**: a new loader or environment name would reappear in the header
+until it is added here. The right fix is to carry the hit\'s `display_categories` separately from its tags, which the API provides and
+this build\'s search document does not yet keep. The name list is what today\'s data allows.

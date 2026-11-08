@@ -1039,7 +1039,15 @@ fn header(
         }
     }
     x += META_GAP;
-    for (tag, glyph) in &project.tags {
+    // **Categories only, as the reference shows them.** The hit\'s tag list also carries loaders (Fabric, Forge) and
+    // environments (Client, Server); the reference puts those in the sidebar\'s Platforms and Supported environments
+    // rows and keeps the header for categories. Drawing all five put two chips in the header that are not there.
+    const NOT_A_CATEGORY: [&str; 6] = ["fabric", "forge", "neoforge", "quilt", "client", "server"];
+    for (tag, glyph) in project
+        .tags
+        .iter()
+        .filter(|(tag, _)| !NOT_A_CATEGORY.contains(&tag.to_lowercase().as_str()))
+    {
         let chip = tag_rect(painter, egui::pos2(x, meta_top), theme, tag.as_str(), Some(*glyph));
         x = chip.right() + TAG_GAP;
     }
