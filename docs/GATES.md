@@ -4233,3 +4233,27 @@ line was wrong -- **the metric is blind to it, and the measurement is not.**
 
 Row 626 can now be closed: its inset is right (avatar within a point), its block gap is right (rule at 186 with the strip held), and the
 only thing left in its description is the title\'s three-point cap-height difference, which is type and belongs to the rasteriser.
+### The channel badge, right way round, and a data difference inside the number (2026-11-08)
+
+Two small corrections on the Versions tab, one of them in the wrong direction first:
+
+| | reference | first attempt | kept |
+|---|---|---|---|
+| the channel badge | a **tinted dark disc** with the orange `B` on it | an orange disc with a dark `B` -- inverted, and louder | tinted disc, letter in the channel\'s ink |
+| its size | ~22 points across | 16 | **22** |
+| a week old | `last wk.` | `1w ago` | `last wk.` for 7-13 days, then `2w ago` |
+
+| | Versions tab |
+|---|---:|
+| before | 63 692 |
+| inverted badge | 64 288 (**worse**) |
+| correct polarity, 16 points | 63 663 |
+| correct polarity, 22 points | **63 660** |
+
+The inversion is the same mistake this file has recorded twice before -- a pair drawn the wrong way round looks *more* wrong than a pair
+drawn badly -- and the metric caught it in one measurement (64 288 against 63 692), which is the useful thing about it.
+
+**And a data difference found while checking the words**: the Downloads column reads `133.7K` here and `135.3K` in the reference, because
+the two clients fetched the project minutes apart. That is not a rendering fault, it is roughly 400 pixels of the tab\'s difference that no
+amount of drawing will remove -- worth writing down, because the Versions tab\'s number is inflated by a quantity that belongs to the API\'s
+clock rather than to this build.

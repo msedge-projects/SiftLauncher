@@ -608,7 +608,9 @@ fn relative_short(published: Date, now: Date) -> String {
         i64::MIN..=0 => "today".to_owned(),
         1 => "yesterday".to_owned(),
         2..=6 => format!("{days}d ago"),
-        7..=27 => format!("{}w ago", days / 7),
+        // The reference prints "last wk." for the week just gone, then weeks counted.
+        7..=13 => "last wk.".to_owned(),
+        14..=27 => format!("{}w ago", days / 7),
         28..=45 => "last mo".to_owned(),
         46..=319 => format!("{}mo ago", days / 30),
         320..=547 => "1y ago".to_owned(),
@@ -2036,16 +2038,29 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
                     egui::pos2(x, band.top()),
                     egui::vec2(columns[0], TABLE_ROW),
                 );
+                // **A circled letter, as the reference draws it** (`VersionChannelIndicator`): the channel\'s ink
+                // under the channel\'s initial in the page\'s background tone. This was a bare 5-point dot, which
+                // says "a channel" but not which one at a glance.
+                // **A tinted disc with the letter in the channel\'s ink** -- not the inverse. The first version drew
+                // the disc in the ink and the letter dark, which is a loud badge where the reference has a quiet one
+                // (its `B` is the orange and its ground is that orange at a fifth over the row).
+                let (ink, rgb) = match version.channel {
+                    Channel::Release => (theme.GREEN, (0x1b, 0xd9, 0x6a)),
+                    Channel::Beta => (theme.ORANGE, (0xe0, 0x8b, 0x3e)),
+                    Channel::Alpha => (theme.RED, (0xd0, 0x3a, 0x3a)),
+                };
                 painter.circle_filled(
                     channel.center(),
-                    5.0,
-                    match version.channel {
-                        Channel::Release => theme.GREEN,
-                        Channel::Beta => theme.ORANGE,
-                        Channel::Alpha => theme.RED,
-                    },
+                    11.0,
+                    crate::shell::tint(theme.BG, rgb, 0.30),
                 );
-                let _ = version.channel.label();
+                painter.text(
+                    channel.center(),
+                    Align2::CENTER_CENTER,
+                    &version.channel.label()[..1],
+                    fonts::semibold(12.0),
+                    ink,
+                );
                 x += columns[0];
 
                 // The version number: font-medium text-contrast.
