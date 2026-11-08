@@ -3350,3 +3350,24 @@ Rows 283 (the page root) is driven and now DONE. **Rows 286 (the toolbar's secon
 mode, its toolbox, the card overlay, the context menu, delete, bulk delete) and 586 (show in folder) all need screenshots that do
 not exist in this lab** -- the empty state is the only state the reference and this build can currently share. They stay VERIFIED,
 which is the honest status: the code is read, the behaviour has never been seen on either side.
+### A populated Screenshots page: this build draws it, the reference will not be shown it (2026-11-08)
+
+Ten matrix rows (toolbar, group collapse, select mode, its toolbox, the card overlay, the context menu, delete, bulk delete, "show
+in folder") need a Screenshots page with something on it, and this lab has none. The files are just files, so the same PNG was
+placed in both clients' instance folders:
+
+| path tried | this build | reference |
+|---|---|---|
+| `<instance>/screenshots/2026-11-08_18.00.00.png` | **populates**: heading, Search, New group, Newest/Date selects, "Today 1" and the image | still the empty state |
+| `<instance>/minecraft/screenshots/2026-11-08_18.00.00.png` | -- | still the empty state |
+
+So this build reads the folder the reference's own source gave it, and **the reference does not scan either candidate path** -- its
+list is probably built by an index written when the game takes a screenshot, not by walking the directory. That is a state this lab
+cannot put the reference into without running Minecraft.
+
+**What that means for the ledger:** those ten rows stay VERIFIED, and their note should not be "needs a capture" but "the reference
+cannot be shown this state here". They are a **missing-state** block, like Servers' service gate, not unfinished work -- and the
+distinction matters, because the first invites a capture attempt every few rounds and the second says what would have to change.
+
+The measurement of the empty state stands: **23 547** total, **4 224** in the content pane, with this build's illustration the
+larger of the two.
