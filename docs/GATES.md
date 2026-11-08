@@ -2975,3 +2975,22 @@ It now asks `serverart::paint_instance_default` first.
 **The overprinted name is not fixed.** Only one `painter.text` draws the crumb in `shell.rs`, so the second string comes from
 somewhere else that also writes to the title bar's left -- recorded here with the crop that shows it, because it is a
 two-string problem and the next round can find the second caller rather than re-derive the first.
+### An overprinted breadcrumb, and what four probes ruled out (2026-11-07)
+
+The title bar draws its crumb twice -- "Home" underneath, the page's own name on top -- on **every** page, not just the instance
+page. Four things were ruled out by measurement rather than by reading:
+
+| hypothesis | test | result |
+|---|---|---|
+| the crumb is computed wrong | `SIFT_CRUMB_PROBE` prints it each frame | `crumb="Fabric 26.3" instance=true` -- correct, **once per frame** |
+| a stale framebuffer | read `soft::Painter::paint` | it clears **every pixel** of every band each frame |
+| a partial present | read the present path | `buffer.present()` -- the whole surface |
+| a second draw site | grep every `bar.center().y` text | three sites, none of them the crumb's x |
+
+Then a decisive one: painting the crumb **red** showed the red string is "Discover modpacks" and the white one underneath is
+"Home", five points to its left -- so a *different* call, in `CONTRAST`, is writing the rail's title at nearly the crumb's
+position. The `SIFT_CRUMB_PROBE` stays in the build for that next step.
+
+**Not fixed this round**, and recorded with the crop and the colour test rather than a guess: the round had already banked the
+instance page's 3 441 pixels, and this is a two-caller problem that deserves its own measurement rather than the end of a long
+round.

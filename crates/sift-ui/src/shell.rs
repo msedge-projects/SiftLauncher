@@ -1774,6 +1774,9 @@ impl Shell {
             (None, Some(project)) => format!("{}  >  {}", self.rail.title(), project.title),
             (None, None) => self.rail.title().to_owned(),
         };
+        if std::env::var_os("SIFT_CRUMB_PROBE").is_some() {
+            eprintln!("crumb={crumb:?} instance={}", self.open_instance.is_some());
+        }
         painter.text(
             egui::pos2(badge.right() + 5.0, bar.center().y),
             Align2::LEFT_CENTER,
