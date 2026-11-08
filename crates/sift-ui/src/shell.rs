@@ -2647,7 +2647,10 @@ impl Shell {
                 // centred empty state: the reference's Screenshots heading centres at 602, which is the centre of 88..1116, and
                 // widening moved ours to 614. The toolbar's own padding was the thing that was wrong, not the column.
                 g::PANEL_LEFT - g::CONTENT_INSET - g::TEXT_LEFT,
-                g::WINDOW.1 - g::TITLE_BAR - 2.0 * g::CONTENT_INSET,
+                // **The inset is not symmetric.** The reference's content surface runs to y 889 and this build's to 876,
+                // measured where each stops being the surface: its list therefore shows a card where ours shows background,
+                // a 24-point band at the content's foot (gap-matrix row 4's neighbourhood, found by the flat-point scan).
+                g::WINDOW.1 - g::TITLE_BAR - g::CONTENT_INSET - 11.0,
             ),
         );
         ui.painter().rect_filled(
@@ -3128,6 +3131,9 @@ impl Shell {
             egui::pos2(content.left(), row.bottom() + 6.0 + chips_below),
             content.max,
         );
+        if std::env::var_os("SIFT_CARD_PROBE").is_some() {
+            eprintln!("list={list:?} content={content:?} row={row:?}");
+        }
         let mut child = ui.new_child(egui::UiBuilder::new().max_rect(list));
         let mut owed = typing;
         egui::ScrollArea::vertical()

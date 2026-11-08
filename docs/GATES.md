@@ -2018,3 +2018,22 @@ content area went from **62 265 to 61 977**.
 The reference's list is cut by the window; this build's ends early, and **unevenly across columns** -- 875 on the left card
 column, 846 on the right two. That is a clipping or a card-height difference, not a pager, and it is the next thing this
 instrument points at.
+### The content surface ended 13 points above the reference's (2026-11-07)
+
+The list-end investigation produced one more measurement that was simply wrong to leave:
+
+| | reference | this build, before | now |
+|---|---|---|---|
+| content surface, bottom edge | y 889 | y 876 | **y 889** |
+| Discover content | -- | 61 977 | **60 523** |
+| Discover total | -- | 82 619 | **81 165** |
+
+The inset was applied to both ends of the column; the reference's is asymmetric, with 11 points at the foot where this used
+the full 16. $1\,454$ pixels, from a number a probe printed rather than a guess about a constant.
+
+**What still differs, and its exact signature.** At y 846 both builds draw a card's top border -- (65,67,75) at x 560 -- and
+one row later the reference continues into the card's fill (49,51,57) while this build shows the surface (39,41,46). A border
+that is drawn with its fill clipped one row below it is a **clip rect**, not a layout error: the card is being laid out and
+then cut by a rectangle 1 800 pixels too short, which my own probe says is *not* the list rect (that now runs to 889). The
+next pass should print the ScrollArea's `clip_rect` rather than its `max_rect` -- they are different things and only one of
+them paints.
