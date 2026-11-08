@@ -246,7 +246,10 @@ fn hit(source: sift_net::modrinth::ModrinthSearchHit) -> Hit {
         summary: source.description,
         icon: source.icon_url,
         downloads: abbreviate(source.downloads),
-        followers: abbreviate(source.follows),
+        // **Followers are not abbreviated.** `thousands` already existed for this rule -- its own comment says a card can
+        // show `5,023` next to `19.62M` -- but this line called `abbreviate` instead, so the card printed `2.1k` where the
+        // reference prints `2,115`.
+        followers: thousands(source.follows),
         // Capitalised the same way `categories` is: the API's ids are lowercase and hyphenated, and a chip
         // that reads "challenging" is not the reference's chip.
         all_categories: {
@@ -354,20 +357,6 @@ pub fn thousands(count: u64) -> String {
 
 /// A download count, abbreviated where the reference abbreviates.
 pub fn abbreviate(count: u64) -> String {
-    // **Grouped below ten thousand, like the reference.** `formatCompactNumber` leaves `2,115` alone rather than turning it
-    // into `2.1K` -- the same rule the project page's versions column already used -- and the card printed `2.1k` against the
-    // reference's `2,115` beside it.
-    if count < 10_000 {
-        let digits = count.to_string();
-        let mut out = String::new();
-        for (index, digit) in digits.chars().enumerate() {
-            if index > 0 && (digits.len() - index) % 3 == 0 {
-                out.push(',');
-            }
-            out.push(digit);
-        }
-        return out;
-    }
     match count {
         0..=999 => count.to_string(),
         1_000..=999_999 => format!("{:.1}K", count as f64 / 1_000.0),

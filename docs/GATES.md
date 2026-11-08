@@ -3052,10 +3052,16 @@ A 1:1 crop of Discover's bottom row showed the two counts side by side and only 
 | downloads | `7.38M` | `7.20M` (the live API's own string) | unchanged |
 | Discover total | -- | 81 617 | **81 267** |
 
-`search::abbreviate` compacted at **1 000**; the reference's `formatCompactNumber` leaves anything under **ten thousand**
-grouped -- the same rule this build already had in `project::compact` for the versions table, which is why the two pages
-disagreed with each other as well as with the reference. The card now groups below ten thousand: `2,141` against the reference's
-`2,115`, differing in the last two digits only because the number is live and 26 followers arrived between the two captures.
+**The rule was already in the codebase and the card was not using it.** `search::thousands` exists for exactly this, and its own
+doc comment says a card "can show `5,023` next to `19.62M`" -- but the search hit built its follower string with `abbreviate`,
+which compacts at 1 000. One field, one wrong function.
+
+The first attempt changed `abbreviate` itself, which broke its own test (`1 000` -> `"1.0K"`) and would have made downloads
+grouped too. The test was right, the function was right, and the *call* was wrong -- so the fix is `followers: thousands(...)`
+and `abbreviate` untouched.
+
+The card now prints `2,141` against the reference's `2,115`, differing in the last two digits only because the number is live and
+26 followers arrived between the two captures.
 
 The download string is the search API's own (`7.20M` against the reference's `7.38M`), not a formatting choice, and is left alone:
 a live number that differs is not a parity defect, and rewriting it would be inventing data.
