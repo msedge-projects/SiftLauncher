@@ -139,6 +139,28 @@ impl Painter {
                         if top == 0 && std::env::var_os("SIFT_PIXEL_PROBE").is_some() {
                             let before = strip[0];
                             // printed after the mesh below by comparing the value next iteration
+                            if index == 4 {
+                                let (mut amin, mut amax) = (255u8, 0u8);
+                                let (mut x0, mut y0, mut x1, mut y1) = (f32::MAX, f32::MAX, f32::MIN, f32::MIN);
+                                for v in &mesh.vertices {
+                                    let a = v.color.a();
+                                    amin = amin.min(a);
+                                    amax = amax.max(a);
+                                    x0 = x0.min(v.pos.x);
+                                    x1 = x1.max(v.pos.x);
+                                    y0 = y0.min(v.pos.y);
+                                    y1 = y1.max(v.pos.y);
+                                }
+                                let bad = mesh
+                                    .vertices
+                                    .iter()
+                                    .filter(|v| !v.pos.x.is_finite() || !v.pos.y.is_finite())
+                                    .count();
+                                eprintln!(
+                                    "prim4 verts={} nonfinite={bad} alpha {amin}..{amax} bounds ({x0},{y0})-({x1},{y1})",
+                                    mesh.vertices.len()
+                                );
+                            }
                             if index < 7 {
                                 let v = &mesh.vertices[0];
                                 eprintln!(
@@ -165,6 +187,19 @@ impl Painter {
                                 &mesh.vertices[triangle[1] as usize],
                                 &mesh.vertices[triangle[2] as usize],
                             );
+                            // **A triangle with a non-finite corner is not filled.** One mesh in this build (the rail
+                            // tooltip on the Project page) carries four infinite vertices; the edge tests pass for
+                            // every pixel and the fill blacks the whole window. A triangle without finite corners has no
+                            // area and no colour to offer, so it is skipped rather than allowed to cover the frame.
+                            if !a.pos.x.is_finite()
+                                || !a.pos.y.is_finite()
+                                || !b.pos.x.is_finite()
+                                || !b.pos.y.is_finite()
+                                || !c.pos.x.is_finite()
+                                || !c.pos.y.is_finite()
+                            {
+                                continue;
+                            }
                             self.triangle(a, b, c, texture, [x0, y0, x1, y1], width, top, strip);
                         }
                     }

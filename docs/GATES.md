@@ -3702,3 +3702,41 @@ blend.
 
 This round produced no fix and no page number. It produced the identity of a culprit after eleven rounds of elimination -- and
 `SIFT_PIXEL_PROBE` now names the primitive and its colour, which is the tool that will finish it.
+### FIXED: one triangle with infinite corners was blacking the Project page (2026-11-08)
+
+Thirteen rounds after it started, the cause is known and the page draws:
+
+| probe | value |
+|---|---|
+| primitive 4 | a 5 729-vertex mesh, `Managed(0)` (the font atlas), alpha spanning 0..255 |
+| its bounds | **`(-inf,-inf) - (inf,inf)`** |
+| non-finite vertices | **4** |
+
+Four vertices with infinite coordinates form a triangle that has no area and no position. The edge tests used to decide whether a
+pixel is inside a triangle pass for **every** pixel when the corners are infinite, so the fill wrote that triangle\'s colour across the
+whole buffer -- which is why the chrome, the rail and the sidebar were black while the page content, drawn afterwards, was fine.
+
+**The fix is in the rasteriser, where it belongs:**
+
+```rust
+if !a.pos.x.is_finite() || !a.pos.y.is_finite()
+    || !b.pos.x.is_finite() || !b.pos.y.is_finite()
+    || !c.pos.x.is_finite() || !c.pos.y.is_finite() { continue; }
+```
+
+A triangle without finite corners has nothing to contribute, and a renderer that fills it is trusting geometry it has already
+proved impossible.
+
+| | before | after |
+|---|---|---|
+| the corner pixel | `(0,0,0)` | **`(22,24,28)`** -- the theme BG |
+| title bar | black | **`(39,41,46)`** -- its own fill |
+| the page | content only, on black | **chrome, rail, sidebar and content** |
+| Project page | unmeasurable | **222 886** (titlebar 4 011, rail 640, content 180 072, sidebar 38 163) |
+
+**The source of the infinity is not fixed.** Four vertices of one mesh are still infinite; the renderer now refuses to draw them. The
+next step is to find which layout produced them -- the mesh is a tooltip-shaped fade at the rail, and the likely path is a pill rect
+built from a label size that came out infinite. A guard at the renderer stops the symptom everywhere; the cause is still owed.
+
+The 222 886 is the first Project-page number this file has ever recorded and it is **not yet like-for-like** -- the two captures were
+taken minutes apart and the reference may not have loaded the same artwork. It is a floor, and it is written down as one.
