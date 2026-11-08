@@ -2618,8 +2618,9 @@ impl Shell {
     // **The tile's context menu**, as the reference has it. Three rows and a divider, opened by a right press on the
     // tile and anchored to the pointer: Play, the rule, View instance, Open folder (`QuickInstanceSwitcher.vue:254-288`).
     if let Some((id, at)) = self.rail_menu.clone() {
-        const MENU_W: f32 = 176.0;
-        const ROW_H: f32 = 32.0;
+        // The reference's menu measures ~183 wide with 36-point rows and a leading glyph on every row.
+        const MENU_W: f32 = 184.0;
+        const ROW_H: f32 = 36.0;
         let rows = 4usize;
         let menu = Rect::from_min_size(at, egui::vec2(MENU_W, ROW_H * rows as f32 + 8.0));
         painter.rect_filled(menu, 8.0, self.theme.RAISED_BG);
@@ -2630,6 +2631,12 @@ impl Shell {
             egui::StrokeKind::Inside,
         );
         let labels = ["Play", "", "View instance", "Open folder"];
+        let glyphs = [
+            Some(crate::icons::Glyph::Play),
+            None,
+            Some(crate::icons::Glyph::Eye),
+            Some(crate::icons::Glyph::FolderOpen),
+        ];
         let mut pressed: Option<usize> = None;
         for (index, label) in labels.iter().enumerate() {
             let y = menu.top() + 4.0 + index as f32 * ROW_H;
@@ -2646,12 +2653,24 @@ impl Shell {
             if hit.hovered() {
                 painter.rect_filled(row.shrink(4.0), 6.0, self.theme.SURFACE_4);
             }
+            let ink = if index == 0 { self.theme.BRAND } else { self.theme.CONTRAST };
+            if let Some(glyph) = glyphs[index] {
+                crate::icons::draw(
+                    painter,
+                    glyph,
+                    Rect::from_center_size(
+                        egui::pos2(row.left() + 22.0, row.center().y),
+                        Vec2::splat(16.0),
+                    ),
+                    ink,
+                );
+            }
             painter.text(
-                egui::pos2(row.left() + 12.0, row.center().y),
+                egui::pos2(row.left() + 40.0, row.center().y),
                 Align2::LEFT_CENTER,
                 *label,
-                crate::fonts::body(14.0),
-                if index == 0 { self.theme.BRAND } else { self.theme.BASE },
+                crate::fonts::label(16.0),
+                ink,
             );
             if hit.clicked() {
                 pressed = Some(index);

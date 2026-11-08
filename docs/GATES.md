@@ -2517,3 +2517,23 @@ that owns its anchor.
 
 Driven: a right press on the tile opens it over the page, and a press on **View instance** navigates -- the breadcrumb reads
 "Home / Fabric 26.3" afterwards. Row 500 in the ledger is closed with that evidence.
+### The rail menu, compared with the reference's own (2026-11-07)
+
+The reference's menu was opened the same way -- a right press on its instance tile, with X focus -- and the two put side by
+side at 1:1:
+
+| | reference | this build |
+|---|---|---|
+| rows | Play, rule, View instance, Open folder | the same |
+| leading glyphs | play, eye, folder | **the same**, drawn with `icons::draw` |
+| Play's ink | brand green | brand green |
+| width | ~183 | **184** |
+| row height | ~36 | **36** |
+
+**The first attempt at the glyphs changed nothing, and the reason was indentation.** The menu had been moved into its own
+method by stripping four spaces from every line, and the replacements were written against the indentation it used to have --
+so the string matches failed silently while the build succeeded. `grep` for the new identifiers said they were not in the file,
+which is the check that caught it. A patch that does not apply is not an error in this toolchain; it is a no-op.
+
+What still differs is the menu's fill: the reference's card is darker than `RAISED_BG`. That is one colour, measured next to
+the rest of the row rather than guessed now.
