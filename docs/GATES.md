@@ -2462,3 +2462,23 @@ Home: 36 886 to **36 262**.
 **The nudge itself is still not implemented**, and now it is a much smaller question: the handle exists, the list exists, and
 what remains is the arrow-key handler and the limit it changes -- `nudgeLimit(-1)` / `nudgeLimit(1)` against a clamp of
 zero to the instance count, with an overdrag flash at either end.
+### The switcher's Up/Down nudge, driven end to end (2026-11-07)
+
+`QuickInstanceSwitcher.vue:96-104` binds Up/Down on the divider to `nudgeLimit(-1)` / `nudgeLimit(1)`, clamped to zero and to
+the instance count, with an overdrag flash at either end. Driven on the running build with the handle clicked first:
+
+| key | rail |
+|---|---|
+| before any key | 1 instance tile (icon at 338..365) |
+| `Up` | **no tile** -- the limit went to zero |
+| `Down` | **the tile returns** |
+| `Down` again | the tile stays -- clamped at the instance count, which is what the reference's `clamp` does |
+
+**One implementation detail worth recording.** The first build read egui's own focus (`has_focus()`), and `Up` worked while
+`Down` then did nothing until the handle was clicked again: this window redraws only when something is in flight, and a focus
+flag that depends on frame-to-frame continuity was dropped between the two keys. The handle's focus is tracked explicitly now
+(`rail_handle_focused`), set by a press on it and cleared by a press anywhere else -- the same scope the reference gets from
+binding the keys to the div.
+
+That is the fourth time this session that a *renderer assumption* -- frames come when you ask, focus persists, a clip covers
+what you drew -- has been the thing that did not hold in a window that only paints when asked.

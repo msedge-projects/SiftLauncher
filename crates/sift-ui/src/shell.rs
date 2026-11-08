@@ -1051,6 +1051,13 @@ pub struct Shell {
     install: crate::install::Install,
     /// The instances on disk, read when the shell starts and when the rail returns to Home.
     instances: Vec<crate::data::Entry>,
+    /// How many instances the rail's switcher shows; `None` means "as many as fit", which is the reference's default.
+    /// The divider's Up/Down nudge writes `Some(n)` -- `QuickInstanceSwitcher.vue:96-104`, clamped to the instance count.
+    rail_shown: Option<usize>,
+    /// Whether the switcher's handle holds the keyboard. Tracked here rather than read from egui: this window redraws only
+    /// when something is in flight, and a focus flag that depends on frame-to-frame continuity was dropped after the first
+    /// keypress -- `Up` hid the instances and `Down` then did nothing until the handle was clicked again.
+    rail_handle_focused: bool,
     /// The Home page's own state: which row's kebab popover is open, and the `saves/` names
     /// it read. Kept here beside the other pages' states so the popover survives the frames
     /// that also draw the rail and the panel.
@@ -1155,6 +1162,8 @@ impl Default for Shell {
             icons: crate::images::Images::default(),
             game: crate::game::Game::default(),
             install: crate::install::Install::default(),
+            rail_shown: None,
+            rail_handle_focused: false,
             instances: crate::data::load().0,
             home: crate::pages::home::State::default(),
             open_project: None,
@@ -1973,7 +1982,8 @@ impl Shell {
             Stroke::new(1.0, self.theme.SURFACE_5),
         );
         let mut rail_opened: Option<String> = None;
-        for (index, entry) in self.instances.iter().take(3).enumerate() {
+        let shown = self.rail_shown.unwrap_or(3).min(self.instances.len());
+        for (index, entry) in self.instances.iter().take(shown).enumerate() {
             let tile = Rect::from_center_size(
                 egui::pos2(g::RAIL / 2.0, 352.0 + index as f32 * g::RAIL_PITCH),
                 Vec2::splat(40.0),
@@ -1993,6 +2003,36 @@ impl Shell {
         if let Some(id) = rail_opened {
             self.open_instance_page(&id);
             self.rail = Rail::Home;
+        }
+        // **The handle between the instances and the create button.** `QuickInstanceSwitcher.vue:343-344` binds Up/Down to
+        // this row: `nudgeLimit(-1)` and `nudgeLimit(1)`, clamped to zero and the instance count, with an overdrag flash at
+        // either end. It is focus-scoped in the reference too -- the keys are on the div, not on the window.
+        let handle = Rect::from_min_max(
+            egui::pos2(0.0, 380.0),
+            egui::pos2(g::RAIL, 398.0),
+        );
+        let handle_hit = ui.interact(handle, egui::Id::new("rail-switcher-handle"), Sense::click());
+        if handle_hit.clicked() {
+            self.rail_handle_focused = true;
+        } else if ui.input(|input| input.pointer.any_click())
+            && !ui.input(|input| input.pointer.hover_pos()).is_some_and(|at| handle.contains(at))
+        {
+            self.rail_handle_focused = false;
+        }
+        if self.rail_handle_focused {
+            let step = ui.input(|input| {
+                if input.key_pressed(egui::Key::ArrowUp) {
+                    Some(-1i64)
+                } else if input.key_pressed(egui::Key::ArrowDown) {
+                    Some(1i64)
+                } else {
+                    None
+                }
+            });
+            if let Some(delta) = step {
+                let current = self.rail_shown.unwrap_or(shown) as i64 + delta;
+                self.rail_shown = Some(current.clamp(0, self.instances.len() as i64) as usize);
+            }
         }
         painter.hline(
             (g::RAIL / 2.0 - 16.0)..=(g::RAIL / 2.0 + 16.0),
