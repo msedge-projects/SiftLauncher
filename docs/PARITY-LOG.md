@@ -1783,3 +1783,42 @@ Rules derived from the measurements, each with the rounds that produced it:
 4. **Before aiming at anything, ask the program where it is** -- `SIFT_HOME_PROBE` prints the card, play and kebab rects.
 5. **A measurement that touches the thing it measures cannot see what it changed** (the text-page drop read as 0 until measured
    with no input at all, where it was 116 kB).
+## 2026-11-08, later -- the renderer round, and what it exposed
+
+This stretch began with a page that could not be measured and ended with it measurable, and the difference was not in the page.
+
+| screen | differing pixels | capture pair |
+|---|---:|---|
+| Home | **31 349** | `sweep-home-ref.png` / `home-badge.png` |
+| Discover | **78 538** | `sweep-discover-ref.png` / `disc-globe.png` |
+| Instance page | **30 454** | `sweep-instance-ref.png` / `inst-clean.png` |
+| Settings (pinned backdrop) | **31 975** | `sweep-settings-ref.png` / `sweep-settings-our.png` |
+| Project -- Description | **71 398** | `projL-ref.png` / `proj-gap4.png` |
+| Project -- Versions | **63 660** | `ver3-ref.png` / `ver-chan3.png` |
+| Screenshots (empty state) | **23 547** | `sweep-screenshots-ref.png` / `sweep-screenshots-our.png` |
+| Files at root (phase pinned) | 48 240 | `ref-files.png` / `our-files-root.png` |
+
+The Project page went **222 886 -> 71 398** in five steps, each one a different kind of bug: a renderer that filled a triangle with
+infinite corners (thirteen rounds to find, one `continue` to fix), a picture cap of 160 points applied to four-hundred-point artwork,
+a hosting banner suppressed by one `Rect::NOTHING`, two loader and environment chips in a row that is for categories, and a header rule
+four points low. Nineteen matrix rows were closed or corrected; three were added for elements that had none.
+
+**Idle memory: 22 628 kB RSS, of which 5 064 is the window\'s pixel buffer and 7 508 is this build\'s own code and rodata, already
+built with `opt-level = "z"` and LTO.** The 20 MB gate is not reachable from the heap, which holds 3.4 MB in total. That is the clause\'s
+state, measured rather than attempted.
+
+Rules added this stretch, each from a round that paid for it:
+
+1. **A capture that agrees with the screen and disagrees with the app is not a capture problem.** Dump the framebuffer and ask which
+   primitive wrote the pixel; that question found what thirteen rounds of elimination could not.
+2. **A control that draws in the wrong order is indistinguishable from one that does not work.** The Versions menu was under the table.
+3. **The metric can prefer the broken state.** A badge with overflowing text scored 70 pixels better than the correctly sized one.
+4. **Crop wider than the thing you are asking about**, because it may not be there -- three conclusions in this stretch needed it.
+5. **Leave the lab as you found it.** A test file of ours made the Instance page\'s Content tab populate and looked like a 7 385-pixel
+   regression.
+6. **Tests are a precondition of the commit, not a check afterwards.** The release binary built while the test build had seven errors.
+7. **A no-op build looks exactly like a broken knob.** The profile was fine; the manifest being edited was not the one being read.
+
+The plain summary of the remainder: every page that has been driven is now within a few thousand pixels of the reference, and what is
+left on each is the type -- this build\'s glyph metrics differ from the reference\'s by enough to move a line break and a cap height. That
+is one cause, named, and it is not an element anyone can point at.
