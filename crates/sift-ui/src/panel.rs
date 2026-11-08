@@ -228,9 +228,12 @@ const TITLE_LINE: f32 = 20.0;
 // aligned with the reference's copy. Dropping this to 1 moved the copy to 557 and made the page 1 450 pixels worse: the
 // 8 here is compensating for a missing line, and the real defect is that our title's measure lets it fit where the
 // reference's wraps.
-// **10: the reference's copy starts at 566 and this build's at 564.** With the title drawn wrapped the gap no longer
-// compensates for anything -- it is the gap, measured, and the rows below it follow by the same two points.
-const TITLE_TO_COPY: f32 = 10.0;
+// **8, and the reference puts both at the same time.** Its copy starts at 566 and its card ends 26 above the hosting
+// banner; with 10 the copy starts at 566 (right) and the gap becomes 24 (wrong), because the card is two points taller
+// and the banner is pinned to the foot. 8 gives the gap its 26 and the copy at 564 -- two points high. Both cannot hold
+// with the current terms, so one of the others (the date line or `COPY_TO_DATE`) is wrong; the pinned gap is the one the
+// test guards and the one the reference states, so it wins until the third term is measured.
+const TITLE_TO_COPY: f32 = 8.0;
 
 /// The copy's size: 12 points, from the reference's measurement.
 const COPY_SIZE: f32 = 14.0;

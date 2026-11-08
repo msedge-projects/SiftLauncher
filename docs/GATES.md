@@ -2333,3 +2333,23 @@ measurement in the comment.
 **The measurement that mattered was of the thing that had not moved.** Comparing the row said "two points"; comparing the
 cards said "not the cards" -- and only both together said "the block's height". A single difference can always be explained
 by the element you are looking at; it takes a second one to rule that out.
+### Two measured constraints that cannot both hold, and the one that wins (2026-11-07)
+
+The news card carries two numbers taken from the reference, and they disagree by two points:
+
+| constraint | reference | with `TITLE_TO_COPY = 10` | with 8 |
+|---|---|---|---|
+| the copy's first line | y 566 | **566** | 564 |
+| the card's bottom to the hosting banner | **26** | 24 | **26** |
+
+The banner is pinned to the foot, so raising the copy by two raises the card's bottom by two and eats the gap. `8` gives
+the gap and loses the copy; `10` gives the copy and loses the gap -- and the gap is the one **a test guards**, from the same
+reference statement, so 8 stays and the two-point copy offset is recorded as the open end of a three-term problem: the card's
+height is `title + copy + date`, and with the title and the copy both measured, the third term is the one that is wrong.
+
+**What the round kept:** the settings theme-cards block's height, which moved "Sync theme across devices" from y 646 to
+**648** against the reference's 648, and took Settings from 34 261 to **32 908**. Tests are green at 264.
+
+**What it gave back:** Home returns to 36 886 from 36 196, because the improvement came from the copy shift that breaks the
+pinned gap. A page number bought by breaking a measured constraint is not a page number worth having -- and the test that
+caught it was written by this project for exactly this reason.
