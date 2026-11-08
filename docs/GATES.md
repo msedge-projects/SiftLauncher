@@ -3012,8 +3012,13 @@ no amount of reading the Rust found a second caller: there was no second caller.
 | | before | after |
 |---|---|---|
 | brand asset | 326x40 (wordmark + buttons + "Home") | **160x40** (wordmark) |
-| title bar, Discover | "Home" under the crumb | clean |
-| Discover total | 81 617 | **81 400** |
+| title bar, Discover | "Home" under the crumb | clean (verified by capture) |
+| Discover total | **not measured before** | 81 617 |
+
+**The aggregate was not measured for this fix, and the first version of this entry said it was.** The pre-crop Discover capture was
+overwritten by the post-crop one before the comparison was run, so the two images that remained were both *after* the change and
+differed by zero pixels -- which is what the tool reported, correctly, for two identical builds. The visual fix is verified by the
+capture; the number is not, and this entry says so rather than quoting one that was never taken.
 
 **A bitmap is a widget that cannot be grepped.** Every grep and probe was correct and every one of them was looking at the
 wrong layer; the app was drawing a picture of another app's controls.
