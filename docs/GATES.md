@@ -3541,3 +3541,31 @@ The rebuild was reverted (it moved nothing). The probes stayed: `SIFT_SCALE_PROB
 the resize result and the buffer length every frame, which is the whole chain from `inner_size` to `present` in one stream. **The
 next step is to read that stream on the frame where the navigation happens** rather than to test a fifth guess: something differs
 between the frame that draws Home correctly and the first frame of the project page, and the probe is already positioned to show it.
+### The project page paints its content and nothing else -- investigation paused (2026-11-08)
+
+One more measurement, and it changes the shape of the problem. Capturing our window directly (never resized, so no resize is
+involved) on the project page:
+
+| measured | value |
+|---|---|
+| window | 1440x900 at 0,0 |
+| content | the project page **only** -- header row, tabs, body |
+| missing | the title bar, the rail, the sidebar |
+| those regions | **pure black (0,0,0)** |
+
+So it is not "the UI is drawn small". The shell's chrome is **not painted at all** on that frame, and the page body is drawn at its
+normal coordinates over black. That is a different fault from the one four rounds were spent on, and it contradicts the
+instrumentation: the buffer is 1440x900, cleared to the window colour in every band, painted, and presented -- and the result has
+black exactly where the chrome should be.
+
+Two things were found while checking that contradiction, and both belong in the record:
+
+1. **There are two windows on `:100`**: `2097154 "Sift Launcher"` and `4194306 "floor"`, both 1440x900 at 0,0. `floor` is not this
+   build -- it is a leftover from an earlier session -- and a second full-screen window on a bare X server is exactly the kind of
+   thing that makes a screen capture show one client over another.
+2. The app already opens at **1440x900** (`geometry::WINDOW`), so the harness's `xdotool windowsize` calls were never needed and
+   have been dropped.
+
+**The investigation is paused, not closed.** The next step is to capture with `floor` destroyed and, if the frame is still
+chrome-less, to instrument `Shell::ui` to print whether the title bar and rail are being drawn on that frame. Everything else in this
+build renders correctly under the same capture path, so the scope is one page.
