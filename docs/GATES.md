@@ -3472,3 +3472,23 @@ deserves a round where it is the first thing touched.
 The `SIFT_RESIZE_PROBE` added this round prints `resized to ...` on every resize and is what proved the app *receives* and *acts on*
 those events, which is why the earlier "the app does not follow a resize" entry was wrong. Both entries stand, in order, with this
 one last -- the file is a log, not a claim.
+### A hypothesis, tested and disproved: the inset is not the two-scale mismatch (2026-11-08)
+
+`Soft::frame` built egui's `screen_rect` from `width / self.scale` while the tessellator used egui's own `pixels_per_point`. When
+those disagree by 1.125 the UI lays out at 1280x800 and is painted into the top-left of a 1440x900 buffer -- which is what the
+project page was showing, and 1.125 is a real X11 DPI step, so the explanation fitted.
+
+It was tried: `screen_rect` built from `ctx.pixels_per_point()`, one scale instead of two.
+
+| | Project page total |
+|---|---:|
+| before | 411 113 |
+| after the one-scale change | **411 113** |
+
+**Unchanged to the pixel, so the hypothesis is wrong and the change is reverted.** The fit was good -- 1/1.125, a plausible DPI
+value, a code path that could produce it -- and a good fit is not evidence. What survives from the attempt is the reproduction: a
+fresh instance draws Home correctly and the *first navigation to a project* produces a byte-identical inset frame every time.
+
+That reproduction is the thing to hand the next round: **it is deterministic**, it distinguishes a fresh instance from a navigated
+one, and it does not depend on resizes, dead clients or duplicate windows -- all three of which were eliminated before the
+reproduction was trusted.
