@@ -3765,3 +3765,27 @@ question, and it is a narrow one: one `Block::Image` draw, one rect, both sizes 
 **Also owed**: the four infinite vertices are still in that mesh -- the renderer now refuses to draw them, which is correct and
 universal, but the layout that produced them is unfound. It is invisible in every capture, so it is now a robustness debt rather
 than a symptom.
+### Pictures are not icons: the project body was a thumbnail (2026-11-08)
+
+The 22nd image in this file was capped at 160 points because **icons** cost 38 MB of RSS when they were uploaded whole. That cap was
+applied to every image, so the Project page\'s body picture -- four hundred points wide in the reference -- was drawn at about a
+hundred. One constant, two kinds of picture, one of them a quarter of its size.
+
+| | before | after |
+|---|---:|---:|
+| Project page | 222 886 | **90 727** |
+| its content | 180 072 | **47 913** |
+
+**132 159 pixels from one number.** The change: `fetch` takes the cap as a parameter, `MAX_ICON` stays 160 for icons, `MAX_PICTURE` is
+1024 for the body and the gallery, and `get_picture` files under `url#1024` so an icon and a picture of the same URL are two textures
+rather than one shared compromise.
+
+**A defect the first attempt introduced, and the second fixed**: the fetch replied under the bare URL while the lookup asked for
+`url#1024`, so the picture vanished entirely and the page measured *worse* (241 162). The reply has to ride back under the same key it
+is filed under -- a two-line rule that cost a build to learn because the failure was silent: `get_picture` simply returned `None`
+forever, exactly as it would while loading.
+
+**And a caveat this change carries**: 1024-point pictures are the largest textures this build has ever held, and the idle-RSS gate is
+already missed. The cache keeps pictures and icons in one pool with a byte budget, so the next measurement should be RSS on this page
+with a picture loaded, against the 22.6 MB baseline. A picture that costs the memory clause would be the wrong trade, and it is worth
+knowing which side of it this lands on.

@@ -203,12 +203,25 @@ impl Images {
     ///
     /// `None` while loading and after a failure, deliberately: a card does not care *why*
     /// it has no picture, only that it has none, and both cases draw the same placeholder.
-    pub fn get(&mut self, ctx: &egui::Context, url: &str) -> Option<TextureHandle> {
-        self.pump(ctx);
+    /// **A picture, at its own size.** Same cache, same channel, a different key and a larger cap: `#picture` cannot collide
+/// with a URL, and an icon and a picture of the same URL are genuinely different textures.
+pub fn get_picture(&mut self, ctx: &egui::Context, url: &str) -> Option<TextureHandle> {
+    self.get_capped(ctx, url, MAX_PICTURE)
+}
+
+pub fn get(&mut self, ctx: &egui::Context, url: &str) -> Option<TextureHandle> {
+    self.get_capped(ctx, url, MAX_ICON)
+}
+
+/// The one fetch path, with the cap that decides how big a texture may be. Icons and pictures share the cache and the
+/// channel and differ only in this number and in the key they are filed under.
+fn get_capped(&mut self, ctx: &egui::Context, url: &str, cap: u32) -> Option<TextureHandle> {
+    let key = if cap == MAX_ICON { url.to_owned() } else { format!("{url}#{cap}") };
+    self.pump(ctx);
         self.tick += 1;
         let tick = self.tick;
 
-        match self.entries.get_mut(url) {
+        match self.entries.get_mut(&key) {
             Some(Entry::Ready(texture, last, _)) => {
                 // A hit is a use: the entry the reader keeps looking at is the last to go.
                 *last = tick;
@@ -219,23 +232,25 @@ impl Images {
         }
 
         let url_owned = url.to_owned();
-        let reply = url_owned.clone();
+        // **The reply rides back under the cache key, not the URL.** A picture is filed as `url#1024`; replying with the bare
+        // URL put its texture where nothing looked for it, and the picture never appeared.
+        let reply = key.clone();
         let sender = self.sender.clone();
         let spawned = std::thread::Builder::new()
             .name("sift-icon".to_owned())
             .spawn(move || {
-                let image = fetch(&url_owned);
+                let image = fetch(&url_owned, cap);
                 // A closed receiver means the window is gone; dropping the result is right.
                 let _ = sender.send((reply, image));
             });
         if spawned.is_ok() {
             self.inflight += 1;
-            self.entries.insert(url.to_owned(), Entry::Loading);
+            self.entries.insert(key.clone(), Entry::Loading);
             // Keep the frame loop alive while the fetch is out, or the reply would sit in
             // the channel until something else happened to ask for a repaint.
             ctx.request_repaint();
         } else {
-            self.entries.insert(url.to_owned(), Entry::Failed);
+            self.entries.insert(key.clone(), Entry::Failed);
         }
         None
     }
@@ -278,7 +293,14 @@ impl Images {
 }
 
 /// Find and decode one icon. Runs on a worker thread.
-fn fetch(url: &str) -> Result<ColorImage, String> {
+/// The most any icon in the product is drawn at, with headroom.
+pub const MAX_ICON: u32 = 160;
+
+/// **A picture is not an icon.** The project body and the gallery draw at four hundred points and more; the 160-point icon
+/// cap existed to stop a Discover visit costing 38 MB, and applying it to pictures made every one of them a thumbnail.
+pub const MAX_PICTURE: u32 = 1024;
+
+fn fetch(url: &str, max_side: u32) -> Result<ColorImage, String> {
     // A temporary file rather than an in-memory read: `download_file` streams to disk, which
     // is the launcher's own client and keeps a large icon off this thread's stack. The file
     // is removed whatever happens.
@@ -297,9 +319,8 @@ fn fetch(url: &str) -> Result<ColorImage, String> {
     // 1024 points and this build uploaded them whole: one Discover visit cost **38 MB of RSS** (24.0 -> 62.1 MiB) and
     // gave none of it back, because ninety-six entries of that size sit under the cache's 64 MiB budget and nothing is
     // ever evicted. No icon in the product is drawn larger than 132 points, so 160 is the most any of them can need.
-    const MAX_ICON: u32 = 160;
-    let decoded = if decoded.width().max(decoded.height()) > MAX_ICON {
-        decoded.resize(MAX_ICON, MAX_ICON, image::imageops::FilterType::Triangle)
+    let decoded = if decoded.width().max(decoded.height()) > max_side {
+        decoded.resize(max_side, max_side, image::imageops::FilterType::Triangle)
     } else {
         decoded
     };

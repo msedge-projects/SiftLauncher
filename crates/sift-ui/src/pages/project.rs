@@ -1535,7 +1535,7 @@ fn description(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, image
         };
         if let Some(url) = picture {
             let size = images
-                .get(ui.ctx(), url)
+                .get_picture(ui.ctx(), url)
                 .map(|texture| texture.size_vec2())
                 .unwrap_or(Vec2::ZERO);
             let size = if size.x > inner.width() {
@@ -1629,7 +1629,7 @@ fn description(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, image
                     let mut height = 0.0_f32;
                     for (url, size) in pictures {
                         let rect = Rect::from_min_size(egui::pos2(x, y), *size);
-                        if let Some(texture) = images.get(ctx, url) {
+                        if let Some(texture) = images.get_picture(ctx, url) {
                             painter.image(
                                 texture.id(),
                                 rect,
@@ -2181,7 +2181,7 @@ fn gallery(
                 probe_rows.push((format!("gallery {index}"), item));
                 probe_rows.push((format!("gallery-picture {index}"), picture));
                 let clipped = painter.with_clip_rect(picture);
-                match images.get(ui.ctx(), &image.url) {
+                match images.get_picture(ui.ctx(), &image.url) {
                     Some(texture) => {
                         let uv = cover_uv(texture.size_vec2(), picture.size());
                         clipped.image(texture.id(), picture, uv, Color32::WHITE);
@@ -2293,7 +2293,7 @@ fn viewer(
         egui::pos2(page.right() - 48.0, page.bottom() - 96.0),
     );
     let mut picture = box_rect;
-    if let Some(texture) = images.get(ui.ctx(), &image.url) {
+    if let Some(texture) = images.get_picture(ui.ctx(), &image.url) {
         let size = texture.size_vec2();
         let scale = (box_rect.width() / size.x).min(box_rect.height() / size.y);
         picture = Rect::from_center_size(box_rect.center(), size * scale);
