@@ -3812,3 +3812,20 @@ watch which of anon/file/shmem holds the 9 MB (Pss_Anon went 5 800 -> 13 080, so
 **The memory clause is still missed and now measured from a second direction**: 22.6 MB idle was already above the 20 MB gate, and a
 page visit adds 9 MB that outlives the page. Both belong to the same fix -- evicting what a page built when the page goes -- and neither
 is solved by making pictures smaller.
+### On the Project page the sidebar stops before the hosting ad (2026-11-08)
+
+Band analysis of the Project page\'s 90 727 puts the worst bands at the **bottom**, and a 1:1 crop says why:
+
+| | sidebar at y 820..900 |
+|---|---|
+| reference | **the hosting ad\'s art** -- the Minecraft characters on their green floor |
+| ours | plain background |
+
+The panel draws the banner (it is there on Home), and on this page it draws `Getting started` and `Compatibility` and then stops. The
+page passes a `locked` game version, so the sidebar takes a different stack -- and the banner is not at the end of it.
+
+**Bands 840 and 865 are 9 700 of the 90 727 between them**, which is most of a seventh of the page in a single missing card. The fix is
+to draw the banner after whichever stack the page asked for; the measurement to hold it to is those two bands.
+
+Recorded rather than fixed: the round had already measured the picture cap against memory and eliminated it as the cause of the 9 MB,
+and a layout change to the sidebar deserves a round where it is the first thing touched.
