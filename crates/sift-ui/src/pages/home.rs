@@ -1107,15 +1107,19 @@ fn list(
                 );
             }
             None => {
-                // An instance with no icon still shows *something*: the reference draws its cube in the tile's
-                // colour, and a flat grey square read as a missing image rather than a placeholder.
-                painter.rect_filled(tile, 10.0, theme.BUTTON_BG);
+                // **The default art, then the cube.** An instance with no `icon.png` shows Modrinth's own default tile in
+                // the reference -- the same campfire its rail button and library card carry -- and this drew the grey cube
+                // instead, so the strip's icon was the one place the art never appeared. The cube is still the fallback for
+                // a build with no texture at all.
+                if !crate::serverart::paint_instance_default(&painter, tile) {
+                    painter.rect_filled(tile, 10.0, theme.BUTTON_BG);
                 crate::icons::draw(
                     &painter,
                     Glyph::Cube,
                     Rect::from_center_size(tile.center(), Vec2::splat(tile.height() * 0.55)),
                     theme.SECONDARY,
                 );
+                }
             }
         }
         let name = painter.text(

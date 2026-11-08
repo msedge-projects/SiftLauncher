@@ -2672,3 +2672,18 @@ again, this time with a number rather than an impression.
 
 The methodology lesson is the one this file keeps relearning: **a measurement that touches the thing it measures cannot see
 what it changed.** Two rounds ago the same mistake produced a confident "no effect" from a change that had one.
+### The jump-in strip drew a grey cube where the reference draws the instance art (2026-11-07)
+
+Row 27 asked about the strip's *position*; it is above the Library heading in both, and the comparison of the two crops found
+something else instead:
+
+| | reference | before | after |
+|---|---|---|---|
+| strip icon | the instance's own art (the campfire tile) | a **grey cube glyph** | the art |
+
+The strip looks for the instance's `icon.png` (`<instance>/icon.png`, then `<instance>/minecraft/icon.png`) and, finding
+none, drew its placeholder cube. The reference falls back to **Modrinth's own default tile** -- the same art its rail button
+and library card carry -- so the strip was the one place in the window where an instance had no picture.
+
+The fallback order is now `icon.png` -> `serverart::paint_instance_default` -> the cube, which is the order the rail tile
+already used. The cube stays for a build with no texture at all; it is no longer what a reader sees first.
