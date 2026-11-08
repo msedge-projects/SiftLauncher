@@ -3789,3 +3789,26 @@ forever, exactly as it would while loading.
 already missed. The cache keeps pictures and icons in one pool with a byte budget, so the next measurement should be RSS on this page
 with a picture loaded, against the 22.6 MB baseline. A picture that costs the memory clause would be the wrong trade, and it is worth
 knowing which side of it this lands on.
+### The picture cap is not what costs the memory (2026-11-08)
+
+The caveat written last round was measured, and it is not the picture:
+
+| configuration | Project page | RSS on the page | RSS after returning Home |
+|---|---:|---:|---:|
+| `MAX_PICTURE = 1024` | 90 727 | 31 508 kB | **31 556 kB** |
+| `MAX_PICTURE = 640` | **90 727** | 31 724 kB | -- |
+
+Two results, both useful:
+
+1. **640 draws the page exactly as well as 1024** -- the number is identical to the pixel, which is what a cap above the reference\'s
+   470-point picture should do. The cap is 640 now, with the measurement in its comment.
+2. **The memory is the same either way**, so it is not the texture. Visiting the Project page costs about **9 MB that never comes back**
+   (30.8 MB idle against the 22.6 MB baseline), and `trim_heap()` already runs at the end of every `pump()`.
+
+So the growth is elsewhere: the long body text\'s galleys, the body JSON, or egui\'s own caches -- all of which are per-page state that
+nothing evicts when the page closes. That is a **new, named memory question** with a clean experiment: visit the page, leave it, and
+watch which of anon/file/shmem holds the 9 MB (Pss_Anon went 5 800 -> 13 080, so it is anonymous and it is ours).
+
+**The memory clause is still missed and now measured from a second direction**: 22.6 MB idle was already above the 20 MB gate, and a
+page visit adds 9 MB that outlives the page. Both belong to the same fix -- evicting what a page built when the page goes -- and neither
+is solved by making pictures smaller.

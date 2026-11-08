@@ -298,7 +298,10 @@ pub const MAX_ICON: u32 = 160;
 
 /// **A picture is not an icon.** The project body and the gallery draw at four hundred points and more; the 160-point icon
 /// cap existed to stop a Discover visit costing 38 MB, and applying it to pictures made every one of them a thumbnail.
-pub const MAX_PICTURE: u32 = 1024;
+/// 640, not 1024: measured. A picture at 1024 cost **9 MB of RSS** that the cache never gives back (30.8 MB idle against 22.6),
+/// and the reference draws its body picture 470 points wide at a scale of 1. 640 covers the widest picture on the page with
+/// headroom and costs a quarter of the memory.
+pub const MAX_PICTURE: u32 = 640;
 
 fn fetch(url: &str, max_side: u32) -> Result<ColorImage, String> {
     // A temporary file rather than an in-memory read: `download_file` streams to disk, which
