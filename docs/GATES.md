@@ -2440,3 +2440,25 @@ stand-in for an impossible measurement.
 **Newly open, with its citation:** the divider's Up/Down nudge. `QuickInstanceSwitcher.vue:343-344` binds it to the drag
 handle, which resizes how many quick instances show; this build draws the divider (`shell.rs:1987`) and handles no arrow keys
 at all.
+### The rail's instance section was missing entirely (2026-11-07)
+
+Reading `QuickInstanceSwitcher.vue` for its Up/Down nudge turned up the reason the nudge had nothing to act on: **this build
+drew no instance list in the rail at all.** The reference's rail is three sections, and the capture shows them plainly:
+
+| | reference | before | now |
+|---|---|---|---|
+| rule 1 | y 316 | y 320 | **y 316** |
+| instance tile | icon at 339..366 | **absent** | **icon at 338..365** |
+| rule 2 | y 389 | **absent** | **y 389** |
+| create button | below both rules | straight after the first | below both |
+| rail, differing pixels | -- | 1 024 | **400** |
+
+The tile draws the instance's own art (`serverart::paint_instance_default`), lifts to `BUTTON_BG` under the pointer, and a press
+opens that instance through the same `open_instance_page` every other navigation uses. Up to three are drawn, which is the
+switcher's own visible limit before its drag handle takes over.
+
+Home: 36 886 to **36 262**.
+
+**The nudge itself is still not implemented**, and now it is a much smaller question: the handle exists, the list exists, and
+what remains is the arrow-key handler and the limit it changes -- `nudgeLimit(-1)` / `nudgeLimit(1)` against a clamp of
+zero to the instance count, with an overdrag flash at either end.

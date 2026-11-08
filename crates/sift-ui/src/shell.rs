@@ -1962,9 +1962,41 @@ impl Shell {
         // in the reference it is a NavButton with a \`+\` after Hosting.
         // The switcher's own rule: `h-px w-8 bg-surface-5` immediately above the create
         // button. The capture puts a 32 px line of #42444a at y 320, centred in the rail.
+        // **The switcher's instance list lives between two rules.** `QuickInstanceSwitcher.vue` draws the rail's five
+        // pages, a rule, the instances (a drag handle between them resizes how many show), a second rule, and the create
+        // button -- and the reference's capture puts the rules at y 316 and 389 with a 28-point instance icon between them
+        // at 339..366. This build drew one rule at 320 and the create button straight after it: the rail's whole instance
+        // section was missing, which is why the divider's Up/Down nudge had nothing to act on.
         painter.hline(
             (g::RAIL / 2.0 - 16.0)..=(g::RAIL / 2.0 + 16.0),
-            320.0,
+            316.0,
+            Stroke::new(1.0, self.theme.SURFACE_5),
+        );
+        let mut rail_opened: Option<String> = None;
+        for (index, entry) in self.instances.iter().take(3).enumerate() {
+            let tile = Rect::from_center_size(
+                egui::pos2(g::RAIL / 2.0, 352.0 + index as f32 * g::RAIL_PITCH),
+                Vec2::splat(40.0),
+            );
+            let hit = ui.interact(tile, egui::Id::new(("rail-instance", index)), Sense::click());
+            if hit.hovered() {
+                painter.circle_filled(tile.center(), 20.0, self.theme.BUTTON_BG);
+            }
+            let art = Rect::from_center_size(tile.center(), Vec2::splat(28.0));
+            if !crate::serverart::paint_instance_default(painter, art) {
+                painter.rect_filled(art, 6, self.theme.BRAND);
+            }
+            if hit.clicked() {
+                rail_opened = Some(entry.id.clone());
+            }
+        }
+        if let Some(id) = rail_opened {
+            self.open_instance_page(&id);
+            self.rail = Rail::Home;
+        }
+        painter.hline(
+            (g::RAIL / 2.0 - 16.0)..=(g::RAIL / 2.0 + 16.0),
+            389.0,
             Stroke::new(1.0, self.theme.SURFACE_5),
         );
 
@@ -1977,10 +2009,9 @@ impl Shell {
         let create = Rect::from_min_size(
             egui::pos2(
                 g::RAIL_PAD,
-                g::TITLE_BAR
-                    + g::RAIL_FIRST
-                    + Rail::ALL.len() as f32 * g::RAIL_PITCH
-                    + RAIL_CREATE_DROP,
+                // Below the second rule at 389, which is the reference's own arithmetic: its create icon's centre is 25
+                // points under it.
+                414.0,
             ),
             Vec2::splat(g::RAIL_BUTTON),
         );
