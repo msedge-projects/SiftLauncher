@@ -3492,3 +3492,33 @@ fresh instance draws Home correctly and the *first navigation to a project* prod
 That reproduction is the thing to hand the next round: **it is deterministic**, it distinguishes a fresh instance from a navigated
 one, and it does not depend on resizes, dead clients or duplicate windows -- all three of which were eliminated before the
 reproduction was trusted.
+### The inset is in the window, and the app does not know about it (2026-11-08)
+
+The scale hypothesis was wrong. The probe settles what the app believes:
+
+```
+frame inner=PhysicalSize { width: 1440, height: 900 } scale=1 ppp=1     (119 frames, every one identical)
+```
+
+So egui lays out at **1440x900 logical with a 1:1 pixel ratio** -- there is no 1.125 anywhere in the app's view of the world. Yet:
+
+| measured | value |
+|---|---|
+| window geometry | 1440x900 |
+| `import -window <id>` size | 1440x900 |
+| content inside it | 1280x800, top-left |
+| the remaining 160 columns and 100 rows | **(0, 0, 0) -- pure black**, not the background colour |
+
+Pure black is the decisive detail. The rasteriser clears **every pixel** of every band with `self.clear` before painting, so a
+region it had painted would be the window background, never black. A black region was never written at all -- which puts the fault
+in **presentation**, not in layout: the app paints a 1440x900 frame and something transfers only 1280x800 of it.
+
+1280x800 is exactly the size winit creates the window at on X11 with no window manager. So the shape of the fault is: the surface
+was created for the launch size, `surface.resize(1440, 900)` is called every frame, and the presented region stays at the size the
+surface was born with.
+
+**Why Home looked fine and the project page does not is still open** -- both are the same window, same surface, same resize call.
+That is the next measurement, and it is now a narrow one: instrument the surface's reported size and the present call's effect, on
+the frame where the navigation happens.
+
+`SIFT_SCALE_PROBE` stays: it is what turned three guesses into one fact.
