@@ -1918,3 +1918,33 @@ above that all have to move together, and the news card's art changed height thi
 the block sits low.
 
 Both numbers are now in the record so the next pass starts from them rather than from `CATEGORY_ROW` alone.
+### Correction: the category pitch was never reverted, and restoring it improved the page (2026-11-07)
+
+**The record was wrong and the tree said so.** An earlier entry claims the pitch change was "reverted"; commit `4f91b32`
+carried it into the tree, and the "revert" that followed (`1735e25`) only changed this document. The probe that exposed it
+printed `category_row=32.0` from the running build while the record said 46.
+
+Three states were measured on the same reference capture:
+
+| state | Discover total | sidebar |
+|---|---:|---:|
+| 32-point pitch, old placement | 82 234 | 16 398 |
+| 32-point pitch, placement tuned (heading +29, gap 43) | 83 870 | 18 048 |
+| **46-point pitch, old placement (restored)** | **79 897** | **14 075** |
+
+So the reference's pitch is **32** -- measured twice, its labels' ink bands start at 410, 442, 474, 506 -- and adopting it
+*costs* 3 000 pixels, because the block above it is misplaced: with the pitch at 32, eight rows are drawn where six were, and
+all eight sit a few points off where the reference puts them. More correctly-pitched rows that are misplaced differ from
+more pixels than fewer rows that drift.
+
+**The coordinated fix, with every number now measured:**
+
+| | reference | this build | change needed |
+|---|---|---|---|
+| "Category" heading ink | y 367 | 338 | **+29** |
+| first category label | y 410 | 389 | **+21** |
+| gap, heading to first row | 43 | 51 | **-8** |
+| pitch | 32 | 46 | **-14** |
+
+The tree is restored to the 46-point state, which is the best measurement on record for this page even though it is not the
+reference's value -- and the four numbers above are what the next attempt needs to land together.
