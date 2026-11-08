@@ -3165,3 +3165,28 @@ as wrong, which no list-body difference can explain. It is the next thing to mea
 The reference's `...` did not open a menu on a press at its measured position, so **what that cell does is still unknown** -- and
 this build's two-press delete is therefore a design of its own, not a copy. That is recorded as a divergence rather than
 claimed as parity.
+### The sidebar anomaly was the news carousel (2026-11-08)
+
+Last round recorded the Files page's sidebar at **36 752** against 16 787 on Home and called it an anomaly no list-body difference
+could explain. Band analysis put every band in 348..473 at ~6 000 differing pixels -- 85% of the area, not an edge or a glyph --
+and a 1:1 crop of the two sidebars showed why immediately:
+
+| | article shown |
+|---|---|
+| reference | **"Joining your server just got easier"** |
+| ours, default | **"Sync settings across instances"** |
+
+Both carsels rotate -- this file has said so since the slides were added -- so the two captures caught different phases of a
+moving card. Pinning ours to the reference's slide (`SIFT_NEWS_SLIDE=1`):
+
+| | unpinned | pinned |
+|---|---:|---:|
+| sidebar | 36 752 | **16 787** |
+| Files tab total | 68 763 | **48 798** |
+
+**The whole anomaly was a state mismatch**, and it is the same mistake this file has recorded twice before: two clients compared
+while showing different things. What is new is that the number was large enough to look like a layout bug and specific enough to
+band-analyse -- which is the cheapest way to find out that a card has two articles rather than a broken one.
+
+The Files tab's remaining 48 798 still holds the reference's `config` against our `mods`, so it is a floor rather than a
+like-for-like figure until both are looking at the same folder.
