@@ -4838,7 +4838,10 @@ fn draw_body(
                         state.consumed = true;
                     }
                 }
-                height + ROW_GAP
+                // **Two points longer than the cards themselves.** The reference's "Sync theme across devices" row starts at
+                // y 648 and this build's at 646, while the cards above it are identical -- the white Light card occupies
+                // x 532..942, y 232..398 in both. So the two points are in the block's own accounting, not in a card.
+                height + ROW_GAP + 2.0
             }
             Block::Admonition { text: words } => {
                 // `Admonition.vue:4`: `rounded-2xl border p-4`, and the warning variant is

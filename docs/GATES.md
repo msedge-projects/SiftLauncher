@@ -2307,3 +2307,29 @@ against the reference's 653..665, and its description with it -- which says the 
 rather than the row being misplaced. Two probes for the card's own edges returned nothing (the colour predicates were wrong),
 and a constant changed without that measurement would be the kind of guess this file has spent the week removing, so it waits
 for a probe that works.
+### The two points were in the block's accounting, and the probe found them (2026-11-07)
+
+Last round left the "Sync theme across devices" row two points high and said it needed a probe. There was already one:
+`SIFT_SETTINGS_PROBE` prints every block's y. With it:
+
+| block | this build | reference |
+|---|---:|---:|
+| "Color theme" heading | y 226 | -- |
+| theme cards | y 291 | -- |
+| **"Sync theme across devices"** | **y 646** | **y 648** |
+| "Advanced rendering" | y 771 | -- |
+
+And the cards themselves are identical -- the white Light card occupies x 532..942, y 232..398 in **both** captures. So the
+row was not misplaced and the cards were not short: the *block* reported a height two points smaller than the space it
+actually occupies, and everything after it inherited that. `height + ROW_GAP` became `height + ROW_GAP + 2.0`, with the
+measurement in the comment.
+
+| | before | now | reference |
+|---|---|---|---|
+| sync title ink | 651..663 | **653..665** | 653..665 |
+| Settings (pinned) | 34 261 | **32 908** | -- |
+| its content pane | 30 379 | **29 026** | -- |
+
+**The measurement that mattered was of the thing that had not moved.** Comparing the row said "two points"; comparing the
+cards said "not the cards" -- and only both together said "the block's height". A single difference can always be explained
+by the element you are looking at; it takes a second one to rule that out.
