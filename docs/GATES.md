@@ -3307,3 +3307,27 @@ more accurately.
 2. Verifying the second pass with `awk -F'|'` reported 11 fields for a 9-column row -- **also** because of the escapes. The
    check had to be done with the same parser that wrote the file, which is the general form of a rule this session keeps
    meeting: an instrument that does not understand the data will happily confirm anything.
+### Four VERIFIED rows driven to DONE, and a correction to last round's row count (2026-11-08)
+
+The audit left 46 rows that were read but never driven. Four were driven this round, and one of them -- the breadcrumb -- had
+never been pressed at all:
+
+| row | what was driven | result |
+|---|---|---|
+| 532 | the card's kebab pressed twice | Play/Edit/Duplicate instance/Open folder opens; a second press closes it (**9 092 -> 922** pixels in the panel's area) |
+| 544 | a file dropped with the Files root showing, then with `mods/` showing | `minecraft/drop-test.jar`, then `minecraft/mods/drop-test.jar` |
+| 557 | the `mods` row pressed inside the Files tab | it opens: `minecraft / mods /` and the file it holds |
+| 558 | **the `minecraft` crumb pressed from inside `mods/`** | returns to the root, which draws the Home button and the `mods` row |
+
+| | before | after |
+|---|---:|---:|
+| DONE | 90 | **94** |
+| VERIFIED | 46 | **42** |
+
+**And a correction.** Last round recorded "679 element rows". Counting the status cell showed 16 of those rows are table headers
+and separators -- `status`, `---` -- which have nine cells because of the legend at the top of the file. The element rows are
+**663**, and every count in that entry should read 16 lower. The four numbers that matter are unaffected: DONE, VERIFIED, OPEN and
+BLOCKED are all counted from rows whose status is one of those words.
+
+The lesson is the same one the escaped pipes taught, one step further in: **a parser that counts rows is not a parser that
+understands them.** The header check was in the data all along and only appeared when a status tally was asked for by name.
