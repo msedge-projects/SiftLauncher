@@ -3919,3 +3919,22 @@ six names that are not: fabric, forge, neoforge, quilt, client, server.
 **The filter is a name list, and that is a weakness worth stating**: a new loader or environment name would reappear in the header
 until it is added here. The right fix is to carry the hit\'s `display_categories` separately from its tags, which the API provides and
 this build\'s search document does not yet keep. The name list is what today\'s data allows.
+### A regression that was my own test file (2026-11-08)
+
+A fresh five-page sweep, both clients driven in one script, put the Instance page at **37 839** against 30 479 earlier -- a rise of
+7 385 that looked like a regression from the day\'s changes. It was not:
+
+| | Instance page |
+|---|---:|
+| with `mods/a.jar` left from the file-management rounds | 37 839 |
+| after deleting it | **30 454** |
+
+Our Content tab lists what is in `mods/`, and the reference\'s has nothing in it, so a test file created four rounds earlier turned an
+empty state into a populated one. The tabs and the empty state themselves were never at fault.
+
+**This is the fourth state mismatch this session** -- after the Settings rail\'s tab count, the news carousel\'s phase and the Files
+panel\'s folder depth -- and the first caused by this project\'s own testing rather than by the two clients differing. The rule needs
+one clause more than it had: **leave the lab as you found it.** A file written to prove a behaviour is evidence while the round runs and
+contamination afterwards.
+
+The sweep itself is the useful artefact: five pages captured from both clients in one pass, so the numbers share a state and a moment.

@@ -7,14 +7,15 @@ clients in the same state, with a capture behind every claim.
 
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
-| Home | **31 049** | `ji-ref.png` vs `ji-our25.png` (1:1, pointer parked at 700,30) | type: both headings are now the reference's sizes, and the rest is glyph coverage |
-| Discover | **81 267** | `ref-discover.png` vs `disc-final.png` | card icons and their artwork; the type is the rasteriser |
-| Instance page | **30 479** | `inst-ref.png` vs `inst-our4.png` | the tabs and the empty state match; the type is the rasteriser |
-| Settings | **32 252** | `set2-ref.png` vs `set2-our.png` (**pinned backdrop**: both captured over Home) | the theme cards and the type |
-| Skins | not comparable | `ref-skins.png` vs `ours-skins-b.png` | the reference's capture has no saved skins and no search row; the two are in different states |
-| Screenshots | not measured | -- | needs a fresh capture in the same state |
-| Servers | not comparable | `ref-servers.png` | the reference refuses its own page: "Modrinth App update required" |
-
+| Home | **31 279** | `sweep-home-ref.png` vs `sweep-home-our.png` (one pass, both clients) | type: the rasteriser |
+| Discover | **78 759** | `sweep-discover-*.png` | card icons and their artwork |
+| Screenshots | **23 547** | `sweep-screenshots-*.png` (both empty -- the only state the reference can be shown) | the empty state\'s illustration is larger here |
+| Instance page | **30 454** | `sweep-instance-ref.png` vs `inst-clean.png` (**mods/ emptied first**: a test file of ours had made the Content tab populate) | type |
+| Settings | **31 975** | `sweep-settings-*.png` (pinned backdrop) | the theme cards and the type |
+| Project page | **71 380** | `projL-ref.png` vs `proj-chips.png` | the header\'s control widths and the body\'s type |
+| Files (root, phase pinned) | **48 240** | `ref-files.png` vs `our-files-root.png` | the row data differs (its `config`, our `mods`) |
+| Skins | not comparable | `ref-skins.png` vs `ours-skins-b.png` | different states |
+| Servers | not comparable | `ref-servers.png` | the reference refuses its own page |
 **Home, by threshold**: 31 049 at 40, and the gradient below it is in `GATES.md`. The 3.6% global type scale was measured as a
 wash and reverted; what moved the number since was **geometry and standalone type**, not a knob:
 
