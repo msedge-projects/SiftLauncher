@@ -46,6 +46,7 @@ pub enum Page {
 impl Page {
     /// The name the reference prints beside the breadcrumb.
     pub fn title(self) -> &'static str {
+        if std::env::var_os("SIFT_TITLE_PROBE").is_some() { eprintln!("page title {:?}", self); }
         match self {
             Page::Home => "Home",
             Page::Discover => "Discover modpacks",

@@ -65,6 +65,7 @@ impl Rail {
 
     /// The name the rail's tooltip shows on hover, which is shorter than the page title.
     pub fn short(self) -> &'static str {
+        if std::env::var_os("SIFT_TITLE_PROBE").is_some() { eprintln!("short {:?}", self); }
         match self {
             Rail::Discover => "Discover",
             // The reference's tooltip and heading both say `Skin selector`.
@@ -1691,7 +1692,11 @@ impl Shell {
         // painted fallback below was still being drawn underneath it, which put "Sift Launcher" set in Inter on top of a
         // bitmap of the reference's wordmark -- unreadable as either. The capture is what caught it; no measurement had,
         // because both elements were "present" and only their overlap was wrong.
-        let plate = Rect::from_min_size(egui::pos2(6.0, 4.0), egui::vec2(326.0, 40.0));
+        // **160 wide, not 326.** The bitmap was a raw crop of the reference's title bar, so it carried not just the
+        // wordmark (x 6..156) but the nav buttons (169..234) and the next crumb, "Home" (253..320) -- stretched into the
+        // plate those drew a second "Home" underneath the one the shell paints, on every page. The asset is cropped to the
+        // wordmark and the plate matches it.
+        let plate = Rect::from_min_size(egui::pos2(6.0, 4.0), egui::vec2(160.0, 40.0));
         if !crate::serverart::paint_brand(painter, plate) {
             let mark = Rect::from_min_size(
                 egui::pos2(12.0, (g::TITLE_BAR - 28.0) / 2.0),

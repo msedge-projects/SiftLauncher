@@ -2994,3 +2994,26 @@ position. The `SIFT_CRUMB_PROBE` stays in the build for that next step.
 **Not fixed this round**, and recorded with the crop and the colour test rather than a guess: the round had already banked the
 instance page's 3 441 pixels, and this is a two-caller problem that deserves its own measurement rather than the end of a long
 round.
+### The second "Home" was inside a bitmap (2026-11-07)
+
+Four hypotheses were ruled out last round by measurement. This round ruled out two more and then found it:
+
+| test | result |
+|---|---|
+| a probe in `Rail::short` and in `Page::title` | `short Discover` (the rail tooltip) -- and **no "Home" at all** |
+| suppress the crumb entirely (`SIFT_NO_CRUMB`) | **"Home" stayed** -- not the crumb |
+| scan `assets/brand/titlebar-brand.png` for content | **runs at 6..156 (wordmark), 169..234 (nav buttons), 253..320 ("Home")** |
+
+The brand plate is a **raw 326x40 crop of the reference's title bar**, stretched over `Rect(6, 4, 326, 40)`. It therefore
+carried not only the "modrinth" wordmark but the two nav buttons and the beginning of the reference's own breadcrumb -- the word
+"Home" -- and drew them under everything the shell paints. The bitmap was **reproducing a neighbouring widget**, which is why
+no amount of reading the Rust found a second caller: there was no second caller.
+
+| | before | after |
+|---|---|---|
+| brand asset | 326x40 (wordmark + buttons + "Home") | **160x40** (wordmark) |
+| title bar, Discover | "Home" under the crumb | clean |
+| Discover total | 81 617 | **81 400** |
+
+**A bitmap is a widget that cannot be grepped.** Every grep and probe was correct and every one of them was looking at the
+wrong layer; the app was drawing a picture of another app's controls.
