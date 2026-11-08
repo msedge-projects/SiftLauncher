@@ -92,6 +92,14 @@ impl Soft {
             return;
         };
         let size = window.inner_size();
+        if std::env::var_os("SIFT_SCALE_PROBE").is_some() {
+            eprintln!(
+                "frame inner={:?} scale={} ppp={}",
+                size,
+                self.scale,
+                self.ctx.pixels_per_point(),
+            );
+        }
         let (width, height) = (size.width as usize, size.height as usize);
         if width == 0 || height == 0 {
             return;
@@ -162,13 +170,21 @@ impl Soft {
         self.painter.apply(&output.textures_delta);
         let primitives = self.ctx.tessellate(output.shapes, output.pixels_per_point);
 
-        surface
-            .resize(
-                NonZeroU32::new(size.width.max(1)).unwrap(),
-                NonZeroU32::new(size.height.max(1)).unwrap(),
-            )
-            .ok();
+        let resized = surface.resize(
+            NonZeroU32::new(size.width.max(1)).unwrap(),
+            NonZeroU32::new(size.height.max(1)).unwrap(),
+        );
+        if std::env::var_os("SIFT_SCALE_PROBE").is_some() {
+            match &resized {
+                Ok(()) => eprintln!("resize ok {width}x{height}"),
+                Err(error) => eprintln!("resize FAILED {width}x{height}: {error}"),
+            }
+        }
+        let _ = resized;
         if let Ok(mut buffer) = surface.buffer_mut() {
+            if std::env::var_os("SIFT_SCALE_PROBE").is_some() {
+                eprintln!("buffer len={} expect={}", buffer.len(), width * height);
+            }
             // **Into the presentable buffer, not a pixmap that is then copied.** That is the 4.94 MiB this backend saves
             // over the spike, and the reason the launcher can sit under the gate where a pixmap-based path cannot.
             let paint_started = Instant::now();

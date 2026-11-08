@@ -3522,3 +3522,22 @@ That is the next measurement, and it is now a narrow one: instrument the surface
 the frame where the navigation happens.
 
 `SIFT_SCALE_PROBE` stays: it is what turned three guesses into one fact.
+### Three mechanisms eliminated; the inset is none of them (2026-11-08)
+
+The deterministic reproduction was used to test each candidate mechanism in turn, and every one came back negative:
+
+| hypothesis | instrument | result |
+|---|---|---|
+| the two scales disagree | `SIFT_SCALE_PROBE` | **all 119 frames**: `inner=1440x900 scale=1 ppp=1` -- no 1.125 anywhere |
+| `surface.resize` fails silently | probe the `Result` | **105 of 105**: `resize ok 1440x900` |
+| the buffer is the old size | print `buffer.len()` | **1 296 000 = 1440x900** -- the full buffer, cleared and painted |
+| `present()` presents the birth size | rebuild the surface on any size change | **unchanged**: still inset after a rebuild |
+
+So: the app lays out full, the surface accepts the new size, the buffer is the new size, the rasteriser clears and paints all of it,
+and the window still shows content in 1280x800 with **black** beyond. Each of the four was a plausible, code-visible mechanism and
+each was disproved by one line of instrumentation.
+
+The rebuild was reverted (it moved nothing). The probes stayed: `SIFT_SCALE_PROBE` now prints the size, the scale, the pixel ratio,
+the resize result and the buffer length every frame, which is the whole chain from `inner_size` to `present` in one stream. **The
+next step is to read that stream on the frame where the navigation happens** rather than to test a fifth guess: something differs
+between the frame that draws Home correctly and the first frame of the project page, and the probe is already positioned to show it.
