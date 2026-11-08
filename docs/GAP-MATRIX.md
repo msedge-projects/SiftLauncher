@@ -874,6 +874,30 @@ grep -E '^\| *[0-9]+ *\|' docs/GAP-MATRIX.md \
 
 **Treat 625 rows / 466 OPEN / 90 DONE / 15 VERIFIED / 19 OPEN-WITH-CAUSE as the numbers, dated 2026-11-01, and the other two sets as history.**
 
+**RE-COUNTED 2026-11-07, with the same command, and its output is the table below.** The numbers moved by 23 DONE and 7 OPEN
+since 2026-11-01, and not all of that is one session's work: rows are closed in the working tree, fixed in code and left
+saying OPEN, and this document records audits rather than the current state of the tree.
+
+| status | rows | change since 2026-11-01 |
+|---|---:|---|
+| OPEN | **459** | -7 |
+| DONE | **113** | +23 |
+| VERIFIED | 21 | +6 |
+| OPEN-WITH-CAUSE | 20 | +1 |
+| RENDERER-RISK | 15 | 0 |
+| NOT-IN-SOURCE | 12 | 0 |
+| BLOCKED-SERVICE | 8 | 0 |
+| **counted rows** | **648** | -- |
+
+The counted rows are 648 rather than the 625 this section has carried since 2026-11-01, because 23 rows that were written
+across several tables now match the script's `^\| N \|` filter; the closure sentences added to rows this week keep their
+row's shape and do not change the count. The 722 lines matching the row pattern include the document's own tables -- the
+priorities above, the counts themselves -- which the `NF>=10` filter excludes.
+
+**Of the 23 DONE rows added since 2026-11-01, six were closed with a drive or a measurement written into the row this week**
+(4, 5, 11, 19, 94, 96) and the rest are the tree having moved under the document. Both are the same problem stated two ways:
+a row is only as current as the last person who read it against the code.
+
 | priority | rows | share |
 |---|---:|---:|
 | P0 | 155 | 24.8% |
