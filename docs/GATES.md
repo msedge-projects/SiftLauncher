@@ -2416,3 +2416,27 @@ to leave a test named as though the reference had them.
 **Two harness facts fell out of this and belong in the recipe:** a window must be focused with `xdotool windowfocus` before
 any key, and the reference dims and blurs its whole window until its webview is focused, so a blurred capture is the sign
 that a keystroke will be ignored rather than evidence about the app.
+### The rail shortcuts are gone, because the reference never had them (2026-11-07)
+
+Reading the reference's source instead of probing keys one at a time, its whole keyboard surface is three things:
+
+| where | what |
+|---|---|
+| `WelcomeScreen.vue:53-73` | `n` with no modifier, on the welcome screen only -- quick create |
+| `QuickInstanceSwitcher.vue:343-344` | **Up/Down on the drag divider**, focus-scoped: `nudgeLimit(-1)` / `nudgeLimit(1)` |
+| `apps/app/src/macos/menu.rs:42-45` | `CmdOrCtrl+Z` / `CmdOrCtrl+Shift+Z`, macOS menu items only |
+
+There is no rail shortcut anywhere, which matches the driven result: `Ctrl+2` on the running reference stays on Home with X
+focus confirmed and a click inside the window.
+
+**So `Ctrl+1`..`Ctrl+5` are removed** -- the method, its call site, and its test (72 lines). The breadcrumb after `Ctrl+2` now
+reads "Home", as the reference's does, and `Escape` still closes the Settings modal (plate (39,41,46) to (22,24,28)).
+Tests: **263**, one fewer, all green.
+
+**A stale claim went with it.** The Escape test's comment said *"keys cannot be driven through X in this container"* -- true of
+the harness, not the container: no window held X focus. That test now says what it is: a guard on the handler's logic, not a
+stand-in for an impossible measurement.
+
+**Newly open, with its citation:** the divider's Up/Down nudge. `QuickInstanceSwitcher.vue:343-344` binds it to the drag
+handle, which resizes how many quick instances show; this build draws the divider (`shell.rs:1987`) and handles no arrow keys
+at all.
