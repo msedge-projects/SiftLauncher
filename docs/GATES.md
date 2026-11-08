@@ -4173,3 +4173,23 @@ rather than the twenty-two rounds that suggested it.
 
 The lesson is the one this file keeps earning: **a no-op build looks exactly like a broken knob**, and the difference is one `grep` in the
 manifest the build actually reads. I recorded a defect in the tooling that was a defect in my reading of it.
+### The three-point offset was load-bearing (2026-11-08)
+
+Row 626 says the page\'s content starts low. It does: first ink at **y 77** against the reference\'s **74**. The inset was raised by
+three points to match, and then:
+
+| | first ink | Project page |
+|---|---:|---:|
+| as it was | 77 | **71 398** |
+| raised 3 points | **74** | 80 122 |
+| reverted | 77 | 71 398 |
+
+**Aligning the top cost 8 742 pixels.** The offset was compensating: this build\'s vertical rhythm below the header -- its foot, the tab
+strip, the card\'s top -- is three points different from the reference\'s, so lifting the whole column moved every element below it *away*
+from where the reference has it while putting the first line where it belongs.
+
+That is exactly the kind of coincidence a pixel total rewards and an element-by-element reading punishes, and it is why the change is
+reverted **with a comment in the code saying so**: the next person to notice the three points should not have to measure it twice.
+
+Row 626 is upgraded from `OPEN` to `OPEN-WITH-CAUSE`: the gap is real, the cause is the rhythm below the header rather than the inset,
+and the fix is to correct that rhythm -- after which the inset returns to 24 and both the first ink and the page agree.

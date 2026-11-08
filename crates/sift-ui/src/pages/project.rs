@@ -828,6 +828,10 @@ pub fn draw(
     //
     // The bottom is the window's own edge: the reference's page scrolls, and its card is cut by
     // the window rather than stopping 24 points above it (ref-project.png y 890 is still card).
+    // **The three-point offset is deliberate, and the reason is measured.** Raising the column by 3 puts the page\'s
+    // first ink at y 74, exactly the reference\'s -- and takes the page from 71 380 to **80 122**, because the rhythm
+    // below the header (its foot, the tab strip, the card\'s top) is 3 points different from the reference\'s. The
+    // offset was compensating for that; aligning the top without fixing the rhythm moves every element below it.
     let column = Rect::from_min_max(
         egui::pos2(rect.left(), rect.top() + PAGE_PADDING),
         egui::pos2(rect.right(), rect.bottom()),
