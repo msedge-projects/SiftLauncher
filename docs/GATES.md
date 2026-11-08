@@ -4118,3 +4118,27 @@ escape-aware parser -- it has written a broken table once before by splitting on
 
 FINISHED\'s table carries the session\'s latest figures: Home 31 349, Discover 78 538, Project 71 380 and its Versions tab 63 692, with
 Instance 30 454, Settings 31 975, Screenshots 23 547 and Files 48 240 unchanged.
+### The memory gate, measured from the other end (2026-11-08)
+
+Twenty-two rounds of trimming allocations have not moved `idle RSS` under 20 MB, so this round asked where the memory *is*, per mapping:
+
+| mapping | resident |
+|---|---:|
+| `/dev/shm/softbuffer-x11-*` -- the window\'s pixel buffer | **5 064 kB** |
+| the binary\'s text and data | **7 508 kB** |
+| `[heap]` | 3 368 kB |
+| `libc.so.6` | 1 280 kB |
+| **total** | **22 628 kB** |
+
+**Two thirds of the gate is structural.** Five megabytes are the buffer a software-presented 1440x900 window cannot do without, and
+seven and a half are this build\'s own code and read-only data (`size`: **text 10.65 MB**, data 500 kB). The heap -- the only part the
+allocation work could reach -- is 3.4 MB.
+
+The obvious lever is therefore code size, and it does not move: `opt-level` was changed from `3` to `"s"` in the workspace manifest, the
+change confirmed present in the container, `src/main.rs` touched to force it -- and the binary came back **byte-identical**
+(`11160049`), twice. **The profile setting does not reach this build**, which is a finding about the build rather than about memory, and
+the change is reverted so the deliberate `opt-level = 3` and its reasoning stay as they were.
+
+So the clause\'s honest state: **22.6 MB, of which 5.0 is the framebuffer and 7.5 is our own image; the gate needs 2.6 MB and the heap has
+3.4 MB in total.** Reaching 20 MB means either a smaller binary (a build-system question this round could not even get a rebuild out of)
+or a window buffer that is not a full screen of pixels (a renderer question already recorded as RENDERER-RISK).
