@@ -190,6 +190,9 @@ impl Soft {
             let paint_started = Instant::now();
             self.painter
                 .paint(&primitives, width, height, &mut buffer);
+            if std::env::var_os("SIFT_PIXEL_PROBE").is_some() {
+                eprintln!("after paint: p0={:#010x} len={}", buffer[0], buffer.len());
+            }
             let painted = paint_started.elapsed();
             let present_started = Instant::now();
             // **The frame as the app sees it, before the X server does.** `SIFT_DUMP_FRAME` writes the buffer to

@@ -129,10 +129,20 @@ impl Painter {
                     for pixel in strip.iter_mut() {
                         *pixel = clear;
                     }
-                    for clipped in primitives {
+                    if top == 0 && std::env::var_os("SIFT_PIXEL_PROBE").is_some() {
+                        eprintln!("after clear: p0={:#010x} clear={:#010x}", strip[0], clear);
+                    }
+                    for (index, clipped) in primitives.iter().enumerate() {
                         let egui::epaint::Primitive::Mesh(mesh) = &clipped.primitive else {
                             continue;
                         };
+                        if top == 0 && std::env::var_os("SIFT_PIXEL_PROBE").is_some() {
+                            let before = strip[0];
+                            // printed after the mesh below by comparing the value next iteration
+                            if before == 0 && index < 40 {
+                                eprintln!("primitive {index} left p0=0 clip={:?} verts={}", clipped.clip_rect, mesh.vertices.len());
+                            }
+                        }
                         let texture = self.textures.get(&mesh.texture_id);
                         let clip = clipped.clip_rect;
                         let x0 = (clip.min.x.round().max(0.0) as usize).min(width);

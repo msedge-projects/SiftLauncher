@@ -3646,3 +3646,32 @@ painting, the clear is not touching this buffer at all.
 **A caveat on my own instrument**: the PPM writer stores `(pixel & 0xff), (pixel >> 8), (pixel >> 16)`, which is `B,G,R` written
 into an `R,G,B` file. Black is black either way, which is why the finding above stands, but no colour judgement should be made from
 that dump until the order is fixed.
+### The corner is blacked by primitive 5, a full-window rounded rect (2026-11-08)
+
+Two probes, one frame apart, and the search is over a single draw call:
+
+```
+after clear:  p0=0x0016181c clear=0x0016181c     <- the theme BG, as it should be
+after paint:  p0=0x00000000 len=1296000          <- painted over, opaquely black
+primitive 5 left p0=0 clip=[[0,0] - [1440,900]] verts=88
+```
+
+So the rasteriser clears correctly, and **primitive 5 -- a rounded rectangle covering the entire window -- paints the corner opaque
+black**. Everything else on the page is painted after it, which is why the project content is bright and the chrome, the rail and the
+sidebar are not: they are under it.
+
+The vertex count is the clue. 88 vertices for one rect is what egui's tessellator produces for a **rounded** rect, and a plain
+`rect_filled(window, 0.0, ...)` is four (primitive 6 is exactly that). So it is a full-window rect with a corner radius and an
+opaque black fill -- and the one candidate this file has already found is the gallery viewer's scrim:
+
+```rust
+painter.rect_filled(page, 0, Color32::from_black_alpha(216));   // project.rs:2290
+```
+
+Two things about it are wrong for what we see, and both are worth testing next: `from_black_alpha` should be **blended**, not
+opaque (our painter may not blend mesh vertex colours at all, which would make a 216-alpha scrim paint solid black), and `page`
+should be the content column, not the whole window.
+
+**Next measurement**: print primitive 5's first vertex colour and its `feather`/radius, and print whether `state.viewer` is `Some`
+on that frame. Both are one `eprintln` in code that already exists, and one of them names the culprit outright -- the scrim's colour
+or the viewer\'s state.
