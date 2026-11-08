@@ -3829,3 +3829,25 @@ to draw the banner after whichever stack the page asked for; the measurement to 
 
 Recorded rather than fixed: the round had already measured the picture cap against memory and eliminated it as the cause of the 9 MB,
 and a layout change to the sidebar deserves a round where it is the first thing touched.
+### The Project page\'s sidebar has no banner at all -- correcting my own first reading (2026-11-08)
+
+The first crop of the bottom band suggested the banner was there but missing its illustration. A 1:1 crop of the whole foot says
+otherwise:
+
+| sidebar x 1130..1440, y 640..900 | reference | ours |
+|---|---|---|
+| "modrinth hosting" mark and wordmark | drawn | **absent** |
+| "Get your next server on Modrinth." | drawn | **absent** |
+| the character art | drawn | **absent** |
+| the dark green ground | drawn | **absent** -- plain background |
+
+So the banner is not drawn on this page at all, ground included -- and `panel::draw` draws it unconditionally at
+`rect.bottom() - 250`. Either the panel is called with a rect whose bottom is above the visible foot, or the project page does not go
+through `panel::draw` and the `Compatibility` block it shows comes from somewhere else.
+
+**The distinction matters and it cost one crop to get right**: "the banner is drawn but its picture is missing" and "the banner is not
+drawn" are different bugs in different files, and the first reading would have sent the next round to the asset loader instead of the
+layout.
+
+That is the third time this session a conclusion has needed a second look at a bigger crop -- the brand plate, the checkbox, and now
+this. The rule holds: **crop wider than the thing you are asking about, because the thing you are asking about may not be there.**
