@@ -2103,16 +2103,33 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
 }
 
 /// A run of `TagItem` chips, one row, clipped to the column they are given.
+/// The mark a loader carries in a table row, by the name the API gives it. An unknown loader gets none rather than a
+/// wrong one, which is the same rule the category rows follow.
+fn loader_glyph(name: &str) -> Option<crate::icons::Glyph> {
+    use crate::icons::Glyph;
+    match name.to_lowercase().as_str() {
+        "fabric" => Some(Glyph::TagLoaderFabric),
+        "forge" => Some(Glyph::TagLoaderForge),
+        _ => None,
+    }
+}
+
 fn chip_run(painter: &egui::Painter, column: Rect, theme: &Theme, labels: &[String]) {
     let painter = painter.with_clip_rect(column);
     let mut x = column.left();
     for label in labels {
+        // **The reference\'s platform chip is a name, not an id.** It reads `Fabric`, capitalised, with the loader\'s
+        // own mark; this column printed the API\'s `fabric` bare, which reads as a filter value rather than a platform.
+        let pretty = match label.chars().next() {
+            Some(first) => first.to_uppercase().collect::<String>() + &label[first.len_utf8()..],
+            None => label.clone(),
+        };
         let chip = tag_rect(
             &painter,
             egui::pos2(x, column.center().y - TAG_HEIGHT / 2.0),
             theme,
-            label.as_str(),
-            None,
+            pretty.as_str(),
+            loader_glyph(label),
         );
         x = chip.right() + TAG_GAP;
         if x > column.right() {

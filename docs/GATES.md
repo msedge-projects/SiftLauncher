@@ -3958,3 +3958,31 @@ The cheap check that catches all five is the same one every time: **capture both
 cannot tell you they are comparing different things; the pictures can, and they take one look.
 
 The 198 109 is struck out and not carried anywhere. The Versions tab of both clients is still unmeasured.
+### The Versions tab, measured at last -- and its structure differs more than its type (2026-11-08)
+
+Two rounds after a void measurement, both clients are verifiably on the same tab:
+
+| | value |
+|---|---:|
+| Versions tab | **63 429** (title bar 4 011, rail 640, content 38 992, sidebar 19 786) |
+
+The title bar, rail and sidebar are identical to the Description tab\'s, which is how both captures were confirmed to be the same page
+before the number was taken. The differences are then all in the tab body, and they are **structural before they are typographic**:
+
+| | reference | ours |
+|---|---|---|
+| filter row | **two dropdowns** -- `Channel` (with a filter mark) and `Game version` | **four chips** -- Release, Beta, Alpha, fabric |
+| channel | a circled **`B`** in the channel\'s own colour | a bare coloured dot |
+| platform | **`Fabric`** with the loader\'s mark | `fabric`, lowercase, no mark |
+| published | `last wk.` | `1w ago` |
+| column starts | Game version 315, Platform 530 | 300, 515 |
+
+**The platform cell was fixed this round** -- capitalised, with `TagLoaderFabric`/`TagLoaderForge` beside it, and no mark for a loader
+that has none (NeoForge and Quilt have no glyph in this build\'s icon set, and a wrong mark is worse than none).
+
+The measurement **rose by 494 pixels** (63 429 -> 63 923). The fix is right and the number is worse, which happens when an element
+becomes more correct and slightly larger: the chip is a little wider than the reference\'s, and the remaining filter-row difference is
+1 200 pixels of dropdowns that are not there. Both are recorded rather than explained away.
+
+**The filter row is the largest single item left on this page**: four chips where the reference has two dropdowns. It is a component
+that does not exist yet -- a select -- rather than a measurement to adjust.
