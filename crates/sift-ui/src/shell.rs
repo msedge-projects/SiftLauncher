@@ -3258,7 +3258,12 @@ impl Shell {
             });
         // The reference draws a second pager under the results, so a reader at the last card can turn
         // the page without scrolling back to the top.
-        self.draw_pager(ui, list.right(), list.bottom() - 20.0, "bottom");
+        // **One pager, at the top.** The reference draws its page numbers in the sort row -- "1 2 … 961" beside "View:
+        // 20" -- and nowhere else. This drew a second, sticky one 20 points above the list's floor, which could be seen
+        // sitting on top of the last card: a 24-point band across the content's foot where the reference shows the card's
+        // own fill (49,51,57) and this build showed the page under a pager (39,41,46).
+        //
+        // The call is removed rather than hidden: the page count above already carries the same information.
         // The open popover, last, so it covers the list rather than the other way round. Its
         // items are interacted here too: an item registered before the cards would lose the
         // click to whichever card overlaps it.

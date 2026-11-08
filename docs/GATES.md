@@ -1996,3 +1996,25 @@ looks like, and why the tint was convincing: it was right in the middle of the c
 does not reach a threshold of 40, so the aggregate metric cannot see it. The element-level measurement above can, and the
 rule is now the reference's own value at every sample. Stating this explicitly is the point: the aggregate is an instrument
 with a blind spot for exactly the kind of defect a 1-pixel rule is.
+### A second pager was sitting on top of the last card (2026-11-07)
+
+Found by the instrument the sidebar rule needed: a scan that compares points which are **flat in both images**, so it sees
+tone and material rather than edges. 1 542 such points agreed on one thing -- a 24-point band across the content's foot at
+y 848..872 where the reference reads (49,51,57) and this build read (39,41,46).
+
+A crop answered in one look what the numbers could not: the reference's last card is complete, and this build's had a
+**second pager row drawn over it**. `draw_pager` had two call sites -- one in the sort row, which is where the reference puts
+its "1 2 ... 961", and one 20 points above the list's floor, which the reference does not have at all. Removed, and the
+content area went from **62 265 to 61 977**.
+
+**And the band it was found through is still there**, which is the more useful finding: at (200,860) the reference still reads
+(49,51,57) and this build (39,41,46). The pager was the visible symptom of a longer list:
+
+| | reference | this build |
+|---|---|---|
+| last row with card fill, x 150..300 | y 889 (the window edge) | y 875 |
+| last row with card fill, x 600..1100 | y 889 | y 846 |
+
+The reference's list is cut by the window; this build's ends early, and **unevenly across columns** -- 875 on the left card
+column, 846 on the right two. That is a clipping or a card-height difference, not a pager, and it is the next thing this
+instrument points at.
