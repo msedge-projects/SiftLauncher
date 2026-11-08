@@ -3851,3 +3851,26 @@ layout.
 
 That is the third time this session a conclusion has needed a second look at a bigger crop -- the brand plate, the checkbox, and now
 this. The rule holds: **crop wider than the thing you are asking about, because the thing you are asking about may not be there.**
+### Why the Project page has no banner: `shared = Rect::NOTHING` (2026-11-08)
+
+The cause is one line in `shell.rs`\'s `right_panel`:
+
+```rust
+if let Some(project) = self.open_project.clone() {
+    let used = crate::pages::project::panel(ui, block, &self.theme, &project);
+    // "the reference hides the default sidebar on a project page"
+    shared = Rect::NOTHING;          // <- and with it, the hosting banner
+}
+```
+
+The reference does hide its **default stack** on a project page -- `Getting started` and `News` are replaced by the project\'s own
+column -- but **the banner is not part of that stack**. Its project page shows the project column *and* the hosting banner at the foot,
+which the capture confirms. Setting `shared` to `NOTHING` suppressed both.
+
+The fix is to draw the banner from both paths, which means lifting it out of `panel::draw` into its own function. The block is about a
+hundred lines and needs four things from its caller -- `ui`, `rect`, `theme` and the `banner_top` it derives -- so it is a clean
+extraction, and it is not one to start with ten minutes left in a round.
+
+**Recorded with the plan, not just the symptom**: extract `panel::hosting_banner(ui, rect, theme)`, call it at the end of
+`panel::draw`, and call it from `right_panel`\'s project branch after `project::panel`. The measurement that judges it is bands 840 and
+865 -- 9 700 pixels between them -- against the Project page\'s current 90 727.
