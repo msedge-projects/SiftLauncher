@@ -3619,3 +3619,30 @@ display accumulated state that no amount of client restarting clears -- and ever
 
 The probes stay (`SIFT_SCALE_PROBE` now covers resize, buffer length and present; `SIFT_CHROME_PROBE` covers the ui rect, the
 background and the title bar). They are the reason this is a contradiction with numbers rather than a suspicion.
+### The fault is in drawing, not presenting -- and a fresh X server proves it is deterministic (2026-11-08)
+
+Two results this round, and the first is the one that matters:
+
+**1. A fresh display reproduces it byte for byte.** `Xvfb :100` was killed, its stale socket removed and a new server started; one
+instance ran, navigated, and captured `ead9a382...` -- **identical** to the capture taken before the server was replaced. The inset is
+a function of the app, not of accumulated display state. Every "the display is lying" hypothesis is now dead.
+
+**2. The app's own framebuffer is black where the chrome should be.** `SIFT_DUMP_FRAME` writes the buffer to a PPM *after painting and
+before `present()`*. Its first bytes are `\0\0\0` over a long run, so the pixels the window shows as black are black **in the buffer
+the app painted** -- the present path is innocent, which is the opposite of where the last round left the search.
+
+That contradicts two things this file already recorded, and both are worth stating plainly:
+
+| recorded | now measured |
+|---|---|
+| the painter clears every pixel to the theme BG (`#16181C`) | the buffer\'s corner is `(0,0,0)` |
+| `title_bar` is called on every frame, with `ui rect` 1440x900 | its pixels are not in the buffer |
+
+So either the clear and the background rect are not reaching this buffer, or they are reaching a different one. The next measurement
+is one line: print `buffer.len()` **and the value of pixel 0 after the clear and before painting**, on the same frame that is dumped.
+If pixel 0 is the BG before painting and black after, something in the primitive loop writes black over it; if it is black before
+painting, the clear is not touching this buffer at all.
+
+**A caveat on my own instrument**: the PPM writer stores `(pixel & 0xff), (pixel >> 8), (pixel >> 16)`, which is `B,G,R` written
+into an `R,G,B` file. Black is black either way, which is why the finding above stands, but no colour judgement should be made from
+that dump until the order is fixed.

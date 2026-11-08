@@ -192,6 +192,21 @@ impl Soft {
                 .paint(&primitives, width, height, &mut buffer);
             let painted = paint_started.elapsed();
             let present_started = Instant::now();
+            // **The frame as the app sees it, before the X server does.** `SIFT_DUMP_FRAME` writes the buffer to
+            // `/tmp/frame.ppm`, which settles whether a wrong picture is a drawing fault or a presenting one.
+            if let Some(path) = std::env::var_os("SIFT_DUMP_FRAME") {
+                use std::io::Write as _;
+                if let Ok(mut file) = std::fs::File::create(&path) {
+                    let _ = write!(file, "P6\n{width} {height}\n255\n");
+                    let mut bytes = Vec::with_capacity(width * height * 3);
+                    for pixel in buffer.iter() {
+                        bytes.push((pixel & 0xff) as u8);
+                        bytes.push(((pixel >> 8) & 0xff) as u8);
+                        bytes.push(((pixel >> 16) & 0xff) as u8);
+                    }
+                    let _ = file.write_all(&bytes);
+                }
+            }
             let presented_result = buffer.present();
             if std::env::var_os("SIFT_SCALE_PROBE").is_some() {
                 match &presented_result {
