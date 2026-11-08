@@ -4049,3 +4049,20 @@ trigger rects are hoisted out of the block that draws them so the menu can find 
 
 That is worth writing down twice: **a control that draws in the wrong order is indistinguishable from a control that does not work**
 -- and only pressing it tells you which. The same lesson as the checkbox three hundred rounds ago, in a different part of the frame.
+### The environment chip drew a monitor where the reference draws a globe (2026-11-08)
+
+Every card on Discover carries one environment chip -- `Client and server` -- and this build drew it with `Glyph::Monitor` where the
+reference has a **globe**. One glyph, twenty cards, and a band analysis that could only say "spread evenly down the page" until the
+cards were cropped and compared.
+
+| | before | after |
+|---|---:|---:|
+| Discover | 78 759 | **78 538** |
+
+A 221-pixel change, which is what twenty small glyphs are worth. **The band analysis was the wrong instrument for this one**: it put
+the worst bands at 740, 715, 190, 415 and 265 -- five bands of similar size -- which is what a *repeated* difference looks like on a page
+of repeated cards. The crop of two cards settled it in one look.
+
+**What is left on Discover is text, not decisions**: our summary truncates a word earlier than the reference\'s on the same line, and our
+chip labels sit a few points apart. Both are the rasteriser\'s metrics, which this file has recorded as the remaining cause on every page
+it has measured. That is the honest summary of Discover: **no known element-level faults left, and a page whose remainder is type.**

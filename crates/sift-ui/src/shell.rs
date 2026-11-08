@@ -3470,7 +3470,10 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
                                     (false, false) => "",
                                 }
                                 .to_owned(),
-                                crate::icons::Glyph::Monitor,
+                                // A globe, not a monitor: the reference\'s environment chip carries the world mark for
+                                // "Client and server", a monitor only as a fallback this build never drew. One glyph,
+                                // every card on Discover.
+                                crate::icons::Glyph::Globe,
                             ))
                             .filter(|(label, _)| !label.is_empty())
                             .chain(tags_in_display_order(&hit.all_categories))
