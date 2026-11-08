@@ -1567,14 +1567,18 @@ fn list(
             action = Action::Open(instance.id.clone());
         }
 
-        // The play button, right-aligned: the reference's green pill on every instance card.
-        painter.rect_filled(play, 8, theme.BUTTON_BG_SELECTED);
-        icons::draw(
-            painter,
-            Glyph::Play,
-            Rect::from_center_size(play.center(), Vec2::splat(18.0)),
-            theme.BUTTON_TEXT_SELECTED,
-        );
+        // **The pill is a hover state.** The reference's card at rest carries its art, its name and its loader and
+        // nothing else; this drew a green pill at the card's foot always, where it sat over the name. It appears under the
+        // pointer, which is also when it is a target.
+        if ui.rect_contains_pointer(card) {
+            painter.rect_filled(play, 8, theme.BUTTON_BG_SELECTED);
+            icons::draw(
+                painter,
+                Glyph::Play,
+                Rect::from_center_size(play.center(), Vec2::splat(18.0)),
+                theme.BUTTON_TEXT_SELECTED,
+            );
+        }
         // The pill is a target now: a launcher whose play button is a drawing is not a
         // launcher. The card's own press still does nothing -- the reference opens the
         // instance's page there, and that page does not exist yet.
@@ -1603,16 +1607,16 @@ fn list(
         if kebab_response.hovered() || is_open {
             painter.rect_filled(kebab, KEBAB_RADIUS, theme.BUTTON_BG);
         }
-        icons::draw(
-            painter,
-            Glyph::EllipsisVertical,
-            Rect::from_center_size(kebab.center(), Vec2::splat(KEBAB_GLYPH)),
-            if kebab_response.hovered() || is_open {
-                theme.CONTRAST
-            } else {
-                theme.SECONDARY
-            },
-        );
+        // **The whole button is the hover state, not just its plate.** The reference's card at rest shows no overflow
+        // glyph at all; drawing one in `SECONDARY` left a quiet mark on every card that the capture does not have.
+        if kebab_response.hovered() || is_open {
+            icons::draw(
+                painter,
+                Glyph::EllipsisVertical,
+                Rect::from_center_size(kebab.center(), Vec2::splat(KEBAB_GLYPH)),
+                theme.CONTRAST,
+            );
+        }
         if kebab_response.clicked() {
             // A second press on the same kebab closes its own popover, which is what the
             // reference's trigger does (`FloatingPanel.vue:184-190`).

@@ -2825,3 +2825,23 @@ failed before:
 
 The probe has been in this build for hundreds of rounds and prints the card, play and kebab rects of every row. Using it took
 one command; guessing took two failures. That is the fourth time this session the answer was a probe that already existed.
+### Two card controls were drawn at rest where the reference shows them on hover (2026-11-07)
+
+Driving **Duplicate instance** from the card's kebab proved the menu and the filesystem both work -- the instances directory
+gained "Fabric 26.3 copy" and the library drew a second card -- and the capture of that state showed something else:
+
+| | reference, card at rest | before | after |
+|---|---|---|---|
+| play pill | none | a green pill at the card's foot, **over the name** | none |
+| kebab glyph | none | three dots in `SECONDARY` | none |
+| Home total | -- | 32 132 | **32 060** |
+
+Both are hover states in the reference. The pill was drawn always "on every instance card" per a comment that the capture
+contradicts, and the kebab's *plate* was already hover-gated while its glyph was not -- so every card carried a quiet mark the
+reference does not have.
+
+Both are gated on `ui.rect_contains_pointer(card)` / `hovered() || is_open` now, and each is still a live target when visible:
+the pill and the kebab keep their `interact` rects whether or not they are painted.
+
+**The engine of this round was a behaviour test.** Verifying Duplicate produced the capture that showed the two defects; no band
+count would have pointed at them, because a pill drawn over text and a text run differing look identical in a difference map.
