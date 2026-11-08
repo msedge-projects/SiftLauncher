@@ -2289,3 +2289,21 @@ because one app's banner is there and the other's is somewhere else. The scrim i
 
 Neither is a constant I could set without looking: both came out of the crop, and the bands that found them (y 320 at 4 045
 pixels, y 680 at 4 275) only said *where* to look.
+### The Light card's avatar was mixed toward black (2026-11-07)
+
+The theme previews draw a mock window with an avatar plate and two bars. The avatar's fill was
+`if light { towards(0.0, 0.12) } else { towards(255.0, 0.20) }` -- a light theme stepped *down* toward black, so the Light
+card's 32-point avatar was grey on a white window where the reference draws it white. It was the one element in that card
+that read as a different control, and the crop named it in one look.
+
+| | before | now | reference |
+|---|---|---|---|
+| Light card's avatar | #cfcfcf (grey) | **white** | white on #f8f8f8 |
+| Settings, pinned backdrop | 36 205 | **34 261** | -- |
+| its content pane | 32 323 | **30 379** | -- |
+
+**Still open, and not guessed at:** the "Sync theme across devices" row sits two points high -- its title ink at 651..663
+against the reference's 653..665, and its description with it -- which says the theme-cards block above is two points short
+rather than the row being misplaced. Two probes for the card's own edges returned nothing (the colour predicates were wrong),
+and a constant changed without that measurement would be the kind of guess this file has spent the week removing, so it waits
+for a probe that works.

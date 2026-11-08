@@ -4760,7 +4760,19 @@ fn draw_body(
                         window.min + egui::vec2(17.0, 17.0),
                         Vec2::splat(32.0),
                     );
-                    body.rect_filled(avatar, 6, if light { towards(0.0, 0.12) } else { towards(255.0, 0.20) });
+                    // **Toward white on a light card, not toward black.** The reference's Light preview is a white square
+                    // on the #f8f8f8 mock window; mixing the #ebebeb plate 12% toward black drew it grey -- the one element
+                    // in that card that read as a different control. A light theme's avatar steps *up* from its page, as a
+                    // dark theme's does.
+                    body.rect_filled(
+                        avatar,
+                        6,
+                        if light {
+                            egui::Color32::WHITE
+                        } else {
+                            towards(255.0, 0.20)
+                        },
+                    );
                     body.rect_filled(
                         Rect::from_min_size(pos2(avatar.right() + 8.0, avatar.top() + 4.0), vec2(73.0, 8.0)),
                         4,
