@@ -103,6 +103,16 @@ impl Soft {
                     if shell.picker.is_some() {
                         ctx.request_repaint();
                     }
+                    // **Promoted before the guard.** `Action::Create` (the welcome screen's button and its `n`) carries no
+                    // clock; this frame has one, and the dialog only draws once `create_open` is true -- so the request is
+                    // turned into state here, one line before the check it feeds. The GL path in `main.rs` had this first and
+                    // it did nothing: the software backend is what this build runs, and it draws its own dialog.
+                    if shell.create_open_pending {
+                        shell.create_open = true;
+                        shell.create_opened = ctx.input(|input| input.time);
+                        shell.create_open_pending = false;
+                        ctx.request_repaint();
+                    }
                     if shell.create_open {
                         shell.draw_create(&ctx, screen, ui);
                     }

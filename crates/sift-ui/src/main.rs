@@ -140,6 +140,15 @@ impl eframe::App for App {
                 if shell.picker.is_some() {
                     ctx.request_repaint();
                 }
+                // **The queued request is promoted here, before the guard.** `Action::Create` has no clock; this frame does,
+                // and the dialog only draws once `create_open` is already true -- so a stamp inside `draw_create` would
+                // never run for a dialog that is not yet open, which is exactly the state it has to open from.
+                if shell.create_open_pending {
+                    shell.create_open = true;
+                    shell.create_opened = ctx.input(|input| input.time);
+                    shell.create_open_pending = false;
+                    ctx.request_repaint();
+                }
                 if shell.create_open {
                     shell.draw_create(&ctx, screen, ui);
                 }

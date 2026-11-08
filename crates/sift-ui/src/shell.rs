@@ -1015,6 +1015,10 @@ pub struct Shell {
     /// When it opened, on the frame clock. The press that opens the dialog is also a click
     /// outside its plate, so the dismissal has to know it is not the same press.
     pub create_opened: f64,
+    /// A request to open the create dialog that arrived without a clock. `Action::Create` comes from the welcome screen's
+    /// button and its `n` shortcut, and the reference answers both with `showCreationModal()` (`WelcomeScreen.vue:50-68`)
+    /// rather than making an instance -- so the request is queued and the frame that draws the dialog stamps it.
+    pub create_open_pending: bool,
     /// Which instance type the reader has chosen, if any. The four rows answer a press by
     /// remembering it; the flows behind them come one at a time.
     pub create_choice: Option<usize>,
@@ -1157,6 +1161,7 @@ impl Default for Shell {
             picker: None,
             picker_opened: 0.0,
             create_opened: 0.0,
+            create_open_pending: false,
             create_choice: None,
             create_step: 0,
             create_name: String::new(),
@@ -2224,7 +2229,10 @@ impl Shell {
         use crate::pages::home::Action;
         match action {
             Action::None => {}
-            Action::Create => self.create_instance(),
+            // **The modal, not an instance.** `WelcomeScreen.vue:50-68` answers both the button and `n` with
+            // `showCreationModal()`; this called `create_instance()` and fabricated a Vanilla instance on a keystroke -- the
+            // same defect the checklist row had, in the other place the hero offers to make one.
+            Action::Create => self.create_open_pending = true,
             Action::Import => {
                 // The button is honest about not doing it yet rather than silently doing
                 // nothing, which reads as a broken press.

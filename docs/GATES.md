@@ -2621,3 +2621,24 @@ no file manager, so the *success* path of `Open folder` is unobservable here and
 
 The same limit applies to the reference: its `showInstanceInFolder` goes through Tauri's `openPath`, which would fail the same
 way on this display, so no side-by-side comparison of the spawned window exists to make.
+### `n` created an instance instead of opening the dialog (2026-11-07)
+
+The welcome screen's `n` is verified above as inert on the library page, which is right. Driving it where it *does* apply --
+an empty data directory, X focus, one press -- showed it **making a Vanilla instance**: a "Created Instance 1" toast and a
+library where a moment before there was a hero.
+
+`WelcomeScreen.vue:50-68` answers both the button and the key with **`showCreationModal()`**. This build's `Action::Create`
+called `create_instance()`, which is the same defect the checklist row had, in the other place the hero offers to make one:
+an action that silently does a bigger thing than the control says.
+
+Now:
+
+| | before | after |
+|---|---|---|
+| `n` on the welcome screen | creates a Vanilla instance, leaves the hero | **opens the Create instance dialog** (plate at (600,450) = (39,41,46), four type cards) |
+
+**Two wrong filings were needed to get the fix to run, and both are worth recording.** The promotion of the queued request was
+first put inside `draw_create`, which only runs when the dialog is already open -- a stamp for a state it has to create. Then it
+was put in `main.rs`, which is the **GL** path: this build runs the software backend, which draws its own dialog in
+`soft/window.rs`, so the fix sat in a file the running binary never executes. Neither failure changed a single pixel, and both
+builds succeeded.
