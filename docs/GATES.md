@@ -2217,3 +2217,26 @@ x 700).
 So this build and the reference use the same window model, and the difference is the modal's chrome and geometry rather than
 a missing OS feature. That is a much smaller and much more fixable gap than the one I wrote down an hour ago -- and it took one
 command to tell the difference between a window and a picture of one.
+### The Settings modal's geometry already matches; the gap is inside it (2026-11-07)
+
+Measured on the same captures, by finding the plate and its border:
+
+| | reference | this build |
+|---|---|---|
+| left edge | 256 | **256** |
+| top edge | 115 | **115** |
+| right edge | ~1183 | **~1183** |
+| plate fill | (39, 41, 46) | (39, 41, 46) |
+| frame | (66, 68, 74) | the same |
+
+So the modal is already in the right place at the right size, and the differences the side-by-side showed are **inside** it:
+the spacing that lets this build's Appearance pane show the "Advanced rendering" row where the reference's ends at its version
+line, and the version line itself.
+
+**The version line is a deliberate deviation, not a defect.** The reference reads "Modrinth App 0.22.0 / Lunar
+20261025.0.616925"; this build reads "Sift Launcher 0.6.2". A clone that prints another product's name and build number is
+lying about what it is, and this file's standard for a row is that a DONE has evidence and a deviation has a reason. The
+reason is identity: the layout, type and position of that line are the reference's; only its value is ours.
+
+What remains as real work on this page is the interior spacing -- one measurement (`Settings: 48 538`) that the geometry
+finding says is not about where the modal sits.
