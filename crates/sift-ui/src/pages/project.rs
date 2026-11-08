@@ -501,6 +501,12 @@ pub struct State {
     pub channels: Vec<Channel>,
     /// The loader chips the reader has toggled on.
     pub loaders: Vec<&'static str>,
+    /// **Which filter menu is open.** The reference\'s Versions tab has two comboboxes over the table -- Channel and
+    /// Game version -- and this build drew four always-visible chips instead, which is a different control and a wider
+    /// row.
+    pub open_filter: Option<FilterKind>,
+    /// The game version the reader has narrowed to, if any.
+    pub game_version: Option<String>,
     /// A press the page took and could not act on, waiting for the shell.
     pressed: Option<Press>,
     /// Whether the header's menu is open.
@@ -520,6 +526,8 @@ impl Default for State {
             page: 1,
             channels: Vec::new(),
             loaders: Vec::new(),
+            open_filter: None,
+            game_version: None,
             pressed: None,
             menu: false,
             installed: false,
@@ -690,6 +698,7 @@ fn filtered_versions<'a>(
     versions: &'a [Version],
     channels: &[Channel],
     loaders: &[&str],
+    game: Option<&str>,
 ) -> Vec<&'a Version> {
     versions
         .iter()
@@ -700,6 +709,7 @@ fn filtered_versions<'a>(
                         .loaders
                         .iter()
                         .any(|loader| loaders.contains(&loader.as_str())))
+                && game.is_none_or(|wanted| version.game_versions.iter().any(|name| name == wanted))
         })
         .collect()
 }
@@ -1827,73 +1837,104 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
     let mut filter_row = Rect::from_min_size(inner.min, egui::vec2(inner.width(), FILTER_HEIGHT));
     {
         let painter = ui.painter();
+        // **Two comboboxes, as the reference has them** (`ProjectPageVersions.vue:2-28`): `Channel`, with the filter
+        // mark, and `Game version`. This row was four always-visible chips, which is a different control and a wider
+        // row; the chips\' semantics are kept inside the menus.
         let mut x = filter_row.left();
-        let mut chips: Vec<(String, bool)> = Vec::new();
-        for channel in [Channel::Release, Channel::Beta, Channel::Alpha] {
-            if !project.versions.iter().any(|version| version.channel == channel) {
-                continue;
-            }
-            chips.push((channel.label().to_owned(), state.channels.contains(&channel)));
+        let chip_y = filter_row.top() + (FILTER_HEIGHT - TAG_HEIGHT) / 2.0;
+        let channel_label = match state.channels.len() {
+            0 => "Channel".to_owned(),
+            1 => state.channels[0].label().to_owned(),
+            count => format!("{count} channels"),
+        };
+        let channel_rect = filter_trigger(
+            painter,
+            egui::pos2(x, chip_y),
+            theme,
+            Some(Glyph::Filter),
+            &channel_label,
+            matches!(state.open_filter, Some(FilterKind::Channel)),
+        );
+        if ui
+            .interact(channel_rect, egui::Id::new("version-channel"), Sense::click())
+            .clicked()
+        {
+            state.open_filter = match state.open_filter {
+                Some(FilterKind::Channel) => None,
+                _ => Some(FilterKind::Channel),
+            };
+            ui.ctx().request_repaint();
         }
-        for loader in ["fabric", "forge", "neoforge", "quilt"] {
-            if !project
-                .versions
-                .iter()
-                .any(|version| version.loaders.iter().any(|shipped| shipped == loader))
-            {
-                continue;
-            }
-            chips.push((loader.to_owned(), state.loaders.contains(&loader)));
+        x = channel_rect.right() + TAG_GAP;
+        let version_label = state
+            .game_version
+            .clone()
+            .unwrap_or_else(|| "Game version".to_owned());
+        let version_rect = filter_trigger(
+            painter,
+            egui::pos2(x, chip_y),
+            theme,
+            None,
+            &version_label,
+            matches!(state.open_filter, Some(FilterKind::Version)),
+        );
+        if ui
+            .interact(version_rect, egui::Id::new("version-game"), Sense::click())
+            .clicked()
+        {
+            state.open_filter = match state.open_filter {
+                Some(FilterKind::Version) => None,
+                _ => Some(FilterKind::Version),
+            };
+            ui.ctx().request_repaint();
         }
-        for (label, on) in &chips {
-            let chip = tag_rect(
-                painter,
-                egui::pos2(x, filter_row.top() + (FILTER_HEIGHT - TAG_HEIGHT) / 2.0),
-                theme,
-                label,
-                None,
-            );
-            if *on {
-                painter.rect_filled(chip, (TAG_HEIGHT / 2.0) as u8, theme.BUTTON_BG_SELECTED);
-                painter.text(
-                    chip.center(),
-                    Align2::CENTER_CENTER,
-                    label,
-                    fonts::label(TAG_TEXT),
-                    theme.BUTTON_TEXT_SELECTED,
-                );
-            }
-            let pressed = ui
-                .interact(
-                    chip,
-                    egui::Id::new(("version-filter", label.as_str())),
-                    Sense::click(),
-                )
-                .clicked();
-            if pressed {
-                if let Some(channel) = [Channel::Release, Channel::Beta, Channel::Alpha]
-                    .into_iter()
-                    .find(|channel| channel.label() == label)
-                {
-                    if let Some(at) = state.channels.iter().position(|open| *open == channel) {
-                        state.channels.remove(at);
-                    } else {
-                        state.channels.push(channel);
+        // The open menu: the same toggles the chips carried, and none of them until it is opened.
+        if let Some(open) = state.open_filter {
+            let anchor = match open {
+                FilterKind::Channel => channel_rect,
+                FilterKind::Version => version_rect,
+            };
+            let items: Vec<String> = match open {
+                FilterKind::Channel => ["All", "Release", "Beta", "Alpha"]
+                    .iter()
+                    .map(|name| (*name).to_owned())
+                    .collect(),
+                FilterKind::Version => {
+                    let mut names: Vec<String> = Vec::new();
+                    for version in &project.versions {
+                        for name in &version.game_versions {
+                            if !names.contains(name) {
+                                names.push(name.clone());
+                            }
+                        }
                     }
-                } else if let Some(at) = state.loaders.iter().position(|open| *open == label.as_str())
-                {
-                    state.loaders.remove(at);
-                } else {
-                    state.loaders.push(match label.as_str() {
-                        "forge" => "forge",
-                        "neoforge" => "neoforge",
-                        "quilt" => "quilt",
-                        _ => "fabric",
-                    });
+                    names.sort_by(|a, b| b.cmp(a));
+                    let mut all = vec!["All".to_owned()];
+                    all.extend(names);
+                    all
                 }
+            };
+            if let Some(picked) = filter_menu(ui, anchor, inner, theme, &items) {
+                match open {
+                    FilterKind::Channel => match picked.as_str() {
+                        "All" => state.channels.clear(),
+                        name => {
+                            state.channels.clear();
+                            if let Some(channel) = [Channel::Release, Channel::Beta, Channel::Alpha]
+                                .into_iter()
+                                .find(|channel| channel.label() == name)
+                            {
+                                state.channels.push(channel);
+                            }
+                        }
+                    },
+                    FilterKind::Version => {
+                        state.game_version = if picked == "All" { None } else { Some(picked) };
+                    }
+                }
+                state.open_filter = None;
                 ui.ctx().request_repaint();
             }
-            x = chip.right() + TAG_GAP;
         }
         filter_row = Rect::from_min_size(
             egui::pos2(inner.left(), inner.top()),
@@ -1901,7 +1942,12 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
         );
     }
 
-    let filtered = filtered_versions(&project.versions, &state.channels, &state.loaders);
+    let filtered = filtered_versions(
+        &project.versions,
+        &state.channels,
+        &state.loaders,
+        state.game_version.as_deref(),
+    );
     let pages = filtered.len().div_ceil(PAGE_SIZE).max(1);
     if state.page > pages {
         state.page = pages;
@@ -2103,6 +2149,115 @@ fn versions(ui: &mut Ui, inner: Rect, theme: &Theme, project: &Project, state: &
 }
 
 /// A run of `TagItem` chips, one row, clipped to the column they are given.
+
+/// Which of the Versions tab\'s two comboboxes is open.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum FilterKind {
+    Channel,
+    Version,
+}
+
+/// One `Combobox` trigger: `h-9 rounded-xl px-2.5` with an optional 20-point prefix and a chevron
+/// (`ButtonFrame.vue:31`, `Combobox.vue:80-93`). Returns the rect it used.
+fn filter_trigger(
+    painter: &egui::Painter,
+    min: egui::Pos2,
+    theme: &Theme,
+    glyph: Option<Glyph>,
+    label: &str,
+    open: bool,
+) -> Rect {
+    let galley = painter.layout_no_wrap(
+        label.to_owned(),
+        fonts::semibold(TAG_TEXT),
+        theme.CONTRAST,
+    );
+    let prefix = if glyph.is_some() { TAG_HEIGHT } else { 0.0 };
+    let width = 2.0 * 10.0 + prefix + galley.size().x + 6.0 + 14.0;
+    let rect = Rect::from_min_size(min, egui::vec2(width, TAG_HEIGHT));
+    painter.rect_filled(
+        rect,
+        (TAG_HEIGHT / 2.0) as u8,
+        if open { theme.BUTTON_BG_SELECTED } else { theme.BUTTON_BG },
+    );
+    let mut x = rect.left() + 10.0;
+    if let Some(glyph) = glyph {
+        icons::draw(
+            painter,
+            glyph,
+            Rect::from_center_size(
+                egui::pos2(x + TAG_HEIGHT / 2.0, rect.center().y),
+                Vec2::splat(TAG_HEIGHT),
+            ),
+            theme.BASE,
+        );
+        x += TAG_HEIGHT;
+    }
+    painter.text(
+        egui::pos2(x, rect.center().y),
+        Align2::LEFT_CENTER,
+        label,
+        fonts::semibold(TAG_TEXT),
+        if open { theme.BUTTON_TEXT_SELECTED } else { theme.CONTRAST },
+    );
+    // The suffix row is a 20-point chevron from the icon set, not a font character: `⌄` is not in the shipped
+    // faces and drew as a missing-glyph box, which is the one thing a control must never show.
+    icons::draw(
+        painter,
+        Glyph::ChevronDown,
+        Rect::from_center_size(
+            egui::pos2(rect.right() - 18.0, rect.center().y),
+            Vec2::splat(16.0),
+        ),
+        theme.BASE,
+    );
+    rect
+}
+
+/// The menu under an open trigger: one row per item, the pressed one returned. Rows are hit-tested
+/// against the pointer rather than registered, so nothing has to be remembered between frames.
+fn filter_menu(
+    ui: &mut Ui,
+    anchor: Rect,
+    page: Rect,
+    theme: &Theme,
+    items: &[String],
+) -> Option<String> {
+    let painter = ui.painter();
+    let row_h = 32.0;
+    let pad = 6.0;
+    let width = anchor.width().max(160.0);
+    let height = items.len() as f32 * row_h + 2.0 * pad;
+    let mut min = egui::pos2(anchor.left(), anchor.bottom() + 6.0);
+    if min.y + height > page.bottom() {
+        min.y = (anchor.top() - 6.0 - height).max(page.top());
+    }
+    let menu = Rect::from_min_size(min, egui::vec2(width, height));
+    painter.rect_filled(menu, 8, theme.SUPER_RAISED_BG);
+    let pointer = ui.ctx().pointer_interact_pos();
+    let mut picked = None;
+    for (index, item) in items.iter().enumerate() {
+        let row = Rect::from_min_size(
+            egui::pos2(menu.left() + pad, menu.top() + pad + index as f32 * row_h),
+            egui::vec2(menu.width() - 2.0 * pad, row_h),
+        );
+        let hovered = pointer.is_some_and(|at| row.contains(at));
+        if hovered {
+            painter.rect_filled(row, 6, theme.RAISED_BG);
+        }
+        painter.text(
+            egui::pos2(row.left() + 8.0, row.center().y),
+            Align2::LEFT_CENTER,
+            item,
+            fonts::label(TAG_TEXT),
+            theme.CONTRAST,
+        );
+        if hovered && ui.input(|input| input.pointer.any_click()) {
+            picked = Some(item.clone());
+        }
+    }
+    picked
+}
 /// The mark a loader carries in a table row, by the name the API gives it. An unknown loader gets none rather than a
 /// wrong one, which is the same rule the category rows follow.
 fn loader_glyph(name: &str) -> Option<crate::icons::Glyph> {

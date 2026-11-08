@@ -3986,3 +3986,30 @@ becomes more correct and slightly larger: the chip is a little wider than the re
 
 **The filter row is the largest single item left on this page**: four chips where the reference has two dropdowns. It is a component
 that does not exist yet -- a select -- rather than a measurement to adjust.
+### The Versions filter row is two comboboxes now, with working menus (2026-11-08)
+
+The largest structural difference on the page -- four always-visible chips where the reference has two dropdowns -- is gone:
+
+| | reference | before | after |
+|---|---|---|---|
+| filter row | `Channel` (filter mark) and `Game version`, both chevroned | Release, Beta, Alpha, fabric | **two comboboxes** |
+| opening one | a menu under the trigger | the chips were the state | **a menu under the trigger** |
+| choosing | filters the table | toggled a chip | **filters the table** |
+
+The menus are not decoration: `Channel` sets the channel filter (All / Release / Beta / Alpha) and `Game version` lists every
+version the project actually ships, newest first, with All clearing it. `filtered_versions` gained the fourth dimension, so the
+combobox and the table agree.
+
+**Two defects of my own on the way, both caught in the capture rather than the compiler:**
+
+1. a stray `}` from the splice, which the parser caught as an unexpected closing delimiter;
+2. the chevron drawn as the *character* `\u{2304}`, which is not in the shipped faces and rendered as a **missing-glyph box** -- the
+   one thing a control must never show. It is `Glyph::ChevronDown` from the icon set now.
+
+| | Versions tab |
+|---|---:|
+| four chips | 63 429 |
+| two comboboxes | **63 692** |
+
+The number rose by 263 and the control is right. The chips were never going to be tuned to look like comboboxes -- that is the
+distinction this file keeps drawing: **a measurement that rewards a wrong control looking close is not a parity metric.**
