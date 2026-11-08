@@ -2353,3 +2353,19 @@ height is `title + copy + date`, and with the title and the copy both measured, 
 **What it gave back:** Home returns to 36 886 from 36 196, because the improvement came from the copy shift that breaks the
 pinned gap. A page number bought by breaking a measured constraint is not a page number worth having -- and the test that
 caught it was written by this project for exactly this reason.
+### The third-term experiment, and why it failed (2026-11-07)
+
+The guess was clean and wrong. The reference's date ink starts **9** points under the copy's last line (619 against 610); this
+build's started at **7** (617). Raising `COPY_TO_DATE` by two would put the date right and raise the card's bottom by two,
+eating the pinned 26-point gap -- unless the date's line box came down by the same two, which would leave the card's height
+alone. Both of the reference's numbers would then hold at once, which is exactly what a correct third term would look like.
+
+`COPY_TO_DATE` 9 -> 11 and `DATE_LINE` 21 -> 19. The card's height held -- the pinned-gap test passed, so the pair did what
+it was supposed to at the plan level -- and the date's ink moved **up** two points, from 617 to 615, not down.
+
+Both constants are back at 9 and 21. Home reads 36 886 either way, tests green at 264.
+
+**What the failure says is that the date's drawn position is not `copy + copy_height + COPY_TO_DATE`.** The plan and the
+draw are reading different numbers for it -- the same shape of bug as the news title measured wrapped and painted unwrapped,
+one element down. That is the next thing to read in the source, and it is a smaller question than it was an hour ago: the
+third term is not a constant, it is a second place the date is computed.
