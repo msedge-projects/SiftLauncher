@@ -3675,3 +3675,30 @@ should be the content column, not the whole window.
 **Next measurement**: print primitive 5's first vertex colour and its `feather`/radius, and print whether `state.viewer` is `Some`
 on that frame. Both are one `eprintln` in code that already exists, and one of them names the culprit outright -- the scrim's colour
 or the viewer\'s state.
+### Primitive 4: a 5 729-vertex text mesh whose vertex colour is fully transparent (2026-11-08)
+
+The primitive that blacks the corner is **index 4**, and its first vertex says the least likely thing:
+
+```
+prim4 before=0x0027292e colour=#00_00_00_00 tex=Managed(0) at=[15.5 388.5] verts=5729
+prim5 before=0x00000000 ...                                    <- black already, so primitive 4 did it
+```
+
+`Managed(0)` is the **font atlas**, so this is text. Its colour is `#00_00_00_00` -- transparent black -- and it is 5 729 vertices,
+which is a page\'s worth of body copy rather than a label.
+
+**And the blender cannot paint transparent black.** `soft/mod.rs` implements premultiplied source-over and returns early on
+`alpha <= 0.0`; a mesh whose every vertex were transparent would leave the pixel untouched. So the black is coming from
+**interpolated** vertex alpha -- some vertices of that mesh are opaque -- or from a vertex position far from the glyphs it belongs
+to. Either way the fault is now inside one mesh, on one page, with a colour and a vertex count to identify it by.
+
+**What this rules out, finally:** the chrome is drawn (its primitives are 0-3, all present with sensible colours), the clear works,
+the blend is correct for zero alpha, the surface and buffer are the right size, and the present succeeds. The black is written by a
+**text mesh**, which is why every measurement of the background, the theme and the window was correct while the corner was black.
+
+**Next**: print that mesh\'s vertex-colour range (min/max alpha) and its position bounds. If alpha spans 0..255 it is a fade that
+should not be painting; if every vertex is (0,0,0,0) the fault is in how `src` is accumulated across a triangle rather than in the
+blend.
+
+This round produced no fix and no page number. It produced the identity of a culprit after eleven rounds of elimination -- and
+`SIFT_PIXEL_PROBE` now names the primitive and its colour, which is the tool that will finish it.

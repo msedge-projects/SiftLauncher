@@ -139,6 +139,13 @@ impl Painter {
                         if top == 0 && std::env::var_os("SIFT_PIXEL_PROBE").is_some() {
                             let before = strip[0];
                             // printed after the mesh below by comparing the value next iteration
+                            if index < 7 {
+                                let v = &mesh.vertices[0];
+                                eprintln!(
+                                    "prim{index} before={:#010x} colour={:?} tex={:?} at={:?} verts={}",
+                                    before, v.color, mesh.texture_id, v.pos, mesh.vertices.len()
+                                );
+                            }
                             if before == 0 && index < 40 {
                                 eprintln!("primitive {index} left p0=0 clip={:?} verts={}", clipped.clip_rect, mesh.vertices.len());
                             }
