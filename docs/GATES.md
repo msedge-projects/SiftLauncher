@@ -2687,3 +2687,19 @@ and library card carry -- so the strip was the one place in the window where an 
 
 The fallback order is now `icon.png` -> `serverart::paint_instance_default` -> the cube, which is the order the rail tile
 already used. The cube stays for a build with no texture at all; it is no longer what a reader sees first.
+### The jump-in strip was eight points high, which cost 3 551 pixels (2026-11-07)
+
+With the icon fixed, the strip could be measured against the reference's tile, and the tile was the thing to measure:
+
+| | reference | before | after |
+|---|---|---|---|
+| instance tile | y 128..175 | y 120..165 | **y 127..173** |
+| "Library" heading | y 215..227 | y 216..229 | y 216..229 (unmoved) |
+| Home, total | -- | 35 838 | **32 287** |
+| Home, content | -- | 17 000 | **13 449** |
+
+The strip sat at `rect.top + 58` and belongs at 66: eight points, the same offset the tile showed. **Everything inside the strip**
+moved with it -- the icon, the name, the badge, the meta line, the Play pill -- which is why eight points cost 3 551 of them.
+
+**The heading below it did not move**, which was the risk worth checking: the `Library` section is positioned from its own
+anchor rather than from the strip's bottom, so the fix did not cascade. Measured before and after rather than assumed.

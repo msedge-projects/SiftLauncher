@@ -1070,7 +1070,7 @@ fn list(
         // while the reference's dashed bottom border runs to x 1 115 -- the strip is the column, and the Play button at
         // its right end sat 238 points left of the reference's because of it.
         let strip = Rect::from_min_size(
-            egui::pos2(rect.left(), rect.top() + 58.0),
+            egui::pos2(rect.left(), rect.top() + 66.0),
             egui::vec2(rect.width(), 72.0),
         );
         // A **dashed** border, as the reference draws it, plus the heading's collapse chevron: a solid rule read as
