@@ -2811,3 +2811,17 @@ pixels, and moving or enlarging it only moves the disagreement.
 That is now measured often enough to stop treating these bands as open work. The honest statement of the remaining gap on
 Home is: **position and structure match; the type does not, and cannot without the reference's font.** The bands at y 135, 260
 and 310 are that fact, not three separate defects.
+### The card's kebab menu, opened at the probe's coordinates (2026-11-07)
+
+Home's remaining large bands turned out to be text again -- the card's title and meta are white in both captures and differ only
+in their glyphs -- so the round went after a **behaviour** instead, and the first two attempts failed the way this session has
+failed before:
+
+| attempt | what happened |
+|---|---|
+| click (303, 505) for the kebab | nothing: 70 points right of it |
+| `SIFT_HOME_PROBE` prints `kebab=[[222,499]-[250,527]]` | centre **(236, 513)** |
+| click (236, 513) | **the menu opens**: Play, Edit, Duplicate instance, Open folder |
+
+The probe has been in this build for hundreds of rounds and prints the card, play and kebab rects of every row. Using it took
+one command; guessing took two failures. That is the fourth time this session the answer was a probe that already existed.
