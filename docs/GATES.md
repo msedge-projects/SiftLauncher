@@ -6827,3 +6827,25 @@ what is actually between y 329 and 354 -- before moving anything again.
 **A process failure worth naming**: while reverting, a line-replacement matched a `+ 25.0` belonging to a different expression and broke the build at
 home.rs:1248. `git checkout` restored the file, and the working tree is clean. Two builds were lost to that, on a round where three were already
 spent on a fix that did not work.
+### Why matching the library card's plate never paid: the metric cannot see it (2026-11-09)
+
+Six builds went into this card across three rounds, and the contradiction -- the plate is measurably 25 points high, and moving it onto the
+reference's own position measures worse every time -- has a plain explanation that I should have reached three rounds ago:
+
+| element | fill against the page | step | counts at threshold 40? |
+|---|---|---|---|
+| the card plate | (39,41,46) against (22,24,28) | **17** | **no** -- only its 1-px border does |
+| its border stroke | (66,68,74) against (22,24,28) | 44 | yes, ~1 px per row |
+| the name's glyphs | (255,255,255) against (22,24,28) | 233 | yes, every ink pixel |
+
+So moving the plate can gain at most its border -- a couple of hundred pixels -- while moving any *text* by ten points costs a thousand. Every
+arrangement that matched the plate and took the text with it lost more than it gained, and the one that matched the plate and held the text still
+(+125) still gained less than the border cost at its new place.
+
+**This is the same blindness that the project has recorded for the filter row and the field's placeholder tone**, now working in the opposite
+direction: a difference that is obvious in a 4x crop is worth almost nothing to the count, and the count is what the objective asks for at threshold
+40. Both statements are true and they point opposite ways, which is why the card has resisted six attempts.
+
+**What to do instead**: match the *text* inside the card (name at 515, loader at 535) and let the plate land wherever it lands. The plate's
+position is worth ~200 px and the text's is worth ~1 000; fixing them in the order of what the metric can see is the only order that pays. That is
+the next attempt's shape, and it is a different experiment from the six that failed.
