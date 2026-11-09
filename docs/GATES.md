@@ -5821,3 +5821,20 @@ the title crop would have said so at the time.
 
 **The rule this adds**: a rail press is not evidence of a destination unless the destination is read back. Position memory is what produced
 two mislabelled captures and a 113 657-pixel comparison of two different pages.
+### Settings, compared as the modal it is (2026-11-09)
+
+Both clients show Settings as a **modal over Home** with a blurred backdrop, and the two are the same object: a title, a close X, three nav
+groups (DISPLAY, ACCOUNT, INSTANCE DEFAULTS), the "Color theme" heading over four cards (Dark, Light, OLED, Sync with system), then "Sync theme
+across devices" with its toggle, and a footer with the mark and the version string.
+
+`compare.py` puts the pair at **32 469** (titlebar 1 547, rail 344, content 28 687, sidebar 1 891). Three differences are visible without
+measuring further, and each is a real one rather than a tone:
+
+| difference | what it means |
+|---|---|
+| the dialog is ~28 points taller and ~20 higher here | the card column or the footer padding is larger |
+| a **scrollbar** is drawn on this build\'s dialog | the content overflows where the reference\'s fits -- the reference has no scrollbar in this state |
+| an **"Advanced options"** hint is drawn at the foot | the reference does not carry it in this state |
+
+The scrollbar is the useful one: it is the measurement telling me the dialog is too tall in a way the height number alone would not. A dialog
+that fits does not need a bar.

@@ -11,7 +11,7 @@ clients in the same state, with a capture behind every claim.
 | Discover | **78 984** | `disc-ref2.png` vs `disc-cur.png` (2026-11-09) | type and card artwork |
 | Screenshots | **23 573** | `shot-ref3.png` vs `shot-our.png` (2026-11-09, both empty; the reference title checked before capture) | the empty state's illustration |
 | Instance page | **30 454** | `sweep-instance-ref.png` vs `inst-clean.png` (mods/ emptied first) | type |
-| Settings | **31 975** | `sweep-settings-*.png` (pinned backdrop) | the theme cards\' interior tone and the type |
+| Settings | **32 469** | `set-ref.png` vs `set-our.png` (2026-11-09, both as a modal over Home) | the dialog is ~28 points taller and ~20 higher here; a scrollbar shows that the reference has none, and an "Advanced options" hint is drawn that the reference does not carry |
 | Project -- Description | **71 398** | `projL-ref.png` vs `proj-gap4.png` | the body\'s type |
 | Project -- Versions | **63 660** | `ver3-ref.png` vs `ver-chan3.png` | the filter row\'s widths and the type; ~400 px is the API\'s download count, fetched minutes apart |
 | Project -- Gallery | **172 200** | `gal-ref.png` vs `viewer-escaped.png` | the grid\'s ratio and a 15-point card-top offset; both grids carry the same six cards |
