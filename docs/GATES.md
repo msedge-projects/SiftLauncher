@@ -7492,3 +7492,28 @@ consequences. It also explains why the sidebar's difference grows with the windo
 **Recorded for the FINISHED statement**: the identity clause's floor is not one mechanism but a short chain, and the flat share that remains is
 partly *downstream* of the textured share rather than independent of it. That makes the reachable target smaller than the 0.6% quoted last round,
 and it is the honest number to carry.
+### The flat/textured split was measuring the wrong thing, and the artwork is scaled differently (2026-11-09)
+
+The classifier divides differing pixels by the reference's local contrast: above 12 is textured, below is flat. Looking at the second-heaviest
+flat cluster (x 1280, y 384 -- 206 flat pixels) shows what that rule does with a **photograph of a gradient**: the news artwork's interior has
+almost no local contrast, so every pixel of it that differs is counted as *flat*, and it is not a fill or a rule. It is an image, drawn at a
+different scale.
+
+| | reference | this build |
+|---|---|---|
+| the artwork's rounded-square icon | smaller, higher in the card | **larger and lower** |
+| the radiating pattern | finer, more rings visible | coarser |
+
+So the two classes are not "reproducible" and "engine", they are "high-frequency" and "low-frequency", and a smooth gradient falls on the wrong
+side. **Every number in the last two entries that called the flat share reachable is therefore too high**, and the honest statement is that the
+split bounds the textured share from below and says nothing reliable about how much of the rest is layout rather than scale.
+
+**What survives**: the textured share (24 816 on Home) is a floor on engine-bound pixels, because high local contrast can only be a glyph edge or
+a sharp photograph -- that direction of the classifier is sound. What does not survive is treating the remainder as a work list.
+
+**The artwork's scale is a real, separate mismatch** and it is drawable work: the reference's card draws its image at one size and this build at
+another. That is the next thing to measure -- the art's rect on both -- rather than another classification pass, because the classification has now
+told me it cannot separate the two.
+
+**Recorded as a correction to `FINISHED.md`'s identity row**, which quoted "0.6% of the frame on Home" as the reachable target. That figure was
+derived from the split and inherits its flaw; it should not be quoted again until the artwork's geometry is measured.
