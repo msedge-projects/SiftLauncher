@@ -2457,6 +2457,12 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
                 } else {
                     self.theme.SECONDARY
                 };
+                // **Only the chevron that can act is drawn.** The reference's pager on page 1 shows `1 2 ... 961 >`
+                // and no back arrow at all; this build greyed the unusable one and kept it, so the row began with a dead
+                // chevron and every numeral after it sat a cell further left. At the last page the same rule hides the forward one.
+                if !enabled {
+                    continue;
+                }
                 // The reference's pager buttons carry a chevron, not an ASCII angle bracket, and the
                 // glyph is sized like the rest of its icon buttons.
                 crate::icons::draw(
@@ -3751,16 +3757,20 @@ fn card(
     // the wrong place. Even a full 712-point line ends at 929 and the stats column starts at 931, so the wider
     // measure cannot run the summary under the counts.
     let summary_width = (rect.width() - 129.0 - 187.0).max(120.0);
-    let summary_text = ellipsise(&result.summary, 150);
-    let summary = painter.layout(
-        summary_text,
-        crate::fonts::body(16.0),
-        theme.SECONDARY,
-        summary_width,
+    // **One line, clipped — not wrapped and not cut at 150 characters.** The reference's card is a single-line
+    // `truncate`: its summary runs to the stats column and stops there mid-word with an ellipsis. Ours wrapped at the
+    // measure and cut the string at 150, so the same card ended at "Unique Structures..." where the reference still
+    // has "Custom Music | Shaders". The budget is wide enough to fill the line, and the painter clips it.
+    let summary_text = ellipsise(&result.summary, 190);
+    let summary = painter.layout_no_wrap(summary_text, crate::fonts::body(16.0), theme.SECONDARY);
+    let summary_clip = egui::Rect::from_min_size(
+        egui::pos2(rect.left() + 129.0, rect.top() + 45.0),
+        egui::vec2(summary_width, summary.size().y),
     );
+    let summary_painter = painter.with_clip_rect(summary_clip);
     // Ink at 278 in a card at 230: the line box starts at 275, the grid's 20-point title row and its 8-point gap
     // below the card's 16-point padding.
-    painter.galley(egui::pos2(rect.left() + 129.0, rect.top() + 45.0), summary, theme.SECONDARY);
+    summary_painter.galley(egui::pos2(rect.left() + 129.0, rect.top() + 45.0), summary, theme.SECONDARY);
 
     // The tag pills, then the stats on the same row. The reference's chip is `TagItem`: bg-button-bg,
     // a one-pixel surface-5 border, px-2 py-1, rounded-full, text-sm, and a 16-point glyph with a

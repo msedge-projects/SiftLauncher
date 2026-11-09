@@ -4681,3 +4681,23 @@ handler now asks for the minimum back itself, which is what produces the table a
 default branch, pushed 2026-11-07), with `apps/app-frontend` for the interface and `apps/app/tauri.conf.json` for the window. One caution
 recorded for the next reader: **the repository is not 0.22.0**. Its `Home` template now says `gap-3` where the 0.22.0 binary\'s does
 `gap-4`, so the source is a guide and the running binary is the authority; where the two disagree, the binary wins.
+### Discover: a dead chevron and a summary cut one word short (2026-11-09)
+
+Two behaviour fixes on the worst page, both found by cropping one card rather than reading bands:
+
+| | reference | ours before | ours now |
+|---|---|---|---|
+| the pager on page 1 | `1 2 … 961 ›` -- **no back chevron** | `‹ 1 2 … 961 ›`, the unusable one greyed and kept | `1 2 … 961 ›` |
+| the card summary | one line, running to the stats column, clipped mid-word | wrapped at the measure, cut at **150 characters**, ending at `Unique Structures...` | one clipped line, budget 190 |
+
+| Discover | differing pixels |
+|---|---:|
+| before | 78 538 |
+| pager chevron | 78 466 |
+| summary line | **78 059** |
+
+**The pager fix generalises**: the reference draws only the chevron that can act, so the last page hides the forward one too -- the same
+`if !enabled { continue; }` covers both.
+
+The card\'s 10 911 differing pixels break down as icon 2 241, title 2 715, summary 1 018, chips 1 277 and the right column 2 545, which is
+what a card of repeated type looks like when a metric is 0.4% off: **every line is nearly right and every line is counted**.
