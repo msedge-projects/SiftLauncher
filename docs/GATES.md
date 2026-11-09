@@ -5856,3 +5856,20 @@ rows: Profile, Social, Privacy, INSTANCE DEFAULTS (Java and memory, Window, Laun
 pointer is on, and this build drew those rows flat. The plate is drawn now -- `BUTTON_BG` under a non-selected row that contains the pointer,
 with the selected row keeping its brand wash. Driven: with the pointer at (300,490) the row under it changes (272,464)-(490,504), a 218x40
 plate.
+### Two claims withdrawn, one difference measured (2026-11-09)
+
+Last round named three differences in the Settings dialog from a downscaled composite. Measured at full resolution, **two of the three were
+wrong**:
+
+| claim | how it was checked | verdict |
+|---|---|---|
+| "a scrollbar is drawn on this build\'s dialog" | cropped both dialogs\' right edges at 1:1 (`edge.png`) | **withdrawn** -- neither side has one. `settings.rs` contains no `ScrollArea`; the line I saw was the plate\'s own border, at 1:2 scale |
+| "the dialog is ~20 higher and ~28 taller" | longest run of the plate\'s fill per row, both captures | **withdrawn** -- the plate\'s top is **115 on both** and the first 84 rows are identical in length |
+| "an `Advanced options` hint is drawn" | cropped the foot at 1:1 | **withdrawn** -- it reads "Advanced rendering", a nav row that both sides have (`settings.display.sidebar.advanced-rendering.title`) |
+
+**What is actually different**: at x 1000, 1020, 1040 and 1060 the reference\'s plate fill ends at y **198** while this build\'s continues to y **447**. Same
+top, so not a height matter -- **this build\'s plate is wider**, by enough that the reference has left the content well before those columns.
+
+The lesson is the one this file keeps re-learning at a different scale each time: **a downscaled composite is a picture, not a measurement**. Three
+plausible differences, all three read from one 540-point-wide thumbnail of a 1440-point window, and all three wrong in a way that each had a
+believable story attached.
