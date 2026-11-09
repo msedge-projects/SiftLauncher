@@ -4475,3 +4475,23 @@ compared on both sides -- stronger than an assertion, weaker than a drive -- and
 **A ledger that audits itself has to be re-audited when the thing it audits changes**, and this is the third time this file has been caught
 describing a version of the product that no longer exists. The difference this time is that the correction raises the standard rather than
 lowering it: sixteen rows can be pressed, and the sentence says which sixteen.
+### Idle CPU, measured: 2 frames a second (2026-11-08)
+
+The question "is it maxing a core?" deserved a number rather than an impression:
+
+| | value |
+|---|---:|
+| CPU while idle on Home | **113 ticks in 10 s = 11.3% of one core** |
+| frames painted while idle | **20 in 10 s = 2 fps** |
+| RSS at the same moment | 22 368 kB |
+
+Two frames a second over 1440x900 is 2.6 million pixels a second through the software rasteriser, which is exactly where an eighth of a
+core goes. **It is not maxing anything and it is not idle either.**
+
+The lever is one line: `panel.rs` calls `request_repaint_after(500 ms)` so the news carousel keeps moving, and the carousel changes article
+every several seconds -- so about four of those five repaints are spent redrawing a frame that has not changed. Dropping it to the carousel\'s
+own period would cut idle CPU by three quarters.
+
+**Not changed with two rounds left**: an animation\'s cadence is exactly the kind of thing that wants a session to measure both the CPU and
+the motion, and a stub that repaints a fifth as often but stutters is a worse launcher than one that spends an eighth of a core looking
+right. The measurement and the lever are both written down; the decision is left where it can be tested.
