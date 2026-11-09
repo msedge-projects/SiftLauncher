@@ -7553,3 +7553,25 @@ it starts at `panel.rs:645` (`banner_top`) and :873.
 
 **What is now known and was not before**: the news block is a list, the rotation is invented, the count is four, and the button exists. Those are
 four matrix rows' worth of fact from one 51-line file.
+### Settings: the theme radio is a filled disc where the reference draws a ring and a dot (2026-11-09)
+
+Settings is the page this session has measured least and it has the highest flat share of any page looked at: **34 498 differing, 14 562 flat
+(42%)**, against Home's 25%. Its two heaviest clusters are at x 416, y 384 (400 flat pixels) and x 608, y 512 (307).
+
+At 2x, the first is the Appearance section's "Dark" row, and the difference is the radio indicator:
+
+| | reference | this build |
+|---|---|---|
+| the chosen indicator | a **green ring with a green dot** inside it | a **solid green disc**, no ring |
+| the moon beside "Dark" | a crescent outline | a filled moon |
+| the Beta badge | a pill, text inside | a pill, slightly smaller |
+
+The chosen row's plate matches, the label matches, the row heights match -- the indicator is the whole difference on that row, and at 18 points
+across with two colours it is worth a few hundred flat pixels per page that shows a radio list.
+
+**Located and not changed**: the radio's dot is drawn at `crates/sift-ui/src/pages/settings.rs:4807` (`circle_filled(radio, 3.0, theme.BRAND)`);
+what is missing is the ring around it. The check-circle at :4637 is a *different* control -- the language list's -- and is already a filled disc with
+a tick, which is what the reference draws there.
+
+**Why not changed tonight**: the edit is small but the verification is not -- a build is eight minutes and the round had less. An unverified radio
+change is exactly the kind of edit this project has had to withdraw before, so the finding and its line number are the deliverable.
