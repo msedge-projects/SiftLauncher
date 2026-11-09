@@ -4640,3 +4640,19 @@ The displays were rebuilt at 1920x1080 so every standard size can be drawn by bo
 sidebar at 1280 went from 14 040 to **2 797** -- it had been drawn a third outside the window.
 
 **The 1440x900 figure is the one that must not move**, and it did not: 31 349 -> 31 325.
+### Resizing is clean: five sizes, a seventeen-step drag, and a click at 1600 (2026-11-09)
+
+The ask was that the pixels and the hit areas survive a resize. Three tests, all on the running build:
+
+| test | result |
+|---|---|
+| resize to 1280/1366/1440/1600/1920 and capture each | **no black band** in the title bar at any size; the sidebar\'s left edge is `width - 300` at every one (980, 1066, 1140, 1300, 1620) |
+| resize in **seventeen steps** from 1280 to 1920 (a drag, not a jump) | lands at 1920x900 with the sidebar at 1620 -- exact |
+| click the library card at **1600x900** | navigates to the instance page, breadcrumb `Fabric 26.3` |
+
+The middle test is the one that matters for a drag: seventeen `windowsize` calls with no sleep between them, and the frame that comes out
+is laid out for the final size rather than for any of the intermediate ones.
+
+**A note on the one flagged result**: the 1366x768 capture first reported its sidebar at 946 instead of 1066. That was the checker reading the
+green **New instance** button in the content column -- sampling `x` from `width-420` walked into it. The sidebar is at 1066, exactly
+`width - 300`, and the number was the instrument, not the product.
