@@ -7855,3 +7855,26 @@ comparison is now honest. `CONTENT_PADDING_TOP` stays at 23.
 of the earlier improvements were deliberate in that sense -- they were judged by the count -- but the possibility that some of the hundreds of
 pixels "saved" in earlier rounds came from a small misalignment is real and cannot be ruled out after the fact. What can be stated is the rule from
 here: **align first, then count**, and treat a count that improves when geometry moves away from the reference as a warning rather than a win.
+### Three pages are aligned; the fourth cannot say (2026-11-09)
+
+Following the finding that a count is not monotone in fidelity, `tools/parity/align.py` reports the shift that best matches a pair and what it
+would save. Run over the pairs the table quotes:
+
+| page | in place | best | verdict |
+|---|---:|---|---|
+| Home | 2 940 | 2 940 at (0,0) | **aligned** |
+| Screenshots | 1 754 | 1 754 at (0,0) | **aligned** |
+| Discover | 11 921 | 11 921 at (0,0) | **aligned** |
+| Skins | 37 394 | 37 331 at (0,-6) | **inconclusive** -- 0.2% fewer at the edge of the search range |
+
+(The counts are small because the probe samples every second pixel inside a region, not the whole frame; it is an alignment test, not a score.)
+
+**So the three page figures the table quotes were taken at aligned geometry**, and the non-monotonicity that would cast doubt on them does not apply.
+That is worth knowing precisely because the Settings finding suggested it might: the concern was that some earlier "saved" pixels were accidental
+cancellations, and for these three pages they were not.
+
+**Skins is inconclusive rather than wrong**: its best shift sits at the edge of the -6..+6 range with a 63-pixel advantage on 37 394, which is
+noise. Its page is dominated by skin artwork, so an edge-based correlation has little structure to lock onto. A narrower region or a bigger range
+would decide it, and neither changes any figure today.
+
+**The tool is committed** so that any future page figure can be accompanied by its alignment, which is now the cheapest way to keep a count honest.
