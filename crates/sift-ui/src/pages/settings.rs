@@ -3344,9 +3344,12 @@ fn draw_rail(
         clipped.galley(label_at, label.clone(), ink);
         if entry.tab.is_beta() {
             // `rounded-md bg-brand-highlight px-1.5 text-xs font-semibold text-brand`.
+            // **At the row's right end, not after the label.** The reference's "Language" row carries its pill hard
+            // against the row's inner right edge, a hundred points clear of the label; this build put it eight points after the
+            // word, which the 2x crop shows as the whole difference on that row.
             let pill = Rect::from_min_size(
                 pos2(
-                    label_at.x + label.size().x + 8.0,
+                    entry.row.right() - RAIL_ROW_PADDING - 42.0,
                     entry.row.center().y - 10.0,
                 ),
                 egui::vec2(42.0, 20.0),

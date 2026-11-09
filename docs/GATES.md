@@ -7883,3 +7883,22 @@ inconclusive reading came from a window whose left third is a large photograph, 
 
 **So all four quoted pages are aligned**: Home, Screenshots, Discover and Skins, each with no shift beating in place. The non-monotonicity found on
 Settings does not cast doubt on any figure this table quotes, and that is now checked rather than assumed.
+### The Beta pill sits at the row's right end: 1 082 pixels (2026-11-09)
+
+The heaviest band inside the aligned Settings modal was x 384-448 at y 384 -- the "Language" rail row. At 2x the whole difference on that row is
+the **Beta** pill: the reference puts it hard against the row's inner right edge, a hundred points clear of the label; this build put it eight
+points after the word.
+
+`settings.rs:3345` now places it at `row.right() - RAIL_ROW_PADDING - 42.0` instead of `label.x + label.width + 8.0`.
+
+| | before | after |
+|---|---:|---:|
+| the Language row band, x 384..500 | 950 across three cells | **286** |
+| inside the modal | 31 721 | **30 639** |
+| page total | 46 437 | 46 204 |
+
+**Minus 1 082 inside the plate against a predicted 300-500** -- the prediction was in the right direction and understated, because the pill's
+old position also overlapped the label's own glyph run for part of its width.
+
+**The page total moved only 233**, because most of it is the dimmed Home page behind the modal: the split measured on this page is why the
+change's real value (1 082) is four times what the headline number shows.
