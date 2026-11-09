@@ -7704,3 +7704,9 @@ reference's name into a product that is not that.
 
 **Left in the tree**: the `retain` is harmless and correct in intent -- a scroll container does clip -- but it is dead code until the stored copy is
 the one it filters. It comes out if the next attempt finds the drawing path does not go through `rail_rows` at all.
+**Withdrawn the same round.** The `retain` came out because it broke `the_rail_fits_its_pane_and_keeps_one_pitch_per_category`, which inspects
+the very rows it removed -- and it had already been shown to change nothing on screen. An ineffective change that also fails a test is worse than
+no change: it costs a build, a test run and the reader's trust in the next "fixed". **269 tests pass again on the reverted tree.**
+
+The finding stands and is now smaller and sharper: the rows that overflow the rail are not drawn from `rail_rows`, and `state.drawn_rail` --
+computed once at :2522, taken at :2840 -- is where to look.

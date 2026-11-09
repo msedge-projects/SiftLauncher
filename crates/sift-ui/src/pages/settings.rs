@@ -3123,12 +3123,6 @@ fn rail_rows(dialog: Rect, scroll: f32, dev_mode: bool) -> Vec<RailRow> {
         previous = Some(tab);
     }
 
-    // **The pane is a scroll container: it clips its children.** This build drew every row of the 13-tab list, so the
-    // overflow ran past the pane and over the footer ("Advanced rendering", "Advanced", "Data" were visible below
-    // "Java and memory" where the reference shows nothing). Rows that begin below the pane are dropped; a row that
-    // straddles its edge is kept and reads as the clip the reference has.
-    let pane_bottom = crate::pages::settings::rail_footer_rect(dialog).top() - RAIL_ROW_GAP * 2.0;
-    rows.retain(|rail_row| rail_row.row.top() < pane_bottom);
 
     rows
 }
