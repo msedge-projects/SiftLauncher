@@ -3340,7 +3340,9 @@ mod tests {
         // **The card, not the old row.** Driving the reference's Home page showed a grid of 168x208 cards where this
         // build drew 96-point full-width rows; the number here is the measurement, and the test follows it rather
         // than the constant it used to read.
-        assert_eq!(card.height(), 208.0);
+        // **215**: re-measured at the card\'s middle column, where its rounded corner cannot interfere -- the reference\'s
+        // plate runs 354..568 at x 150. At 208 this build\'s loader line ran into the plate\'s bottom edge.
+        assert_eq!(card.height(), 215.0);
         assert_eq!(card.width(), 168.0);
         assert!(card.contains_rect(play), "the pill is on the card");
         assert!(card.contains_rect(kebab), "the kebab is on the card");

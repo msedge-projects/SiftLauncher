@@ -6089,3 +6089,7 @@ comes from a line this build does not draw.
 
 Four attempts at this card across two rounds have produced 4 pixels and three reverts. The honest reading is that the card\'s geometry is a
 consequence of a content difference -- one line, one height -- and no arrangement of the box alone will match it.
+**The test caught the change, and was right to.** `a_rows_targets_are_on_the_card_and_clear_of_each_other` asserts the card is 208 tall,
+with a comment saying the number is the measurement and the test follows it rather than the constant. Changing the constant to 215 failed it,
+which is the guard working: a height is a claim about the reference, and the claim now has a new value with its own measurement behind it
+(354..568 at x 150). Updated to 215 with that reason; **269 tests** pass.
