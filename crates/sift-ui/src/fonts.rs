@@ -132,7 +132,16 @@ pub fn install(ctx: &egui::Context) {
         };
         definitions
             .font_data
-            .insert(family.to_owned(), std::sync::Arc::new(FontData::from_static(bytes)));
+            .insert(
+                family.to_owned(),
+                std::sync::Arc::new(FontData::from_static(bytes).tweak(egui::FontTweak {
+                    // **One part in 250, measured.** "Fabulously Optimized" renders 248 points here and 249 in the
+                    // reference; the faces are the same family and weight, so the difference is in the advance. A
+                    // long line accumulates it into the two or three points that decide where a word wraps.
+                    scale: 1.004,
+                    ..Default::default()
+                })),
+            );
         definitions
             .families
             .insert(FontFamily::Name(family.into()), vec![family.to_owned()]);

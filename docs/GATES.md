@@ -4395,3 +4395,25 @@ That changes what the last rounds should do, and what the next person should kno
 in their line breaking**, and the fix -- if one is wanted -- is a fraction of a percent of advance width (`egui`\'s `FontTweak.scale`
 carries exactly this), not a new face, a new size or a new measure. It was not tried with the rounds remaining, because a change that moves
 every line break on every page wants a session of its own to measure both ways.
+### A font scale of one part in 250, and where it came from (2026-11-08)
+
+The measurement that made it possible took three attempts and is one line:
+
+| | reference | ours (before) | ours (after) |
+|---|---:|---:|---:|
+| "Fabulously Optimized" | **249 px** | 248 | **249** |
+
+Same family, same weight, same size -- and one pixel short on a 249-pixel string. `FontTweak { scale: 1.004 }` in `fonts::install` is exactly
+that one pixel, applied to every face:
+
+| | before | after |
+|---|---:|---:|
+| Home | 31 349 | **31 277** |
+| Project -- Description | 71 398 | **71 315** |
+
+Both pages moved in the right direction, which is what a correct metric fix looks like: small, uniform, and larger than the change itself
+because a line that breaks in the right place stops being counted for the rest of its length.
+
+**Why this is the last change of the stretch and not the first**: it moves every line break on every page, so it needed a session where
+both directions could be measured -- and it needed the 249-pixel measurement, which two earlier attempts failed to obtain by scanning the
+whole header row instead of the title. **The fix was one line; finding the number it should be was three.**
