@@ -6117,3 +6117,20 @@ for the news card ("+1 and the -4"). The reference\'s offsets cannot be copied; 
 **Stopped here, deliberately.** Five attempts at this card across three rounds: 4 pixels gained, four reverts, one test corrected. The card sits at
 a measured optimum of 32 780 with `CARD_H` 215, and every further move I can justify from a capture makes it worse. Getting it right needs the
 line-box model written down first -- one paragraph of arithmetic, then one attempt -- rather than a sixth guess at an offset.
+### The rail tooltip was white with dark text -- the inverse of the reference (2026-11-09)
+
+Two rounds of "the rail does nothing on hover" turned out to be the reference sitting behind a Settings modal. With it closed and Home shown,
+the tooltip is there -- and so is this build's, as the **opposite object**:
+
+| | reference | this build, before |
+|---|---|---|
+| the plate | `RAISED_BG` (39,41,46) | **`CONTRAST` -- white** |
+| the label | white, 15 point | **`ACCENT_CONTRAST` -- dark**, 12 point |
+| the arrow | a left-pointing arrow at the plate's edge, aimed at the icon | **none** |
+| the offset | 31 points right of the rail | 6 |
+
+Now drawn as the reference draws it, and driven on both sides: the Servers icon shows **"Modrinth Hosting"** in both (`tt5-rail.png`,
+`tt6-servers.png`) -- same string, same design, right of the icon.
+
+**Rows 213, 430 and 505 closed.** The timing (300 ms to show, 400 to hide, per `providers/tooltip.ts`) was already in the code and is recorded
+rather than timed; the geometry spec in row 507 (8-point offset, flip, arrow, default `top`) is matched for the rail only, so it stays open.

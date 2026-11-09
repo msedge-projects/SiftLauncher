@@ -1586,20 +1586,40 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
                 .position(|candidate| *candidate == destination)
                 .unwrap_or(0) as f32;
             let y = g::TITLE_BAR + g::RAIL_FIRST + index * g::RAIL_PITCH + g::RAIL_BUTTON / 2.0;
+            // **The reference's pill, not a white one.** Driving its rail tooltip at 1:1 gave: a \`RAISED_BG\` plate
+            // (39,41,46) 98x36 at (71,335), a white 15-point label, and a **left-pointing arrow** at the plate's
+            // left edge aimed at the icon. This drew a white plate with dark 12-point text and no arrow -- the
+            // inverse of the reference, which is why a hover on the rail looked like a different application.
             let label = painter.layout_no_wrap(
                 destination.short().to_owned(),
-                crate::fonts::body(12.0),
-                self.theme.ACCENT_CONTRAST,
+                crate::fonts::body(15.0),
+                self.theme.CONTRAST,
             );
             let pill = egui::Rect::from_min_size(
-                egui::pos2(g::RAIL_PAD + g::RAIL_BUTTON + 6.0, y - label.size().y / 2.0 - 5.0),
-                egui::vec2(label.size().x + 16.0, label.size().y + 10.0),
+                egui::pos2(
+                    g::RAIL_PAD + g::RAIL_BUTTON + 31.0,
+                    y - (label.size().y + 17.0) / 2.0,
+                ),
+                egui::vec2(label.size().x + 20.0, label.size().y + 17.0),
             );
-            painter.rect_filled(pill, 6, self.theme.CONTRAST);
+            painter.rect_filled(pill, 8, self.theme.RAISED_BG);
+            let arrow = vec![
+                egui::pos2(pill.left() - 9.0, y),
+                egui::pos2(pill.left() + 1.0, y - 7.0),
+                egui::pos2(pill.left() + 1.0, y + 7.0),
+            ];
+            painter.add(egui::Shape::convex_polygon(
+                arrow,
+                self.theme.RAISED_BG,
+                egui::Stroke::NONE,
+            ));
             painter.galley(
-                egui::pos2(pill.left() + 8.0, pill.top() + 5.0),
+                egui::pos2(
+                    pill.left() + 10.0,
+                    pill.center().y - label.size().y / 2.0,
+                ),
                 label,
-                self.theme.ACCENT_CONTRAST,
+                self.theme.CONTRAST,
             );
         }
 
