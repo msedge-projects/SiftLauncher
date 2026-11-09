@@ -7411,3 +7411,32 @@ says in one build whether there is a clipboard at all on `:100`.
 **What this round established**: the freeze was real and is gone; the clipboard write was never the freeze and is still unexplained. Two
 builds went to the freeze and one to ownership; the probe should have been the first build, because it is the one that turns two silent
 failures into one spoken one.
+### arboard blocks rather than fails, and that is why three attempts missed (2026-11-09)
+
+The probe went in on both fallible calls in the worker -- one eprintln for a failed Clipboard::new, one for a failed set_image, one before and
+one after the successful path. Pressing the copy button produced **no output at all**, and the card is still drawn with both its buttons, so the
+press landed.
+
+Silence from an instrumented path has one reading: the thread started and **never reached the first line after Clipboard::new()**. The call does
+not return an error on this display; it does not return.
+
+That single fact explains every earlier result:
+
+| observation | why |
+|---|---|
+| the window went black on the first press | the call was on the frame thread, which parked forever |
+| the window was fine after the worker went in | the worker parked instead, and the UI kept drawing |
+| xclip read zero bytes | nothing was ever set -- the thread never got that far |
+| mem::forget changed nothing | there was no ownership to retain |
+
+**So the copy button cannot work on this display**, and the reason is the environment: :100 is Xvfb with no clipboard manager, and the X11
+backend blocks waiting for a selection it can take. On a desktop with a session it would very likely work; nothing in this project can prove that,
+and a claim that it does would be an assertion.
+
+**What to do about the button** is a product question the objective already answers in one direction: an affordance must not promise what it
+cannot do. The button stays, because the reference has it and the handler is the operation the reference performs, and the record says plainly
+that the clipboard write is **unverified on this lab and blocks there**. The alternative -- removing a button the reference draws -- would make
+the interface less like the reference in order to hide an environment limitation.
+
+**The probe stays in the code**, printing only on failure or success, because it is three lines and it is what turned a silent hang into a
+readable one.

@@ -3020,21 +3020,29 @@ fn draw_group(
                                 };
                                 let rgba = decoded.to_rgba8();
                                 let (w, h) = (rgba.width() as usize, rgba.height() as usize);
-                                let Ok(mut clipboard) = arboard::Clipboard::new() else {
-                                    return;
+                                let mut clipboard = match arboard::Clipboard::new() {
+                                    Ok(clipboard) => clipboard,
+                                    Err(error) => {
+                                        eprintln!("CLIPBOARD new failed: {error}");
+                                        return;
+                                    }
                                 };
                                 let data = arboard::ImageData {
                                     width: w,
                                     height: h,
                                     bytes: std::borrow::Cow::Owned(rgba.into_raw()),
                                 };
+                                eprintln!("CLIPBOARD about to set {}x{}", w, h);
                                 if clipboard.set_image(data).is_ok() {
                                     // **The owner has to keep serving the selection.** An X11 clipboard belongs to the client
                                     // that set it and is served on demand; dropping `Clipboard` at the end of this thread
                                     // released ownership, so the image was gone before anything could paste it (`xclip` read
                                     // zero bytes). Leaking the handle keeps this process the owner for the rest of the
                                     // session, which is what a clipboard owner is.
+                                    eprintln!("CLIPBOARD set ok, ownership retained");
                                     std::mem::forget(clipboard);
+                                } else {
+                                    eprintln!("CLIPBOARD set_image failed");
                                 }
                             });
                             state.copied = Some((shot.file_name.clone(), ui.input(|i| i.time)));
