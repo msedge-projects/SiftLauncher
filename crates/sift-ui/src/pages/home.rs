@@ -1521,20 +1521,7 @@ fn list(
     ordered(&mut shown, state.sort_label);
     // A grouped page draws a header above the grid and moves the grid down by its height.
     let grouped = matches!(state.group_label, Some(key) if key != "No grouping");
-    let grid_shift = if grouped { GROUP_HEADER_H } else { 0.0 };
 
-    // Rule 1 of the drive: the rect comes from the program, never off a capture. Off unless
-    // `SIFT_HOME_PROBE` is set, and it prints the numbers a press is aimed with.
-    if std::env::var_os("SIFT_HOME_PROBE").is_some() {
-        eprintln!("home page={rect:?} rows={}", shown.len().min(ROWS_SHOWN));
-        for (index, instance) in shown.iter().take(ROWS_SHOWN).enumerate() {
-            let (card, play, kebab) = row_targets_at(rect, index, grid_shift);
-            eprintln!(
-                "home row={index} id={:?} card={card:?} play={play:?} kebab={kebab:?}",
-                instance.id
-            );
-        }
-    }
 
     // A dialog that was already open when this frame began owns every press in it. `egui::Modal`
     // makes the widgets under the plate inert from the frame after it is drawn, so this covers
@@ -1573,57 +1560,107 @@ fn list(
     // in its row's turn would be painted under the card below it.
     let mut anchored: Option<(String, Rect)> = None;
     let rows = shown.len().min(ROWS_SHOWN);
-    // **The group header**, when the second chip is grouping: the reference's is a chevron, the group's name
-    // and its count in a pill, over a rule at the row's foot (`ref-grouped.png`, grouped by Instance type, which
-    // reads "Custom 1"). One header per contiguous run of one name.
+    // **The groups.** Grouping is by the second chip: `Loader` and `Game version` read the entry, `Instance type`
+    // is "Custom" for every instance this build has (it records no type), and `Custom group` -- the reference's
+    // default -- draws no headings at all. The cards of each group restart the grid, and each group is preceded by
+    // its own header: chevron, name, count in a pill, a rule at the foot (`ref-grouped.png`).
+    let mut group_of = vec![0usize; shown.len()];
+    let mut index_in_group = vec![0usize; shown.len()];
+    let mut group_names: Vec<String> = Vec::new();
+    let mut group_counts: Vec<usize> = Vec::new();
     if grouped {
-        let name = match state.group_label {
-            Some("Loader") => shown.first().map(|entry| entry.loader.clone()).unwrap_or_default(),
-            Some("Game version") => shown.first().map(|entry| entry.version.clone()).unwrap_or_default(),
-            _ => "Custom".to_owned(),
-        };
-        // **At the grid's own top, not above it**: the cards were moved down by the header's height, so this is
-        // the space they vacated. Subtracting the height again drew it over the filter chips.
-        let top = rect.top() + ROW_TOP;
+        for (index, entry) in shown.iter().enumerate() {
+            let name = match state.group_label {
+                Some("Loader") => entry.loader.clone(),
+                Some("Game version") => entry.version.clone(),
+                _ => "Custom".to_owned(),
+            };
+            if group_names.last() != Some(&name) {
+                group_names.push(name);
+                group_counts.push(0);
+            }
+            let group = group_names.len() - 1;
+            group_of[index] = group;
+            index_in_group[index] = group_counts[group];
+            group_counts[group] += 1;
+        }
+    }
+    // How far each group starts below the grid's own top: its own header plus every earlier group's header and rows.
+    let columns = (((rect.width() + 12.0) / (168.0 + 12.0)).floor().max(1.0)) as usize;
+    let mut group_shift = vec![0.0f32; group_names.len()];
+    let mut cursor = 0.0f32;
+    for (group, count) in group_counts.iter().enumerate() {
+        group_shift[group] = cursor;
+        let rows = count.div_ceil(columns);
+        cursor += GROUP_HEADER_H + rows as f32 * (208.0 + 12.0);
+    }
+    if grouped {
         let painter = ui.painter();
-        crate::icons::draw(
-            painter,
-            crate::icons::Glyph::ChevronDown,
-            Rect::from_min_size(egui::pos2(rect.left() + 8.0, top + 4.0), Vec2::splat(16.0)),
-            theme.SECONDARY,
-        );
-        painter.text(
-            egui::pos2(rect.left() + 32.0, top + 12.0),
-            Align2::LEFT_CENTER,
-            name.clone(),
-            fonts::label(16.0),
-            theme.CONTRAST,
-        );
-        let name_width = painter
-            .layout_no_wrap(name.clone(), fonts::label(16.0), theme.CONTRAST)
-            .size()
-            .x;
-        let badge = Rect::from_min_size(
-            egui::pos2(rect.left() + 32.0 + name_width + 10.0, top + 3.0),
-            egui::vec2(22.0, 18.0),
-        );
-        painter.rect_filled(badge, 9.0, theme.BUTTON_BG);
-        painter.text(
-            badge.center(),
-            Align2::CENTER_CENTER,
-            format!("{}", shown.len()),
-            fonts::body(12.0),
-            theme.SECONDARY,
-        );
-        painter.rect_filled(
-            Rect::from_min_size(egui::pos2(rect.left(), top + 26.0), egui::vec2(rect.width(), 1.0)),
-            0,
-            theme.SURFACE_4,
-        );
+        for (group, name) in group_names.iter().enumerate() {
+            let top = rect.top() + ROW_TOP + group_shift[group];
+            crate::icons::draw(
+                painter,
+                crate::icons::Glyph::ChevronDown,
+                Rect::from_min_size(egui::pos2(rect.left() + 8.0, top + 4.0), Vec2::splat(16.0)),
+                theme.SECONDARY,
+            );
+            painter.text(
+                egui::pos2(rect.left() + 32.0, top + 12.0),
+                Align2::LEFT_CENTER,
+                name.clone(),
+                fonts::label(16.0),
+                theme.CONTRAST,
+            );
+            let name_width = painter
+                .layout_no_wrap(name.clone(), fonts::label(16.0), theme.CONTRAST)
+                .size()
+                .x;
+            let badge = Rect::from_min_size(
+                egui::pos2(rect.left() + 32.0 + name_width + 10.0, top + 3.0),
+                egui::vec2(22.0, 18.0),
+            );
+            painter.rect_filled(badge, 9.0, theme.BUTTON_BG);
+            painter.text(
+                badge.center(),
+                Align2::CENTER_CENTER,
+                format!("{}", group_counts[group]),
+                fonts::body(12.0),
+                theme.SECONDARY,
+            );
+            painter.rect_filled(
+                Rect::from_min_size(egui::pos2(rect.left(), top + 26.0), egui::vec2(rect.width(), 1.0)),
+                0,
+                theme.SURFACE_4,
+            );
+        }
+    }
+    // Rule 1 of the drive: the rect comes from the program, never off a capture. Off unless
+    // `SIFT_HOME_PROBE` is set, and it prints the numbers a press is aimed with.
+    if std::env::var_os("SIFT_HOME_PROBE").is_some() {
+        eprintln!("home page={rect:?} rows={}", shown.len().min(ROWS_SHOWN));
+        for (index, instance) in shown.iter().take(ROWS_SHOWN).enumerate() {
+            let (card, play, kebab) = row_targets_at(
+                rect,
+                if grouped { index_in_group[index] } else { index },
+                if grouped { group_shift[group_of[index]] } else { 0.0 },
+            );
+            eprintln!(
+                "home row={index} id={:?} card={card:?} play={play:?} kebab={kebab:?}",
+                instance.id
+            );
+        }
     }
     for (index, instance) in shown.iter().copied().take(ROWS_SHOWN).enumerate() {
+        // Grouped pages restart the grid inside each group and push it down by the headers above it.
+        // **A group's cards start below its own header**, not at it: with the shift alone the first group's cards
+        // began exactly where its heading was drawn, and the card painted over the heading.
+        let grid_shift = if grouped { group_shift[group_of[index]] + GROUP_HEADER_H } else { 0.0 };
         // The card, its pill and its kebab from the one function the probe and the tests read.
-        let (card, play, kebab) = row_targets_at(rect, index, grid_shift);
+        let (card, play, kebab) = row_targets_at(
+            rect,
+            if grouped { index_in_group[index] } else { index },
+            grid_shift,
+        );
         let is_selected = selected_ids.contains(&instance.id);
         // A selected card's plate lifts one step, which is what the reference's capture shows while the ring is ticked.
         painter.rect_filled(

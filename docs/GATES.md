@@ -4940,3 +4940,20 @@ laid-out name now.
 **What is still wrong, and is now its own OPEN row**: the header is drawn **once for the whole list** and names the first entry. Two
 loaders would share one header where the reference draws two sections. That is recorded as a new row rather than left implied by a
 "done" on the row above it -- the row that closed is the header itself, which was verified against the reference.
+### Grouping draws one section per group, and three mistakes came out of it (2026-11-09)
+
+With a Vanilla instance beside the Fabric one, grouping by Loader now draws **two sections**, each with its own chevron, name, count
+in a pill and rule, and each restarting the grid in column 0 (`two-groups3.png`). The default page is unchanged by any of it:
+**Home still measures 31 339** with the same per-slab split, because the ungrouped path passes no shift.
+
+Three separate mistakes on the way, each visible only when driven:
+
+| mistake | what it looked like | why |
+|---|---|---|
+| the drawing loop still used the **global** index | the second group\'s card appeared in **column 1** | only the probe\'s call site had been converted |
+| the tables were declared **after** the probe | a compile error, then a probe reading an empty table | blocks spliced in the wrong order |
+| a group\'s cards started **at** its header | the card painted over the heading -- the header was there, underneath | the shift was the group\'s offset, without its own header\'s height |
+
+The last one is the same failure as the sort menu two rounds ago, in a different costume: **a thing drawn correctly and then covered by
+the next thing drawn**. It is worth naming because the fix is always the same -- give the covered element its own space -- and because
+the symptom (nothing appears) is identical to the symptom of not drawing it at all.
