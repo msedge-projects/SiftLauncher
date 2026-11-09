@@ -5595,3 +5595,19 @@ kebab\'s Delete does rather than removing a folder on one press.
 **A hand-over note for the next round**: the bar\'s `Delete` rect is `bar.right()-96 .. bar.right()-24`, which is 72 wide and sits 24 in from
 the bar\'s end. The red label is about 45 wide, so the rect covers the label and its glyph with a little slack -- but `New group`\'s label ends
 at `bar.right()-120`, only 24 from the Delete rect\'s left edge, and a press in that 24-point gap does nothing at all.
+### The selection ring was a fifth of the size it should be (2026-11-09)
+
+The reference draws a **24-point circle inside a 50-point hit area** (`instance-card.vue:363-388`). This build drew 22 in 22 -- the circle a point
+small and the target a fifth of the area, so a press anywhere near the ring missed it.
+
+| | reference | before | after |
+|---|---|---|---|
+| the circle | 24 | 22 | **24** (measured: the white disc runs x 198..221 in the selected frame) |
+| the hit area | 50 | 22 | **50** |
+| a press 22 points from the centre | selects | **missed** | **selects** (`k0.png` -> `k3` sequence) |
+
+The check glyph went from 14 to 16 with it (`CheckIcon size-4`).
+
+**Not done**: the 200 ms opacity fade. The reference fades the ring in (`opacity-0 ... group-hover:opacity-100`,
+`transition-opacity duration-200 ease-out`); this build draws it at once, as it draws every hover state. That is recorded in the row rather than
+claimed, and it is the same missing mechanism as the menu fades.

@@ -1917,23 +1917,24 @@ fn list(
         // card is hovered, a white disc with a brand check once it is selected -- and the check stays when the pointer
         // leaves, which is how a reader knows what a bulk action would act on.
         {
-            let ring = Rect::from_center_size(
-                egui::pos2(card.left() + 122.0, card.top() + 59.0),
-                Vec2::splat(22.0),
-            );
-            let ring_hit = ui.interact(ring, egui::Id::new(("select", &instance.id)), Sense::click());
+            let centre = egui::pos2(card.left() + 122.0, card.top() + 59.0);
+            // **24 inside 50**, which is what the reference uses: `instance-card.vue:363-388` draws a 24-point circle in a
+            // `size-[50px]` hit area. This build drew 22 in 22, so the target was a fifth of the size and the circle a
+            // point small. The hit rect is the 50; the circle is drawn on the 24.
+            let hit = Rect::from_center_size(centre, Vec2::splat(50.0));
+            let ring_hit = ui.interact(hit, egui::Id::new(("select", &instance.id)), Sense::click());
             if is_selected {
-                painter.circle_filled(ring.center(), 11.0, theme.CONTRAST);
+                painter.circle_filled(centre, 12.0, theme.CONTRAST);
                 crate::icons::draw(
                     painter,
                     Glyph::Check,
-                    Rect::from_center_size(ring.center(), Vec2::splat(14.0)),
+                    Rect::from_center_size(centre, Vec2::splat(16.0)),
                     theme.BRAND,
                 );
             } else if ui.rect_contains_pointer(card) {
                 // The empty ring follows the **card's** hover, not the ring's: the reference shows it as soon as the pointer
                 // is anywhere on the card, which is what tells a reader the card can be selected before they aim at it.
-                painter.circle_stroke(ring.center(), 10.0, Stroke::new(2.0, theme.CONTRAST));
+                painter.circle_stroke(centre, 11.0, Stroke::new(2.0, theme.CONTRAST));
             }
             if ring_hit.clicked() {
                 toggled = Some(instance.id.clone());
