@@ -5200,3 +5200,31 @@ uncorrected one.
 **The rule, now with a third instance behind it**: *restart the reference and check a known pixel before any sweep*. A click leaves the
 ring, a click also leaves a grouping, and both survive everything short of a restart. Every "the numbers moved" episode in this file is
 one of those two.
+### The pointer is a state too, and the rail is not where this file thought (2026-11-09)
+
+Comparing Discover at 1440 gave **80 453**, then **78 984** after nothing but moving the reference\'s pointer from (50,860) to (700,880) --
+the same place this build\'s pointer was parked. The 1 469-pixel difference was a **hover state** in the reference\'s sidebar, on an element
+this build was not hovering because the pointer was somewhere else.
+
+That is the fourth member of the same family as the grouped reference and the focus ring: **the pointer position is part of the state**, and
+two captures taken with it in different places are not comparable. The rule now reads: restart the reference, check the ring pixel, park
+both pointers on the same neutral point (700,880), and only then capture.
+
+Clean Discover, both thresholds:
+
+| page | @40 | @20 | previously recorded |
+|---|---:|---:|---:|
+| Discover modpacks | **78 984** | 119 597 | 77 486 / 78 059 |
+
+in line with what was recorded, so the recent work did not move it.
+
+**The rail map, measured rather than assumed.** Clicking the reference\'s rail at y 123 gives *Discover modpacks* and at y 178 gives the
+*Skin selector* -- which is not the order this file had been driving (Home, Discover, Screenshots). Each page needs its icon identified
+by pressing it and reading the title, not by counting down a list:
+
+| rail y (1440x900) | page |
+|---|---|
+| 123 | Discover modpacks |
+| 178 | Skin selector |
+
+The rest are unmapped and will be found the same way, one press at a time.
