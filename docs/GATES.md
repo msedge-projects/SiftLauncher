@@ -4345,3 +4345,14 @@ BLOCKED-SERVICE, 12 NOT-IN-SOURCE); seven pages with a capture pair and a number
 **And the honest sentence about the whole objective**: it is not achieved, it is not close to achieved in the sense the objective means
 by "1:1", and the distance that remains is now described rather than assumed -- one renderer property this build cannot reproduce, one
 gate its architecture cannot meet, and a type metric nobody has chosen to chase.
+### Two behaviours re-driven after the renderer work (2026-11-08)
+
+Both were recorded as closed before this stretch; both were pressed again because the rasteriser changed underneath them.
+
+| behaviour | drive | result |
+|---|---|---|
+| gallery viewer\'s Escape | press a picture, then Escape | `viewer-open.png` -> `viewer-escaped.png`: the viewer closed, the grid returned |
+| rail tile\'s context menu | right press on the rail tile | `rail-menu.png`: **Play** in the brand green with its glyph, a rule, **View instance**, **Open folder** |
+
+Neither regressed. The menu is drawn over the page and under the modals, which is what the record says it should be, and the Escape
+returns to the grid rather than leaving the page -- the two behaviours that were hardest to get right the first time.
