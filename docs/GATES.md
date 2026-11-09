@@ -5998,3 +5998,22 @@ they measured the interface.
 **The pattern, fourth time this session**: a difference attributed to a mechanism, measured, and found to be a state or content mismatch. The
 probe that prints our own computed value is what ended it; nothing in the captures could, because two different sentences look exactly like two
 different renderings of one sentence.
+### The "Jump in" caret: off by twelve points and a shade, invisible to the metric (2026-11-09)
+
+Measuring four labels\' ink extents to test the rasteriser attribution turned up one that was not the rasteriser:
+
+| | ink extent |
+|---|---|
+| reference "Jump in" + caret | x 89..205 |
+| this build | x 88..187 |
+
+At 4x the cause is plain: the reference\'s caret sits **twelve points right** of the last glyph, in the heading\'s own white; this build drew it
+hard against the "n" in `SECONDARY`, a shade below the text. Moving it to `rect.left() + 104` and `CONTRAST` matches both.
+
+**The number did not move**: 32 781 -> 32 784, three pixels, against a 40-point threshold that cannot see a caret\'s tone or twelve points of
+gap. The change is correct and the metric is blind to it -- which is the standing reason this project measures with crops as well as counts,
+and the reason a flat number is not evidence that nothing happened.
+
+**Three of the four labels measured were clean**: the "Library" heading\'s ink box, the card name\'s column and the sidebar\'s "News" heading all
+land within a point or two across 1 000-odd ink pixels each. So the rasteriser attribution holds for those, and this round is the first in five
+that tested it rather than assuming it -- the difference it found was real, small, and in the one place nobody had looked.

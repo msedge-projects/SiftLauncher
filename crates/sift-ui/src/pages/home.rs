@@ -1156,14 +1156,18 @@ fn list(
         // of ref (29,31,35) against ours (22,24,28), invisible to a 40-point threshold and obvious to the eye in a crop.
         painter.rect_filled(strip, 12.0, theme.SURFACE_2);
         crate::pages::home::dashed_rect(&painter, strip, 12.0, theme.SURFACE_5);
+        // **104 and `CONTRAST`, measured at 1:1.** The reference\'s caret sits at x 192..202, twelve points right of the
+        // last glyph, and it is as bright as the heading; this drew it at 96 in `SECONDARY`, hard against the "n" and a
+        // shade below the text. Both are visible in a 4x crop and neither moves a number much -- which is exactly the kind
+        // of difference a threshold-40 count cannot see.
         crate::icons::draw(
             &painter,
             Glyph::ChevronUp,
             Rect::from_center_size(
-                egui::pos2(rect.left() + 96.0, rect.top() + 38.0),
+                egui::pos2(rect.left() + 104.0, rect.top() + 38.0),
                 egui::Vec2::splat(14.0),
             ),
-            theme.SECONDARY,
+            theme.CONTRAST,
         );
         let tile = Rect::from_min_size(
             egui::pos2(strip.left() + 12.0, strip.top() + 12.0),
