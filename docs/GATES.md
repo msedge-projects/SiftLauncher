@@ -7731,3 +7731,25 @@ re-capture -- a one-line change with an unambiguous before and after, which is e
 
 **The footer's text is a deliberate difference**, recorded last round: this build names itself. It should not be "fixed" by copying the
 reference's product name.
+### The rule is 226 by 1 at y 785, and nothing in the footer draws it (2026-11-09)
+
+Measured with the rule colour, scanning x 265..500 and y 680..800:
+
+| | reference | this build |
+|---|---|---|
+| runs at y 737..758 | 9-13 pixels wide -- the footer's own glyphs | the same |
+| a wide run | **none** | **y 785, 226 pixels** |
+
+So the difference is a single-pixel high rule, 226 points wide, at `rail.bottom() - 1`, spanning x 265..491 -- which is the rail's inner width
+(256..506 less 16 of padding on each side, to the pixel).
+
+**What it is not**: the footer block (`settings.rs:3398-3440`) draws only the dev-mode line, the mark and two text lines. The rail's border
+(`:3276`) is the vertical `border-r`, `rail.top()..=rail.bottom()` at `rail.right()`. The header's rule (`:3162`) is at `header.bottom()`.
+
+**Candidates left**, in the order a bisect should try them: the `ScrollArea`'s own frame or its scrollable background; a `rect_stroke` around
+`rail_rect` that this build adds and the reference does not; or the *selected row's* plate clipped to a sliver by the pane's bottom (a plate is 226
+wide, and only one row of it matched -- which is what a clip would leave).
+
+**The bisect is one line at a time**: disable each candidate, rebuild, and compare `clip-our.png` against the new frame. The comparison is exact and
+cheap -- two captures, `compare.py`, zero if nothing changed and a number if it did. That is how the last two no-ops should have been tested, and
+it is what the next round does first.
