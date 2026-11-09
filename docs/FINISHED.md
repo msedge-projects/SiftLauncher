@@ -18,6 +18,11 @@ clients in the same state, with a capture behind every claim.
 | Files at root (phase pinned) | **48 240** | `ref-files.png` vs `our-files-root.png` | the row data differs (its `config`, our `mods`) |
 | Skins | not comparable | `ref-skins.png` vs `ours-skins-b.png` | different states |
 | Servers | not comparable | `ref-servers.png` | the reference refuses its own page |
+**Read the modal rows as modals.** Settings and the project\'s dialog states are plates over a *blurred* page, so their figure is the plate plus
+whatever shows through the blur -- two different things. Measured on Settings: **27 256 differing pixels inside the plate, 10 189 outside it**. The
+backdrop\'s count is far below Home\'s own 32 781 because the blur suppresses glyph detail, so a modal row understates its dialog and cannot be
+compared with a full-page row. Rows below that are modals: Settings, and the project page\'s dialog states.
+
 **Home, by threshold**: 31 049 at 40, and the gradient below it is in `GATES.md`. The 3.6% global type scale was measured as a
 wash and reverted; what moved the number since was **geometry and standalone type**, not a knob:
 

@@ -5915,3 +5915,25 @@ two thirds of the disagreement disappears.
 It also means a modal comparison is not a page comparison: the number includes whatever is behind the plate, attenuated by the blur, so it
 understates the dialog and overstates nothing. Reading it as "the Settings dialog differs by 32 469" -- which the table did for many rounds -- was
 wrong in both directions at once.
+### The sidebar is half of Home, and its news card is 33 points narrow (2026-11-09)
+
+Home\'s 32 781 splits 13 875 content and **16 816 sidebar**. The sidebar is banded here by 40-row slices, and the largest single band is
+**rows 568-607 with 3 697 differing pixels** -- the news card\'s paragraph.
+
+At 1:1 the cause is not tone, it is **where the lines break**:
+
+| | line 1 of the paragraph |
+|---|---|
+| reference | "Share your server with friends **directly**" |
+| this build | "Share your server with friends" |
+
+Measuring the two cards\' right edges at y 600 gives **x 1378 for the reference and x 1345 here** -- the news card is **33 points narrower**, so the
+same words do not fit. The type itself is the same width per character (about 6.5 points a glyph on both), so the size is right and the box is
+wrong.
+
+**A hypothesis tried and measured out**: `COPY_SIZE` is 14 while its own doc comment says "12 points, from the reference\'s measurement". Setting it
+to 12 made the sidebar **worse by 140** (16 816 -> 16 956), so 14 stands and the comment is the stale artefact -- the second time this session a
+comment and its constant disagreed and the constant was right.
+
+**The fix is the card\'s width**, which the wrapping measure is derived from (`column(rect).width() - 20`). That is next round\'s work, and it is
+worth 3 697 pixels in one band rather than the 50-100 the last four rounds have averaged.
