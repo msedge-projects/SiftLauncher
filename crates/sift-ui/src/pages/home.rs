@@ -2418,6 +2418,23 @@ fn list(
 /// `rounded-[14px] bg-surface-3 ring-1 ring-surface-5` (`button-menu.ts:21`) around a
 /// `p-2` column of `min-h-10` rows (`ButtonMenuPanel.vue:70`, `button-menu.ts:15`). The
 /// delete row is the reference's red one (`tone: 'red'`, `use-library.ts:1371`).
+/// **Where a menu's panel goes.** Two anchors, two placements:
+///
+/// - a menu the **kebab** opened hangs below-right of the kebab, so its right edge is the anchor's;
+/// - a menu a **right press** opened is `bottom-start` at the pointer, as the reference's card context menu is
+///   (`ContextMenu.vue:32-33`, placement `bottom-start`, distance 0). Its left edge is the pointer's, clamped
+///   into the page -- aligning to `anchor.right() - width` put a zero-size anchor's menu off the window's left edge.
+///
+/// `top` is decided by the caller: it depends on the panel's height and the space below the anchor.
+fn menu_placement(anchor: Rect, bounds: Rect, size: Vec2, pointer_opened: bool, top: f32) -> Rect {
+    let left = if pointer_opened {
+        anchor.left().min(bounds.right() - size.x).max(bounds.left())
+    } else {
+        anchor.right() - size.x
+    };
+    Rect::from_min_size(egui::pos2(left, top), size)
+}
+
 fn menu_popover(
     ui: &mut Ui,
     theme: &Theme,
@@ -2491,16 +2508,7 @@ fn menu_popover(
     } else {
         (anchor.top() - MENU_DISTANCE - height).max(bounds.top())
     };
-    // **A pointer-opened menu is `bottom-start`**, as the reference\'s card context menu is
-    // (`ContextMenu.vue:32-33`: placement `bottom-start`, distance 0). The kebab\'s own menu hangs below-right of
-    // the kebab, and the zero-size anchor a right press gives has no right edge to align to -- left \'right() - width\'
-    // it landed off the window\'s left edge.
-    let left = if menu.opened_at.is_some() {
-        anchor.left().min(bounds.right() - width).max(bounds.left())
-    } else {
-        anchor.right() - width
-    };
-    let panel = Rect::from_min_size(egui::pos2(left, top), egui::vec2(width, height));
+    let panel = menu_placement(anchor, bounds, egui::vec2(width, height), menu.opened_at.is_some(), top);
     // `bg-surface-3` is `RAISED_BG`; the ring is `--surface-5`, one step above it, which is
     // `SURFACE_5` and not `DIVIDER` (`variables.scss:238-239`).
     painter.rect_filled(panel, MENU_RADIUS, theme.RAISED_BG);
@@ -3377,6 +3385,25 @@ mod tests {
         assert_eq!(menu.opened_at, None, "closing forgets where it was opened");
         menu.open("b");
         assert_eq!(menu.opened_at, None, "and opening again starts with none");
+    }
+
+    /// **The placement that put a menu off the window.** A right-pressed menu is bottom-start at the pointer and
+    /// must clamp into the page; the kebab's hangs off its own right edge and is not clamped the same way.
+    #[test]
+    fn a_pointer_menu_is_clamped_and_a_kebab_menu_hangs_right() {
+        let bounds = Rect::from_min_size(egui::pos2(64.0, 48.0), egui::vec2(1076.0, 852.0));
+        let size = egui::vec2(200.0, 240.0);
+        // A right press at x 150 puts the panel's left edge at 150. The old code used `right() - width`, which
+        // produced -50 here -- off the page, and exactly what a capture showed.
+        let at = Rect::from_min_size(egui::pos2(150.0, 400.0), Vec2::ZERO);
+        let panel = menu_placement(at, bounds, size, true, 408.0);
+        assert_eq!(panel.left(), 150.0, "the pointer's own column");
+        let near = Rect::from_min_size(egui::pos2(1120.0, 400.0), Vec2::ZERO);
+        let clamped = menu_placement(near, bounds, size, true, 408.0);
+        assert_eq!(clamped.right(), bounds.right(), "clamped to the page's right edge");
+        let kebab = Rect::from_min_size(egui::pos2(222.0, 499.0), egui::vec2(28.0, 28.0));
+        let hanging = menu_placement(kebab, bounds, size, false, 300.0);
+        assert_eq!(hanging.right(), kebab.right(), "right-aligned to the kebab");
     }
 
     fn the_menu_moves_and_activates_from_the_keyboard() {

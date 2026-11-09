@@ -5657,3 +5657,23 @@ the same dialogs.
 card, and the kebab. If it survived a close, the next kebab menu would appear wherever the last right press had been -- a fault that would
 read as a rendering bug. `a_pointer_anchor_does_not_outlive_its_menu` asserts that opening the kebab\'s menu starts with no pointer
 anchor, that closing forgets one, and that opening again starts clean. **268 tests** pass.
+### The placement that broke, now a function with tests (2026-11-09)
+
+Two rounds ago a card\'s menu drew **off the window\'s left edge**, because the panel aligned to `anchor.right() - width` and a
+right-pressed anchor has no width. The fix was two lines inline; the number that broke had no test, and the same shape of mistake is one
+edit away.
+
+It is `menu_placement(anchor, bounds, size, pointer_opened, top)` now, with three assertions:
+
+| case | expected |
+|---|---|
+| a right press at x 150 | the panel\'s **left** edge is 150 (the old code produced **-50**) |
+| a right press near the right edge | the panel clamps to the page\'s right edge |
+| the kebab\'s menu | its **right** edge stays on the kebab |
+
+**269 tests** pass, and the running build still opens the card menu at the pointer with all five rows (`w1.png`) -- the refactor is
+behaviour-preserving, which is the least a refactor owes.
+
+**Also cleaned**: the comment block that carried the old inline maths had literal backslashes in it (`\'`), left by the escaping on a
+previous insert. They were inside `//` so the build never noticed, but they were noise in the one place a reader looks for why the number is
+what it is.
