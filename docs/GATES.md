@@ -6802,3 +6802,28 @@ Two measurement errors were made getting here, both worth recording because they
 nothing while the process was alive, and `ps aux | grep` returned the **wrapper shell** (1 476 kB, `RssAnon` 4 kB) ahead of the program. The first
 read of the five sizes was of a `bash` process, and it reported a flat 1 476 kB across all five -- which is exactly the shape of the right answer
 and entirely wrong. `ps -C SiftUi -o pid=,stat=` with the zombies filtered is what works.
+### The library card: every number measured, and the fix still measures worse (2026-11-09)
+
+Measured on a verified pair, with the plate identified by its own fill and the artwork by its own green:
+
+| | reference | this build |
+|---|---|---|
+| card plate | **354..568** | **329..544** |
+| artwork (green runs at x 150) | **367..409, 468..481** | **367..409, 468..481** |
+| the name | 515 | 505 |
+
+So the artwork matches to the pixel, the plate is **25 points higher**, and the text block is **10 points higher inside it**. The obvious fix -- plate
++25, tile inset 36 -> 11 to keep the art still, name gap 8 -> 18 to bring the text down -- was applied and measured **13 763 of content against
+12 948, worse by 815**.
+
+That is the third arrangement tried for this card, and all three are worse despite matching the reference's measured positions. Something in the
+premise is wrong, and the candidates are now narrow: either the plate's measured extent is of a different element than the card (the fill scan at
+x 95 found the **chip row**, not the plate, until the x was moved), or the card's plate is not what the difference is being counted on.
+
+**What is not in doubt**: the artwork aligns exactly, and the totals are reproducible (**31 625** with the file restored from HEAD). What is in doubt
+is the identity of the 25-point band, and the next attempt should settle *that* -- by cropping the reference's card's top edge at 4x and looking at
+what is actually between y 329 and 354 -- before moving anything again.
+
+**A process failure worth naming**: while reverting, a line-replacement matched a `+ 25.0` belonging to a different expression and broke the build at
+home.rs:1248. `git checkout` restored the file, and the working tree is clean. Two builds were lost to that, on a round where three were already
+spent on a fix that did not work.
