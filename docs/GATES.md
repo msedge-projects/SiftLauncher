@@ -6454,3 +6454,19 @@ the double padding -- and the same method: box the element, trust its fill, chan
 
 **The chips were 3 and 5 narrow because two different strings measured narrow**, and a shared constant cannot fix two different errors exactly. 12
 splits the difference: chip 1 ends a point late, chip 2 a point early, and the row's total width lands on the reference's.
+### Two fixes on the Screenshots page: chips then heading (2026-11-09)
+
+| fix | evidence | content | total |
+|---|---|---:|---:|
+| chips 3 and 5 points narrow -> `SELECT_PADDING` 10 -> 12 | plates 88..221/230..342 against 88..218/227..334 | 7 646 -> **7 237** | 27 745 -> 26 586 |
+| group heading `TEXT_PRIMARY` -> `BASE` | reference label is (176,186,197), exactly `BASE`; ours was (255,255,255) | 7 237 -> **7 133** | 26 586 -> **26 482** |
+
+Both were found by boxing one element and reading its **fill**, the method that has worked every time this session: the chip plates gave edges to
+the point, and the heading tone answered to (176,186,197), which is a theme token rather than a mixture. After the change the heading brightest
+pixel is (176,186,197) on both sides and its ink box is the same 120..239 x 222..247.
+
+**513 pixels for two numbers**, and both are now at the reference values rather than near them -- `SELECT_PADDING` splits two label measures that
+cannot both be right, and `BASE` is exact.
+
+The page has gone **39 083 -> 26 482** over four rounds, 12 601 of it from the double padding and the rest from these two. What is left is 7 133
+of content, of which 2 166 is the image resample and the remainder is type on a page with a heading, two chips, a search field and a group header.
