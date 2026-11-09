@@ -1868,8 +1868,19 @@ fn list(
         // one verb there is what let a press on Save reopen the dialog it meant to save.
         let card_response = ui.interact(card, egui::Id::new(("card", &instance.id)), Sense::click());
         if card_response.clicked() && matches!(action, Action::None) {
-            menu.close();
-            action = Action::Open(instance.id.clone());
+            // **A press with a selection live toggles that card instead of opening it**, and so does a press with
+            // Shift, Ctrl or Cmd held (`instance-card.vue:148-154`, `modified-selection.ts:11-19`). Opening an
+            // instance while three cards are ticked throws the ticks away; the reference does not, and neither does
+            // this now.
+            let extend = ui.input(|input| {
+                input.modifiers.shift || input.modifiers.command || input.modifiers.ctrl
+            });
+            if extend || !selected_ids.is_empty() {
+                toggled = Some(instance.id.clone());
+            } else {
+                menu.close();
+                action = Action::Open(instance.id.clone());
+            }
         }
 
         // **The pill is a hover state.** The reference's card at rest carries its art, its name and its loader and

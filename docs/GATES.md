@@ -5544,3 +5544,20 @@ reference doing it.
 **A lab note from the same drive**: the reference was still sitting on a *project page* from a previous round, so hunting for its ring on
 Home found a "How to install" button instead. The reference is not reset between rounds and does not reset itself; the only way to know which
 screen it is on is to look at it.
+### A card press means two things, and the reference decides by selection (2026-11-09)
+
+Driving the reference showed what happens when a card is ticked: its whole content band changes, because selecting anything brings up a
+**selection bar** (row 155) -- "1 selected | Clear" on the left, "New group | Delete" on the right. That is a separate gap. What this round
+took from the same drive is the rule underneath it (`instance-card.vue:148-154`):
+
+> a press on a card **opens the instance**, unless a selection is live or Shift/Ctrl/Cmd is held -- then it **toggles that card**.
+
+This build opened the instance every time, which throws away every tick the reader has made. Now:
+
+| step | what changed |
+|---|---|
+| tick a card | (199,377)-(221,399), the ring |
+| press the card body **with the tick live** | **the same 22x22 box -- the tick came off, the page did not move** |
+
+So a reader can tick, then untick by pressing the card, and never leaves Home by accident. The modifier half of the rule is in the same
+expression but **untested**: the library has one instance, and an extension needs two.
