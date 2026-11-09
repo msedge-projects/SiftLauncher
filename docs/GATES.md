@@ -4459,3 +4459,19 @@ So the font is left at its own metrics, with the whole experiment -- six numbers
 person will look, because the alternative is that someone finds the 248/249 discrepancy and "fixes" it again.
 
 Home re-measured after the revert: **31 349**, exactly where it was.
+### The matrix\'s own audit line, recounted (2026-11-08)
+
+`GAP-MATRIX.md` opens with a paragraph auditing its own DONE status, written 2026-11-01. It said **90 DONE rows, of which none names a
+test or a driven run**. Recounted against the file as it is now:
+
+| | 2026-11-01 | today |
+|---|---:|---:|
+| DONE rows | 90 | **103** |
+| ...that name a capture, drive or test | **0** | **16** |
+
+The 16: rows 22, 46, 54, 68, 283, 626, 627, 636, 641, 642, 647, 648, and the four added this stretch. The other 87 rest on a value
+compared on both sides -- stronger than an assertion, weaker than a drive -- and the paragraph now says so instead of claiming none exist.
+
+**A ledger that audits itself has to be re-audited when the thing it audits changes**, and this is the third time this file has been caught
+describing a version of the product that no longer exists. The difference this time is that the correction raises the standard rather than
+lowering it: sixteen rows can be pressed, and the sentence says which sixteen.
