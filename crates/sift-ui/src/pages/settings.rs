@@ -3374,7 +3374,14 @@ fn draw_rail(
                 dialog
             );
         }
-        if travel > 0.0 {
+        // **An overlay scrollbar is invisible until it is used.** The reference draws one here -- the rail does overflow, 13 tabs
+        // at a 44-point pitch need 728 against a 508-point pane -- but the capture taken with the pointer parked elsewhere shows no
+        // thumb at all, only the plate's own border at x 506. Ours painted it at rest, four points wide, at x 498..501.
+        let rail_hovered = ui
+            .ctx()
+            .input(|input| input.pointer.hover_pos())
+            .is_some_and(|at| rail.contains(at));
+        if travel > 0.0 && rail_hovered {
             let thumb_h = (visible * visible / content).max(24.0);
             let offset = (scroll / travel).clamp(0.0, 1.0) * (visible - thumb_h);
             painter.rect_filled(

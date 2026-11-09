@@ -7658,3 +7658,27 @@ wrong. The scrollbar is a symptom of that term and will disappear with it.
 
 **Recorded rather than fixed** because the round ended, but this one now has a number, a function and a line, and the disagreement between them is
 the whole of the remaining work.
+### The rail's scrollbar is an overlay: invisible until used (2026-11-09)
+
+The numbers and the pixels disagreed for a reason that turned out to be mine, not the code's: **`Tab::ALL` holds 13 entries**, so
+`rail_needed_height` returning 728 against a 508-point pane is correct arithmetic -- 13 rows at a 44-point pitch plus four category blocks --
+and the rail genuinely overflows. The reference overflows too.
+
+What differs is that its scrollbar is an **overlay**: invisible at rest, shown while the pointer is on the list. The capture taken with the
+pointer parked elsewhere has no thumb, only the plate's border at x 506; ours painted a 4-point thumb at x 498..501 unconditionally.
+
+**Changed**: the thumb is drawn only while the pointer is over the rail. Measured after:
+
+| | reference | before | after |
+|---|---|---|---|
+| `SURFACE_5` columns, x 440..560 | **506** | 498, 499, 500, 501, 506 | **506** |
+
+That is exact agreement on the column set -- the first time a probe of this kind has matched rather than merely moved.
+
+**A second difference the same pair shows, not yet fixed**: both rails hold 13 tabs, but the reference **clips** at "Java and memory" -- its last
+visible row -- while this build draws the rows below it past the pane's foot and over the footer ("Advanced rendering", "Advanced", "Data"). So the
+reference's scroll container clips its children to the pane and ours does not, which is why its overflow needs a scrollbar and ours needs a clip.
+
+**And a number to distrust**: Settings measured 42 213 on this pair against 39 064 on the previous one, with both clients on the same tab and the
+scrollbar now matching. The difference is in what the rails *draw* below the clip, so the two figures are not comparable until the clipping is
+fixed; 42 213 should not replace 39 064 in any table.
