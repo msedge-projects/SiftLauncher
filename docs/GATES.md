@@ -4417,3 +4417,23 @@ because a line that breaks in the right place stops being counted for the rest o
 **Why this is the last change of the stretch and not the first**: it moves every line break on every page, so it needed a session where
 both directions could be measured -- and it needed the 249-pixel measurement, which two earlier attempts failed to obtain by scanning the
 whole header row instead of the title. **The fix was one line; finding the number it should be was three.**
+### The font scale, measured on every page it touched (2026-11-08)
+
+One change moves every line break, so every page was re-measured rather than assumed:
+
+| page | before | after | change |
+|---|---:|---:|---:|
+| Screenshots | 23 547 | **23 260** | **-287** |
+| Home | 31 349 | **31 277** | **-72** |
+| Project -- Description | 71 398 | **71 315** | **-83** |
+| Instance page | 30 454 | 30 608 | **+154** |
+| Settings | 31 975 | 32 212 | **+237** |
+
+**Three pages better, two slightly worse, net better by 51 pixels** -- and the title\'s advance now matches the reference exactly (249 = 249),
+which is the thing the change was for. The two regressions are the same mechanism in the other direction: a wrap that used to land where the
+reference\'s does now lands one word earlier on those pages. **A global metric fix cannot be judged one page at a time**, and this is what
+that looks like -- a correct measurement, a mixed result, and the mix recorded rather than the best page quoted.
+
+**Discover could not be measured at all**: the reference\'s own window had come back at **1436x848** instead of 1440x900, so the capture pair
+failed its size check. The harness caught it (compare.py refuses mismatched sizes), which is the guard working; the number needs a fresh
+pair and is left at its previous 78 538 rather than guessed.
