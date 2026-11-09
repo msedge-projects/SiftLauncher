@@ -816,6 +816,19 @@ pub fn draw(
     // and a wider box no longer means fewer lines.
     let measure = column(rect).width() - 20.0;
     if std::env::var("SIFT_PANEL_PROBE").is_ok() {
+        // **The reference\'s own first line, measured in this engine.** Its ink runs x 1160..1413 at 1440 wide, which is
+        // 253 points for "Share your server with friends directly". If this face needs more than that, the wrap that
+        // breaks before "directly" is the face and not the box -- a number instead of an attribution.
+        let probe_line = painter.layout_no_wrap(
+            "Share your server with friends directly".to_owned(),
+            fonts::body(COPY_SIZE),
+            theme.BASE,
+        );
+        eprintln!(
+            "news line width={} (reference ink 253) column_width={}",
+            probe_line.size().x,
+            column(rect).width()
+        );
         eprintln!(
             "news column={:?} measure={measure} copy_lines={}",
             column(rect),

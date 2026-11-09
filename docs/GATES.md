@@ -5965,3 +5965,36 @@ printed value has ended an argument that measurements from captures could not.
 
 **The band\'s 3 697 pixels are therefore the text engine\'s**, not a layout error -- the same cause as every other page\'s floor, concentrated in
 one card because this card has four lines of it.
+### The "wrap" that was two different articles (2026-11-09)
+
+Two rounds attributed the news card\'s 3 697 pixels to a narrower box, then to a wider typeface. Both were wrong, and the probe that disproved the
+second one also disproves the first:
+
+```
+news line width=252.40625 (reference ink 253) column_width=275
+```
+
+This engine lays out "Share your server with friends directly" at **252.4 points** where the reference inks **253**. The faces are within a fifth
+of a percent of each other; the box is the reference\'s 255; nothing about the type or the measure explains a wrap.
+
+**Because it is not the same sentence.** At 1:1, rows 548-620:
+
+| | the card\'s copy |
+|---|---|
+| reference | "Share your server with friends directly / in the app. When they accept, we\'ll / create an instance for them that\'s ..." |
+| this build | "Keep game options, servers, resource / packs, and more the same across / your instances." |
+
+**Different articles.** The reference\'s first card is the hosting promo; this build\'s is a different item, dated "September 7, 2026". Every
+"wrap difference" measured across two rounds was the line breaks of two different sentences, and the 3 697-pixel band is mostly that, not a
+rendering difference at all.
+
+Three slides were tried (`SIFT_NEWS_SLIDE=0/1/2`) and all three differ from the reference by about 9 500 pixels in that band, so the ordering is
+not a one-off: this build\'s bundled feed does not lead with the article the reference\'s live feed leads with.
+
+**What this changes.** Home\'s 32 781 is not all rendering: some of it is different words. Any page whose content comes from a live service --
+news, the project page\'s body, download counts -- carries the same contamination, and the numbers for those pages should not be read as though
+they measured the interface.
+
+**The pattern, fourth time this session**: a difference attributed to a mechanism, measured, and found to be a state or content mismatch. The
+probe that prints our own computed value is what ended it; nothing in the captures could, because two different sentences look exactly like two
+different renderings of one sentence.

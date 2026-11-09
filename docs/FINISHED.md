@@ -7,7 +7,7 @@ clients in the same state, with a capture behind every claim.
 
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
-| Home | **32 781** | `refclean2.png` vs `field6.png` (2026-11-09, pointer parked, reference restarted) | type: the rasteriser |
+| Home | **32 781** | `refclean2.png` vs `field6.png` (2026-11-09, pointer parked, reference restarted) | type, **and different news copy**: the sidebar\'s first card is a different article here, so its 3 697-pixel band is different words, not different rendering |
 | Discover | **78 984** | `disc-ref2.png` vs `disc-cur.png` (2026-11-09) | type and card artwork |
 | Screenshots | **23 573** | `shot-ref3.png` vs `shot-our.png` (2026-11-09, both empty; the reference title checked before capture) | the empty state's illustration |
 | Instance page | **30 454** | `sweep-instance-ref.png` vs `inst-clean.png` (mods/ emptied first) | type |
