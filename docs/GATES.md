@@ -7682,3 +7682,25 @@ reference's scroll container clips its children to the pane and ours does not, w
 **And a number to distrust**: Settings measured 42 213 on this pair against 39 064 on the previous one, with both clients on the same tab and the
 scrollbar now matching. The difference is in what the rails *draw* below the clip, so the two figures are not comparable until the clipping is
 fixed; 42 213 should not replace 39 064 in any table.
+### The clip was a no-op, and the two captures say so (2026-11-09)
+
+The rail now filters the rows that begin below its pane, was built and was run -- and the picture did not change:
+
+```
+compare.py sb-our.png clip-our.png   ->   total 0   titlebar 0   rail 0   content 0   sidebar 0
+```
+
+Identical to the pixel, with the binary built at 23:00:08 and the app started at 23:00:20. So the rows the filter removes are not the thing that
+draws "Advanced rendering", "Advanced" and "Data" below the rail's foot, and the filter has no effect on the frame.
+
+**Where they most likely come from**: `state.drawn_rail` (`settings.rs:622`, assigned at :2522, taken at :2840). The rail's rows are computed once,
+stored in the state, and the stored copy is what later code reads -- my `retain` changed the freshly computed list and not the stored one, which
+would explain an exact no-op. That is one read away and is where the next attempt starts.
+
+**A second difference the same capture pair shows, and it is not a bug**: the rail's footer names the product. The reference reads
+`Modrinth App 0.22.0 / Linux 20261025.0.616225`; this build reads `Sift Launcher 0.1.62 / linux 0.1.62`. That is this build telling the truth about
+itself, and it is a deliberate difference from the reference rather than a miss -- recorded here so that no later round "fixes" it by copying the
+reference's name into a product that is not that.
+
+**Left in the tree**: the `retain` is harmless and correct in intent -- a scroll container does clip -- but it is dead code until the stored copy is
+the one it filters. It comes out if the next attempt finds the drawing path does not go through `rail_rows` at all.
