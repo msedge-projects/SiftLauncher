@@ -5580,3 +5580,18 @@ in the destructive red, each with the reference\'s glyph.
 
 The glyphs were drawn on top of their labels first, because both were placed by eye; they are now placed from the label\'s laid-out width,
 which is the same fix the filter row needed and for the same reason.
+### Both of the bar\'s live actions, driven (2026-11-09)
+
+The selection bar was drawn last round with two of its four labels wired. Both were pressed this round:
+
+| press | what happened |
+|---|---|
+| **Clear** (with one card ticked) | the frame afterwards is **pixel-identical** to the one before the tick -- the tick came off, the bar went, nothing else moved |
+| **Delete** (with one card ticked) | the **"Delete instance"** confirmation opened: its warning, the instance\'s own row, `Cancel` and the red `Delete instance` |
+
+So the bar is not decoration: a reader can tick, clear, or commit to deleting, and the last of those goes through the same confirmation the
+kebab\'s Delete does rather than removing a folder on one press.
+
+**A hand-over note for the next round**: the bar\'s `Delete` rect is `bar.right()-96 .. bar.right()-24`, which is 72 wide and sits 24 in from
+the bar\'s end. The red label is about 45 wide, so the rect covers the label and its glyph with a little slack -- but `New group`\'s label ends
+at `bar.right()-120`, only 24 from the Delete rect\'s left edge, and a press in that 24-point gap does nothing at all.
