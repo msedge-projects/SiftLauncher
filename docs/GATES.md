@@ -5937,3 +5937,31 @@ comment and its constant disagreed and the constant was right.
 
 **The fix is the card\'s width**, which the wrapping measure is derived from (`column(rect).width() - 20`). That is next round\'s work, and it is
 worth 3 697 pixels in one band rather than the 50-100 the last four rounds have averaged.
+### The news wrap: the box was already the reference\'s, and widening it is worse (2026-11-09)
+
+Last round left the question open -- is the news card narrow, or its column? -- with the note that two causes would need two fixes. A probe
+settles it:
+
+```
+news column=[[1153.0 48.0] - [1428.0 900.0]] measure=255
+```
+
+The column is **275** wide and the measure is **255** -- exactly the reference\'s own measure, as the code\'s comment claims. The plates agree
+too: at y 120, 300 and 700 both sides\' sidebar spans 1140..1439 identically. So neither the card nor the column is narrow, and the earlier
+"33 points" was text ink at y 600, not a card edge -- a third reading of the same row, and the third one to be wrong.
+
+**What is left is the typeface.** At the same 255 points and the same nominal 14-point size, this build\'s face needs more width per word than
+the reference\'s, so "directly" does not fit on line 1. Widening the box to the column\'s full 275 should then pull the reference\'s line break
+back -- and it does, and it is worse:
+
+| measure | sidebar | Home |
+|---|---:|---:|
+| 255 (the reference\'s) | **16 816** | **32 781** |
+| 275 (the column\'s full width) | 17 681 | 33 646 |
+
+Widening fits more words per line but shifts every news card\'s date, art and height, and costs 865 pixels overall. 255 is the measured
+optimum, and the probe is kept so the next round that wonders about this number can read it rather than infer it -- the third time this session a
+printed value has ended an argument that measurements from captures could not.
+
+**The band\'s 3 697 pixels are therefore the text engine\'s**, not a layout error -- the same cause as every other page\'s floor, concentrated in
+one card because this card has four lines of it.

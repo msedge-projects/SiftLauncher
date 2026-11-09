@@ -815,6 +815,16 @@ pub fn draw(
     // drawn unwrapped and never broke at all; with the galley drawn, the reference's measure gives the reference's breaks
     // and a wider box no longer means fewer lines.
     let measure = column(rect).width() - 20.0;
+    if std::env::var("SIFT_PANEL_PROBE").is_ok() {
+        eprintln!(
+            "news column={:?} measure={measure} copy_lines={}",
+            column(rect),
+            slide.copy
+                .is_empty()
+                .then_some(0)
+                .unwrap_or_default()
+        );
+    }
     let copy = painter.layout(
         slide.copy.to_owned(),
         fonts::body(COPY_SIZE),
