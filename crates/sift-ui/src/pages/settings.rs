@@ -3300,6 +3300,13 @@ fn draw_rail(
             // (`TabbedModal.vue:189`); the theme's brand wash is `BUTTON_BG_SELECTED`.
             clipped.rect_filled(entry.row, RAIL_ROW_RADIUS, theme.BUTTON_BG_SELECTED);
         }
+        // **A hovered row carries a plate, and this build drew none.** Driving the wheel over the reference\'s rail and
+        // cropping it showed the row under the pointer on a `BUTTON_BG` plate while this build\'s rows stayed flat; the
+        // selected row keeps the brand wash above.
+        let hovered = !is_selected && ui.rect_contains_pointer(entry.row);
+        if hovered {
+            clipped.rect_filled(entry.row, RAIL_ROW_RADIUS, theme.BUTTON_BG);
+        }
         let ink = if is_selected {
             theme.BUTTON_TEXT_SELECTED
         } else {

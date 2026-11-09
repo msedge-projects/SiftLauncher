@@ -5838,3 +5838,21 @@ measuring further, and each is a real one rather than a tone:
 
 The scrollbar is the useful one: it is the measurement telling me the dialog is too tall in a way the height number alone would not. A dialog
 that fits does not need a bar.
+### Settings: the nav scrolls on both sides, and only one draws a hover plate (2026-11-09)
+
+Three deltas were named from the Settings comparison. Chasing them produced one fix, one correction and one near-miss.
+
+**The near-miss first.** The extra text at the dialog\'s foot reads **"Advanced rendering"** -- a nav row, not a hint. The tempting reading
+("the reference has no such item, delete it") would have removed a real tab: the reference\'s own key is
+`settings.display.sidebar.advanced-rendering.title`, so the item exists on both sides. What the reference lacks is the **scrollbar**, and
+that is an overlay-scrollbar convention, not an absent list.
+
+**The correction.** The page\'s own header comment says "scrolling it is the next thing this page owes". Driving the wheel over the reference\'s
+rail and over this build\'s changed both by the same region -- (273,220)-(468,698) against (272,218)-(490,695) -- and both landed on the same
+rows: Profile, Social, Privacy, INSTANCE DEFAULTS (Java and memory, Window, Launch hooks), SYSTEM (Resources, Troubleshooting). So the nav
+**does** scroll, and the comment is stale.
+
+**The fix.** Cropping the two after-states side by side showed the difference that matters: the reference puts a plate under the row the
+pointer is on, and this build drew those rows flat. The plate is drawn now -- `BUTTON_BG` under a non-selected row that contains the pointer,
+with the selected row keeping its brand wash. Driven: with the pointer at (300,490) the row under it changes (272,464)-(490,504), a 218x40
+plate.
