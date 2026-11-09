@@ -4495,3 +4495,28 @@ own period would cut idle CPU by three quarters.
 **Not changed with two rounds left**: an animation\'s cadence is exactly the kind of thing that wants a session to measure both the CPU and
 the motion, and a stub that repaints a fifth as often but stutters is a worse launcher than one that spends an eighth of a core looking
 right. The measurement and the lever are both written down; the decision is left where it can be tested.
+### Correction: the "frozen carousel" proved nothing, and the revert was made on it (2026-11-08)
+
+The record above says the scheduled-repaint change "froze the carousel", on the evidence of two captures eleven seconds apart that came
+back byte-identical. **That evidence does not support the claim**, and this entry corrects it:
+
+| run | repaint tick | two captures 11 s apart |
+|---|---|---|
+| with `request_repaint_after(next slide)` | scheduled, ~10 s | identical (`bb70f426`) |
+| after reverting to `request_repaint_after(500 ms)` | fixed, 0.5 s | identical (`bb70f426`) -- **the same bytes** |
+
+The identical pair is produced by the known-good tick as well, so it distinguishes nothing. Either the capture is stale, or the app is not
+repainting in this run at all -- and the run that *measured* 2 fps had `SIFT_SCALE_PROBE` set, which is the probe that counts `present`
+calls, so the two runs are not the same run.
+
+**What is actually known:** the change reduced idle CPU from **11.3% to 5.5% of a core** and frames from **2 fps to 0.1 fps**, both
+measured with the probe. Whether the carousel still advances under it was **not** determined -- the check that was used could not
+determine it, and it was misread as a failure.
+
+**The revert stands**, because a 500 ms tick is the state this build shipped and a change whose animation behaviour is unverified should
+not be kept on the strength of a bad measurement -- but the reason recorded in `panel.rs` is now wrong and has to say so. The honest
+version is: *the CPU saving is real and measured; the animation cost is unknown; the check has to be a probe-driven frame count with the
+news index printed, not two screengrabs compared by md5.*
+
+That is the third time this session a screenshot-based conclusion has been wrong in a way a probe would not have been -- and the first
+time the wrong conclusion made me give back a measured win.

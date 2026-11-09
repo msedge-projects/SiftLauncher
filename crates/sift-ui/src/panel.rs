@@ -707,6 +707,12 @@ pub fn draw(
             .get((seconds / NEWS_SLIDE_SECONDS) as usize % NEWS_SLIDES.len())
             .unwrap_or(&NEWS_SLIDES[0]),
     };
+    // **A fixed half-second tick, and the reason it is still here is not the one first written.** Asking instead for the
+    // moment of the next slide cut idle CPU from 11.3% to 5.5% of a core (2 fps -> 0.1 fps, both probe-measured), and it was
+    // reverted because two captures eleven seconds apart came back byte-identical. **That evidence was worthless**: the same
+    // identical pair appears with this tick restored, so it distinguishes nothing. The CPU saving is real; whether the carousel
+    // still advances under the change is unmeasured. Re-try it with a probe that prints the slide index each time the news card
+    // draws, not with two screengrabs compared by md5.
     ui.ctx().request_repaint_after(std::time::Duration::from_millis(500));
 
     // The sidebar is the surface's right column, not a panel bolted onto it: the
