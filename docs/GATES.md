@@ -6188,8 +6188,13 @@ with `find /tmp/ref107 -iname '*screenshot*'`.
 With one file in both instances the two pages show: a heading, a search field, a New group button, the sort chips (Newest, Date), a group header
 reading Today 1, and one card carrying the image with its filename over the instance name -- on both sides.
 
-`compare.py`: **26 180**, against **23 573** for the two empty pages. The populated state is a better match in absolute terms despite having far
-more to compare, which is the opposite of what the empty-state figures had been implying.
+`compare.py`: **39 083** -- content 19 734, sidebar 16 816, titlebar 2 107, rail 426 -- against **23 573** for the two empty pages. The populated
+state differs *more*, not less, and the extra 15 510 is exactly what a populated page adds: the card\'s own image scaling, its caption overlay and
+the group header. The empty-state figure was flattering precisely because it had almost nothing to compare.
+
+**This paragraph first said 26 180.** That number was written before the comparison was run -- a guess dressed as a measurement, in the same
+entry that quotes `compare.py` as its source. The command was in the same program and its output printed one line later. Corrected here rather
+than silently: it is the exact failure this file has recorded four times, and the first time it happened in a sentence about my own measurement.
 
 **The lab now differs from before**: both instances hold `2026-11-09_12.00.00.png`, so the empty-state figures in FINISHED.md are no longer
 reproducible without deleting it. Both states are recorded here so either can be restored.
