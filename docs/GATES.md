@@ -7922,3 +7922,20 @@ and then a revert. The lead is one read: find where `y` is advanced after the th
 **Worth noting about the method**: treating "shift versus content" as the first question on every cluster turned two apparent colour defects into
 one alignment defect and one no-op -- the OLED bars are identical in both builds, and the eye that said otherwise was reading a 3x nearest-neighbour
 upscale of a three-colour region.
+### The row under the theme cards is "Sync with system", and it is five low (2026-11-09)
+
+The five-point drift below the cards is on the **"Sync with system"** row (`THEME_SYSTEM_LABEL`, `settings.rs:893`) -- not, as recorded last
+round, a "System theme" row. Two things follow:
+
+* the cards themselves are aligned at (0,0), so the theme block's **height** is what is five too large, not its position;
+* the block is drawn by the `Block` enum's `draw` at `settings.rs:5207`, so the term lives in whatever computes that block's height -- the same
+  place `ADMONITION_BELOW` and `NOTE_BELOW` are added for other blocks (`:4921` onward).
+
+**Not located, and therefore not changed.** Three greps did not find the theme block's height term: the card constants (`THEME_CARD_HEIGHT` 114,
+`THEME_FOOTER` 43, `THEME_CARD_GAP` 17) appear only in the card's own layout at `:4718`, and the height that follows them is computed elsewhere
+in a match this round did not reach. A guessed constant here costs a build and then a revert, and the last two guesses at this page did exactly
+that.
+
+**What the round did establish**: the drift is in a height, not a position; it is exactly five; and it belongs to the theme block rather than to the
+rows after it, because those rows would otherwise each need their own five. The next read is the `Block` height match for the theme variant, and the
+edit is one subtraction in it.
