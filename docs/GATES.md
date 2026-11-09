@@ -6591,3 +6591,22 @@ that the pointer did not register (an `xdotool mousemove` without a subsequent m
 **What would settle it**: a hover with two motions (move away, move back in), a capture of the card in a state where the instance has been played,
 and a re-read of the earlier round's capture rather than its prose. Until then, claim 3 stays open and the three affordances keep the evidence they
 were built on.
+### The jump-in strip and the getting-started card, looked at rather than measured (2026-11-09)
+
+Both at 1:1, after checking the two clients were on the same page (the first pair this round was not -- the reference was on Home and this build
+on Files, which is obvious in the image and would have been a meaningless number from a diff).
+
+**The jump-in strip** is the same object on both: the heading with its caret, a dashed row, the instance tile, the name in semibold and the green
+"New instance" pill with its sparkle. Ours runs about four points wider -- the same trailing difference the name has everywhere -- and nothing else
+differs at 1:1.
+
+**The getting-started card** carries the same three rows in the same order with the same states, including the struck-through "Create first instance".
+Sampling a row through the card at y 90: the sidebar's tinted background is (25,35,32) in the reference and (25,35,33) here -- **within one unit**, which
+is the closest any large surface in this project has come.
+
+**What the sample did find** is at the panel's right edge: x 1432..1436 reads **(66,68,74) in the reference and the background colour here**. That is the
+reference's **sidebar scrollbar**, drawn as an overlay thumb because its sidebar overflows. This build draws none.
+
+It is the mirror of an earlier finding -- the Settings rail drawing a scrollbar where the reference draws none -- so the two are not one policy
+applied inconsistently: the reference draws an overlay thumb **when a panel overflows**, and this build's panels differ in whether they overflow and
+whether they draw. That is a behaviour, not a tone, and it belongs with the other animation work rather than with the pixel fixes.
