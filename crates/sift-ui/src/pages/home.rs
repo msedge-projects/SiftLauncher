@@ -606,6 +606,10 @@ pub struct State {
     /// The instances ticked for a bulk action. `InstanceItem.vue` puts a selection ring on the card's art, filled with a
     /// check when the card is in this set; the reference's tooltip reads "Select instance" or "Deselect instance".
     pub selected: std::collections::HashSet<String>,
+    /// **Where the page's own context menu was opened**, if it is open. The reference opens a one-item menu
+    /// on a right press anywhere on the library page: `+ New instance`, anchored at the pointer. Captured at
+    /// (149,349)-(327,407) after a press at (150,350). Escape, or a press anywhere else, closes it.
+    pub page_menu: Option<egui::Pos2>,
 }
 
 impl State {
@@ -1048,6 +1052,20 @@ fn list(
     instances: &[Entry],
     state: &mut State,
 ) -> Action {
+    // **A right press anywhere on the page opens the one-item menu**, as the reference does. This was missing
+    // entirely: a right press on the library background changed nothing in this build while the reference shows
+    // `+ New instance` anchored at the pointer.
+    if ui.input(|input| input.pointer.secondary_clicked()) {
+        if let Some(at) = ui.ctx().pointer_interact_pos() {
+            if rect.contains(at) {
+                state.page_menu = Some(at);
+                ui.ctx().request_repaint();
+            }
+        }
+    }
+    if ui.input(|input| input.key_pressed(egui::Key::Escape)) {
+        state.page_menu = None;
+    }
     // One directory walk per change of instance list, not per frame.
     state.refresh_worlds(instances);
     // Two disjoint fields of one state: naming them separately is what lets the rows below
@@ -1779,6 +1797,57 @@ fn list(
 
     if modal_was_open {
         action = Action::None;
+    }
+    // **The page's own menu**, over the cards and under the modals: one row, anchored at the press and kept
+    // inside the page. The reference's is 178 wide and 58 tall for its single row, and pressing it opens the
+    // same creation dialog the toolbar's button does.
+    if let Some(at) = state.page_menu {
+        let width = 178.0;
+        let height = 58.0;
+        let min = egui::pos2(
+            at.x.min(rect.right() - width - 4.0).max(rect.left() + 4.0),
+            at.y.min(rect.bottom() - height - 4.0).max(rect.top() + 4.0),
+        );
+        let menu_rect = Rect::from_min_size(min, egui::vec2(width, height));
+        let painter = ui.painter();
+        painter.rect_filled(menu_rect, 8.0, theme.SUPER_RAISED_BG);
+        let row = Rect::from_min_size(
+            egui::pos2(menu_rect.left() + 6.0, menu_rect.top() + 9.0),
+            egui::vec2(width - 12.0, 40.0),
+        );
+        let hovered = ui.ctx().pointer_interact_pos().is_some_and(|p| row.contains(p));
+        if hovered {
+            painter.rect_filled(row, 6.0, theme.RAISED_BG);
+        }
+        crate::icons::draw(
+            painter,
+            crate::icons::Glyph::Plus,
+            Rect::from_center_size(egui::pos2(row.left() + 18.0, row.center().y), Vec2::splat(16.0)),
+            theme.SECONDARY,
+        );
+        painter.text(
+            egui::pos2(row.left() + 38.0, row.center().y),
+            Align2::LEFT_CENTER,
+            "New instance",
+            fonts::label(16.0),
+            theme.CONTRAST,
+        );
+        if ui.input(|input| input.pointer.primary_clicked()) {
+            if hovered {
+                state.open_create = true;
+            }
+            state.page_menu = None;
+        }
+    }
+    // **The `+ New instance` flag becomes the action here.** The toolbar and the page menu both set
+    // `state.open_create`, and nothing read it: the toolbar's own button was dead for the same reason the page
+    // menu was, which is how this was found. The action is the only way out of this page to the creation dialog
+    // (`main.rs` promotes `Action::Create` into `create_open`).
+    if state.open_create {
+        state.open_create = false;
+        if matches!(action, Action::None) {
+            action = Action::Create;
+        }
     }
     // The confirmation, last of all: it paints over the chrome on its own layer, and it owns
     // the only press on this page that can take a folder with it.

@@ -4846,3 +4846,25 @@ measured in. The probe was worth building: it turned "looks zoomed" into two num
 
 The Gallery\'s 164 485 is therefore its **text**, like every other page, and the picture\'s softness against the reference is the difference
 between downscaling a 350-point texture and downscaling a 1920-point one -- which the 20 MB memory clause forbids us from matching.
+### The library page had no context menu, and its "+ New instance" button was dead (2026-11-09)
+
+Found by pressing: a right press on the library background changed **nothing** in this build, where the reference opens a one-item
+menu anchored at the pointer. Measured by diffing each client against its own idle frame:
+
+| | reference | ours before |
+|---|---|---|
+| change after a right press at (150,350) | menu at **(149,349)-(327,407)** | **no change at all** |
+| its content | `+ New instance` | -- |
+
+It is implemented now, and pressing it exposed a second, older bug:
+
+| step | result |
+|---|---|
+| right press on the library page | menu opens at the pointer, panel 178x58, `+ New instance` (`pgmenu-our.png`) |
+| Escape | closes (`pgmenu-esc.png`) |
+| pressing the row | **opens the "Create instance" dialog** (`pgmenu-created.png`) |
+
+**The dialog did not open the first time.** `state.open_create` was set by the toolbar\'s `+ New instance` button and by the new menu, and
+**nothing in the tree ever read it** -- the toolbar\'s button had been dead for as long as it existed, and the only working route was the
+hero\'s own `Action::Create`. The flag is now consumed at the end of `list`, which fixes both: one field, two buttons, three rounds of
+"the press did nothing" that were a press doing nothing.
