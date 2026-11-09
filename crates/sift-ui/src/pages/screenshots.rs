@@ -2806,10 +2806,13 @@ fn draw_group(
             Align2::LEFT_CENTER,
             &group.title,
             fonts::semibold(GROUP_TITLE_SIZE),
+            // **`BASE`, not `TEXT_PRIMARY`.** Measured on the populated page: the reference's "Today" is (176,186,197)
+            // -- `BASE` exactly -- where this build drew white, and its ink box is the same 120..239 x 222..247 either
+            // way, so only the tone was wrong.
             if response.hovered() {
                 theme.CONTRAST
             } else {
-                theme.TEXT_PRIMARY
+                theme.BASE
             },
         );
 
