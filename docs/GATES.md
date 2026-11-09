@@ -7517,3 +7517,39 @@ told me it cannot separate the two.
 
 **Recorded as a correction to `FINISHED.md`'s identity row**, which quoted "0.6% of the frame on Home" as the reachable target. That figure was
 derived from the split and inherits its flaw; it should not be quoted again until the artwork's geometry is measured.
+### The sidebar is a news LIST of four, not one card -- which is why the reference scrolls (2026-11-09)
+
+`features/news/news-sidebar.vue` is 51 lines and settles the structure:
+
+```js
+const { data: news } = useQuery({ ...newsArticlesQueryOptions(), select: (articles) => articles.slice(0, 4) })
+```
+```html
+<div class="space-y-4 flex flex-col items-center w-full">
+  <NewsArticleCard v-for="item in news" :key="item.path" :article="item" />
+  <ButtonLink type="colored" color="brand" size="xl" href="https://modrinth.com/news" target="_blank" class="my-4">
+    <NewspaperIcon /> View all news
+  </ButtonLink>
+</div>
+```
+
+So the sidebar renders **up to four cards stacked 16 points apart**, then a brand **View all news** button. This build draws **one** card and
+rotates between two bundled articles every ten seconds (`NEWS_SLIDES`, `NEWS_SLIDE_SECONDS`), which is a different thing in three ways:
+
+| | reference | this build |
+|---|---|---|
+| how many cards | up to **4**, all visible | **1** |
+| what a card is | an article from the feed | a bundled slide |
+| does it change over time | no | **rotates every 10 s** |
+| after the cards | a **View all news** button | nothing |
+
+**This is the cause of the scrollbar**, and it is structural rather than a metric artefact: four cards plus a button do not fit a 900-point panel,
+so the reference's sidebar overflows and draws the overlay bar; one card fits, so ours does not.
+
+**Why it was not changed today**: the panel positions the art plate absolutely (`serverart::paint_news(painter, plate, index, hover)` at a fixed
+rect) and pins the hosting banner to the foot at `rect.bottom() - BANNER_H`. A second card has to push the first up and displace the banner, which
+means the sidebar needs a scrolling column -- the thing this build has never had -- rather than an extra draw call. That is a round of its own and
+it starts at `panel.rs:645` (`banner_top`) and :873.
+
+**What is now known and was not before**: the news block is a list, the rotation is invented, the count is four, and the button exists. Those are
+four matrix rows' worth of fact from one 51-line file.
