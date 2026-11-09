@@ -7369,3 +7369,23 @@ sets the ceiling for this method, and the next pass needs a different signal: th
 `ScrollablePanel`, `EmptyState`), searched for as identifiers rather than sentences.
 
 **Counts after this round**: 164 DONE, **63 VERIFIED**, 436 OPEN, 38 OPEN-WITH-CAUSE.
+### The false-negative vein is nearly dry, and that is the finding (2026-11-09)
+
+Two rounds of hunting rows that were already implemented, with the search scoped to the file each row is about:
+
+| pass | signal | candidates | real |
+|---|---|---:|---:|
+| 1 | verbatim literals | 14 from 228 rows | 7 |
+| 2 | identifiers (`StopCircle` -> `stop_circle`), scoped by page | 7 from 439 rows | 2 |
+
+The second pass's five false leads are instructive: `empty_state` exists in `screenshots.rs` and not in `instance.rs`, so an unscoped name hit is
+evidence of nothing -- which is why the area-to-file map went in before the numbers were trusted. What is left after both passes is mostly rows
+whose literal appears **only in a comment saying the feature is missing**, which is the opposite of a lead.
+
+**So the hypothesis is answered**: this project's six wrongly-recorded rows were real but rare, and the 436 that remain are mostly genuinely open.
+Nine rows were closed across two rounds (42, 97, 103, 17, 18, 118, 266, 304, 305, plus 129 and 616 today), which is 2 per cent of the OPEN list,
+not the third the hand-work suggested.
+
+**Two of the eleven were rows that contradicted themselves** -- row 42's states cell described our circle while its gap said none, and row 616's
+ours cell said "in use: yes, central" while its status said OPEN. That is a cheaper signal than any grep: a row whose cells disagree needs a read,
+and it says where to start. The next pass should look for those first, because they are self-identifying.

@@ -44,10 +44,60 @@ def literals(text):
     return out
 
 
-def find(needle):
+def identifiers(text):
+    """Component and icon names as the source writes them, in our snake_case: `StopCircle` -> `stop_circle`.
+
+    The literal pass drained because the strings left are the ones our code mentions only to say it lacks them. A
+    *name* is a different signal: `EmptyState`, `ScrollablePanel`, `StopCircle` are what the implementation would be
+    called, and a name in our source is a stronger lead than a sentence in a comment.
+    """
+    found = re.findall(r"\b([A-Z][a-z]+(?:[A-Z][a-z]+)+)\b", text)
+    out = []
+    for name in found:
+        snake = re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+        out.append(snake)
+    return out
+
+
+# **Which file a row is about.** A name like `empty_state` exists once per page, so a hit anywhere is not evidence
+# for a row about one page. The element cell leads with its area, and the area names the file.
+AREAS = {
+    "sidebar": "panel.rs",
+    "screenshots": "screenshots.rs",
+    "skins": "skins.rs",
+    "settings": "settings.rs",
+    "rail": "shell.rs",
+    "header": "shell.rs",
+    "titlebar": "shell.rs",
+    "toggle": "panel.rs",
+    "hero": "home.rs",
+    "home": "home.rs",
+    "card": "home.rs",
+    "content": "instance.rs",
+    "worlds": "instance.rs",
+    "files": "instance.rs",
+    "logs": "instance.rs",
+    "versions": "instance.rs",
+    "instance": "instance.rs",
+    "about": "about.rs",
+    "servers": "servers.rs",
+    "discover": "shell.rs",
+    "search": "shell.rs",
+}
+
+
+def scope(element):
+    area = element.split("—")[0].strip().lower()
+    for key, name in AREAS.items():
+        if key in area:
+            return name
+    return None
+
+
+def find(needle, only=None):
     try:
         result = subprocess.run(
-            ["grep", "-rn", "--fixed-strings", "--include=*.rs", needle, str(SOURCE)],
+            ["grep", "-rn", "--fixed-strings", "--include=*.rs", needle, str(SOURCE / only) if only else str(SOURCE)],
             capture_output=True, text=True, timeout=60,
         )
     except Exception:
@@ -63,13 +113,29 @@ def main():
     hits = 0
     checked = 0
     for number, element, reference, status in rows():
+        only = scope(element)
         if status not in ("OPEN", "OPEN-WITH-CAUSE"):
             continue
         if "absent" not in reference.lower() and "none" not in reference.lower():
             pass
         checked += 1
+        found_any = False
+        for ident in identifiers(reference):
+            hits_lines = find(ident, only)
+            real = [h for h in hits_lines if "///" not in h and "//!" not in h]
+            if real:
+                hits += 1
+                print(f"row {number}  {element[:60]}")
+                print(f"  identifier: {ident}")
+                print(f"  found:      {real[0][:140]}")
+                found_any = True
+                break
+        if found_any:
+            if hits >= limit:
+                break
+            continue
         for literal in literals(reference):
-            found = find(literal)
+            found = find(literal, only)
             if found:
                 hits += 1
                 print(f"row {number}  {element[:60]}")
