@@ -3364,6 +3364,21 @@ mod tests {
     /// (`button-menu.ts:102-131, 29, 149-177`). Each rule is one call here, so a row that went
     /// unreachable again would fail this rather than a drive.
     #[test]
+    /// **The pointer anchor belongs to one opening.** A menu opened by a right press places itself at the pointer;
+    /// one opened by the kebab places itself at the kebab. If `opened_at` survived a close, the next kebab menu would
+    /// appear wherever the last right press was -- a fault that would look like rendering, not state.
+    #[test]
+    fn a_pointer_anchor_does_not_outlive_its_menu() {
+        let mut menu = Menu::default();
+        menu.open("a");
+        assert_eq!(menu.opened_at, None, "the kebab\'s menu has no pointer anchor");
+        menu.opened_at = Some(egui::pos2(10.0, 20.0));
+        menu.close();
+        assert_eq!(menu.opened_at, None, "closing forgets where it was opened");
+        menu.open("b");
+        assert_eq!(menu.opened_at, None, "and opening again starts with none");
+    }
+
     fn the_menu_moves_and_activates_from_the_keyboard() {
         let mut menu = Menu::default();
         menu.open("Parity Test");

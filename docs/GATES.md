@@ -5647,3 +5647,13 @@ edge**, because the placement assumes a right-aligned trigger. A pointer-opened 
 
 The first two of those are the same class of failure this file keeps recording -- **a control that looks wired and is not**, because the
 thing it depends on was never called. The third is a familiar one too: two code paths writing one field, and the later one winning silently.
+### The card menu\'s rows act, and a test for the anchor it uses (2026-11-09)
+
+Opening the card menu at (150,400) and pressing **Edit** -- its second row -- opened the **"Edit instance"** dialog with the name field,
+`Cancel` and `Save` (`edit-row.png`). So the menu is not a new code path with its own verbs: its rows are the kebab\'s, and they reach
+the same dialogs.
+
+**A test for the risk the last round left open.** `opened_at` decides where a menu appears, and two things write it: a right press on a
+card, and the kebab. If it survived a close, the next kebab menu would appear wherever the last right press had been -- a fault that would
+read as a rendering bug. `a_pointer_anchor_does_not_outlive_its_menu` asserts that opening the kebab\'s menu starts with no pointer
+anchor, that closing forgets one, and that opening again starts clean. **268 tests** pass.
