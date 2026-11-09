@@ -402,7 +402,11 @@ impl Step {
 /// project page had a compact copy of it; this is the one both call. It draws the frame, the heading with its
 /// open chevron, and the three steps, and answers the height it used. `done` says which steps the library has
 /// finished, in the same order as the steps themselves.
-pub fn getting_started_card(
+/// **The PROJECT page\'s copy of this card.** Home draws its own, further down this file, through [`draw`] --
+/// and the two are *not* one implementation: this one positions its rows from `card.top() + 52`, Home\'s from
+/// `plan.steps_first`. Two rounds were spent editing this function and measuring no change, because the
+/// screenshot in hand was Home. The name says which page it belongs to now.
+pub fn project_getting_started_card(
     ui: &mut egui::Ui,
     rect: Rect,
     theme: &Theme,

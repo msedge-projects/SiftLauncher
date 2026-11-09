@@ -5307,3 +5307,20 @@ that a metric prefers a misaligned element to an aligned one.
 
 **Reverted.** The tree is at 32 864 / 50 298, the numbers it had before the round, and the six-point offset is recorded rather than left as a
 half-made change in a card with two implementations.
+### The trap has a name now (2026-11-09)
+
+Two rounds were spent editing a function that Home never calls. Both implementations are live -- Home\'s is inside `panel::draw`, the
+project page\'s is its own function -- and the comment beside the project one claimed they were shared, which is exactly the sentence that
+made the mistake reasonable.
+
+| | before | after |
+|---|---|---|
+| the function | `getting_started_card` | **`project_getting_started_card`** |
+| its doc | none | says which page draws it, that Home\'s is a **different implementation**, and that two rounds were lost to this |
+| the call site\'s comment | "the card itself is the shared one in `panel`, so the project and Home sidebars cannot drift apart again" | states that they are two implementations **and they can drift** |
+
+Home is unchanged by the rename: **32 864** at threshold 40, the same per-slab split, and 266 tests pass.
+
+**Not done**: the rename makes the trap visible, it does not remove it. The two cards still compute their row positions from different
+expressions (`card.top() + 52` against `plan.steps_first`), so they can still drift; the honest fix is one row-drawing routine called by
+both, and that is a refactor rather than a rename. What this round buys is that the next person reading either one knows there are two.

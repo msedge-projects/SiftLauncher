@@ -2602,14 +2602,15 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
 
     // Each section is a SidebarCard: flex flex-col gap-3 p-4 pt-3, card-shadow mb-4 rounded-2xl
     // bg-surface-3 border border-surface-4, h2 at text-lg font-semibold (SidebarCard.vue:11-18).
-    // **Getting started sits above the Compatibility card on this page**, as the reference's own project capture
-    // shows -- and *only* those two, with no News card and no hosting banner. The card itself is the shared one in
-    // `panel`, so the project and Home sidebars cannot drift apart again.
+    // **Getting started sits above the Compatibility card on this page**, as the reference\'s own project capture
+    // shows -- and *only* those two, with no News card and no hosting banner. The card is `panel`\'s
+    // `project_getting_started_card`, which is **not** the one Home draws: they are two implementations and they
+    // can drift. (This comment claimed they were shared; a round of edits to the wrong one proved otherwise.)
     {
         let has_instance = std::fs::read_dir(crate::data::instances_dir())
             .map(|read| read.flatten().any(|entry| entry.path().is_dir()))
             .unwrap_or(false);
-        let (used, _pressed) = crate::panel::getting_started_card(
+        let (used, _pressed) = crate::panel::project_getting_started_card(
             ui,
             Rect::from_min_size(egui::pos2(rect.left(), y), egui::vec2(rect.width(), 0.0)),
             theme,
