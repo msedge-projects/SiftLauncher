@@ -1337,8 +1337,9 @@ fn list(
         &painter,
         Glyph::Search,
         Rect::from_center_size(
-            egui::pos2(field.left() + 22.0, field.center().y),
-            egui::Vec2::splat(16.0),
+            egui::pos2(field.left() + 23.0, field.center().y),
+            // **20, not 16.** The reference's magnifier inks 18x18 at (102,257)-(119,274); a 16-point box drew 14x14.
+            egui::Vec2::splat(20.0),
         ),
         theme.SECONDARY,
     );
@@ -1348,7 +1349,8 @@ fn list(
     // (111,119,130) and its ink is 16 rows tall; this build peaked at (150,162,176) with 13 rows. The tone is
     // `SECONDARY` pulled 72% of the way to the page, and the type one step larger.
     painter.text(
-        egui::pos2(field.left() + 38.0, field.center().y),
+        // +41, not +38: the reference\'s text starts at x 129 against this build\'s 127.
+        egui::pos2(field.left() + 40.0, field.center().y),
         Align2::LEFT_CENTER,
         shown_text,
         fonts::body(15.0),

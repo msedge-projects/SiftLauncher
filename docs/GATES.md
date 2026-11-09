@@ -5737,3 +5737,18 @@ Home at 1440x900 went **32 864 -> 32 818**, which is what a placeholder two shad
 **The mistake worth keeping**: an element-level tool reports the extremes of whatever box it is given, and a box containing two elements answers
 for the brighter one. Every "off by N" is about one pixel, and which pixel is the reader\'s job -- the third time in this file that a window
 wider than the thing produced a confident number about a different thing.
+### The field\'s glyph and inset, to the pixel (2026-11-09)
+
+Boxing the glyph and the text separately -- the lesson from last round -- gave numbers that converged in two passes:
+
+| | reference | first | after |
+|---|---|---|---|
+| the magnifier | (102,257)-(119,274) | 14x14, 2 points in | **18x18, the same box** |
+| the text\'s first column | 129 | 127 | **129** |
+
+and Home at 1440x900 came down **32 864 -> 32 781** across the whole field (placeholder tone, glyph size, text inset), which is 83 pixels for
+three measured corrections -- a small number for the work, and the honest scale of what an element this size can be worth.
+
+The passes were needed because each fix moved the other: enlarging the glyph pushed its box a point left, and the text had to move a point
+back to compensate. That is ordinary for adjacent elements, and it is why the box has to be re-measured after every change rather than
+extrapolated from the first.
