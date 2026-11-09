@@ -6284,3 +6284,26 @@ record should say that rather than quote 57 726 as though it measured the table'
 
 **The lab changed again**: this instance now has six folders where it had one, so every earlier Files figure (including 48 240 in FINISHED.md) is
 for a state that no longer exists.
+### Where the Screenshots chrome still differs, band by band (2026-11-09)
+
+After the double padding came out, the chrome's 3 688 differing pixels were banded by 20-row slices:
+
+| rows | differing | what is there |
+|---|---:|---|
+| 120-139 | **1 316** | the search field |
+| 160-179 | **810** | the sort chips |
+| 80-99 | **783** | the heading |
+| 180-199 | 468 | the chips' foot |
+| 220-239 | 413 | the group header |
+| 260-279 | 375 | the card's top |
+
+**The heading band was 783 and looked like a clean 24-point error** -- the reference's heading ink starts at x 88, and something in this build's
+band starts at 64. Moving the heading to `rect.left() + PAGE_PADDING` was measured at **28 510, worse by 765**, and reverted: 27 745 is restored.
+
+So the ink at x 64 in that band is **not the heading** -- the heading was already on the reference's column, and the other thing in the row is what
+differs. That is the fourth time in this file that an ink box wider than its subject has answered for the wrong element, and the second time in
+two rounds that the "obvious" 24-point shift was already correct.
+
+**What that leaves**: the search field's 1 316 is the largest single band, and it is measurable -- its plate, its placeholder and its magnifier can
+each be boxed separately, as the library's field was. That is the next piece of this page, and it is a search for *which* element rather than for
+an offset.
