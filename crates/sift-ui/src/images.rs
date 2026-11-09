@@ -51,7 +51,11 @@ const CACHE_LIMIT: usize = 96;
 /// view the reader scrolls to resident while leaving the process's footprint predictable. Before this, the only cap was
 /// the entry count, and a reader paging through a screenshot folder could reach hundreds of megabytes without any single
 /// entry looking expensive.
-const CACHE_BYTES: usize = 64 * 1024 * 1024;
+// **8 MiB, not 64.** A single full-size screenshot is 5.2 MB of texture and its decode a second 5.2, and at a 64 MiB
+// budget neither was ever evicted: one preview lifted the process from 13 720 kB to 28 108 kB and closing the viewer did not
+// give a byte back. At 8 MiB the viewer's own texture is over budget on its own and goes as soon as the reader leaves it,
+// while the grid's thumbnails -- a few hundred kilobytes each -- still hold several screens of scroll.
+const CACHE_BYTES: usize = 8 * 1024 * 1024;
 
 /// A decoded image's size as bytes, which is what the texture will occupy once uploaded.
 fn texture_bytes(size: [usize; 2]) -> usize {
@@ -144,7 +148,20 @@ impl Images {
     /// Synchronous, unlike [`Images::get`]: the file is on the disk the caller has just read, and a
     /// screenshot decodes in a few milliseconds -- a worker would cost a frame of latency for it.
     pub fn get_file(&mut self, ctx: &egui::Context, path: &std::path::Path) -> Option<TextureHandle> {
-        self.get_file_with(ctx, path, egui::TextureOptions::LINEAR, "smooth")
+        self.get_file_with(ctx, path, egui::TextureOptions::LINEAR, "smooth", 0)
+    }
+
+    /// The same file, decoded no larger than `cap` on its longest side. **A screenshot is 1440x900 and a card draws it
+    /// 510 wide**, so decoding it whole spends 5.2 MB of texture and 5.2 MB of intermediate bitmap to fill a quarter of
+    /// that -- and both were held for the life of the process. The cap is a separate cache entry from the full-size one,
+    /// so the viewer can still open the original after a card has shown the thumbnail.
+    pub fn get_file_capped(
+        &mut self,
+        ctx: &egui::Context,
+        path: &std::path::Path,
+        cap: u32,
+    ) -> Option<TextureHandle> {
+        self.get_file_with(ctx, path, egui::TextureOptions::LINEAR, "smooth", cap)
     }
 
     /// The same file, sampled nearest instead of smooth.
@@ -158,7 +175,7 @@ impl Images {
         ctx: &egui::Context,
         path: &std::path::Path,
     ) -> Option<TextureHandle> {
-        self.get_file_with(ctx, path, egui::TextureOptions::NEAREST, "nearest")
+        self.get_file_with(ctx, path, egui::TextureOptions::NEAREST, "nearest", 0)
     }
 
     /// Decode `path` once and cache it under its path and sampling.
@@ -168,10 +185,16 @@ impl Images {
         path: &std::path::Path,
         options: egui::TextureOptions,
         sampling: &str,
+        cap: u32,
     ) -> Option<TextureHandle> {
         // The sampling is part of the key: a path asked for both ways gets one texture each,
-        // and the suffix keeps that key from colliding with a URL.
-        let key = format!("file:{sampling}:{}", path.display());
+        // and the suffix keeps that key from colliding with a URL. The cap joins it for the same reason:
+        // the thumbnail and the original are different textures.
+        let key = if cap == 0 {
+            format!("file:{sampling}:{}", path.display())
+        } else {
+            format!("file:{sampling}:{cap}:{}", path.display())
+        };
         self.tick += 1;
         let tick = self.tick;
         match self.entries.get_mut(&key) {
@@ -185,6 +208,13 @@ impl Images {
         let decoded = std::fs::read(path)
             .ok()
             .and_then(|bytes| image::load_from_memory(&bytes).ok())
+            .map(|image| {
+                if cap > 0 && (image.width() > cap || image.height() > cap) {
+                    image.resize(cap, cap, image::imageops::FilterType::Triangle)
+                } else {
+                    image
+                }
+            })
             .map(|image| image.to_rgba8());
         let Some(image) = decoded else {
             self.entries.insert(key, Entry::Failed);

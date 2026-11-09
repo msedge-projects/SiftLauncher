@@ -230,6 +230,10 @@ const CARD_ASPECT: f32 = 9.0 / 16.0;
 /// `rounded-xl` on the card (`card.vue:172`).
 const CARD_RADIUS: u8 = 12;
 
+/// The longest side a card decodes its picture to. The card is 510 points wide at 1440 and its picture fills it, so 640
+/// leaves room for a window twice as wide without ever holding a 1440x900 decode for a thumbnail.
+const THUMB_CAP: u32 = 640;
+
 /// `p-3` on the caption overlay (`card.vue:233`).
 const OVERLAY_PADDING: f32 = 12.0;
 
@@ -3075,7 +3079,9 @@ fn draw_card(
     // The thumbnail, object-cover: the picture keeps its aspect and fills the card, and the
     // excess is cut off. The source asks for a 512-point thumbnail (card.vue:37-41); this
     // decodes the file once and keeps the texture, the trade the instance page makes too.
-    if let Some(texture) = images.get_file(painter.ctx(), &shot.path) {
+    // **A card asks for a thumbnail, not the original.** The decode is capped at the size the card draws it, which is
+    // what keeps one 1440x900 screenshot from costing 10 MB of texture and intermediate bitmap to fill a 510-wide card.
+    if let Some(texture) = images.get_file_capped(painter.ctx(), &shot.path, THUMB_CAP) {
         let uv = cover_uv(texture.size_vec2(), rect.size());
         painter.image(texture.id(), rect, uv, Color32::WHITE);
     } else {

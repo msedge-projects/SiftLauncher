@@ -7173,3 +7173,30 @@ measurement above says it is the latter.
 
 **Recorded as a regression against a met gate** -- the first time this session has broken one. It is not caused by the copy button, but it was
 found by checking the copy button's cost, which is the argument for re-measuring after any dependency change rather than assuming.
+### Thumbnails decoded at thumbnail size -- and the gate is still broken (2026-11-09)
+
+The image cache held a screenshot whole: a 1440x900 file decoded to 5.2 MB of bitmap and uploaded as 5.2 MB of texture, to fill a card 510
+points wide. `get_file` now has a capped sibling and the card asks for **640 on the longest side**, a separate cache entry from the original so
+the viewer can still open the full one.
+
+| state | before the cap | after |
+|---|---:|---:|
+| the grid | 27 800 kB | **24 920 kB** |
+| the viewer open | 27 812 kB | 38 840 kB |
+| back on Home, viewer closed | 27 844 kB | 38 840 kB |
+
+**320 kB on the grid, and the gate is still not met.** Two things are wrong and one of them is not this fix:
+
+1. **The baseline has grown from 13 720 kB to 22 504 kB** since round 348, with the app on Home and no screenshot ever opened. That is not
+   the cache, not the thumbnails and -- measured directly -- not `arboard`: a build with the dependency removed read 27 564 kB against 27 800
+   with it. What it is, is unattributed, and attributing it means bisecting builds, which costs rounds this loop does not have.
+2. **The viewer's 14 MB is never given back.** Opening one picture takes the process to 38 840 kB and closing it, leaving the page and
+   returning to Home all leave it there. The 8 MiB budget did not evict it, which says the eviction runs on insert and not on use, or that
+   something still holds the handle.
+
+**So `FINISHED.md`'s RSS row must be corrected again**: it currently claims MET at 13 720 kB, and that figure is not this build's. The clause is
+**NOT MET** on the current tree, with the numbers above, and the two causes named but not yet fixed.
+
+**This is the second time a met gate has been recorded on a number that stopped being true**, and both times the correction came from a
+re-measurement prompted by something else entirely. The lesson is not about RSS: it is that a gate's row needs the date and the build it was
+measured on, because a figure without them silently becomes a claim about code that no longer exists.
