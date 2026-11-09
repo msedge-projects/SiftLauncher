@@ -6067,3 +6067,25 @@ which is what the two worse measurements are.
 
 So the card\'s box cannot be matched before its interior is: the height is a consequence of the lines, not a number to set. The measurement stands
 and the fix waits for the interior -- recorded here so the next round does not try the three numbers again, which is what this file is for.
+### The card\'s height, taken alone, is worth 4 pixels; its top is not a number (2026-11-09)
+
+Reading the interior at 2x before touching numbers again -- the lesson last round wrote down -- showed the real defect plainly: this build\'s grey
+loader line ran **into the plate\'s bottom edge**, where the reference leaves padding under it.
+
+The three numbers were separated this time:
+
+| change | Home |
+|---|---:|
+| baseline | 32 784 |
+| **`CARD_H` 208 -> 215 alone** | **32 780** |
+| `CARD_H` 215 and the name\'s gap 8 -> 3 | 32 803 |
+| `CARD_H` 215, `ROW_TOP` +25 and the tile inset 36 -> 11 | 32 905 |
+
+So the height is worth 4 pixels and the **top is not a number to set**: the card\'s top edge is 25 points above the reference\'s, and moving it --
+with the tile inset compensated, so the artwork stays at 367 on both -- costs 121. The reference\'s card is taller *and lower*, and its extra height
+comes from a line this build does not draw.
+
+**Kept**: `CARD_H` 215. **Reverted**: the gap and the top. Home 32 784 -> **32 780**, and the padding under the loader line is now visible at 2x.
+
+Four attempts at this card across two rounds have produced 4 pixels and three reverts. The honest reading is that the card\'s geometry is a
+consequence of a content difference -- one line, one height -- and no arrangement of the box alone will match it.

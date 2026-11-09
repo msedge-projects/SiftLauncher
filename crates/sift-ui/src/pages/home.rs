@@ -165,7 +165,9 @@ fn row_targets_at(rect: Rect, index: usize, shift: f32) -> (Rect, Rect, Rect) {
     // loader+version under it. This build drew one full-width row per instance with the Play pill and the kebab
     // inside it, which is a different object on a different page.
     const CARD_W: f32 = 168.0;
-    const CARD_H: f32 = 208.0;
+    // **215, not 208.** Measured on the reference's own card at x 150: 354..568. At 208 this build's grey loader line ran into the
+    // plate's bottom edge, which is what the 2x crop shows; the extra 7 is the padding under it.
+    const CARD_H: f32 = 215.0;
     const GAP: f32 = 12.0;
     let columns = ((rect.width() + GAP) / (CARD_W + GAP)).floor().max(1.0) as usize;
     let column = index % columns;
