@@ -634,6 +634,9 @@ pub struct State {
     pub group_label: Option<&'static str>,
     /// Whether that menu is open.
     pub group_open: bool,
+    /// **The groups the reader has folded shut**, by name. The reference\'s header chevron collapses its section;
+    /// this set is what makes the chevron a control rather than a decoration.
+    pub collapsed: std::collections::HashSet<String>,
 }
 
 impl State {
@@ -1591,16 +1594,43 @@ fn list(
     let mut cursor = 0.0f32;
     for (group, count) in group_counts.iter().enumerate() {
         group_shift[group] = cursor;
-        let rows = count.div_ceil(columns);
+        // **A folded group takes only its header**, which is what the reference\'s chevron does.
+        let rows = if state.collapsed.contains(&group_names[group]) {
+            0
+        } else {
+            count.div_ceil(columns)
+        };
         cursor += GROUP_HEADER_H + rows as f32 * (208.0 + 12.0);
     }
     if grouped {
         let painter = ui.painter();
         for (group, name) in group_names.iter().enumerate() {
             let top = rect.top() + ROW_TOP + group_shift[group];
+            let folded = state.collapsed.contains(name);
+            // **The chevron is a control.** A press anywhere on the header folds or unfolds the section, and the
+            // glyph points right when folded, as the reference\'s does.
+            let header = Rect::from_min_size(
+                egui::pos2(rect.left(), top),
+                egui::vec2(rect.width(), GROUP_HEADER_H),
+            );
+            if ui
+                .interact(
+                    header,
+                    egui::Id::new(("library-group-fold", name.as_str())),
+                    Sense::click(),
+                )
+                .clicked()
+            {
+                if folded {
+                    state.collapsed.remove(name);
+                } else {
+                    state.collapsed.insert(name.clone());
+                }
+                ui.ctx().request_repaint();
+            }
             crate::icons::draw(
                 painter,
-                crate::icons::Glyph::ChevronDown,
+                if folded { crate::icons::Glyph::ChevronRight } else { crate::icons::Glyph::ChevronDown },
                 Rect::from_min_size(egui::pos2(rect.left() + 8.0, top + 4.0), Vec2::splat(16.0)),
                 theme.SECONDARY,
             );
@@ -1655,6 +1685,10 @@ fn list(
         // **A group's cards start below its own header**, not at it: with the shift alone the first group's cards
         // began exactly where its heading was drawn, and the card painted over the heading.
         let grid_shift = if grouped { group_shift[group_of[index]] + GROUP_HEADER_H } else { 0.0 };
+        // A folded group draws its header and nothing under it.
+        if grouped && state.collapsed.contains(&group_names[group_of[index]]) {
+            continue;
+        }
         // The card, its pill and its kebab from the one function the probe and the tests read.
         let (card, play, kebab) = row_targets_at(
             rect,

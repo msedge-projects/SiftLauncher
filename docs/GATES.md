@@ -4957,3 +4957,19 @@ Three separate mistakes on the way, each visible only when driven:
 The last one is the same failure as the sort menu two rounds ago, in a different costume: **a thing drawn correctly and then covered by
 the next thing drawn**. It is worth naming because the fix is always the same -- give the covered element its own space -- and because
 the symptom (nothing appears) is identical to the symptom of not drawing it at all.
+### The group chevron folds its section (2026-11-09)
+
+It was drawn and did nothing -- the exact shape this sequence of rounds keeps finding. Now:
+
+| | before the press | after |
+|---|---|---|
+| the Vanilla section | chevron down, "Vanilla 1", its card under it | **chevron right, no cards, the subsection folded** |
+| the Fabric section | below it | **moved up** into the space the fold freed |
+
+The press target is the whole header, not the 16-point glyph, because the reference\'s row is the control. A folded group takes only
+its header\'s height in the layout, so the sections below shift by exactly 208 + 12 rather than leaving a hole.
+
+The default page is unchanged by any of it: **Home still measures 31 339**, same per-slab split.
+
+**Still open**: the chevron\'s rotation is a different glyph rather than a rotated one (they agree at 16 points), and there is no
+animation on the fold -- the reference\'s sections open and close over ~150 ms, which this build does not do anywhere yet.
