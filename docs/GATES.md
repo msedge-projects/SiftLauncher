@@ -6327,3 +6327,22 @@ the position no longer added. Removing it from the width closes the gap exactly:
 **The band had said 1 316 differing pixels in rows 120-139 and could not say which element they were in.** The box said it in one line: same
 fill, same rows, different right edge. That is the second time in two rounds that boxing one element beat banding a row, and the cause is the same
 as the padding bug one round earlier -- a rect that is already padded, used as though it were not.
+### The chips are 3 and 6 points narrow; the heading is not a size error (2026-11-09)
+
+Boxing the two sort-chip plates, and the heading, after the search field:
+
+| | reference | this build |
+|---|---|---|
+| first chip plate | 89..218 (129) | 89..215 (126) |
+| second chip plate | 233..339 (106) | 228..328 (100) |
+| the gap between them | 15 | 13 |
+
+so the chips are **3 and 6 points narrow and the gap 2**, and the row ends 11 points short. Small, and in the same family as the field -- widths
+derived from a text measure rather than a set number -- but not the same cause, and not worth a build on their own.
+
+**The heading looked like an 11-point size error and is not.** Its ink measured 26 rows here against the reference's 16, which reads as a font one
+step too large; at 1:1 the two are the same size and weight, and the 26 was the ink threshold catching antialiasing on a bold face at a different
+subpixel phase. The same threshold that made the search field's 1 316 visible made this look like something it is not.
+
+**The remaining 7 646 on this page** therefore sits in: the chips' 11 points of width, whatever the group header is doing (413 in rows 220-239),
+the image's 2 166, and the ordinary type difference on every string. Each is measurable; none of them is a 750-pixel constant like the last two.
