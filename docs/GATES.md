@@ -5156,3 +5156,25 @@ objective names, so it is quoted honestly: **it is 599 worse, and it is right**.
 What that implies for the objective: any element whose fill step from the page is under 40 cannot be measured by the frame count, and
 **19** of the surfaces in this theme are within 40 of the page -- so the frame figure has a floor set by what it cannot see, independent of
 how close the drawing gets.
+### The same row at three thresholds, and a correction (2026-11-09)
+
+The filter row\'s correction was kept while the frame count said it was worse. Both captures were then measured against the same clean
+reference at three thresholds:
+
+| threshold | three chips (wrong shape) | funnel + outlined button (correct) | winner |
+|---|---:|---:|---|
+| **40** -- the objective\'s | **32 265** | 32 864 | the wrong one, by **599** |
+| 20 | 54 562 | **50 298** | the right one, by **4 264** |
+| 10 | 90 901 | **86 356** | the right one, by **4 545** |
+
+So the correction is a real improvement of about **4 300 pixels**, and threshold 40 inverts the ranking. That is not an argument about
+which number to like: it is the same measurement with the threshold moved, and the ordering flips.
+
+**Correction to the previous entry.** It said "19 of the surfaces in this theme are within 40 of the page". Counted from `theme.rs` for
+the dark palette -- the first count was polluted by the light one, whose page tone is (235,235,235) -- there are **12 distinct tone steps**
+under 40: 0, 4, 7, 10, 13, 15, 16, 18, 20, 22, 28 and 32, shared across about twenty token names. The claim was directionally right and
+numerically wrong, and it is the number a reader would have quoted.
+
+**What to use from here**: `tools/parity/element.py` for any single element (it sees colour to the point), `compare.py` at 40 for the
+objective\'s figure as written, and `compare.py --threshold 20` when the question is "is this frame getting closer", because at 20 the
+measure is monotone with the drawing being right on the rows this file has tested.
