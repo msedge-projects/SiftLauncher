@@ -828,8 +828,10 @@ pub fn draw(
     painter.text(
         egui::pos2(card.left() + HEADING_INSET, plan.getting_started),
         Align2::LEFT_TOP,
+        // **700, not 600.** The heading\'s letters drift 7 points left of the reference\'s by the end of the phrase --
+        // same ink height, same start, progressively narrower -- which is a weight, not a size.
         GETTING_STARTED,
-        fonts::semibold(CHECKLIST_HEADING_SIZE),
+        fonts::title(CHECKLIST_HEADING_SIZE),
         theme.CONTRAST,
     );
     // The disclosure chevron, on the heading's own line and in its own ink. The checklist's

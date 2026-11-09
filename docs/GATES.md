@@ -4777,3 +4777,30 @@ the Gallery is the closest and it is at 12.7%. The number is a property of havin
 
 **The work that remains can still move it**: every non-text difference is measurable and fixable, and this file has the list. But the
 floor has to be reported rather than chased.
+### Letter positions: the drift is real, and it is the advance (2026-11-09)
+
+The 24.7% figure for a text row is not soft edges -- it is letters in different places. Measured stem by stem on the words "Getting
+started" (16-point, semibold), the reference\'s stems and this build\'s:
+
+```
+ref  : 1167 1179 1190 1197 1203 1207 1213 1217 1231 1241 1247 1257 1265 1272
+ours : 1167 1179 1189 1195 1200 1205 1210 1214 1229 1238 1243 1252 1260 1265
+delta:   0    0    1    2    3    2    3    3    2    3    4    5    5    7
+```
+
+**Same start, same ink height, and a drift of seven points by the fourteenth stem.** That is not antialiasing and not a box; it is the
+accumulated advance being a little short, glyph by glyph.
+
+The heading was set in Inter 600; the reference\'s is heavier, so it is **700** now:
+
+| | Home | drift by stem 14 |
+|---|---:|---:|
+| semibold 600 | 31 401 | **7 points** |
+| **bold 700** | **31 339** | **5 points** |
+
+It helped and it did not cure, and the reason is worth stating: the remaining five points over fourteen glyphs is about a third of a point
+per glyph -- **sub-pixel advance**, which is what a layout engine rounds and a browser does not. The same measurement on the 24-point
+project title found a difference of one point in 249, so the error scales with the size of the type, not with the string.
+
+**This is the floor from the inside**: the ink is in the right place to within a pixel and a half, and every stem after the first drifts
+by a fraction of one. Nothing in this build can round the same way as Chrome.
