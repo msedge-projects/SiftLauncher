@@ -6866,3 +6866,21 @@ swamped by the losses.
 
 The card now has 38 points above its artwork against the reference's 13, and 20 below its loader against the reference's 21. The bottom matches;
 the top is still 25 out, and closing that would mean moving the plate up into the text -- which is the experiment that failed six times.
+### Five sizes, re-swept through the verified tool (2026-11-09)
+
+Every size captured with `pair.py`, so both windows were confirmed the same size and both clients the same page before any number was taken:
+
+| size | total | share | titlebar | content | sidebar |
+|---|---:|---:|---:|---:|---:|
+| 1280x720 | **29 888** | 3.24% | 2 854 | 16 581 | 10 056 |
+| 1366x768 | **36 268** | 3.46% | 2 729 | 23 047 | 10 095 |
+| 1440x900 | **31 356** | 2.42% | 1 715 | 12 679 | 16 565 |
+| 1600x900 | **45 469** | 3.16% | 2 995 | 25 513 | 16 564 |
+| 1920x1080 | **57 864** | 2.79% | 3 237 | 26 932 | 27 298 |
+
+Against the previous sweep (28 171 / 35 839 / 31 876 / 45 815 / 57 677) every size is within about 600 and 1440 is 520 better, which is the card
+and copy work of the last few rounds showing up at the one size it was tuned at.
+
+**The sidebar's 10 056 at 1280 against 27 298 at 1920** is the news card again: at narrow widths it wraps to more lines but its artwork is smaller,
+and at 1920 the artwork is large enough that the two builds' scaling differs across a bigger area. The panel is a fixed 300 points, so this is all
+content, not layout.
