@@ -6038,3 +6038,32 @@ a second row would drift further -- with one instance in the library, that has n
 **Three wrong turns got here**, each recorded rather than hidden: the chips\' fill (measured identical at (52,54,60)), the chevron band (no
 glyph ink above threshold 90, so nothing to measure), and the card\'s top edge at x 100 (which caught the chip row above it). The measurement
 that worked scanned a column **inside the card but right of its icon** and split the rows into runs.
+### The card box is measurably wrong, and moving it alone costs 121 pixels (2026-11-09)
+
+At the card\'s middle column -- where the rounded corner cannot interfere -- the two plates are:
+
+| | plate at x 150 | height |
+|---|---|---:|
+| reference | 354..568 | **215** |
+| this build | 329..536 | **208** |
+
+and **the artwork starts at y 367 on both**. So the reference\'s card begins 25 lower than this build\'s and is 7 taller, with its tile 11 below
+its top edge where this build\'s is 36.
+
+The fix was applied as three numbers -- `ROW_TOP` 281 -> 306, `CARD_H` 208 -> 215, the tile\'s inset 36 -> 11 -- and measured **worse**:
+
+| change | content | Home |
+|---|---:|---:|
+| baseline | 13 878 | **32 784** |
+| the three numbers | 13 999 | 32 905 |
+| and the name\'s gap 8 -> 3 | 14 022 | 32 928 |
+
+**All four reverted**, back to 32 784 exactly.
+
+The reason is in the reference\'s own card: its name ink starts at **y 500**, only three points below the tile\'s 497, and its plate continues
+215 points to 568. That is not a taller version of this build\'s card -- the reference\'s card carries its text *inside* a plate that has room for
+more lines than this build draws, a "last played" line among them. Moving the box without those lines puts every one of them in the wrong place,
+which is what the two worse measurements are.
+
+So the card\'s box cannot be matched before its interior is: the height is a consequence of the lines, not a number to set. The measurement stands
+and the fix waits for the interior -- recorded here so the next round does not try the three numbers again, which is what this file is for.
