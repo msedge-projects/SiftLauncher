@@ -6674,3 +6674,10 @@ rendering, so the warning fires at **15%**, the point at which the words themsel
 correct pair, which is how the calibration was found.
 
 The tool prints its two capture paths and the breadcrumb count on success, so a round can start from a pair it did not have to trust by hand.
+### Discover, re-measured through the new tool (2026-11-09)
+
+`python3 tools/parity/pair.py discV --rail 123` produced a pair it could vouch for -- both windows 1440x900, both on Discover (breadcrumbs 4.8%
+apart, under the 15% floor) -- and `compare.py` reads **79 146** (titlebar 2 438, rail 427, content 59 142, sidebar 17 139).
+
+That replaces 78 363, which came from a pair assembled by hand. The 783-point difference is not a regression: it is what a verified pair reads
+where the earlier one may have been a moment or a state apart. From here the table quotes only pairs the tool produced.

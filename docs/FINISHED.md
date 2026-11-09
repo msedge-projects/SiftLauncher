@@ -8,7 +8,7 @@ clients in the same state, with a capture behind every claim.
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
 | Home | **32 780** | `refclean2.png` vs `back319b.png` (2026-11-09, pointer parked, reference restarted) | type, plus the news sidebar\'s first card being a different article |
-| Discover | **78 984** | `disc-ref2.png` vs `disc-cur.png` (2026-11-09) | type and card artwork |
+| Discover | **79 146** | `discV-ref.png` vs `discV-our.png` (2026-11-09, captured by `pair.py`: both windows verified 1440x900, both on Discover, breadcrumbs 4.8% apart) | type, card artwork, and the emoji in API summaries that this font has no glyph for |
 | Screenshots (populated) | **27 745** | `sc-away.png` vs `our-shots2.png` (2026-11-09, **one screenshot in both instances**) | 2 166 inside the card is the image resample; 3 688 elsewhere is the top chrome. Was 23 573 for two *empty* pages -- an empty page has nothing to misalign, and hid a 24-point double padding worth 11 338 |
 | Instance page | **30 471** | `inst-ref.png` vs `inst-our.png` (2026-11-09, both on Content, empty) | type; the sidebar is 16 816 of it |
 | Settings | **32 469** | `set-ref.png` vs `set-our.png` (2026-11-09, both as a modal over Home) | **type**: the plate is the same rectangle (257..1182, 115..784), the heading inks 231..269 on both, and the first card\'s top edge is 240/245 at x 620/560 on both. Of the 32 469, **27 256 are inside the plate and 10 189 are the blurred page behind** -- the blur suppresses glyph detail, which is why the backdrop counts less than Home\'s own 32 781 |
