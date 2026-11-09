@@ -6631,3 +6631,22 @@ not.
 **The scrollbar question, narrowed**: at 625 the reference's sidebar overflows and carries a 6-point overlay thumb at its right edge; at 900 it may
 not. This build draws none at either size. Whether ours *should* needs one more capture at 625 -- and a wheel test that actually reaches the panel,
 which the one I ran did not (both clients returned `None`).
+### The sidebar's 6x97 element, measured and not yet explained (2026-11-09)
+
+At 1440x700 (the window manager refuses 625 and clamps to 700) the reference carries a SURFACE_5 element that this build does not:
+
+| property | value |
+|---|---|
+| columns | **1432..1437** -- 6 points, four in from the window's edge |
+| rows | **51..147** -- 97 points, beginning just below the title bar |
+| colour | (66,68,74), the theme's `SURFACE_5` |
+
+A thumb that occupies 97 of a 652-point panel implies content about 4.3 times the visible height, which nothing in the sidebar is. So it is probably
+**not** a scrollbar thumb, and the three candidates -- an overlay thumb for a longer list than the panel shows, a window-level scrollbar from the
+web view itself, or a divider belonging to something not yet identified -- cannot be separated from one capture.
+
+**What is settled**: the element is real, it is in the reference, it is absent here, and it is 6 by 97 at a measured position. What is not settled is
+what draws it, and drawing something 6 by 97 to match a number without knowing that would be exactly the fabricated affordance this project's rules
+forbid.
+
+**Both windows are back at 1440x900**, verified by reading the capture sizes rather than assuming.
