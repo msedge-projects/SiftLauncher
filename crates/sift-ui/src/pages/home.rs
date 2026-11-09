@@ -610,6 +610,14 @@ pub struct State {
     /// on a right press anywhere on the library page: `+ New instance`, anchored at the pointer. Captured at
     /// (149,349)-(327,407) after a press at (150,350). Escape, or a press anywhere else, closes it.
     pub page_menu: Option<egui::Pos2>,
+    /// **The sort the library is in**, as the reference names it. Its chip reads this, and its menu lists all
+    /// seven of the reference's keys -- `Name`, `Last played`, `Hours played`, `Date created`, `Date modified`,
+    /// `Loader`, `Game version` -- with the current one in green.
+    /// `None` is the reference's default, `Last played`. An `Option` because `#[derive(Default)]` gives a bare
+    /// `&'static str` the empty string, which is how the chip first drew with no label at all.
+    pub sort_label: Option<&'static str>,
+    /// Whether that menu is open.
+    pub sort_open: bool,
 }
 
 impl State {
@@ -1387,7 +1395,7 @@ fn list(
     // played", the grid on "Custom group", the filter funnel on "Add filter". Ours drew bare text, which read as three
     // buttons rather than three controls of the same kind.
     for (label, width, glyph) in [
-        ("Last played", 118.0_f32, Glyph::ArrowUpDown),
+        (state.sort_label.unwrap_or("Last played"), 118.0_f32, Glyph::ArrowUpDown),
         ("Custom group", 164.0, Glyph::Grid),
         ("Add filter", 122.0, Glyph::Filter),
     ] {
@@ -1422,6 +1430,20 @@ fn list(
             theme.SECONDARY,
         );
         filter_x = chip.right() + 8.0;
+    }
+    // **The sort chip opens its menu.** The chips were drawn and never interacted with, so every one of them was
+    // dead -- found by pressing. The reference opens a 165-wide menu under the chip listing seven keys; this one
+    // draws the same list and keeps the chosen one in green.
+    let sort_chip = Rect::from_min_size(
+        egui::pos2(filters.left(), filters.top()),
+        egui::vec2(118.0, 32.0),
+    );
+    if ui
+        .interact(sort_chip, egui::Id::new("library-sort"), Sense::click())
+        .clicked()
+    {
+        state.sort_open = !state.sort_open;
+        ui.ctx().request_repaint();
     }
     if ui
         .interact(field, egui::Id::new("library-search"), Sense::click())
@@ -1797,6 +1819,80 @@ fn list(
 
     if modal_was_open {
         action = Action::None;
+    }
+    // **The sort menu, drawn here so the cards cannot paint over it.** It was drawn beside the chip first and
+    // the first card covered it: the clicks worked and the menu was there, underneath.
+    let pointer_pos = ui.ctx().pointer_interact_pos();
+    if state.sort_open {
+        // Read the frame before borrowing a painter: `ui.input` after `ui.painter()` is a second borrow of `ui`.
+        let primary_clicked = ui.input(|input| input.pointer.primary_clicked());
+        let escape = ui.input(|input| input.key_pressed(egui::Key::Escape));
+        const SORTS: [&'static str; 7] = [
+            "Name",
+            "Last played",
+            "Hours played",
+            "Date created",
+            "Date modified",
+            "Loader",
+            "Game version",
+        ];
+        let row_h = 48.0;
+        let menu = Rect::from_min_size(
+            egui::pos2(filters.left(), filters.top() + 34.0),
+            egui::vec2(165.0, row_h * SORTS.len() as f32 + 12.0),
+        );
+        // **The panel claims its own rectangle**, or the press that chooses a row falls through to the card
+        // underneath it: choosing "Name" opened the instance instead of renaming the sort.
+        let _ = ui.interact(menu, egui::Id::new("library-sort-menu"), Sense::click());
+        // A painter of this block's own: reusing the one bound near the top of `list` would hold a borrow of `ui`
+        // across the popover call above it.
+        let painter = ui.painter();
+        painter.rect_filled(menu, 8.0, theme.SUPER_RAISED_BG);
+        let pointer = pointer_pos;
+        let mut chosen: Option<&'static str> = None;
+        for (index, label) in SORTS.iter().enumerate() {
+            let row = Rect::from_min_size(
+                egui::pos2(menu.left() + 6.0, menu.top() + 6.0 + index as f32 * row_h),
+                egui::vec2(menu.width() - 12.0, row_h),
+            );
+            let current = *label == state.sort_label.unwrap_or("Last played");
+            if current {
+                painter.rect_filled(row, 6.0, theme.BUTTON_BG_SELECTED);
+            } else if pointer.is_some_and(|p| row.contains(p)) {
+                painter.rect_filled(row, 6.0, theme.RAISED_BG);
+            }
+            painter.text(
+                egui::pos2(row.left() + 16.0, row.center().y),
+                Align2::LEFT_CENTER,
+                *label,
+                fonts::label(16.0),
+                if current { theme.BRAND } else { theme.CONTRAST },
+            );
+            if pointer.is_some_and(|p| row.contains(p)) && primary_clicked {
+                chosen = Some(label);
+            }
+        }
+        if let Some(label) = chosen {
+            state.sort_label = Some(label);
+            state.sort_open = false;
+            ui.ctx().request_repaint();
+        } else if primary_clicked
+            && !pointer.is_some_and(|p| {
+                // The press that opened it is on the chip, which is outside the panel: without this the same
+                // click opens the menu and closes it again in the same frame, and nothing is ever drawn.
+                menu.contains(p)
+                    || Rect::from_min_size(
+                        egui::pos2(filters.left(), filters.top()),
+                        egui::vec2(118.0, 32.0),
+                    )
+                    .contains(p)
+            })
+        {
+            state.sort_open = false;
+        }
+        if escape {
+            state.sort_open = false;
+        }
     }
     // **The page's own menu**, over the cards and under the modals: one row, anchored at the press and kept
     // inside the page. The reference's is 178 wide and 58 tall for its single row, and pressing it opens the

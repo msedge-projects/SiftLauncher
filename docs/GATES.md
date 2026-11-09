@@ -4868,3 +4868,26 @@ It is implemented now, and pressing it exposed a second, older bug:
 **nothing in the tree ever read it** -- the toolbar\'s button had been dead for as long as it existed, and the only working route was the
 hero\'s own `Action::Create`. The flag is now consumed at the end of `list`, which fixes both: one field, two buttons, three rounds of
 "the press did nothing" that were a press doing nothing.
+### The filter row\'s chips were painted, never interactive (2026-11-09)
+
+Pressing them did nothing, and the reason was in the code: the loop that draws "Last played", "Custom group" and "Add filter" had
+**no `interact` call at all**. They were decoration that looked like controls. The sort chip now opens the reference\'s menu:
+
+| | reference | ours |
+|---|---|---|
+| the menu | seven rows under the chip, current one green: Name, Last played, Hours played, Date created, Date modified, Loader, Game version | **same seven, same order, same green row** (`sort3-our.png`) |
+| choosing a row | chip\'s label becomes the key | **chip reads `Name`** (`sort-pick2.png`) |
+
+**Three bugs were stacked on one press**, and each was found by driving rather than reading:
+
+1. the chip had no interaction;
+2. the menu was drawn beside the chip, so the first card **painted over it** -- the clicks worked and nothing appeared;
+3. the same click that opened the menu **closed it in the same frame** (the chip is outside the panel), and once it did draw, a row
+   press **fell through to the card underneath** and opened the instance instead of choosing the sort. The panel now claims its own
+   rectangle.
+
+The label also drew empty at first: `#[derive(Default)]` gives a bare `&'static str` the empty string, so the chip showed only its glyph
+and chevron. It is an `Option` now, with `None` meaning the reference\'s default, `Last played`.
+
+**Not done**: the order of the cards is unchanged. With one instance there is nothing to reorder, so the comparator would be untestable --
+the menu, the selection and the chip are real and driven, and the ordering is the next slice, with a second instance to prove it.
