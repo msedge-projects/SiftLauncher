@@ -6409,3 +6409,27 @@ The slabs moved into `slabs_for(width, height)` so the selftest exercises the sa
 arithmetic would have passed while the tool stayed wrong.
 
 **Run it before a sweep.** `python3 tools/parity/compare.py --selftest` takes no captures and prints one line.
+### The element tool now says when its box holds more than one thing (2026-11-09)
+
+`element.py` has reported both a dominant colour and an extreme since it was written; my error was reading the extreme as the subject, twice --
+once taking a magnifier glyph for a placeholder, once taking a chip's plate for its neighbour. The tool could not have stopped that, because it
+never said how much of the box the dominant colour was.
+
+It does now: `fill share`, plus a warning when it is under half --
+
+```
+  fill share ref 0.77
+             our 0.78
+```
+
+for the field box, which is one element with its glyph and placeholder inside it, and
+
+```
+  WARNING    the ref box is not one element: its most common colour is only 33% of it, so `brightest` and `ink rows` answer for whatever else is in there
+```
+
+for a box straddling three.
+
+**`--selftest`** builds both cases as synthetic images and checks the detection: one element with ink reports that element's fill and its brightest
+pixel, and a three-way box reports a share under half. The first version of the test used a 50/50 split, which sits *exactly* on the threshold and
+asserted a warning that correctly did not fire -- the test was wrong, not the tool, and it is now a three-way split.
