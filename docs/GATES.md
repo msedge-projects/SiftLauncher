@@ -5895,3 +5895,23 @@ increasing confidence.
 
 **The count**: four confident differences, four measurements, four withdrawals. The first two came from a thumbnail, the third from reading a
 clipped label, the fourth from a scan whose method could not answer the question asked of it. Each had a story that fit.
+### Where the Settings difference actually lives: inside the plate, and it is type (2026-11-09)
+
+The plate being identical left the question of where 32 469 pixels differ. Masking the plate\'s own rect answers it:
+
+| region | differing pixels at threshold 40 |
+|---|---:|
+| inside the plate (257..1182, 115..784) | **27 256** |
+| outside it -- the blurred Home behind | **10 189** |
+
+And the plate\'s contents check out at the landmarks: the "Color theme" heading inks rows 231..269 on **both** sides, and the first card\'s top
+edge is 240 at x 620 and 245 at x 560 on **both**. So the difference is not layout, not the frame, not the cards\' geometry -- it is the text inside
+them, which is the same rasteriser difference every page has.
+
+**The useful number is the backdrop\'s.** Home alone differs by 32 781 pixels; the same page seen through Settings\' blur differs by only
+**10 189**, because the blur suppresses glyph detail. That is a direct measurement of how much of every page\'s difference is text: blur it and
+two thirds of the disagreement disappears.
+
+It also means a modal comparison is not a page comparison: the number includes whatever is behind the plate, attenuated by the blur, so it
+understates the dialog and overstates nothing. Reading it as "the Settings dialog differs by 32 469" -- which the table did for many rounds -- was
+wrong in both directions at once.

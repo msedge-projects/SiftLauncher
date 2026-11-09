@@ -11,7 +11,7 @@ clients in the same state, with a capture behind every claim.
 | Discover | **78 984** | `disc-ref2.png` vs `disc-cur.png` (2026-11-09) | type and card artwork |
 | Screenshots | **23 573** | `shot-ref3.png` vs `shot-our.png` (2026-11-09, both empty; the reference title checked before capture) | the empty state's illustration |
 | Instance page | **30 454** | `sweep-instance-ref.png` vs `inst-clean.png` (mods/ emptied first) | type |
-| Settings | **32 469** | `set-ref.png` vs `set-our.png` (2026-11-09, both as a modal over Home) | **the plate is the same rectangle on both sides** -- rows 257..1182 at y 116/120/130/140 and its bottom corners agree within 2 points, so the frame is not where the difference is; all 32 469 pixels are interior type and spacing |
+| Settings | **32 469** | `set-ref.png` vs `set-our.png` (2026-11-09, both as a modal over Home) | **type**: the plate is the same rectangle (257..1182, 115..784), the heading inks 231..269 on both, and the first card\'s top edge is 240/245 at x 620/560 on both. Of the 32 469, **27 256 are inside the plate and 10 189 are the blurred page behind** -- the blur suppresses glyph detail, which is why the backdrop counts less than Home\'s own 32 781 |
 | Project -- Description | **71 398** | `projL-ref.png` vs `proj-gap4.png` | the body\'s type |
 | Project -- Versions | **63 660** | `ver3-ref.png` vs `ver-chan3.png` | the filter row\'s widths and the type; ~400 px is the API\'s download count, fetched minutes apart |
 | Project -- Gallery | **172 200** | `gal-ref.png` vs `viewer-escaped.png` | the grid\'s ratio and a 15-point card-top offset; both grids carry the same six cards |
