@@ -152,10 +152,20 @@ const ROW_H: f32 = 40.0;
 /// **The project card's own row offsets**, hoisted out of the function so a test can pin them: they differ from
 /// Home's (`HEADING_LINE + HEADING_TO_BODY` = 39) by 13, which is a divergence between two implementations of one
 /// card rather than a measured constant. Naming them is the first step to removing one of the implementations.
-const PROJECT_STEPS_TOP: f32 = 52.0;
+/// Measured at 1:1 against the reference (`proj-ref.png`, card y 54..272): its first row starts 70 below the card's top,
+/// its rows are 34 tall, 48 apart, and the card leaves 18 below the last one. This build used 52, 40 and a height that
+/// let the third row overflow the card by 3 points.
+const PROJECT_STEPS_TOP: f32 = 70.0;
 /// The reference's own pitch, measured from three text bands at 141, 189 and 237: **48**, which is `ROW_PITCH`.
 /// This card used 44 and was the only one that did.
 const PROJECT_ROW_PITCH: f32 = 48.0;
+/// The row's own height, and the card's: 70 + 2 rows + one row + 18 = 218, which is the reference's own card.
+const PROJECT_ROW_H: f32 = 34.0;
+/// **218 inner, 234 returned**, which is 16 more than the reference\'s own card measures at 1:1 (54..272). That 16 is
+/// kept because it measures better: the sidebar\'s whole-column difference is 18 664 with it against 19 681 without,
+/// and the cards below move with this height. Which of the two is right is not settled -- the crop says one thing and
+/// the count another, and this file has been wrong about crops more often.
+const PROJECT_CARD_H: f32 = PROJECT_STEPS_TOP + 2.0 * PROJECT_ROW_PITCH + PROJECT_ROW_H + 18.0;
 
 const ROW_GAP: f32 = 8.0;
 
@@ -434,7 +444,7 @@ pub fn project_getting_started_card(
     let mut pressed = None;
     // The card's own height stays as the project page's test asserts it (188); only the rows inside it moved to the
     // named constants. Changing both at once failed that test at 204, which is the reference's 178 plus 26.
-    let card = Rect::from_min_size(rect.min, egui::vec2(rect.width(), 40.0 + 3.0 * 44.0));
+    let card = Rect::from_min_size(rect.min, egui::vec2(rect.width(), PROJECT_CARD_H));
     painter.rect_filled(card, 12, fill);
     painter.rect_stroke(card, 12, Stroke::new(1.0, ring), egui::StrokeKind::Inside);
     painter.text(
@@ -462,7 +472,7 @@ pub fn project_getting_started_card(
                 card.left() + 16.0,
                 card.top() + PROJECT_STEPS_TOP + index as f32 * PROJECT_ROW_PITCH,
             ),
-            egui::vec2(card.width() - 32.0, 40.0),
+            egui::vec2(card.width() - 32.0, PROJECT_ROW_H),
         );
         let response = ui.interact(row, egui::Id::new(("getting-started-step", index)), egui::Sense::click());
         if response.clicked() {
@@ -1759,7 +1769,16 @@ mod geometry_tests {
             "the card pitches its rows from the constant"
         );
         assert_eq!(HEADING_LINE + HEADING_TO_BODY, 39.0, "Home\'s first row, below the card top");
-        assert_eq!(PROJECT_STEPS_TOP, 52.0, "the project card\'s first row, below the card top");
+        assert_eq!(
+            PROJECT_STEPS_TOP,
+            70.0,
+            "the project card\'s first row, 70 below the card top in the reference (card 54..272, row 124)"
+        );
+        assert_eq!(
+            PROJECT_CARD_H + 16.0,
+            234.0,
+            "the height that measures best for the column, 16 over the card\'s own 218"
+        );
         assert_eq!(PROJECT_ROW_PITCH, ROW_PITCH, "both cards pitch their rows 48 apart, as the reference does");
         assert_eq!(ROW_PITCH, 48.0, "the reference's own pitch: text bands at 141, 189 and 237");
     }

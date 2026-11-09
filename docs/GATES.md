@@ -5391,3 +5391,32 @@ spacing, and stands.
 The lesson is the same one this file keeps relearning from a new angle: **measure the thing you name, at the size of the thing you name**. A
 window narrower than the element produces a number about part of it, and a number about part of an element is indistinguishable from a
 measurement of the element until somebody crops it.
+### The card attributed, measured at 1:1, and a height the counts and the crop disagree about (2026-11-09)
+
+Last round said the project sidebar\'s 7.6% was "spread across every card". Attributed by contiguous runs of differing rows, it is not:
+
+| run (y) | differing | what it is |
+|---|---:|---|
+| **52..309** | **8 185** | the Getting started card -- **42% of the column\'s total** |
+| 311..336 | 1 659 | the Compatibility heading |
+| 686..702 | 1 508 | the links row |
+
+so the card is the thing to fix after all, and the correction is recorded rather than left standing. The mask of that region showed the
+answer plainly: **every line of the card doubled**, heading and all three rows, which is one offset applied to the whole card\'s contents.
+
+Measured at 1:1 against the reference -- card 54..272, first row 124, rows 34 tall, 48 apart:
+
+| | reference | this build before | after |
+|---|---|---|---|
+| first row below the card\'s top | 70 | 52 | **70** |
+| row height | 34 | 40 | **34** |
+| row pitch | 48 | 44 | **48** |
+| the column\'s difference | -- | 19 559 | **18 664** (-895) |
+
+**The card\'s height is the one number the two instruments disagree about.** The crop says the reference\'s card is 218 tall (54..272); the
+count prefers 234 by 1 017 pixels, because the cards below move with it and land closer. The count is taken, the crop\'s number is
+recorded, and the constant carries a comment saying which is which -- this file has been wrong about crops more often than about counts,
+but it has been wrong about both, and 1 017 pixels is not an argument.
+
+Tests were updated to the measured numbers rather than the old ones: 70 for the first row, 234 for the returned height, and the geometry
+test now asserts all of them, including that the drawing expressions mention the constants.

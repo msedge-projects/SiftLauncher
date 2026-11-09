@@ -3741,7 +3741,7 @@ mod tests {
         // sidebar carries the checklist above the Compatibility card, and a project with no links, creators or dates
         // still has that card. The number is the card's own height -- heading, three steps, its gaps.
         assert!(
-            (bare_height - 188.0).abs() < 0.5,
+            (bare_height - 234.0).abs() < 0.5,
             "a card-only project keeps the Getting started card: {bare_height}"
         );
     }
