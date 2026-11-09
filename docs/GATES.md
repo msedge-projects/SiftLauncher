@@ -7346,3 +7346,26 @@ string.
 
 **Six rows in one pass against two by hand**, and the counts moved from 56/443 to **62/437**. The remaining lead list is printed by the tool and
 each pass costs seconds, so the limit is reading rather than finding.
+### The literal signal is exhausted, and it says so (2026-11-09)
+
+After the first six, `rows.py` returns **nine** candidates from 440 OPEN rows, and eight of them are **comments**:
+
+| row | literal | where it matched |
+|---|---|---|
+| 12 | Hide already installed | a doc comment about the wording being wrong |
+| 55 | New instance | a doc comment describing the toolbars press |
+| 212 | Modrinth App {version} | a module doc listing the reference keys |
+| 248 | Reset to default | a doc comment introducing the row |
+| 259 | Drag to rotate | a module doc citing the reference line |
+| 279 | Default skins | a doc comment about the strip columns |
+| 309 | Export ZIP | a doc comment saying Export ZIP is NOT built |
+| 598 | Sift Launcher | an unrelated string in `servers.rs` |
+
+One was real: **row 97**, the locked game-version pill, drawn at `panel.rs:1079` with the loader interpolated. Converted.
+
+**So the finder has drained what it can find.** Its signal is a verbatim string, and the strings that remain are the ones our code mentions only
+in order to say it does not have them. That is not a failure of the tool -- seven rows came out of it in one round against two by hand -- but it
+sets the ceiling for this method, and the next pass needs a different signal: the reference element names and their Code tokens (`StopCircle`,
+`ScrollablePanel`, `EmptyState`), searched for as identifiers rather than sentences.
+
+**Counts after this round**: 164 DONE, **63 VERIFIED**, 436 OPEN, 38 OPEN-WITH-CAUSE.
