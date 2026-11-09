@@ -5782,3 +5782,17 @@ identical to the byte. This build draws exactly that, so "the field\'s focus rin
 Two of the six cannot be reached from here, and the document says so in the same table as the four that can. That is the honest form of
 "finished" this project\'s own rules ask for: the bar is stated, the measurements are attached, and the shortfall is named with its cause
 rather than left as a number to be improved.
+### A page comparison that was two different pages (2026-11-09)
+
+Refreshing the Screenshots number gave **113 657** against a longstanding 23 573. The capture said why: the reference was showing
+**Settings** -- a key press made while probing the rail had opened it, and the Screenshots capture was of its backdrop.
+
+The tell was not subtle once looked at: content alone differed by 76 438 pixels, which is not a tone or a glyph, it is a page. The rule this file
+already carries -- **check a known pixel before any sweep** -- caught it at the first comparison rather than in a table three rounds later.
+
+After Escape the reference was on **Servers**, not Screenshots: the rail\'s y 245 is Servers and y 205 is Screenshots, and the probe had
+pressed 245 expecting the picture icon. Pressing 205 and reading the title first gave the true figure, **23 573**, identical to the number
+recorded months of rounds ago -- so the page has not regressed, and my "improvement" was a measurement of the wrong window.
+
+Three presses were needed to get one comparison: 245 (Servers), 820 (Settings, which then had to be dismissed), then 205 (Screenshots,
+confirmed by cropping the title bar and reading it). The crop-and-read step is what turned a passing comparison into a checked one.
