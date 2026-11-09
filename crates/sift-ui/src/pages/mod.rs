@@ -77,7 +77,7 @@ impl Page {
             ),
             egui::vec2(
                 geometry::panel_left() - geometry::CONTENT_INSET - geometry::TEXT_LEFT,
-                geometry::WINDOW.1 - geometry::TITLE_BAR,
+                geometry::window().1 - geometry::TITLE_BAR,
             ),
         )
     }

@@ -4615,3 +4615,28 @@ centre, the page column, the skins grid -- derives from it.
 **The five sizes are now measurable and the number that matters is per size**: the same page is 2.4% different at 1440 and 4.0% at 1280,
 because a narrower content column re-wraps text and the reference\'s own layout moves elements between breakpoints. The next rounds are
 1280 down to 1% and then the other three sizes.
+### Five screen sizes, and the layout now reads the live window everywhere (2026-11-09)
+
+The displays were rebuilt at 1920x1080 so every standard size can be drawn by both clients at once. Then the remaining constants fell:
+
+| constant | was | became |
+|---|---|---|
+| `PANEL_LEFT` / `CONTROLS_LEFT` | `WINDOW.0 - ...` | `panel_left()` / `controls_left()` over the live window |
+| the window background rect | `g::WINDOW` | `g::window()` |
+| the title bar\'s width | `g::WINDOW.0` | `g::window().0` |
+| the rail\'s and panel\'s heights | `g::WINDOW.1 - TITLE_BAR` | `g::window().1 - TITLE_BAR` |
+| the page column\'s height | `geometry::WINDOW.1` | `geometry::window().1` |
+| the toast\'s height | `g::WINDOW.1 - 56` | `g::window().1 - 56` |
+
+| Home | differing pixels | % of the frame | before this round |
+|---|---:|---:|---:|
+| 1280x720 | **27 619** | 3.00% | 51 796 |
+| 1366x768 | **35 286** | 3.36% | -- |
+| 1440x900 | **31 325** | 2.42% | 31 349 |
+| 1600x900 | **45 259** | 3.14% | -- |
+| 1920x1080 | **57 137** | 2.76% | 103 610 |
+
+**Every size is now between 2.4% and 3.4%**, where three of them had never been measured and the two that had were 4-5% off. The
+sidebar at 1280 went from 14 040 to **2 797** -- it had been drawn a third outside the window.
+
+**The 1440x900 figure is the one that must not move**, and it did not: 31 349 -> 31 325.

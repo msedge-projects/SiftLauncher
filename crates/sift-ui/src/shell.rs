@@ -1350,7 +1350,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
             self.instances = crate::data::load().0;
         }
 
-        let window = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(g::WINDOW.0, g::WINDOW.1));
+        let window = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(g::window().0, g::window().1));
         ui.painter().rect_filled(window, 0, self.theme.BG);
 
         if std::env::var_os("SIFT_CHROME_PROBE").is_some() {
@@ -1612,7 +1612,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
             let galley =
                 painter.layout_no_wrap(message, crate::fonts::body(13.0), self.theme.CONTRAST);
             let plate = Rect::from_center_size(
-                egui::pos2((g::CONTENT_LEFT + g::panel_left()) / 2.0, g::WINDOW.1 - 56.0),
+                egui::pos2((g::CONTENT_LEFT + g::panel_left()) / 2.0, g::window().1 - 56.0),
                 egui::vec2(galley.size().x + 32.0, 36.0),
             );
             painter.rect_filled(plate, 8, self.theme.SUPER_RAISED_BG);
@@ -1652,7 +1652,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
     fn content_surface(&self, ui: &mut Ui) {
         let surface = Rect::from_min_max(
             egui::pos2(g::CONTENT_LEFT, g::TITLE_BAR),
-            egui::pos2(g::WINDOW.0, g::WINDOW.1),
+            egui::pos2(g::window().0, g::window().1),
         );
         let painter = ui.painter();
         painter.rect_filled(surface, 0, self.theme.BG);
@@ -1679,7 +1679,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
     fn content_shadow(&self, ui: &mut Ui) {
         let surface = Rect::from_min_max(
             egui::pos2(g::CONTENT_LEFT, g::TITLE_BAR),
-            egui::pos2(g::WINDOW.0, g::WINDOW.1),
+            egui::pos2(g::window().0, g::window().1),
         );
         let painter = ui.painter();
         let r = g::RADIUS_XL;
@@ -1734,7 +1734,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
         if std::env::var_os("SIFT_CHROME_PROBE").is_some() {
             eprintln!("title_bar called, painter clip={:?}", ui.painter().clip_rect());
         }
-        let bar = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(g::WINDOW.0, g::TITLE_BAR));
+        let bar = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(g::window().0, g::TITLE_BAR));
         let painter = ui.painter();
         painter.rect_filled(bar, 0, self.theme.RAISED_BG);
 
@@ -1985,7 +1985,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
         // the original lacks is a deviation however useful; the method is kept, uncalled, with the measurement in its comment.
         let rail = Rect::from_min_size(
             egui::pos2(0.0, g::TITLE_BAR),
-            egui::vec2(g::RAIL, g::WINDOW.1 - g::TITLE_BAR),
+            egui::vec2(g::RAIL, g::window().1 - g::TITLE_BAR),
         );
         let painter = ui.painter();
         painter.rect_filled(rail, 0, self.theme.RAISED_BG);
@@ -2252,7 +2252,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
     fn window_rect() -> Rect {
         Rect::from_min_size(
             egui::pos2(0.0, 0.0),
-            egui::vec2(g::WINDOW.0, g::WINDOW.1),
+            egui::vec2(g::window().0, g::window().1),
         )
     }
 
@@ -2805,7 +2805,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
     fn right_panel(&mut self, ui: &mut Ui) -> bool {
         let panel = Rect::from_min_size(
             egui::pos2(g::panel_left(), g::TITLE_BAR),
-            egui::vec2(g::PANEL, g::WINDOW.1 - g::TITLE_BAR),
+            egui::vec2(g::PANEL, g::window().1 - g::TITLE_BAR),
         );
 
         let mut shared = panel;
@@ -2942,13 +2942,13 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
                 // **The inset is not symmetric.** The reference's content surface runs to y 889 and this build's to 876,
                 // measured where each stops being the surface: its list therefore shows a card where ours shows background,
                 // a 24-point band at the content's foot (gap-matrix row 4's neighbourhood, found by the flat-point scan).
-                g::WINDOW.1 - g::TITLE_BAR - g::CONTENT_INSET - 11.0,
+                g::window().1 - g::TITLE_BAR - g::CONTENT_INSET - 11.0,
             ),
         );
         ui.painter().rect_filled(
             Rect::from_min_max(
                 egui::pos2(g::CONTENT_LEFT, g::TITLE_BAR),
-                egui::pos2(g::panel_left(), g::WINDOW.1),
+                egui::pos2(g::panel_left(), g::window().1),
             ),
             0,
             self.theme.BG,
