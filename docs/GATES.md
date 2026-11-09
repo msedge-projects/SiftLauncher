@@ -4356,3 +4356,21 @@ Both were recorded as closed before this stretch; both were pressed again becaus
 
 Neither regressed. The menu is drawn over the page and under the modals, which is what the record says it should be, and the Escape
 returns to the grid rather than leaving the page -- the two behaviours that were hardest to get right the first time.
+### Smoke test of the shipped binary (2026-11-08)
+
+One clean start after every change in this stretch, a Home capture, and the memory reading:
+
+| | value |
+|---|---:|
+| Home | **31 349** -- the same number as before the last three commits, so nothing regressed |
+| idle RSS | **22 780 kB** |
+| frames drawn | `final-home.png`, one window, 1440x900, scale 1 |
+
+**The type question was asked and not answered**, and it is worth recording how far it got: the build already embeds **Inter in five
+weights**, which is the reference\'s family -- so the width difference is not a wrong face. Two attempts to measure the ratio from captures
+both caught the whole header row instead of the title (extents of `150..1093` on both sides, which is the row and not the string). The
+instrument that would settle it is a layout probe that prints a galley\'s size, which this build does not have and which is one `eprintln`
+in `fonts.rs` away.
+
+With the rounds remaining, that is the honest place to leave it: **the face is right, the width is off, and the measurement that would say
+by how much was not built.**
