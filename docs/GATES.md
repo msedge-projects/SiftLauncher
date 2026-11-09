@@ -4520,3 +4520,31 @@ news index printed, not two screengrabs compared by md5.*
 
 That is the third time this session a screenshot-based conclusion has been wrong in a way a probe would not have been -- and the first
 time the wrong conclusion made me give back a measured win.
+### The clock: every animation in this build was running some thirty times slow (2026-11-08)
+
+Chasing a "frozen carousel" through three wrong answers ended at the input:
+
+```rust
+// crates/sift-ui/src/soft/window.rs, before
+let raw = egui::RawInput { screen_rect: Some(...), ..Default::default() };   // time: None
+```
+
+**`RawInput::time` was `None`.** With no clock given, egui advances its own by a *predicted* 1/60 s per frame -- and this window paints
+twice a second, so egui\'s clock ran at about **1/30 of real time**. Everything driven by `input.time` was wrong with it: the news carousel
+advanced once a minute instead of once every ten seconds, and every fade and slide in the interface was thirty times slow.
+
+The proof took four measurements and three mistakes:
+
+| measurement | result | what it meant |
+|---|---|---|
+| frames painted in 11 s | **23** (2.09 fps) | the app *is* repainting -- so "frozen" was not a stalled loop |
+| two captures 11 s apart | byte-identical | the *content* genuinely had not changed |
+| `input.time` source | `None`, predicted 1/60 per frame | the clock, not the painting |
+| after `time: Some(elapsed)` | `bb70f426` -> **`d22ba089`** | the card changed: green slides art to the magenta server art |
+
+The fix is one field, and it makes the whole animation clause of the objective real rather than nominal: **timings that were being
+measured against a frozen clock now run at the speed the reference runs them.**
+
+**And it retroactively explains two rounds of confusion**: the scheduled-repaint experiment looked like it froze the carousel because the
+carousel was already effectively frozen; the "identical captures" that made me revert a measured CPU win were the slow clock, not the
+tick. With the clock fixed, that change is worth re-trying on its own measurements.

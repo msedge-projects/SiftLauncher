@@ -31,6 +31,11 @@ struct Soft {
     dropped: Vec<std::path::PathBuf>,
     /// When an *injected* drop gives up waiting for an instance page. A real one arrives whenever the reader drops it.
     drop_deadline: Option<std::time::Instant>,
+    /// **The clock egui reads.** `RawInput::time` was left `None`, and egui then advances its own clock by a predicted
+    /// 1/60 s per frame -- while this window paints twice a second, so the clock ran some thirty times slow. Every
+    /// animation was wrong with it: the news carousel advanced once a minute instead of once every ten seconds, and two
+    /// captures eleven seconds apart were byte-identical because the frame genuinely had not changed.
+    started: std::time::Instant,
     /// A frame is only run when something happened or an animation asked for one: an idle window draws nothing, which is
     /// this project's lightness rule and the reason a fan does not spin.
     dirty: bool,
@@ -74,6 +79,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             })
             .unwrap_or_default(),
         drop_deadline: std::env::var_os("SIFT_DROP_PATHS").map(|_| std::time::Instant::now() + std::time::Duration::from_secs(30)),
+        started: std::time::Instant::now(),
         dirty: true,
         painted: std::time::Duration::ZERO,
         presented: std::time::Duration::ZERO,
@@ -106,6 +112,8 @@ impl Soft {
         }
 
         let raw = egui::RawInput {
+            // The real clock, in seconds since the window opened.
+            time: Some(self.started.elapsed().as_secs_f64()),
             screen_rect: Some(egui::Rect::from_min_size(
                 egui::Pos2::ZERO,
                 egui::vec2(width as f32 / self.scale, height as f32 / self.scale),
