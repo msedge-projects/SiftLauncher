@@ -301,9 +301,9 @@ const HOSTING_LINE: f32 = 28.0;
 /// The chip's mark box: the reference's logo ink is 16 points at x 1154..1169. This build paints
 /// it through [`crate::brand::paint_mark`], whose ink is three quarters of its box, so a 20-point
 /// box lands the same 16 points of ink.
-const CHIP_MARK: f32 = 20.0;
+const CHIP_MARK: f32 = 16.0;
 /// Where that box starts, from the banner's left edge.
-const CHIP_LEFT: f32 = 12.0;
+const CHIP_LEFT: f32 = 14.0;
 /// The gap between the mark and `modrinth hosting`.
 const CHIP_GAP: f32 = 0.0;
 /// The chip label's size: its ink spans 127 points, which is 16-point medium here.
@@ -648,13 +648,35 @@ pub fn hosting_banner(ui: &egui::Ui, rect: Rect, theme: &Theme) -> Option<Step> 
         egui::pos2(banner.left() + CHIP_LEFT, banner.top() + BANNER_PAD - 1.0),
         Vec2::splat(CHIP_MARK),
     );
-    if !crate::brand::paint_mark(painter, ui.ctx(), chip_mark) {
-        painter.circle_filled(chip_mark.center(), 8.0, theme.BRAND);
+    if !crate::brand::paint_mark_in(
+        painter,
+        ui.ctx(),
+        chip_mark,
+        // Sampled from the reference\'s own banner: its mark is a dimmed green there, not the brand tone.
+        egui::Color32::from_rgb(63, 196, 118),
+    ) {
+        painter.circle_filled(chip_mark.center(), 8.0, egui::Color32::from_rgb(63, 196, 118));
     }
+    // **Two colours, as the reference sets it**: the word "modrinth" in white and the word "hosting" in the
+    // brand green, not the whole phrase in green. The reference reads "modrinth hosting" with that split at 16
+    // points; this painted one string in one colour and the difference was the whole wordmark.
+    let chip_x = chip_mark.right() + CHIP_GAP;
+    let brand_word = painter.layout_no_wrap(
+        "modrinth".to_owned(),
+        fonts::label(CHIP_SIZE),
+        theme.CONTRAST,
+    );
     painter.text(
-        egui::pos2(chip_mark.right() + CHIP_GAP, chip_mark.center().y),
+        egui::pos2(chip_x, chip_mark.center().y),
         Align2::LEFT_CENTER,
-        "modrinth hosting",
+        "modrinth",
+        fonts::label(CHIP_SIZE),
+        theme.CONTRAST,
+    );
+    painter.text(
+        egui::pos2(chip_x + brand_word.size().x + 4.0, chip_mark.center().y),
+        Align2::LEFT_CENTER,
+        "hosting",
         fonts::label(CHIP_SIZE),
         theme.BRAND,
     );

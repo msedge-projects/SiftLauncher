@@ -4722,3 +4722,28 @@ discouraged it has been replaced with this table.
 **What bilinear did not fix**: the hosting banner mark still draws as a striped square where the reference has clean rings, so that is
 not aliasing. It is the next thing to look at, along with the wordmark, which this build paints all in green where the reference sets
 the word "modrinth" in white and "hosting" in green.
+### The app was drawing its own stand-in logo (2026-11-09)
+
+The hosting banner\'s mark was a **bright green square** and the wordmark was one green string. The reference draws Modrinth\'s
+concentric rings and sets "modrinth" in white with "hosting" in green. Both are now right, and the logo is the real one:
+
+| | before | after |
+|---|---|---|
+| the mark | a generated stand-in, a green square | **`packages/assets/branding/logo.svg` from `modrinth/code`**, rasterised at 512 |
+| its size / position in the banner | 20 points at x 1152 | **16 points at x 1154** (reference: 16 at 1154) |
+| its tone | brand green `(27,217,106)` | **`(63,196,118)`**, sampled from the reference\'s own banner |
+| the wordmark | `modrinth hosting`, all green | **`modrinth` white, `hosting` green** |
+
+| Home | differing pixels |
+|---|---:|
+| before | 31 310 |
+| wordmark split | 31 133 |
+| real logo + matched mark | **31 401** |
+
+**The last step made the total 229 worse and the picture right.** The generated square happened to cover a different set of the
+reference\'s ink pixels than the true rings do; the wordmark now agrees to a point vertically and five horizontally, and the mark is the
+mark. That is the same trade this file has recorded before -- a metric that rewards a wrong shape because it overlaps -- and the state
+that can be pressed and compared wins.
+
+The logo is Modrinth\'s own asset, taken from the open-source repository the objective points at, with its provenance in a comment in
+`assets/brand/logo.svg`.

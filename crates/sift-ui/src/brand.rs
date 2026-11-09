@@ -93,6 +93,17 @@ pub fn use_mark(mark: bool) -> bool {
 /// asked for for the same reason -- cropping here would silently change the framing the
 /// hero and the About view were measured at.
 pub fn paint_mark(painter: &egui::Painter, ctx: &egui::Context, rect: egui::Rect) -> bool {
+    paint_mark_in(painter, ctx, rect, egui::Color32::WHITE)
+}
+
+/// The mark in a given tint. The banner draws it in the reference\'s own dimmed green -- sampled from its render at
+/// `(63, 196, 118)` where the title bar\'s is the brand green -- and every other site passes white.
+pub fn paint_mark_in(
+    painter: &egui::Painter,
+    ctx: &egui::Context,
+    rect: egui::Rect,
+    tint: egui::Color32,
+) -> bool {
     let mark = mark(ctx);
     if !use_mark(mark.is_some()) {
         return false;
@@ -103,7 +114,7 @@ pub fn paint_mark(painter: &egui::Painter, ctx: &egui::Context, rect: egui::Rect
                 texture.id(),
                 rect,
                 egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-                egui::Color32::WHITE,
+                tint,
             );
             true
         }
