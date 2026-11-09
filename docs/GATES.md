@@ -7878,3 +7878,8 @@ noise. Its page is dominated by skin artwork, so an edge-based correlation has l
 would decide it, and neither changes any figure today.
 
 **The tool is committed** so that any future page figure can be accompanied by its alignment, which is now the cheapest way to keep a count honest.
+**CORRECTED within the round**: on a narrower region (80,140 to 900,860) Skins reads **30 619 in place, 30 619 at (0,0)** -- aligned. The
+inconclusive reading came from a window whose left third is a large photograph, where an edge-based correlation has little structure to lock onto.
+
+**So all four quoted pages are aligned**: Home, Screenshots, Discover and Skins, each with no shift beating in place. The non-monotonicity found on
+Settings does not cast doubt on any figure this table quotes, and that is now checked rather than assumed.
