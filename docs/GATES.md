@@ -7804,3 +7804,28 @@ reference's by coincidence in some places.
 **So this is not yet a win and is recorded as such.** The next step is `CONTENT_LIFT = 5.0`, one build, and the same three-row probe: the cards
 and system rows should both prefer dy 0, and the total should fall below 42 213. If it does not, the lift comes out -- a change that halves one
 region's difference and raises the page's is not a fix until the total says so.
+### The rows want five points; the plate does not (2026-11-09)
+
+`CONTENT_LIFT = 5.0`, built and measured, with the prediction stated first: *both regions prefer dy 0 and the total falls below 42 213*.
+
+| | lift 0 | lift 4 | lift 5 |
+|---|---:|---:|---:|
+| theme cards, best shift | +4 (581) | +1 (334) | **0 (334)** |
+| System row, best shift | +4 (178) | +1 (80) | **0 (80)** |
+| inside the modal | 27 256 | -- | **31 721** |
+| page total | **42 213** | 45 536 | 46 437 |
+
+**The alignment prediction was right and the total prediction was wrong, and the gap between them is the finding**: at lift 5 the rows sit
+exactly where the reference's do -- best shift 0, differences down from 581 to 334 and from 178 to 80 -- and the page is *worse* by four and a
+half thousand pixels.
+
+**Because `content_rect` is not only the rows.** It carries the pane's own background and its edges, so lifting the rect moves the plate by five
+points as well: it now starts five points into the header and leaves a five-point band at the foot, and those two edges cost far more than the
+rows saved. The rows are in the right place and the box they sit in is in the wrong one.
+
+**Reverted, and the revert verified**: `sb-ref.png` against the reverted frame reads **42 213** again, exactly the figure before the lift. HEAD is at
+the better number.
+
+**What a real fix would look like**: lift the *children* of the pane and not the pane -- the row layout's own start, not the rect it is clipped to.
+That is a different edit in a different place (`settings.rs`'s per-row draw, not `content_rect`), and it is the one the cross-correlation actually
+calls for. Recorded rather than attempted, because the round's two builds went to a lift that had to come out.

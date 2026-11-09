@@ -1156,7 +1156,7 @@ const DIALOG_MARGIN: f32 = 16.0;
 
 /// The content column sits this far above the header's foot: measured by cross-correlation against the reference, which
 /// prefers the pane four points higher while the rail beside it prefers where it is.
-const CONTENT_LIFT: f32 = 4.0;
+
 
 /// The plate's corner: `!rounded-[20px]` (`TabbedModal.vue:142`), which is `--radius-xl`
 /// (`variables.scss:205`) -- the theme's own ladder, `theme::RADIUS_XL`.
@@ -3002,10 +3002,7 @@ fn content_rect(dialog: Rect) -> Rect {
     // plate's border for every row of the pane (the verifier found it erased at x 1183 on all
     // 585 body rows).
     Rect::from_min_max(
-        // **Four points up, measured.** Cross-correlating the Appearance pane against the reference over -4..+4 finds the minimum
-        // at dy +4 for the theme cards (581 differing) and for the System theme row (178), while the rail prefers dy 0 -- so the
-        // rail is right and the content column sits four points low. This is that four.
-        pos2(dialog.left() + RAIL_WIDTH + RULE_STROKE, dialog.top() + HEADER_HEIGHT - CONTENT_LIFT),
+        pos2(dialog.left() + RAIL_WIDTH + RULE_STROKE, dialog.top() + HEADER_HEIGHT),
         pos2(dialog.right() - RULE_STROKE, dialog.bottom() - RULE_STROKE),
     )
 }
