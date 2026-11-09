@@ -6932,3 +6932,25 @@ the same heading and the same body at the same height, where one of them previou
 
 **Why this state had never been caught**: every earlier capture of this page was of a populated library or the *empty library* state, which is a
 different branch and which sits correctly. The no-results state needs a query that matches nothing, and no round had typed one.
+### The dropdown's chosen row is a green plate, not a tick (2026-11-09)
+
+Driving the Screenshots page's sort dropdown on both clients, and then its group-by dropdown on the reference to check whether the style was the
+sort menu's or the component's:
+
+| | reference | this build, before |
+|---|---|---|
+| the chosen row's plate | **(46,94,72)**, a dark green | the same (52,54,60) as the rest |
+| the chosen row's label | **brand green** | `CONTRAST` |
+| a mark at the row's right end | **none** | a `Check` glyph |
+
+The sample is the evidence: three points inside the chosen row all read (46,94,72) and two points inside an unchosen row all read (52,54,60), with the
+menu's own plate at (52,54,60) -- so the green is the row's, not the menu's.
+
+`open_list` is shared by every dropdown on the page, so the fix is in one place: fill the chosen row with (46,94,72), set its label in `theme.BRAND`,
+and drop the `Check` glyph. The hover fill still applies to the other rows and no longer competes with the selection, since a chosen row is never
+overpainted by a hover.
+
+**Still different, and now recorded rather than fixed**: the reference's sort chip reads **Newest ^** -- its chevron is the *direction* -- where this
+build reads **Newest v**, the same dropdown chevron every other chip carries. Its Date chip carries v in both, so the sort chip's chevron is a
+special case: up for newest-first, down for oldest-first. The glyph is hardcoded in the shared chip helper and needs a parameter; that is the next
+round's first item, with `sort-ref.png` and `sort2-our.png` behind it.

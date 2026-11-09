@@ -2169,7 +2169,13 @@ fn open_list(
             egui::vec2(plate.width() - 2.0 * MENU_PAD, MENU_ROW),
         );
         let response = ui.interact(row, egui::Id::new((salt, index)), Sense::click());
-        if response.hovered() {
+        // **The chosen row is a green plate with green text, not a tick.** Measured on the reference's own sort
+        // dropdown: the selected row's plate is (46,94,72) where the rest of the menu is (52,54,60), and its label is
+        // brand green. This build drew the label in CONTRAST with a Check glyph pinned to the row's right end.
+        if index == chosen {
+            ui.painter()
+                .rect_filled(row, MENU_RADIUS, egui::Color32::from_rgb(46, 94, 72));
+        } else if response.hovered() {
             ui.painter().rect_filled(row, MENU_RADIUS, theme.SURFACE_4);
         }
         ui.painter().text(
@@ -2178,22 +2184,11 @@ fn open_list(
             *label,
             fonts::body(MENU_TEXT_SIZE),
             if index == chosen {
-                theme.CONTRAST
+                theme.BRAND
             } else {
                 theme.BASE
             },
         );
-        if index == chosen {
-            icons::draw(
-                ui.painter(),
-                Glyph::Check,
-                Rect::from_center_size(
-                    egui::pos2(row.right() - MENU_TEXT_PADDING, row.center().y),
-                    Vec2::splat(MENU_GLYPH),
-                ),
-                theme.TEXT_PRIMARY,
-            );
-        }
         if response.clicked() {
             picked = Some(index);
         }
