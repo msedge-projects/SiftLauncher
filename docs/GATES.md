@@ -6176,3 +6176,20 @@ running, repairing -- that the reference is not in and that this lab cannot indu
 So of the 16 open tooltip rows, **four are reachable now** (the rail's three, closed, plus the download ring, drawn) and the rest are behind
 states. That is a bigger statement than "not done": it says the cluster cannot be closed from here at all, and the rows should carry that cause
 rather than staying OPEN as though a drive would close them.
+### A populated Screenshots page, on both sides, for the first time (2026-11-09)
+
+Every screenshots comparison in this project has been of **two empty pages**, because the reference had never taken a screenshot. It does not
+have to be that way: the page reads `/tmp/ref107/ModrinthApp/profiles/<instance>/screenshots`, and a file copied in there makes the page populate.
+
+**Two wrong folders first.** The instance folder under `/tmp/ref107/SiftLauncher/instances/...` looks like the obvious home, and is where this
+build keeps them; putting a PNG there changed nothing -- the page still said No screenshots yet. The reference reads its *profile* copy, found
+with `find /tmp/ref107 -iname '*screenshot*'`.
+
+With one file in both instances the two pages show: a heading, a search field, a New group button, the sort chips (Newest, Date), a group header
+reading Today 1, and one card carrying the image with its filename over the instance name -- on both sides.
+
+`compare.py`: **26 180**, against **23 573** for the two empty pages. The populated state is a better match in absolute terms despite having far
+more to compare, which is the opposite of what the empty-state figures had been implying.
+
+**The lab now differs from before**: both instances hold `2026-11-09_12.00.00.png`, so the empty-state figures in FINISHED.md are no longer
+reproducible without deleting it. Both states are recorded here so either can be restored.
