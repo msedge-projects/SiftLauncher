@@ -6743,3 +6743,17 @@ interacting with a trailing space, a line box, a different wrap rule -- and call
 **What stands**: the numbers in the table (our advances, printed by the build) and the reference inks (measured from captures). **What does not**:
 the inference from them to "the face explains the remaining differences". The next round that meets a text-position difference should assume the
 face is *close* and look for a mechanical cause first.
+### The "copy is 20% heavier" was the link, not the copy (2026-11-09)
+
+Last round's diagnosis for the news card -- "the copy is 20% heavier in ink, so the size is wrong" -- does not survive a check of the weight it
+implied. `fonts::body` is **inter-400**, the regular face, which is what the reference's copy uses; there is no heavier weight to be wrong about.
+
+And the box the ink was counted in, **(1150..1425, 536..620)**, contains the bright purple **"Upgrade to Modrinth+"** row, which sits under the copy
+and crosses the same rows in both captures at slightly different heights. Purple link glyphs count as "lit" exactly like text does, so the count was
+the link's position as much as the copy's weight.
+
+**What survives**: the totals. `COPY_SIZE` 13 measures 16 565 against 14's 16 817, and 13.5 measures 17 236 -- three verified pairs, three numbers,
+and the choice stands on them rather than on the ink explanation.
+
+**What does not**: "the copy is heavier, so shrink it". The right lesson is not that the size is 13 but that an ink count is only meaningful when
+the box holds one thing -- the same rule `element.py` now warns about, broken here by a box drawn around a paragraph and a link together.
