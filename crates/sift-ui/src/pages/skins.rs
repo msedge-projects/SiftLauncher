@@ -1485,7 +1485,7 @@ fn page_box(rect: Rect) -> Rect {
             rect.top() + PAGE_PADDING,
         ),
         egui::pos2(
-            crate::geometry::PANEL_LEFT - ROUTE_PADDING,
+            crate::geometry::panel_left() - ROUTE_PADDING,
             rect.bottom(),
         ),
     )

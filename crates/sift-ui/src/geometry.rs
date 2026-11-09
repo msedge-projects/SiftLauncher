@@ -65,7 +65,29 @@ pub const CONTENT_LEFT: f32 = RAIL;
 pub const PANEL: f32 = 300.0;
 
 /// The sidebar's left edge in window coordinates.
-pub const PANEL_LEFT: f32 = WINDOW.0 - PANEL;
+// **The window is not always 1440 wide.** This module used to derive the sidebar edge from the constant
+// `WINDOW.0`, which is where the window *opens* -- so at 1280 the sidebar was still drawn at 1140 and its right
+// third fell outside the window. The size the frame is actually drawing is recorded once per frame.
+static WINDOW_SIZE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Record the size the frame is drawing, before anything asks for a derived edge.
+pub fn set_window(width: f32, height: f32) {
+    let packed = ((width as u32 as u64) << 32) | height as u32 as u64;
+    WINDOW_SIZE.store(packed, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// The size the frame is drawing: the live window, or the size it opens at before the first frame sets it.
+pub fn window() -> (f32, f32) {
+    match WINDOW_SIZE.load(std::sync::atomic::Ordering::Relaxed) {
+        0 => WINDOW,
+        packed => ((packed >> 32) as u32 as f32, (packed & 0xffff_ffff) as u32 as f32),
+    }
+}
+
+/// The sidebar edge, from the window that is drawing.
+pub fn panel_left() -> f32 {
+    window().0 - PANEL
+}
 
 /// A page's own `px-6` inside the surface: text starts 24 px in from the surface's edge,
 /// which is why the reference's first column of text begins at x 88.
@@ -96,7 +118,10 @@ pub const BREADCRUMB_BADGE: f32 = 256.0;
 pub const WINDOW_CONTROLS: f32 = 48.0 * 2.0 + 60.0;
 
 /// Where the window controls begin, measured from the right edge.
-pub const CONTROLS_LEFT: f32 = WINDOW.0 - WINDOW_CONTROLS;
+/// The window controls edge, from the window that is drawing.
+pub fn controls_left() -> f32 {
+    window().0 - WINDOW_CONTROLS
+}
 
 /// The third window control is wider: `.window-controls .titlebar-button:last-child`
 /// carries `width: 3.75rem`.
@@ -145,9 +170,9 @@ mod tests {
     fn the_columns_do_not_overlap_and_reach_the_window_edge() {
         assert_eq!(CONTENT_LEFT, 64.0, "--left-bar-width: 4rem");
         assert_eq!(TEXT_LEFT, 88.0, "the surface's edge plus the page's px-6");
-        assert_eq!(PANEL_LEFT, 1140.0, "1440 - 300");
-        assert_eq!(PANEL_LEFT + PANEL, WINDOW.0, "the sidebar ends at the window edge");
-        assert_eq!(CONTROLS_LEFT, 1284.0, "48 + 48 + 60 from the right edge");
+        assert_eq!(panel_left(), 1140.0, "1440 - 300");
+        assert_eq!(panel_left() + PANEL, WINDOW.0, "the sidebar ends at the window edge");
+        assert_eq!(controls_left(), 1284.0, "48 + 48 + 60 from the right edge");
     }
 
     /// The rail stacks 48 px buttons four pixels apart starting at the surface's top.
@@ -166,6 +191,6 @@ mod tests {
             BREADCRUMB_ARROWS + ARROW_BUTTON * 2.0 + ARROW_GAP < BREADCRUMB_BADGE,
             "the badge follows the forward arrow"
         );
-        assert!(BREADCRUMB_BADGE < CONTROLS_LEFT, "the breadcrumb is left of the controls");
+        assert!(BREADCRUMB_BADGE < controls_left(), "the breadcrumb is left of the controls");
     }
 }

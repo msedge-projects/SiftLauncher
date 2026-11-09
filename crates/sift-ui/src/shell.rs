@@ -1302,6 +1302,10 @@ impl Shell {
 
 pub fn ui(&mut self, ui: &mut Ui) -> bool {
         let ctx = ui.ctx().clone();
+        // **Before anything reads a derived edge.** Every position below comes from the size the frame is
+        // drawing, which is the live window and not the size it opened at.
+        let frame = ui.max_rect();
+        g::set_window(frame.width(), frame.height());
         if let Some(text) = self.clipboard.take() {
             ctx.copy_text(text);
         }
@@ -1608,7 +1612,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
             let galley =
                 painter.layout_no_wrap(message, crate::fonts::body(13.0), self.theme.CONTRAST);
             let plate = Rect::from_center_size(
-                egui::pos2((g::CONTENT_LEFT + g::PANEL_LEFT) / 2.0, g::WINDOW.1 - 56.0),
+                egui::pos2((g::CONTENT_LEFT + g::panel_left()) / 2.0, g::WINDOW.1 - 56.0),
                 egui::vec2(galley.size().x + 32.0, 36.0),
             );
             painter.rect_filled(plate, 8, self.theme.SUPER_RAISED_BG);
@@ -2800,7 +2804,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
     }
     fn right_panel(&mut self, ui: &mut Ui) -> bool {
         let panel = Rect::from_min_size(
-            egui::pos2(g::PANEL_LEFT, g::TITLE_BAR),
+            egui::pos2(g::panel_left(), g::TITLE_BAR),
             egui::vec2(g::PANEL, g::WINDOW.1 - g::TITLE_BAR),
         );
 
@@ -2934,7 +2938,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
                 // **The inset is on both sides after all.** Widening this to the panel edge fixed the toolbar and broke every
                 // centred empty state: the reference's Screenshots heading centres at 602, which is the centre of 88..1116, and
                 // widening moved ours to 614. The toolbar's own padding was the thing that was wrong, not the column.
-                g::PANEL_LEFT - g::CONTENT_INSET - g::TEXT_LEFT,
+                g::panel_left() - g::CONTENT_INSET - g::TEXT_LEFT,
                 // **The inset is not symmetric.** The reference's content surface runs to y 889 and this build's to 876,
                 // measured where each stops being the surface: its list therefore shows a card where ours shows background,
                 // a 24-point band at the content's foot (gap-matrix row 4's neighbourhood, found by the flat-point scan).
@@ -2944,7 +2948,7 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
         ui.painter().rect_filled(
             Rect::from_min_max(
                 egui::pos2(g::CONTENT_LEFT, g::TITLE_BAR),
-                egui::pos2(g::PANEL_LEFT, g::WINDOW.1),
+                egui::pos2(g::panel_left(), g::WINDOW.1),
             ),
             0,
             self.theme.BG,

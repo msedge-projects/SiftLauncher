@@ -1547,7 +1547,7 @@ mod tests {
     /// drawn into the window the captures are taken at rather than into a convenient box.
     fn panel_rect() -> Rect {
         Rect::from_min_size(
-            egui::pos2(g::PANEL_LEFT, g::TITLE_BAR),
+            egui::pos2(g::panel_left(), g::TITLE_BAR),
             egui::vec2(g::PANEL, g::WINDOW.1 - g::TITLE_BAR),
         )
     }
@@ -1601,7 +1601,7 @@ mod tests {
         let card = column;
         let row_x = card.left() + HEADING_INSET;
         let row_w = card.width() - 2.0 * HEADING_INSET;
-        assert_eq!(row_x, g::PANEL_LEFT + 26.0, "the row starts at x 1166");
+        assert_eq!(row_x, g::panel_left() + 26.0, "the row starts at x 1166");
         assert_eq!(row_w, 249.0, "and is 249 wide");
         for top in step_tops() {
             let row = Rect::from_min_size(egui::pos2(row_x, top), egui::vec2(row_w, ROW_H));

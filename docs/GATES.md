@@ -4593,3 +4593,25 @@ Gallery joins it.
 Geometry now agrees to a pixel: cards at 88 / 436 / 784, 332 wide, tops at 247 against 248, picture bands 166 against 169. **What is left
 inside the cards is the picture\'s resampling** -- the same artwork, cropped the same way, drawn from a 640-point texture here against a
 larger one there -- and the body\'s type.
+### The layout was nailed to 1440 (2026-11-09)
+
+**New objective: 99% visual identity, verified at five standard screen sizes.** The first size exposed a structural fault within a minute:
+
+| | the sidebar at a 1280-wide window |
+|---|---|
+| before | drawn from `WINDOW.0 - PANEL` = **1140**, so its right third was outside the window |
+| after | **980**, from the window that is drawing |
+
+`geometry`\'s `PANEL_LEFT` and `CONTROLS_LEFT` were constants derived from the size the window *opens* at. They are now functions over a
+window size recorded once per frame (`set_window` in `Shell::ui`, `window()` everywhere else), and every consumer -- the panel, the toast\'s
+centre, the page column, the skins grid -- derives from it.
+
+| Home | differing pixels |
+|---|---:|
+| 1440x900, before and after | **31 349** -- unchanged, so the fix costs nothing at the size everything was tuned to |
+| 1280x720, before | **65 983** |
+| 1280x720, after | **51 796** |
+
+**The five sizes are now measurable and the number that matters is per size**: the same page is 2.4% different at 1440 and 4.0% at 1280,
+because a narrower content column re-wraps text and the reference\'s own layout moves elements between breakpoints. The next rounds are
+1280 down to 1% and then the other three sizes.
