@@ -4571,3 +4571,25 @@ Final state: build `Finished`, **264 tests passed**, **tree clean**, **649 commi
   scaled for, and measured worse (net +564 across six pages), so left alone with the experiment recorded in `fonts.rs`.
 * **The Gallery tab** is measured but not explained: a 15-point card-top offset and an unmeasured picture ratio.
 * **Animation timing** is now correct (it was thirty times slow until this round), and has no side-by-side capture behind it yet.
+### The gallery grid is on the page, not in a card: 172 200 -> 165 797 (2026-11-09)
+
+New objective, new standard: **99% visual identity**, and tested at five standard screen sizes. First slice is the worst page in the
+ledger, and the measurement that cracked it was the gaps:
+
+| | cards | first card | gaps |
+|---|---|---|---|
+| reference | **332 wide at 88, 436, 784** | at x 88 | page-coloured |
+| ours before | 321.3 wide at 104, 441, 779 | 16 points in | 16, but inside a card |
+
+The reference\'s gallery is **not inside a card** -- the pixels between two cards are the page\'s own background -- so `card.shrink(CARD_PAD)`
+was putting every card 16 points in and 11 points narrow. The Versions tab already had a "not a card" branch for exactly this reason; the
+Gallery joins it.
+
+| | Gallery tab |
+|---|---:|
+| before | 172 200 (86.7% identical) |
+| after | **165 797 (87.2%)** |
+
+Geometry now agrees to a pixel: cards at 88 / 436 / 784, 332 wide, tops at 247 against 248, picture bands 166 against 169. **What is left
+inside the cards is the picture\'s resampling** -- the same artwork, cropped the same way, drawn from a 640-point texture here against a
+larger one there -- and the body\'s type.

@@ -893,12 +893,18 @@ pub fn draw(
     // column: the filter row sits on the page's own background and the table is its own rounded
     // box, which is why the reference's filter row starts at y 268 where its page card would have
     // been bordered at 265, and why the table's border is at 313 (ref-project-versions.png).
-    if state.current(project) == Tab::Versions {
+    // **The Gallery is not a card either**: its gaps are page-coloured in the reference, and a `shrink(CARD_PAD)`
+    // put every card 16 points in and 11 narrow (321.3 against the reference's 332).
+    if matches!(state.current(project), Tab::Versions | Tab::Gallery) {
         let inner = Rect::from_min_max(
             egui::pos2(column.left(), card_top + VERSIONS_INSET),
             egui::pos2(column.right(), column.bottom()),
         );
-        versions(ui, inner, theme, project, state);
+        match state.current(project) {
+            Tab::Versions => versions(ui, inner, theme, project, state),
+            Tab::Gallery => gallery(ui, inner, theme, project, images, state, &mut probe_rows),
+            _ => {}
+        }
     } else {
         ui.painter().rect_filled(card, CARD_RADIUS, theme.SURFACE_3);
         ui.painter().rect_stroke(
@@ -911,8 +917,7 @@ pub fn draw(
         let inner = card.shrink(CARD_PAD);
         match state.current(project) {
             Tab::Description => description(ui, inner, theme, project, images),
-            Tab::Gallery => gallery(ui, inner, theme, project, images, state, &mut probe_rows),
-            Tab::Versions => {}
+            _ => {}
         }
     }
 
