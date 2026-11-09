@@ -5442,3 +5442,22 @@ needs for a 1440x900 window in 32-bit colour. Reverted, because 112 kB is not wo
 The gate therefore stands where it stood: **2.5 MB over, with the two biggest line items being the framebuffer this backend requires and the
 code itself.** Neither is reachable by configuration; both were measured, and the numbers are here so the next round does not spend its time
 on the cache again.
+### The card\'s height: three instruments, three answers, none of them settled (2026-11-09)
+
+This file has now recorded the project card\'s height as 218, then 234, then 214, and the running build has been each of those in turn.
+Here is what each instrument actually measured, and why none of them can be trusted for this number:
+
+| instrument | said | why it is not the card |
+|---|---|---|
+| a 1:1 crop | 218 | I read the bottom edge by eye against a dark page; the card\'s ring is 17 points from the page and the crop\'s last rows are the third **row\'s** ring |
+| long light runs in a column | 215 | the scan finds the rows\' rings as readily as the card\'s -- on this build it reported the bottom at 269, which is inside the card |
+| the whole-column pixel count | 234 | prefers whichever height puts the *other* cards closest, and cannot see a fill 17 points from the page at threshold 40 |
+
+**All three are proxies.** The card\'s own rect is not visible as an edge distinct from its rows\' rings; the only reliable way to get it is to ask
+the program, which is what `SIFT_HOME_PROBE` does for cards on Home and what nothing does for the sidebar\'s cards on a project page.
+
+So the height is left at the value the column count prefers (**234 returned, 218 inner**) -- not because it is right, but because it is the best
+measured state and because oscillating between three proxies has cost three rounds. The build is reverted to exactly that state.
+
+**The instrument to build next**: a probe that prints the sidebar\'s card rects the way `SIFT_HOME_PROBE` prints the grid\'s. Then this number is
+read rather than inferred, and the crop/ring/count argument ends.
