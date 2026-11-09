@@ -18,6 +18,11 @@ clients in the same state, with a capture behind every claim.
 | Files tab | **57 726** | `files-ref2.png` vs `files-our3.png` (2026-11-09, six folders in both) | **the mtimes**: same six folders, same order, same five columns; the dates differ because the folders were made today. Higher than the 49 056 measured when this build listed one row -- more rows, more to compare |
 | Skin selector | **135 516** | `skin-ref.png` vs `skin-our.png` (2026-11-09, both in the demo-account state) | **the skin art**: the heading and "Saved skins" land within a point, and the structure is identical, but the reference draws nine real skin textures where this build draws flat stand-ins (144 609 px), plus its 3D model shading (13 891) |
 | Servers | not comparable | `ref-servers.png` | the reference refuses its own page |
+**The table above is the current lab; everything below it is history.** Later tables in this file record what each round measured at the
+time, against the lab as it stood then, and several of them describe states that no longer exist -- an empty Screenshots page, an instance
+with one folder, a reference with no screenshot. They are kept because they are the record of what was proved, and they are **not**
+comparable with the table above or with each other.
+
 **Read the modal rows as modals.** Settings and the project\'s dialog states are plates over a *blurred* page, so their figure is the plate plus
 whatever shows through the blur -- two different things. Measured on Settings: **27 256 differing pixels inside the plate, 10 189 outside it**. The
 backdrop\'s count is far below Home\'s own 32 781 because the blur suppresses glyph detail, so a modal row understates its dialog and cannot be
