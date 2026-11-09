@@ -7575,3 +7575,9 @@ a tick, which is what the reference draws there.
 
 **Why not changed tonight**: the edit is small but the verification is not -- a build is eight minutes and the round had less. An unverified radio
 change is exactly the kind of edit this project has had to withdraw before, so the finding and its line number are the deliverable.
+**CORRECTED within the round**: the code at `settings.rs:4807` already draws a **ring with a dot** -- `circle_stroke(radio, 6.5, 1.5)` in the brand
+colour plus `circle_filled(radio, 3.0, BRAND)` when chosen -- and its own comment says so. So the capture I read, `t2-settings-*.png`, **predates that
+fix** and the difference it shows is not this build's. The finding is withdrawn.
+
+This is the second time this session that a capture pair has been treated as current without checking its age, and the first where the difference
+was convincing enough to write up. The check costs one `ls`: a capture older than the file it tests is evidence about the past.
