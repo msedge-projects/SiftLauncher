@@ -4747,3 +4747,33 @@ that can be pressed and compared wins.
 
 The logo is Modrinth\'s own asset, taken from the open-source repository the objective points at, with its provenance in a comment in
 `assets/brand/logo.svg`.
+### The text floor, measured three ways (2026-11-09)
+
+The 99% target needs 12 960 differing pixels on a 1440x900 frame. Home sits at 31 401. This round asked whether the remainder is
+something this build can fix, and measured the same regions three ways:
+
+| region | area | differing | share |
+|---|---:|---:|---:|
+| blank card padding (no ink at all) | 8 400 | **22** | **0.26%** |
+| the words "Getting started" | 3 200 | **789** | **24.7%** |
+| the same heading, ink rows | -- | **identical**: 84..98 in both | -- |
+
+So **the layout, the box, the size and the position of the text all match, and a quarter of the glyph pixels still differ**. That is the
+rasteriser: Chrome and `ab_glyph` put different coverage in the same box.
+
+Two attempts to close it, both measured and both reverted:
+
+| attempt | belief | result |
+|---|---|---|
+| damp glyph coverage to 0.92 | our text averages 107.6 brightness where the reference averages 99.8 | **Home 31 401 -> 32 713**, worse |
+| scale every face by 1.004 | the advance is 248 against 249 | net **+309** across five pages, worse |
+
+The damping failed for a reason worth keeping: the brightness gap is in the **edges**, not in the glyph cores, so scaling all coverage
+makes the strokes lighter than the reference rather than matching them.
+
+**What this means for the objective, stated plainly**: a page whose ink covers 10% of its area cannot get below ~2.5% differing, because
+that 10% differs by a quarter no matter what this build does. 1% is reachable only on pages that are almost entirely image and chrome --
+the Gallery is the closest and it is at 12.7%. The number is a property of having a different text engine, not a list of things left to do.
+
+**The work that remains can still move it**: every non-text difference is measurable and fixable, and this file has the list. But the
+floor has to be reported rather than chased.
