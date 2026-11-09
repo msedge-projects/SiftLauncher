@@ -4548,3 +4548,26 @@ measured against a frozen clock now run at the speed the reference runs them.**
 **And it retroactively explains two rounds of confusion**: the scheduled-repaint experiment looked like it froze the carousel because the
 carousel was already effectively frozen; the "identical captures" that made me revert a measured CPU win were the slow clock, not the
 tick. With the clock fixed, that change is worth re-trying on its own measurements.
+## Final entry, round 256 (2026-11-08)
+
+The last re-measurement after the clock fix, with the news card pinned so both clients show the same article:
+
+| page | before the clock fix | after |
+|---|---:|---:|
+| Home | 31 349 | **31 349** |
+| Project -- Description | 71 398 | **71 398** |
+
+**Unchanged, and that is the correct result**: a static frame does not depend on the clock. What the clock fix changed is what no static
+capture can show -- the carousel advancing every ten seconds, and every fade and slide running at the speed the reference runs them.
+
+Final state: build `Finished`, **264 tests passed**, **tree clean**, **649 commits** on this stretch.
+
+**The objective is not achieved.** What stands against it, with numbers:
+
+* **idle RSS 22 368-22 780 kB against a 20 MB bound** -- of which 5 064 is the window\'s pixel buffer, 7 508 is this build\'s own code
+  (already `-Oz` with LTO), 3 368 is the whole heap and 1 280 is libc. Not reachable by allocating more carefully, measured three ways.
+* **Pixel parity, page by page**: Home 31 349, Discover 78 538, Screenshots 23 547, Instance 30 454, Settings 31 975, Project 71 398
+  (Versions 63 660, Gallery 172 200). The remainders are line-break positions decided by a 0.4% metric difference that was measured,
+  scaled for, and measured worse (net +564 across six pages), so left alone with the experiment recorded in `fonts.rs`.
+* **The Gallery tab** is measured but not explained: a 15-point card-top offset and an unmeasured picture ratio.
+* **Animation timing** is now correct (it was thirty times slow until this round), and has no side-by-side capture behind it yet.
