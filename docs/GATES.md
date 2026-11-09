@@ -6017,3 +6017,24 @@ and the reason a flat number is not evidence that nothing happened.
 **Three of the four labels measured were clean**: the "Library" heading\'s ink box, the card name\'s column and the sidebar\'s "News" heading all
 land within a point or two across 1 000-odd ink pixels each. So the rasteriser attribution holds for those, and this round is the first in five
 that tested it rather than assuming it -- the difference it found was real, small, and in the one place nobody had looked.
+### The library card\'s plate is 18 points high and 11 short; its artwork is right (2026-11-09)
+
+A region of `RAISED_BG` below the filter chips -- 3 450 pixels with no counterpart in the reference -- led to the card, and the card\'s own
+extents settle it:
+
+| | plate | height |
+|---|---|---:|
+| reference (x 95, y run) | 358..564 | **207** |
+| this build | 340..535 | **196** |
+
+**The artwork starts at y 367 on both sides.** So the thing that is wrong is the plate around it: this build\'s card begins **18 points higher**
+and ends **29 earlier**, and the art sits at the reference\'s own row inside it. That is why the difference did not show as a misplaced picture --
+the picture is where it belongs and the box around it is not.
+
+Two consequences worth naming before the fix: the card\'s top padding here is **27 points** where the reference\'s is **9**, and its bottom padding
+is **29 points short** of the reference\'s. A card that is 207 tall in the reference and 196 here also means the grid\'s row pitch is wrong, and
+a second row would drift further -- with one instance in the library, that has never been visible.
+
+**Three wrong turns got here**, each recorded rather than hidden: the chips\' fill (measured identical at (52,54,60)), the chevron band (no
+glyph ink above threshold 90, so nothing to measure), and the card\'s top edge at x 100 (which caught the chip row above it). The measurement
+that worked scanned a column **inside the card but right of its icon** and split the rows into runs.
