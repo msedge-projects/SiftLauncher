@@ -6262,3 +6262,25 @@ silhouette.
 card's different article: the interface is in the right place and the thing inside it is different. Recorded rather than attempted, because
 drawing nine skin textures by hand would be inventing assets to make a number smaller -- the fake-measurement this project forbids, in its most
 literal form.
+### The Files tab listed one folder because the instance had one (2026-11-09)
+
+The instance page reads **30 471** (content 11 114) -- one of the closer pages -- and its Files tab read **49 056** with a list that looked wrong:
+
+| | rows |
+|---|---|
+| reference | config, crash-reports, datapacks, mods, resourcepacks, saves |
+| this build | **mods** |
+
+The columns, the header, the search row, Refresh and the kebab all matched; the list was one row against six. That is not a rendering fault -- this
+lab's instance had `mods` and nothing else, because nothing in this session had ever created the others. The reference's profile folder carries all
+six, and creating the same six in `/tmp/matchdata/SiftLauncher/instances/Fabric 26.3/minecraft` made the list identical in content and order.
+
+`compare.py` went **up**, 49 056 -> 57 726, and that is the honest direction: six populated rows hold more to compare than one, and the columns
+they differ in are the mtimes -- 11/03/26 5:58 PM in the reference, 11/09/26 3:32 PM here, because the folders were made today. Two instances of the
+same app on different days cannot have the same file dates.
+
+**So the usable number for this tab is the structure, not the count**: same six folders, same order, same five columns, same control row. The
+record should say that rather than quote 57 726 as though it measured the table's design.
+
+**The lab changed again**: this instance now has six folders where it had one, so every earlier Files figure (including 48 240 in FINISHED.md) is
+for a state that no longer exists.
