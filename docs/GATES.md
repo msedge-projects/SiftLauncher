@@ -5768,3 +5768,17 @@ behaviour matched by *not* having a behaviour, which is the kind that is easy to
 
 **There is no focus ring.** The reference\'s field border reads (66,68,74) at (88,266) and at (600,248) whether it has the keyboard or not --
 identical to the byte. This build draws exactly that, so "the field\'s focus ring" was a thing I had worried about that does not exist.
+### The objective, clause by clause, with each clause\'s own number (2026-11-09)
+
+`docs/FINISHED.md` now opens with a table that answers the objective directly rather than describing the work. Its contents, in brief:
+
+- **99% identity: not met.** Best page 2.54%; the floor is the text rasteriser, measured three ways.
+- **Five sizes: met.** All five captured against a restarted reference with both pointers parked.
+- **Matrix rows: partial.** 192 of 733 DONE.
+- **RSS: not met.** 22 500 kB against 20 MB, with the breakdown and the cache experiment that ruled the cache out.
+- **Build and tests: met.**
+- **Committed and measured: met.** 709 commits.
+
+Two of the six cannot be reached from here, and the document says so in the same table as the four that can. That is the honest form of
+"finished" this project\'s own rules ask for: the bar is stated, the measurements are attached, and the shortfall is named with its cause
+rather than left as a number to be improved.

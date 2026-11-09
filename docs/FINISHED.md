@@ -7,9 +7,9 @@ clients in the same state, with a capture behind every claim.
 
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
-| Home | **31 349** | `sweep-home-ref.png` vs `home-badge.png` | type: the rasteriser |
-| Discover | **78 538** | `sweep-discover-ref.png` vs `disc-globe.png` | type and card artwork |
-| Screenshots | **23 547** | `sweep-screenshots-*.png` (both empty -- the only state the reference can be shown) | the empty state\'s illustration |
+| Home | **32 781** | `refclean2.png` vs `field6.png` (2026-11-09, pointer parked, reference restarted) | type: the rasteriser |
+| Discover | **78 984** | `disc-ref2.png` vs `disc-cur.png` (2026-11-09) | type and card artwork |
+| Screenshots | **23 573** | `sweep-screenshots-*.png` (both empty -- the only state the reference can be shown) | the empty state\'s illustration |
 | Instance page | **30 454** | `sweep-instance-ref.png` vs `inst-clean.png` (mods/ emptied first) | type |
 | Settings | **31 975** | `sweep-settings-*.png` (pinned backdrop) | the theme cards\' interior tone and the type |
 | Project -- Description | **71 398** | `projL-ref.png` vs `proj-gap4.png` | the body\'s type |
@@ -29,6 +29,28 @@ wash and reverted; what moved the number since was **geometry and standalone typ
 | the strip's name, then its badge and meta | 32 158 -> 31 949 |
 | both page headings, each measured against its own ink | 31 949 -> 31 215 |
 | the sidebar's "News" heading | 31 215 -> 31 049 |
+## Where this stands against the objective, clause by clause (2026-11-09)
+
+The objective names six things. Four are measurable, and each is measured; two are not met, and the reasons are measurements
+rather than estimates.
+
+| clause | status | the evidence |
+|---|---|---|
+| **99% visual identity (<=1% of pixels at threshold 40)** | **NOT MET** | best page 2.54% of the frame (Home at 1440: 32 863 of 1 296 000); five sizes 2.54-3.51%. The floor is the text rasteriser: the same box, the same size, the same start, and a quarter of the glyph pixels differ -- measured three ways in `GATES.md` |
+| verified at five standard sizes | **MET** | 1280x720 29 153, 1366x768 36 825, 1440x900 32 863, 1600x900 46 795, 1920x1080 57 752, both clients restarted, pointer parked, `cln-*.png` against `cur-*.png` |
+| a GAP-MATRIX row per element with a capture behind every done | **PARTIAL** | **192 of 733 rows DONE**; of those, 30 name a capture or a drive. The rest rest on a code path or a value match |
+| idle RSS under 20 MB on the software backend | **NOT MET** | **22 500 kB**, stable. RssAnon 5 592, VmData 18 068. The image cache was cut to 384/128 and saved 112 kB, so the bulk is the 5 MB framebuffer this backend needs and the code itself |
+| tree building, tests green | **MET** | `cargo build --release` clean, **269 tests** pass |
+| every slice committed and measured | **MET** | 709 commits; each round's measurement is an entry in `GATES.md` |
+
+**Why the first clause cannot be closed by working harder.** The measurement is monotone in text density, and every page is text:
+Home's difference is 13 215 at threshold 120 and 5 549 at 160, which is the signature of one glyph drawn a shade apart by two rasterisers
+rather than of misplaced boxes. Two families of fix were tried and both reverted on measurement: a global type scale (a wash) and a glyph
+coverage factor (+1 312, worse). The remaining 2.5% is the same drawing in a different engine.
+
+**Why the third clause cannot either.** At one row per round -- the rate this session has managed on rows that need a drive -- the
+remaining 541 rows need more than the 114 rounds left. The ledger is a record of what has been proved, not a checklist that will be complete.
+
 ## The floor on text, measured rather than asserted
 
 Home's difference by threshold: 31 171 at 40, 26 340 at 60, 22 656 at 80, 13 215 at 120, **5 549 at 160**. The
