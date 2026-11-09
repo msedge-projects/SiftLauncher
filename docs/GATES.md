@@ -6610,3 +6610,24 @@ reference's **sidebar scrollbar**, drawn as an overlay thumb because its sidebar
 It is the mirror of an earlier finding -- the Settings rail drawing a scrollbar where the reference draws none -- so the two are not one policy
 applied inconsistently: the reference draws an overlay thumb **when a panel overflows**, and this build's panels differ in whether they overflow and
 whether they draw. That is a behaviour, not a tone, and it belongs with the other animation work rather than with the pixel fixes.
+### The reference window was 1440x625, and two rounds of comparisons were between different sizes (2026-11-09)
+
+Measuring the element at the sidebar's right edge printed the capture's size in passing: **`(1440, 625)`** for the reference against 1440x900
+for this build. The reference's window had been left at a different height by the five-size sweep and had not been reset, so the last two rounds'
+side-by-sides -- the jump-in strip, the getting-started card, the sidebar row sample -- were crops of windows of different heights.
+
+Some of those observations survive, because they were made on elements pinned to the top (the strip, the card's first rows, the heading). The
+**sidebar sample at y 90 does not survive in the way I read it**: with a 625-point window the sidebar's own content overflows, which is why the
+reference had a 6x220 thumb at x 1432..1437 -- and at 900 it may not overflow at all.
+
+**The rule, stated properly this time**: every capture pair needs its **size** checked as well as its **title**. `compare.py` refuses a mismatch,
+but crops and pastes do not, so a whole round can be spent looking at two windows that are not the same shape. The check costs one line:
+`Image.open(path).size` on both.
+
+After resetting both to 1440x900 and re-capturing, Home reads **31 876** (titlebar 1 715, rail 397, content 12 948, sidebar 16 816) -- the figure
+this session has been quoting, which is itself evidence that the earlier numbers came from the right size and only the recent *visual* pairs did
+not.
+
+**The scrollbar question, narrowed**: at 625 the reference's sidebar overflows and carries a 6-point overlay thumb at its right edge; at 900 it may
+not. This build draws none at either size. Whether ours *should* needs one more capture at 625 -- and a wheel test that actually reaches the panel,
+which the one I ran did not (both clients returned `None`).
