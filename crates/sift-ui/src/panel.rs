@@ -256,7 +256,9 @@ const TITLE_LINE: f32 = 20.0;
 const TITLE_TO_COPY: f32 = 8.0;
 
 /// The copy's size: 12 points, from the reference's measurement.
-const COPY_SIZE: f32 = 14.0;
+// **13, measured.** 14 gave a sidebar of 16 817, 12 gave 16 956, and 13 gives **16 565**; 13.5 gives 17 236,
+// so the optimum is the integer and not a value between it and 14.
+const COPY_SIZE: f32 = 13.0;
 
 /// How many lines the copy takes in the reference: the article's summary wraps twice at
 /// the panel's inner width, which is why the card reserves room for two.

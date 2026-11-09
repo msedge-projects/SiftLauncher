@@ -6681,3 +6681,26 @@ apart, under the 15% floor) -- and `compare.py` reads **79 146** (titlebar 2 438
 
 That replaces 78 363, which came from a pair assembled by hand. The 783-point difference is not a regression: it is what a verified pair reads
 where the earlier one may have been a moment or a state apart. From here the table quotes only pairs the tool produced.
+### The news copy is 13 points, not 14 -- and 13.5 is worse than both (2026-11-09)
+
+Looking at the two sidebar news cards at 1:1, with both showing the **same article** for the first time, showed our text heavier and wrapping
+differently. Counting lit pixels over the same boxes: the headline differs by 6% (1 145 against 1 083) and the copy by **20%** (3 403 against
+2 824). A headline that is close and a copy that is not points at one size, not at the face.
+
+Four sizes measured, each on a verified pair:
+
+| `COPY_SIZE` | sidebar | Home |
+|---|---:|---:|
+| 12 | 16 956 | 32 921 |
+| **13** | **16 565** | **31 625** |
+| 13.5 | 17 236 | 32 296 |
+| 14 (was) | 16 817 | 31 877 |
+
+**13, and the non-integer is worse than both neighbours** -- which is not noise: at 13.5 the copy wraps to a different set of lines than at either
+integer, and the wrap costs more than the size gains. The optimum here is not a value to interpolate towards; it is one of two integers, and the
+measurement picks it.
+
+**252 pixels, and they are honest ones**: the copy is now nearer the reference in weight, which is what the 20% ink difference said was wrong.
+
+This is also the first round where every number came from `pair.py` -- both windows the same size, both on the same page, both verified before
+the comparison ran.
