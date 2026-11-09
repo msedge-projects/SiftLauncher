@@ -6550,3 +6550,21 @@ That is a real gap on a tab that is now reachable in both clients, and it is wor
 
 **Also visible in the same pair**: this build's Settings rail draws a scrollbar at its right edge where the reference's draws none -- the overlay
 convention recorded earlier, still unfixed.
+### The Create instance dialog: a ring at the right place, and two claims settled (2026-11-09)
+
+The audit's claim 8 said the reference's instance-type cards carry **no chevron**. The dialog, opened in both clients, has four cards -- Custom
+setup, Start from a mod or modpack, Upload a modpack, Import instance -- each an icon, a title and a subtitle, and **no chevron on either side**.
+The claim holds, and the glyph that was removed was never there to remove.
+
+What the same pair did find was the **search field**, which the reference focuses on open and rings in brand green. This build drew the plate with
+no border at all. The ring is the one element in the dialog that is unconditionally drawn, so it makes a better landmark than the text:
+
+| | brand ring box |
+|---|---|
+| reference | (461,255)-(978,298) |
+| before | (456,220)-(983,259) -- 35 high, 10 wide, 4 short |
+| after | **(461,255)-(978,298)** |
+
+Three numbers and one stroke: the offset 104 -> 139, a five-point inset on each side, and a height of 44 rather than 40, with a two-point
+`--color-brand` ring. The dialog plates themselves already matched -- (441,116)-(998,784) against (441,117)-(998,782) -- so the mismatch was
+entirely inside a frame that was right.

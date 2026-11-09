@@ -780,11 +780,23 @@ impl Shell {
             crate::fonts::semibold(14.0),
             theme.CONTRAST,
         );
+        // **139, not 104, and four taller.** Measured by the brand ring's own box: the reference's runs (461,255)-(978,298)
+        // and this build's ran (456,220)-(983,259) -- 35 points high, 10 wide and 4 short. The ring is the only thing in the
+        // dialog that is unconditionally drawn, which makes it the honest landmark.
         let search = egui::Rect::from_min_size(
-            egui::pos2(left, plate.top() + 104.0),
-            egui::vec2(right - left, 40.0),
+            egui::pos2(left + 5.0, plate.top() + 139.0),
+            egui::vec2((right - left) - 10.0, 44.0),
         );
         painter.rect_filled(search, 10.0, theme.BUTTON_BG);
+        // **The brand ring.** The reference focuses this field when the dialog opens and draws a two-point `--color-brand`
+        // ring around it; this build drew the plate and no border at all, which reads as an unfocused, inert field in a
+        // dialog whose whole first instruction is to type in it.
+        painter.rect_stroke(
+            search,
+            10.0,
+            egui::Stroke::new(2.0, theme.BRAND),
+            egui::StrokeKind::Inside,
+        );
         // The magnifier the reference puts inside the field's left edge.
         crate::icons::draw(
             &painter,
