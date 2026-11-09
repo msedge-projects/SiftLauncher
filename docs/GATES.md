@@ -7200,3 +7200,29 @@ the viewer can still open the full one.
 **This is the second time a met gate has been recorded on a number that stopped being true**, and both times the correction came from a
 re-measurement prompted by something else entirely. The lesson is not about RSS: it is that a gate's row needs the date and the build it was
 measured on, because a figure without them silently becomes a claim about code that no longer exists.
+### The RSS "regression" was the environment, and one build proved it (2026-11-09)
+
+Two rounds were spent suspecting the copy button, then the image cache, of an eight-megabyte growth. The experiment that settled it is the one
+I said cost too much: **build the older tree and measure it in the same session**.
+
+| tree | state | `VmRSS` | `RssAnon` | `RssFile` |
+|---|---|---:|---:|---:|
+| round 348's build, measured then | Home, fresh | **13 720** | 2 464 | 6 240 |
+| commit `6e05c3c`, rebuilt today | Home, fresh | **22 472** | 5 604 | 11 804 |
+| the current tree | Home, fresh | **22 504** | 5 608 | ~16 900 |
+
+**The old tree reads the same as the new one**, so no code changed this. What moved is `RssFile`: 6 240 kB against an 11 MB binary meant only
+about half the executable was resident when the gate was certified, and 11 804 means essentially all of it is now. That is the kernel's page-cache
+and mapping behaviour under the container's current memory state, not anything in this project.
+
+**So the correct statement of the gate is conditional, and that is what `FINISHED.md` now says**: the clause was met on this lab as it was running in
+round 348 and is not met as it runs now, with the tree unchanged in the relevant respect. A gate whose number depends on the host's page-cache
+pressure is a gate that cannot be asserted from one measurement -- it needs the date, the build and the host state, and only the first two are
+recorded by anything in this repository.
+
+**What remains a real defect**: opening one picture adds 14 MB and no path gives it back -- not closing the viewer, not leaving the page. That one
+is the code's, and it is not explained by any of the above.
+
+**Cost of the detour**: three builds and most of two rounds, against the one build that would have answered it at the start. The instinct to
+blame the most recent change was wrong twice -- first arboard, then the cache -- and both times the reasoning was 'it changed just before the
+number did', which is not evidence.
