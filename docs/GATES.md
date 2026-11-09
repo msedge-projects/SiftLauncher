@@ -7279,3 +7279,23 @@ or interleaved rather than one mmapped arena.
 
 **What is still true**: `forget_file` is a real fix -- a preview no longer pins its picture for the life of the process -- and the viewer's
 texture now goes when the reader leaves the page, even though the operating system is told nothing about it.
+### The environment chip's glyph follows its value (2026-11-09)
+
+Discover's difference is spread evenly across every row -- 4 000 to 10 000 in each 80-row band, with no band standing out -- which is the
+signature of something repeated on every card rather than one bad element. At 1:1 the repeated thing was the **environment chip's icon**: the
+reference draws a **monitor** for a client-only project, and this build drew a **globe**.
+
+The comment above that line asserted the opposite, that the reference carries the world mark for both cases and a monitor only as a fallback
+this build never drew. It is wrong in the way the codebase's negative comments keep being wrong: half right. The globe *is* the mark for
+"Client and server"; the monitor is the mark for a single side. Both are visible in the same reference capture, one card apart.
+
+The glyph is now chosen with the label: both sides -> globe, client only -> monitor, otherwise the globe. Verified at 2x against the reference:
+both read a monitor followed by Client.
+
+**The measurement barely moved: Discover 79 146 -> 79 115, thirty-one pixels.** That is not a contradiction; it is the metric being blind in a
+way worth recording. A 14-point glyph inside a chip shares most of its ink with any other 14-point glyph of similar mass, so at threshold 40 the
+two icons differ by about one and a half pixels per card. The defect was real, visible at 1:1, and worth fixing; the count could not have found
+it and cannot be used to justify it.
+
+**Which is the counterexample to the last several rounds**: fixing what the number points at has been the productive loop, and here the number
+pointed at a region while the defect needed an eye on a single element. Both instruments, in that order -- band the region, then look inside it.

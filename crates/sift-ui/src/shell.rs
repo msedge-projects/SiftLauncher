@@ -3557,10 +3557,18 @@ fn tooltip_below(painter: &egui::Painter, anchor: Rect, label: &str, theme: &cra
                                     (false, false) => "",
                                 }
                                 .to_owned(),
-                                // A globe, not a monitor: the reference\'s environment chip carries the world mark for
-                                // "Client and server", a monitor only as a fallback this build never drew. One glyph,
-                                // every card on Discover.
-                                crate::icons::Glyph::Globe,
+                                // **The glyph follows the value.** A single-sided project carries a monitor and a project that
+                                // runs on both carries the world mark -- both are visible in one reference capture, a card apart --
+                                // so a single glyph for every card was wrong for whichever case it was not drawn from.
+                                match (
+                                    matches!(hit.client_side.as_str(), "required" | "optional"),
+                                    matches!(hit.server_side.as_str(), "required" | "optional"),
+                                ) {
+                                    (true, true) => crate::icons::Glyph::Globe,
+                                    // Measured: the reference draws a monitor for a client-only project.
+                                    (true, false) => crate::icons::Glyph::Monitor,
+                                    _ => crate::icons::Glyph::Globe,
+                                },
                             ))
                             .filter(|(label, _)| !label.is_empty())
                             .chain(tags_in_display_order(&hit.all_categories))
