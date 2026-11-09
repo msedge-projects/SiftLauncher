@@ -7024,3 +7024,35 @@ on the chip behind it.
 **Not done, and it is in the source**: `instance` is offered only when `isGlobal`. This build's Screenshots page *is* the global one, so
 the condition is satisfied today -- but there is no instance-scoped variant of this page to satisfy it for, so the flag has nothing to
 switch. Recording it as an open question rather than implementing a condition with no branch to guard.
+### A fabricated element that was not there, and what showed me (2026-11-09)
+
+Reading `toolbar.vue` (87 lines, the whole component) gave the page's row structure precisely:
+
+```html
+row 1: <Input icon=Search placeholder="Search" clearable /> + <Button><SquarePlusIcon /> New group</Button>
+row 2: <Combobox sort prefix=ArrowUpDown dropdown-min-width=160px />
+       <Combobox group prefix=LayoutGrid dropdown-min-width=160px />
+```
+
+Grepping the component directory for a filter control returned only the empty-state copy ("Try a different search or filter.") and
+JavaScript `.filter()` calls -- **no filter UI anywhere in the reference's screenshots page**. But this build appeared to carry a
+funnel and an "Add filter" control beside the two chips, which would have been a fabricated element of exactly the kind the rules
+forbid.
+
+**It was not.** Capturing the whole frame instead of a crop showed the page's toolbar as Search, New group, Newest ^, Date -- correct,
+matching the source line for line -- and the "Add filter" sitting *inside the screenshot card's picture*. The fixture for this page is a
+capture of this app's own window, so the thumbnail contains a complete miniature Home page: its chips, its "Add filter", its "New group"
+pill and its news card. At 1:1 in a crop, none of that is distinguishable from UI.
+
+**Two things this cost and two it taught**:
+
+* the hypothesis was wrong, and it was caught before anything was deleted -- the round's only value is the negative result;
+* the capture that settled it took one command, and it is the same command that would have prevented the confusion: **look at the frame,
+  not the region**, when the region's content is unfamiliar.
+
+**The toolbar is now confirmed against the source rather than assumed**: row 1 is the search field and the New group button, row 2 is the
+two comboboxes with their arrow and grid prefixes, and there is no third control. That also confirms the menu order fixed last round sits
+under the right chip.
+
+**A hazard worth writing down for later rounds**: a fixture that depicts the interface is a bad fixture for comparing the interface. Every
+future crop of this page has to remember that roughly a third of it is a picture of the app.
