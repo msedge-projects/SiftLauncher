@@ -3008,22 +3008,36 @@ fn draw_group(
                 }
                 match action {
                     Action::Copy => {
-                        // **The picture, as a picture.** `copyScreenshot` reads the PNG and writes it to the clipboard as
-                        // `image/png`; this decodes the same file and hands arboard the RGBA. A failure is silent, which is
-                        // also the reference's behaviour through `handleError` -- the card simply does not show the check.
-                        if let Ok(decoded) = image::open(&shot.path) {
-                            let rgba = decoded.to_rgba8();
-                            let (w, h) = (rgba.width() as usize, rgba.height() as usize);
-                            if let Ok(mut clipboard) = arboard::Clipboard::new() {
+                        // **Off the frame thread.** `arboard::Clipboard::new()` blocks on this X server -- the press left the
+                        // window drawn black with the process alive and the log empty, which is a UI thread waiting inside
+                        // the clipboard library. The bytes are read here (a file on local disk, milliseconds) and the
+                        // clipboard work happens on a worker, so a hostile or absent clipboard manager cannot stop the
+                        // window drawing.
+                        if let Ok(bytes) = std::fs::read(&shot.path) {
+                            std::thread::spawn(move || {
+                                let Ok(decoded) = image::load_from_memory(&bytes) else {
+                                    return;
+                                };
+                                let rgba = decoded.to_rgba8();
+                                let (w, h) = (rgba.width() as usize, rgba.height() as usize);
+                                let Ok(mut clipboard) = arboard::Clipboard::new() else {
+                                    return;
+                                };
                                 let data = arboard::ImageData {
                                     width: w,
                                     height: h,
                                     bytes: std::borrow::Cow::Owned(rgba.into_raw()),
                                 };
                                 if clipboard.set_image(data).is_ok() {
-                                    state.copied = Some((shot.file_name.clone(), ui.input(|i| i.time)));
+                                    // **The owner has to keep serving the selection.** An X11 clipboard belongs to the client
+                                    // that set it and is served on demand; dropping `Clipboard` at the end of this thread
+                                    // released ownership, so the image was gone before anything could paste it (`xclip` read
+                                    // zero bytes). Leaking the handle keeps this process the owner for the rest of the
+                                    // session, which is what a clipboard owner is.
+                                    std::mem::forget(clipboard);
                                 }
-                            }
+                            });
+                            state.copied = Some((shot.file_name.clone(), ui.input(|i| i.time)));
                         }
                     }
                     Action::More => {

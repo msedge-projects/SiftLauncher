@@ -7389,3 +7389,25 @@ not the third the hand-work suggested.
 **Two of the eleven were rows that contradicted themselves** -- row 42's states cell described our circle while its gap said none, and row 616's
 ours cell said "in use: yes, central" while its status said OPEN. That is a cheaper signal than any grep: a row whose cells disagree needs a read,
 and it says where to start. The next pass should look for those first, because they are self-identifying.
+### The copy button froze the window; it no longer does, and the clipboard still gets nothing (2026-11-09)
+
+Pressing the card's copy button with `arboard::Clipboard::new()` on the frame thread left the window **drawn black with the process alive and
+the log empty** -- a UI thread parked inside the clipboard library. That is worse than the wrong glyph it replaced: a button that appears to
+work and kills the window is a defect a reader would report as a crash.
+
+**Fixed**: the bytes are read on the frame thread (a local file, milliseconds) and the clipboard work happens on a worker. Pressing copy now
+leaves the window drawn -- 65 dark samples of 12 298 across the page area, against a black frame before.
+
+**Not fixed**: the clipboard still reads zero bytes. Two attempts:
+
+1. `set_image` from the worker and drop the handle -- an X11 selection belongs to the client that set it and is served on demand, so dropping
+   `Clipboard` released ownership before anything could paste.
+2. Hold it with `std::mem::forget(clipboard)` -- ownership survives, and `xclip -t image/png -o` still returns an empty file.
+
+So the failure is upstream of ownership: either `Clipboard::new()` fails on this display, or `set_image` does, and the code cannot currently
+tell the two apart because both are swallowed. **The next step is a probe, not a fix**: an `eprintln!` on each `Result` in the worker, which
+says in one build whether there is a clipboard at all on `:100`.
+
+**What this round established**: the freeze was real and is gone; the clipboard write was never the freeze and is still unexplained. Two
+builds went to the freeze and one to ownership; the probe should have been the first build, because it is the one that turns two silent
+failures into one spoken one.
