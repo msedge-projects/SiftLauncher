@@ -9,7 +9,7 @@
 //! makes the drawing part of the binary, so the picture cannot be separated from the program
 //! that draws it.
 //!
-//! **What it costs.** `logo512.png` is **148,607 bytes -- 145.1 KiB -- measured on the file**
+//! **What it costs.** `logo512.png` is **38,016 bytes -- 37.1 KiB -- measured on the file**
 //! that `tools/gen_brand.py` writes. `include_bytes!` places the PNG in the binary's
 //! read-only data verbatim: the linker neither compresses nor re-encodes it, so that is the
 //! whole cost of embedding. The 512-pixel copy rather than `icon256.png` (46,465 bytes)
@@ -35,7 +35,10 @@ use std::sync::OnceLock;
 
 use egui::{self, ColorImage, TextureHandle};
 
-/// The mark, 512x512 RGBA, as `tools/gen_brand.py` writes it.
+/// The mark, 512x512 RGBA: **Modrinth\'s own**, from `packages/assets/branding/logo.svg` in the open-source
+/// repository (see `assets/brand/logo.svg`), rasterised by `rsvg-convert` at 512.
+///
+/// It used to be a generated stand-in -- a green square -- which was wrong in every capture that showed it.
 ///
 /// The path is the generated file's own: `assets/brand/logo512.png`,
 /// which is where the generator and `--check` look for it. `src/brand.rs` is two
@@ -46,7 +49,7 @@ const LOGO_PNG: &[u8] = include_bytes!("../../../assets/brand/logo512.png");
 ///
 /// The `Option` inside is the failure case *remembered*: a decode that failed is a fact
 /// about a build-time asset, not something that can heal on the next frame, and re-decoding
-/// 148,607 bytes per frame to find that out again would be the one cost this module exists
+/// 38,016 bytes per frame to find that out again would be the one cost this module exists
 /// to avoid. `install` fills the cell at startup, so the first frame that draws the title
 /// bar already has the mark.
 static MARK: OnceLock<Option<TextureHandle>> = OnceLock::new();
@@ -172,7 +175,7 @@ mod tests {
         assert_eq!((width, height), (512, 512), "the mark is 512x512");
         assert_eq!(
             LOGO_PNG.len(),
-            148_607,
+            38_016,
             "the byte cost the module doc quotes"
         );
     }
