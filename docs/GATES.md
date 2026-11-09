@@ -5720,3 +5720,20 @@ which two targets can share one rect.
 
 The probe prints the field\'s rect now (`field=[[88,248]-[837,284]]`) -- the press had been aimed at a guess for two attempts, because
 nothing printed where the field was.
+### The search field\'s placeholder was the wrong tone, and the tool said so about the wrong pixel (2026-11-09)
+
+`element.py` on the field box reported "brightest off by 26, ink rows 3 short", and I took the placeholder to be the subject. It was not: the
+brightest pixel in that box is the **magnifier glyph**, which is `SECONDARY` in both builds and was never in question. Narrowing the box to
+the text alone gave the real numbers:
+
+| | reference | before | after |
+|---|---|---|---|
+| text tone | (111,119,130) | (150,162,176) -- **off by 39** | **(114,123,135) -- off by 5** |
+| text ink rows | 12 | 9 | **11** |
+| the field\'s fill | -- | -- | **off by 0** |
+
+Home at 1440x900 went **32 864 -> 32 818**, which is what a placeholder two shades right is worth: 46 pixels, none of them loud.
+
+**The mistake worth keeping**: an element-level tool reports the extremes of whatever box it is given, and a box containing two elements answers
+for the brighter one. Every "off by N" is about one pixel, and which pixel is the reader\'s job -- the third time in this file that a window
+wider than the thing produced a confident number about a different thing.

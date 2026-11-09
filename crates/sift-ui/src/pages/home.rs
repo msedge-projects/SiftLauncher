@@ -1344,12 +1344,19 @@ fn list(
     );
     let placeholder = "Search";
     let shown_text = if state.query.is_empty() { placeholder } else { state.query.as_str() };
+    // **Dimmer and larger than this first drew it.** `element.py` on the field: the reference\'s placeholder peaks at
+    // (111,119,130) and its ink is 16 rows tall; this build peaked at (150,162,176) with 13 rows. The tone is
+    // `SECONDARY` pulled 72% of the way to the page, and the type one step larger.
     painter.text(
         egui::pos2(field.left() + 38.0, field.center().y),
         Align2::LEFT_CENTER,
         shown_text,
-        fonts::body(13.0),
-        if state.query.is_empty() { theme.SECONDARY } else { theme.BASE },
+        fonts::body(15.0),
+        if state.query.is_empty() {
+            crate::shell::tint(theme.BG, (150, 162, 176), 0.72)
+        } else {
+            theme.BASE
+        },
     );
     // The reference's two buttons beside the field: "New group" and the brand "New instance".
     for (index, (label, brand)) in [("New group", false), ("New instance", true)].into_iter().enumerate() {
