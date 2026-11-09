@@ -4910,3 +4910,17 @@ reference's own default rather than inventing an order; that is written in the f
 
 The lab was put back as it was found: Aardvark removed and the stamp deleted from Fabric's cfg, so every capture measures one instance
 again.
+### The second chip: five groups, named after the reference\'s (2026-11-09)
+
+The "Custom group" chip was the third dead control in the filter row (after the sort chip and the add-filter chip, which was dead by
+drawing rather than by wiring). It opens the reference\'s menu now:
+
+| | reference | ours |
+|---|---|---|
+| the menu | 187 wide, five rows: Custom group, Instance type, Loader, Game version, No grouping | **same five, same order, current in green** (`grp-our.png` vs `ref-groupmenu.png`) |
+| choosing | the chip takes the row\'s name | **chip reads `No grouping`** (`grp-pick.png`) |
+
+**What this does not yet do**: it does not group. The chip\'s label and the menu\'s green row are real and driven, but the cards are
+still one row with no section headers, so `populated -- group header` (row 32) and `empty -- empty group message` (row 53) stay OPEN --
+correctly. A menu row that changes a label and nothing else is exactly the kind of control this round was spent finding; the difference
+is that this one is written down as half-done instead of counted as done.

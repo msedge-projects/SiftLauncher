@@ -618,6 +618,11 @@ pub struct State {
     pub sort_label: Option<&'static str>,
     /// Whether that menu is open.
     pub sort_open: bool,
+    /// **How the library is grouped**, as the reference's second chip names it: `Custom group`, `Instance type`,
+    /// `Loader`, `Game version`, `No grouping`. `None` is the reference's default, `Custom group`.
+    pub group_label: Option<&'static str>,
+    /// Whether that menu is open.
+    pub group_open: bool,
 }
 
 impl State {
@@ -1396,7 +1401,7 @@ fn list(
     // buttons rather than three controls of the same kind.
     for (label, width, glyph) in [
         (state.sort_label.unwrap_or("Last played"), 118.0_f32, Glyph::ArrowUpDown),
-        ("Custom group", 164.0, Glyph::Grid),
+        (state.group_label.unwrap_or("Custom group"), 164.0, Glyph::Grid),
         ("Add filter", 122.0, Glyph::Filter),
     ] {
         let chip = Rect::from_min_size(
@@ -1443,6 +1448,20 @@ fn list(
         .clicked()
     {
         state.sort_open = !state.sort_open;
+        state.group_open = false;
+        ui.ctx().request_repaint();
+    }
+    // The second chip, the same way: the reference's menu is five rows and the chip carries the chosen one.
+    let group_chip = Rect::from_min_size(
+        egui::pos2(filters.left() + 126.0, filters.top()),
+        egui::vec2(164.0, 32.0),
+    );
+    if ui
+        .interact(group_chip, egui::Id::new("library-group"), Sense::click())
+        .clicked()
+    {
+        state.group_open = !state.group_open;
+        state.sort_open = false;
         ui.ctx().request_repaint();
     }
     if ui
@@ -1822,9 +1841,73 @@ fn list(
     if modal_was_open {
         action = Action::None;
     }
-    // **The sort menu, drawn here so the cards cannot paint over it.** It was drawn beside the chip first and
-    // the first card covered it: the clicks worked and the menu was there, underneath.
+    // **The two filter-row menus, drawn here so the cards cannot paint over them.** They were drawn beside
+    // their chips first and the first card covered them: the clicks worked and the menus were there, underneath.
     let pointer_pos = ui.ctx().pointer_interact_pos();
+    if state.group_open {
+        const GROUPS: [&'static str; 5] = [
+            "Custom group",
+            "Instance type",
+            "Loader",
+            "Game version",
+            "No grouping",
+        ];
+        let primary_clicked = ui.input(|input| input.pointer.primary_clicked());
+        let escape = ui.input(|input| input.key_pressed(egui::Key::Escape));
+        let row_h = 48.0;
+        let menu = Rect::from_min_size(
+            egui::pos2(filters.left() + 126.0, filters.top() + 34.0),
+            egui::vec2(187.0, row_h * GROUPS.len() as f32 + 12.0),
+        );
+        // The panel claims its rectangle, or the press that chooses a row falls through to the card underneath.
+        let _ = ui.interact(menu, egui::Id::new("library-group-menu"), Sense::click());
+        let painter = ui.painter();
+        painter.rect_filled(menu, 8.0, theme.SUPER_RAISED_BG);
+        let chosen = state.group_label.unwrap_or("Custom group");
+        let mut picked: Option<&'static str> = None;
+        for (index, label) in GROUPS.iter().enumerate() {
+            let row = Rect::from_min_size(
+                egui::pos2(menu.left() + 6.0, menu.top() + 6.0 + index as f32 * row_h),
+                egui::vec2(menu.width() - 12.0, row_h),
+            );
+            let current = *label == chosen;
+            let hovered = pointer_pos.is_some_and(|p| row.contains(p));
+            if current {
+                painter.rect_filled(row, 6.0, theme.BUTTON_BG_SELECTED);
+            } else if hovered {
+                painter.rect_filled(row, 6.0, theme.RAISED_BG);
+            }
+            painter.text(
+                egui::pos2(row.left() + 16.0, row.center().y),
+                Align2::LEFT_CENTER,
+                *label,
+                fonts::label(16.0),
+                if current { theme.BRAND } else { theme.CONTRAST },
+            );
+            if hovered && primary_clicked {
+                picked = Some(label);
+            }
+        }
+        if let Some(label) = picked {
+            state.group_label = Some(label);
+            state.group_open = false;
+            ui.ctx().request_repaint();
+        } else if primary_clicked
+            && !pointer_pos.is_some_and(|p| {
+                menu.contains(p)
+                    || Rect::from_min_size(
+                        egui::pos2(filters.left() + 126.0, filters.top()),
+                        egui::vec2(164.0, 32.0),
+                    )
+                    .contains(p)
+            })
+        {
+            state.group_open = false;
+        }
+        if escape {
+            state.group_open = false;
+        }
+    }
     if state.sort_open {
         // Read the frame before borrowing a painter: `ui.input` after `ui.painter()` is a second borrow of `ui`.
         let primary_clicked = ui.input(|input| input.pointer.primary_clicked());
