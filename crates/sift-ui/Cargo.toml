@@ -32,6 +32,10 @@ path = "src/main.rs"
 gl = ["dep:eframe"]
 
 [dependencies]
+# **The card's copy button.** The reference writes the screenshot's PNG to the clipboard as image/png
+# (`copyScreenshot` in screenshots-page/index.vue) and shows a check for two seconds afterwards. This is the
+# smallest crate that offers image-to-clipboard without a window system of its own.
+arboard = { version = "3" }
 # egui and its framework: the stack spotifast and fastframe are built on. `glow`
 # rather than wgpu: it is the renderer fastframe's own apps use, and the one whose
 # per-frame cost this slice is measuring. `x11` and `wayland` are no-ops on Windows

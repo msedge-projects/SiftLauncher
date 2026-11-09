@@ -7118,3 +7118,33 @@ most likely a rename, which `card.vue` would pass up as `emit('edit')`. `index.v
 
 **So the card now matches on its text and is recorded as wrong on its actions** -- which is the honest state, and better than matching the
 icons while the behaviour underneath lies.
+### The card's buttons are now copy and more, and the copy is unproven (2026-11-09)
+
+The reference's three actions are `editScreenshot`, `copyScreenshot` and `showScreenshotOptions`, and reading them settled what each does:
+
+* **copy** reads the screenshot's PNG and writes it to the clipboard as `image/png`, then marks the card copied for **2 000 ms**, during
+  which the glyph is a check (`markScreenshotCopied`);
+* **edit** opens the *viewer* at that index and calls `imageViewer.edit(index)` -- it is an edit mode inside the preview, not a rename;
+* **more** opens the options menu.
+
+This build had `[Image, Trash, More]` wired to `[Open, Delete, More]`, so its middle control deleted where the reference copies.
+
+**Changed**:
+
+| | before | after |
+|---|---|---|
+| buttons | image, trash, kebab | **clipboard-copy, kebab** |
+| actions | open, delete, more | **copy, more** |
+| copy | -- | `arboard` writes the decoded RGBA to the clipboard; the glyph becomes a check for two seconds |
+| delete from the card | yes | **no** -- it stays in the card's menu, where the reference keeps it |
+
+The edit button is **absent rather than mislabelled**: this build has no edit mode inside the viewer, and a pencil that opens a plain preview
+would promise something it does not do. Two honest buttons and one missing is a better state than three buttons of which one lies.
+
+**Not verified, and stated plainly**: the copy was never executed. The click that was meant to press it landed on the card instead and opened
+the viewer -- the screenshot of that moment is the viewer, not a crash -- so `arboard`'s write is untested on this X server, and so is the
+two-second check. The next round presses the button by its measured rect (the copy slot is `action_button_rect(rect, 0)`, which at the card's
+current box is its own rect from the frame probe) and reads the clipboard back with `xclip -t image/png -o`.
+
+**Also worth recording**: `arboard` was added as a dependency, which is the first thing this project has added to the binary in a while. It
+built, but its cost to the 13 720 kB RSS figure has not been re-measured, and the RSS gate is the one clause that is currently met.

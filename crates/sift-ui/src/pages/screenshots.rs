@@ -643,6 +643,9 @@ pub struct State {
     /// The reader's own groups and their assignments, read with the screenshots. The select lists them and the grid
     /// can group by one.
     pub groups: crate::groups::Groups,
+    /// The card whose picture was copied, and when. The check replaces the clipboard glyph for two seconds
+    /// (`markScreenshotCopied` resets it after 2 000 ms).
+    pub copied: Option<(String, f64)>,
     /// The group list a card's menu opened, while it is open.
     group_menu: Option<GroupMenu>,
     /// The new-group dialog's name while it is open; `None` closes it.
@@ -690,6 +693,7 @@ impl Default for State {
         State {
             sort: Sort::default(),
             groups: crate::groups::Groups::load(&crate::groups::Groups::path(&crate::data::instances_dir())),
+            copied: None,
             group_menu: None,
             new_group: None,
             new_group_button: None,
@@ -2916,6 +2920,9 @@ fn draw_group(
             hovered,
             selected,
             state.group_by != GroupBy::Instance,
+            state.copied.as_ref().is_some_and(|(name, at)| {
+                name == &shot.file_name && ui.input(|i| i.time) - at < 2.0
+            }),
         );
         probe_rows.push((format!("card {}", shot.file_name), card));
         probe_rows.push((format!("check {}", shot.file_name), hits.check));
@@ -2975,11 +2982,7 @@ fn draw_group(
         // The caption's three buttons, which the reference draws only while the card is
         // hovered (card.vue:243-275).
         if let Some(actions) = hits.actions {
-            for (slot, action) in [
-                (actions[0], Action::Open),
-                (actions[1], Action::Delete),
-                (actions[2], Action::More),
-            ] {
+            for (slot, action) in [(actions[0], Action::Copy), (actions[1], Action::More)] {
                 let pressed = ui
                     .interact(
                         slot,
@@ -2991,10 +2994,24 @@ fn draw_group(
                     continue;
                 }
                 match action {
-                    Action::Open => state.viewer = Some(base + index),
-                    Action::Delete => {
-                        state.armed = Some(Arm::Card(shot.path.clone()));
-                        state.armed_touched = true;
+                    Action::Copy => {
+                        // **The picture, as a picture.** `copyScreenshot` reads the PNG and writes it to the clipboard as
+                        // `image/png`; this decodes the same file and hands arboard the RGBA. A failure is silent, which is
+                        // also the reference's behaviour through `handleError` -- the card simply does not show the check.
+                        if let Ok(decoded) = image::open(&shot.path) {
+                            let rgba = decoded.to_rgba8();
+                            let (w, h) = (rgba.width() as usize, rgba.height() as usize);
+                            if let Ok(mut clipboard) = arboard::Clipboard::new() {
+                                let data = arboard::ImageData {
+                                    width: w,
+                                    height: h,
+                                    bytes: std::borrow::Cow::Owned(rgba.into_raw()),
+                                };
+                                if clipboard.set_image(data).is_ok() {
+                                    state.copied = Some((shot.file_name.clone(), ui.input(|i| i.time)));
+                                }
+                            }
+                        }
                     }
                     Action::More => {
                         state.menu = Some(Menu {
@@ -3012,20 +3029,20 @@ fn draw_group(
 /// Which of the caption's buttons a press belongs to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Action {
-    /// Show the screenshot full size.
-    Open = 0,
-    /// Arm its delete.
-    Delete = 1,
+    /// **Copy the picture to the clipboard.** `copyScreenshot` in the reference: the PNG bytes go to the clipboard as
+    /// `image/png` and the card shows a check for two seconds afterwards (`markScreenshotCopied`).
+    Copy = 0,
     /// Open the card's menu.
-    More = 2,
+    More = 1,
 }
 
 /// The rects a drawn card offers as targets.
 struct CardHits {
     /// The selection checkbox's 50-point hit box.
     check: Rect,
-    /// The three caption buttons, when the caption is drawn.
-    actions: Option<[Rect; 3]>,
+    /// The caption buttons, when the caption is drawn: copy and more. The reference has three -- edit, copy, more --
+    /// and the third is absent here rather than mislabelled, because this build has no edit mode for a picture.
+    actions: Option<[Rect; 2]>,
 }
 
 /// The selection checkbox's hit box: size-[50px] at right-0.5 top-0 pt-4 (card.vue:196-197).
@@ -3050,6 +3067,7 @@ fn draw_card(
     hovered: bool,
     selected: bool,
     show_instance: bool,
+    copied: bool,
 ) -> CardHits {
     // The card's own fill, under the picture (card.vue:172).
     painter.rect_filled(rect, CARD_RADIUS, theme.SURFACE_2);
@@ -3072,7 +3090,7 @@ fn draw_card(
     }
 
     if hovered {
-        draw_overlay(painter, rect, theme, shot, show_instance);
+        draw_overlay(painter, rect, theme, shot, show_instance, copied);
     }
 
     // The checkbox, revealed on hover and always visible once selected (card.vue:206-214).
@@ -3126,7 +3144,6 @@ fn draw_card(
         Some([
             action_button_rect(rect, 0),
             action_button_rect(rect, 1),
-            action_button_rect(rect, 2),
         ])
     } else {
         None
@@ -3140,7 +3157,7 @@ fn action_button_rect(card: Rect, index: usize) -> Rect {
     let step = ACTION_SIZE + ACTION_GAP;
     Rect::from_min_size(
         egui::pos2(
-            inner_right - ACTION_SIZE - (2 - index) as f32 * step,
+            inner_right - ACTION_SIZE - (1 - index) as f32 * step,
             card.bottom() - OVERLAY_PADDING - ACTION_SIZE,
         ),
         Vec2::splat(ACTION_SIZE),
@@ -3180,6 +3197,7 @@ fn draw_overlay(
     // global page grouped by date that is the instance alone; this build drew both, joined by a dot, from the string the
     // *preview* uses. The condition is passed in because the overlay is drawn per card and the mode lives on the page.
     show_instance: bool,
+    copied: bool,
 ) {
     let painter = painter.with_clip_rect(plate);
 
@@ -3240,7 +3258,11 @@ fn draw_overlay(
 
     // The three quiet IconButtons, carrying bg-surface-2 text-contrast (card.vue:248-275),
     // circular by default (IconButton.vue:29) and 36 points across.
-    let glyphs = [Glyph::Image, Glyph::Trash, Glyph::MoreHorizontal];
+    // `markScreenshotCopied` swaps the clipboard glyph for a check for two seconds.
+    let glyphs = [
+        if copied { Glyph::Check } else { Glyph::ClipboardCopy },
+        Glyph::MoreHorizontal,
+    ];
     for (index, glyph) in glyphs.into_iter().enumerate() {
         let slot = action_button_rect(plate, index);
         painter.circle_filled(slot.center(), ACTION_SIZE / 2.0, theme.SURFACE_2);

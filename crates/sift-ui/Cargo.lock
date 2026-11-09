@@ -2844,6 +2844,7 @@ dependencies = [
 name = "sift-ui"
 version = "0.1.62"
 dependencies = [
+ "arboard",
  "eframe",
  "egui",
  "fastframe-scroll",
