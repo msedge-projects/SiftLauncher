@@ -5119,3 +5119,40 @@ reverted, and it is recorded here as a place where the objective\'s own measurem
 **What would settle it**: a per-element comparison (the GAP-MATRIX\'s own idea) that checks the chip\'s colour, height and type against the
 reference directly, rather than a whole-frame pixel count that cannot see them. That is a different instrument from `compare.py` and this
 round did not build it.
+### A per-element instrument, and the row it settles (2026-11-09)
+
+`tools/parity/element.py` compares **one rectangle** between a reference and a build: its fill, its brightest pixel (the ink), the rows that
+carry ink, and the rows its fill covers. It answers what a whole-frame threshold-40 count cannot: what colour is it, and how big.
+
+Its first verdict, on the sort chip:
+
+| property | reference | before | after |
+|---|---|---|---|
+| fill | (52,54,60) | (52,54,60) | (52,54,60) |
+| ink | **(255,255,255)** | (176,186,197) -- off by **79** | **off by 0** |
+| ink rows | 305..320 (16) | 306..319 (14) | **305..320** |
+| chip fill rows | 296..327 | 291..320 (-5) | 297..326 (+-1) |
+
+and on the control after the two chips:
+
+| | reference | the old filled chip | the outlined button now |
+|---|---|---|---|
+| brightest | (255,255,255) | **off by 105** (grey) | **off by 0** |
+| ink rows | 293..330 (19) | 310..312 (3) | 296..327 (15) |
+| extent | 288..331 | 288..331 | 288..331 |
+
+**And the whole-frame count went up, not down: 32 265 -> 32 864.** The arithmetic says why, and it is worth writing down because it
+explains four reverted rounds:
+
+- this build\'s chip fill is (52,54,60) on a (22,24,28) page: a **30-point** step, under the threshold of 40, so a chip drawn where the
+  reference has none **does not count**;
+- the reference\'s outlined button draws a 1-point border at (66,68,74): a **44-point** step, over the threshold, so drawing the *correct*
+  border **does count** -- and counts against the alternative, which was a filled chip that overlapped the same area invisibly.
+
+So `compare.py` scores a filled chip above the reference\'s own outlined button, and always will at threshold 40. **The correct drawing is
+kept**, both numbers are recorded, and the row is now judged by the instrument that can see it. The whole-frame figure is the one the
+objective names, so it is quoted honestly: **it is 599 worse, and it is right**.
+
+What that implies for the objective: any element whose fill step from the page is under 40 cannot be measured by the frame count, and
+**19** of the surfaces in this theme are within 40 of the page -- so the frame figure has a floor set by what it cannot see, independent of
+how close the drawing gets.

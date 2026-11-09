@@ -1410,8 +1410,11 @@ fn list(
         }
     }
     // The filter row under it: the two selects, a divider and the add-filter chip.
+    // **Measured with `tools/parity/element.py`**, which compares one element\'s fill, ink and extent:
+    // the reference\'s chip fill spans rows 296..327, its label ink 305..320 and is pure white (255,255,255).
+    // This build\'s chip started five points high and its label was (176,186,197).
     let filters = Rect::from_min_size(
-        egui::pos2(rect.left(), rect.top() + 242.0),
+        egui::pos2(rect.left(), rect.top() + 248.0),
         egui::vec2(rect.width(), 32.0),
     );
     let mut filter_x = filters.left();
@@ -1419,9 +1422,9 @@ fn list(
     // played", the grid on "Custom group", the filter funnel on "Add filter". Ours drew bare text, which read as three
     // buttons rather than three controls of the same kind.
     for (label, width, glyph) in [
-        (state.sort_label.unwrap_or("Last played"), 118.0_f32, Glyph::ArrowUpDown),
-        (state.group_label.unwrap_or("Custom group"), 164.0, Glyph::Grid),
-        ("Add filter", 122.0, Glyph::Filter),
+        // Widths from the same instrument: the reference\'s chip fills run 88..252 and 255..453, so 165 and 199.
+        (state.sort_label.unwrap_or("Last played"), 165.0_f32, Glyph::ArrowUpDown),
+        (state.group_label.unwrap_or("Custom group"), 199.0, Glyph::Grid),
     ] {
         let chip = Rect::from_min_size(
             egui::pos2(filter_x, filters.top()),
@@ -1432,29 +1435,65 @@ fn list(
             &painter,
             glyph,
             Rect::from_center_size(
-                egui::pos2(chip.left() + 15.0, chip.center().y + 6.0),
-                egui::Vec2::splat(13.0),
+                egui::pos2(chip.left() + 20.0, chip.center().y),
+                egui::Vec2::splat(16.0),
             ),
-            theme.BASE,
+            theme.CONTRAST,
         );
         painter.text(
-            egui::pos2(chip.left() + 28.0, chip.center().y + 6.0),
+            egui::pos2(chip.left() + 32.0, chip.center().y),
             Align2::LEFT_CENTER,
             label,
-            fonts::body(12.0),
-            theme.BASE,
+            fonts::label(16.0),
+            theme.CONTRAST,
         );
         crate::icons::draw(
             &painter,
             Glyph::ChevronDown,
             Rect::from_center_size(
-                egui::pos2(chip.right() - 12.0, chip.center().y + 6.0),
-                egui::Vec2::splat(12.0),
+                egui::pos2(chip.right() - 16.0, chip.center().y),
+                egui::Vec2::splat(16.0),
             ),
-            theme.SECONDARY,
+            theme.CONTRAST,
         );
-        filter_x = chip.right() + 8.0;
+        filter_x = chip.right() + 3.0;
     }
+    // The funnel and the outlined `+ Add filter` after the two chips: the reference has no third chip here.
+    crate::icons::draw(
+        &painter,
+        Glyph::Filter,
+        Rect::from_center_size(
+            egui::pos2(filters.left() + 376.0, filters.center().y),
+            Vec2::splat(16.0),
+        ),
+        theme.CONTRAST,
+    );
+    let add_filter = Rect::from_min_size(
+        egui::pos2(filters.left() + 387.0, filters.top()),
+        egui::vec2(155.0, 32.0),
+    );
+    painter.rect_stroke(
+        add_filter,
+        8.0,
+        egui::Stroke::new(1.0, theme.SURFACE_5),
+        egui::StrokeKind::Inside,
+    );
+    crate::icons::draw(
+        &painter,
+        Glyph::Plus,
+        Rect::from_center_size(
+            egui::pos2(add_filter.left() + 20.0, add_filter.center().y),
+            Vec2::splat(16.0),
+        ),
+        theme.CONTRAST,
+    );
+    painter.text(
+        egui::pos2(add_filter.left() + 38.0, add_filter.center().y),
+        Align2::LEFT_CENTER,
+        "Add filter",
+        fonts::label(16.0),
+        theme.CONTRAST,
+    );
     // **The sort chip opens its menu.** The chips were drawn and never interacted with, so every one of them was
     // dead -- found by pressing. The reference opens a 165-wide menu under the chip listing seven keys; this one
     // draws the same list and keeps the chosen one in green.
