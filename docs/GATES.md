@@ -6650,3 +6650,27 @@ what draws it, and drawing something 6 by 97 to match a number without knowing t
 forbid.
 
 **Both windows are back at 1440x900**, verified by reading the capture sizes rather than assuming.
+### A capture tool that refuses a bad pair (2026-11-09)
+
+Three rounds lost to a pair that was not a pair -- a modal on one side, two different pages, and a reference window at 1440x625 against
+1440x900 -- and each time the fault was visible only after a number had been produced from it. The checks were known and were run afterwards.
+
+`tools/parity/pair.py` runs the whole sequence and refuses to hand back a pair that fails them:
+
+```
+python3 tools/parity/pair.py NAME [--size 1440x900] [--rail 65]
+```
+
+It resizes and moves both windows, optionally presses the same rail y on both, parks both pointers at the same place, captures, and then:
+
+| check | on failure |
+|---|---|
+| both captures the same size | **refuses**, exit 2 -- a number from two sizes is meaningless |
+| the size is the one asked for | warns (the window manager clamps: 1440x625 comes back as 1440x700) |
+| the breadcrumbs agree | warns, and saves both strips for a look |
+
+**The breadcrumb threshold is calibrated, not guessed.** The same page -- both clients on Home -- reads **419 of 23 600 (1.8%)** purely from glyph
+rendering, so the warning fires at **15%**, the point at which the words themselves must differ. The first version warned at 200 and fired on a
+correct pair, which is how the calibration was found.
+
+The tool prints its two capture paths and the breadcrumb count on success, so a round can start from a pair it did not have to trust by hand.
