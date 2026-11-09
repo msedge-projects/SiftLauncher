@@ -6963,3 +6963,39 @@ group call passes `ChevronDown`, and the helper draws whatever it is given. Both
 **`docs/COMPONENTS.md`** now records where each shared element lives, verified by grep. Writing it took one command and immediately caught two
 things I had wrong from memory: `menu_placement` is in `home.rs`, not `shell.rs`, and `open_list` -- the dropdown renderer that cost most of the
 previous round to find -- is in `screenshots.rs` with no module of its own.
+### The group menu: read from the reference's own source, not its UI (2026-11-09)
+
+Driving the group-by dropdown failed three times (the open sort menu swallowed the clicks, twice producing byte-identical captures), so this
+went to the source instead -- which is in the workspace, 2 044 `.vue` files under `.scratch/modrinth-0.22/`. The screenshots page is not where the
+comments said: `pages/instance/screenshots/index.vue` is an 11-line wrapper, and the real component is
+**`components/ui/screenshots-page/index.vue`**, 1 708 lines.
+
+From it, verbatim:
+
+```js
+type ScreenshotGroupBy = 'custom' | 'instance' | 'date' | 'none'
+const sortOptions = [newest, oldest, name]
+const groupOptions = [
+  { value: 'custom',   label: 'Custom group' },
+  ...(isGlobal ? [{ value: 'instance', label: 'Instance' }] : []),
+  { value: 'date',     label: 'Date' },
+  { value: 'none',     label: 'No grouping' },
+]
+```
+
+**What matches**: every label -- including "No grouping", which I had doubted -- and the three sort options.
+
+**What does not**:
+
+| | reference | this build |
+|---|---|---|
+| order | **Custom first**, then Instance, Date, None | Instance, Date, None, then the groups |
+| custom entries | **one**, `custom` | **one per group**, appended, each labelled "Group" |
+| `instance` offered | **only when `isGlobal`** | always |
+
+So the menu's *shape* differs, not just its order: the reference has a single "Custom group" mode and groups by whichever groups exist, while this
+build lists each group as its own mode. That is a state-model difference rather than a drawing one -- the chip's label, the stored value and the
+grouping function all key off it -- so it is the next round's work rather than a line changed at the end of this one.
+
+**The general lesson**: three attempts to drive a dropdown cost a round and produced nothing; reading the component took three commands. The source
+has been in the workspace the whole time and answers questions a capture cannot -- the *conditional* (isGlobal) and the exact string set among them.
