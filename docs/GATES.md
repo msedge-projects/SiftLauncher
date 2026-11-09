@@ -5369,3 +5369,25 @@ the heading and the row loop is adding ~40 points that this round did not find.
 The card\'s height was left at its tested value: changing it with the pitch broke the project page\'s own test at 204 against the
 reference\'s 178, so the height and the pitch are now pinned separately and the height\'s own 26-point error is recorded here rather than
 folded into this change.
+### The project sidebar is 7.6% different all over, and the "43 points" was a bad scan (2026-11-09)
+
+Last round\'s entry said the project sidebar\'s checklist rows sat "43 points too low", from a scan that found text bands at 184 and 232
+against the reference\'s 141 and 189. On screen the two sidebars look closely matched, and a direct measurement says why the scan was wrong:
+
+| measurement | value |
+|---|---|
+| the project sidebar\'s differing pixels (1140..1440 x 40..900) | **19 559 of 258 000 -- 7.6%** |
+| where they are | the **whole column**: bbox (13,11)-(298,691), worst 20-row bands at offsets 160, 200, 280, 360 and 500 |
+
+So the differences are spread across every card -- Getting started, Compatibility, the links -- and not concentrated in the checklist\'s rows at
+all. The band scan that produced "43" restricted itself to x 1210..1340 and a brightness threshold that caught the second and third rows in one
+image and the Compatibility card\'s chips in the other; the two numbers were measuring different objects, which is the third time in this file
+(after the two-rows box and the crop offsets) that a narrow window has produced a confident, wrong number.
+
+**Corrected**: the checklist rows\' position on the project page is **not** known to be 43 out. What is known is that the page\'s sidebar as a
+whole differs by 7.6%, distributed across its cards, and that is the number to work from. The pitch of 48 is verified separately, by band
+spacing, and stands.
+
+The lesson is the same one this file keeps relearning from a new angle: **measure the thing you name, at the size of the thing you name**. A
+window narrower than the element produces a number about part of it, and a number about part of an element is indistinguishable from a
+measurement of the element until somebody crops it.
