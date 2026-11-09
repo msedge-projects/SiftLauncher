@@ -6491,3 +6491,27 @@ project has already made once, for the text rasteriser, and the answer is the sa
 
 The external-link mark is **not** in that category: it is a 16-point glyph this build already has (`Glyph::ExternalLink` or similar), simply not
 drawn on this line. That is next round's work, and it is a call rather than a font.
+### The external-link mark: measured, and why the first placement missed (2026-11-09)
+
+The glyph exists in the reference and not in this build. Measuring it exactly, by taking the ink runs across the first card byline row:
+
+| | value |
+|---|---|
+| the byline last ink column | **611** |
+| the glyph box | **(619,249)-(632,262)** -- 14x14 |
+| the gap between them | **8 points** |
+
+**The first attempt drew it at `by_at.x + by.size().x + 13` and cost 171 pixels** rather than saving any: a 14x14 glyph can only cost that much
+if none of its 196 pixels lands where the reference has one, so both axes were wrong at once.
+
+Two reasons, both from the same habit of trusting a laid-out width:
+
+- `by.size().x` is the galley **advance**, which carries side bearings and any trailing space; the reference gap is measured from the last **ink**
+  column, 611. The advance can sit several points past it.
+- `by_at.y + by.size().y / 2.0` centres on the **line box**, which for a 16-point body puts the glyph's centre several points above where the ink is --
+  the reference glyph centre is at 255.5, and its own text's ink centre is not the line box's.
+
+So the fix is to place it from ink, not from the layout: find the byline galley's ink end (or lay the string out with a trailing mark so the measure
+carries it) and centre vertically on the text's ink rows, which for this card are 249..262's neighbours.
+
+**Also recorded**: the same note that denied the glyph had been in the file for many rounds, specific enough to sound checked. It was not.
