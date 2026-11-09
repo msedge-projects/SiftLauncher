@@ -6568,3 +6568,26 @@ no border at all. The ring is the one element in the dialog that is unconditiona
 Three numbers and one stroke: the offset 104 -> 139, a five-point inset on each side, and a height of 44 rather than 40, with a two-point
 `--color-brand` ring. The dialog plates themselves already matched -- (441,116)-(998,784) against (441,117)-(998,782) -- so the mismatch was
 entirely inside a frame that was right.
+### Three attempts to open the reference card menu, and a hover that did nothing (2026-11-09)
+
+Adjudicating audit claim 3 ("the reference never deletes on the menu press") needs the menu open first. On the reference's Home, with the title
+bar read back to confirm the page:
+
+| attempt | result |
+|---|---|
+| press the card foot at (238,540), where this build puts its kebab | **no menu** |
+| right-click the card at (170,450) | **no menu** -- the card is unchanged in the capture |
+| hover the card at (170,450) after moving in from (700,870) | **no change anywhere on screen** -- `hover changed: None` at threshold 30 |
+
+The third is the surprising one. This build draws three hover affordances on a library card -- a play pill, a kebab and, on the art, a selection
+ring -- and all three were built by *driving the reference* in earlier rounds. The capture here shows the reference's card with none of them, at rest
+or under the pointer.
+
+**Not recorded as a fact, and here is why.** "Nothing happened" is the one result this session has repeatedly misread: the rail tooltip looked
+absent twice and was there both times, once behind a settings modal and once the pointer was in the wrong place. The candidate explanations here are
+that the pointer did not register (an `xdotool mousemove` without a subsequent motion event), that the instance's state hides the affordances
+(never played, never installed), or that earlier rounds drove a *different* page and attributed it to Home.
+
+**What would settle it**: a hover with two motions (move away, move back in), a capture of the card in a state where the instance has been played,
+and a re-read of the earlier round's capture rather than its prose. Until then, claim 3 stays open and the three affordances keep the evidence they
+were built on.
