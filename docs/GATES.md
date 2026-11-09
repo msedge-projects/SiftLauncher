@@ -5873,3 +5873,25 @@ top, so not a height matter -- **this build\'s plate is wider**, by enough that 
 The lesson is the one this file keeps re-learning at a different scale each time: **a downscaled composite is a picture, not a measurement**. Three
 plausible differences, all three read from one 540-point-wide thumbnail of a 1440-point window, and all three wrong in a way that each had a
 believable story attached.
+### The Settings plate is the same rectangle, and that took four wrong answers to establish (2026-11-09)
+
+Four differences were named for this dialog across two rounds, and **all four were withdrawn by measurement**:
+
+| claim | measurement | verdict |
+|---|---|---|
+| a scrollbar is drawn | cropped both right edges at 1:1 | no bar on either side |
+| ~20 higher, ~28 taller | longest fill run per row | top at **115 on both**, first 84 rows identical |
+| an extra `Advanced options` hint | cropped the foot at 1:1 | it is `Advanced rendering`, a nav row both sides have |
+| **this build\'s plate is wider** | the plate\'s own top rows | **identical**: 270..1169 at y 116, 257..1182 from y 140 |
+
+The bottom corners agree too -- both plates end between y 784 and 786, and their rounded corners differ by at most 2 points. **The plate is the
+same rectangle on both sides**: x 257..1182, y 115..784. Every one of the 32 469 differing pixels is interior -- type, spacing, a card\'s tone --
+and none of it is the frame.
+
+**The measurement technique that finally worked**, after three that did not: read the plate\'s extent from **its own edge rows**, where its content
+cannot interfere. Scanning a row *through* the dialog cannot distinguish "plate" from "empty plate" -- `(39,41,46)` is both -- so a row where the
+reference happens to hold a card and this build holds space reads as a width difference that is not there. Which is what I reported, twice, with
+increasing confidence.
+
+**The count**: four confident differences, four measurements, four withdrawals. The first two came from a thumbnail, the third from reading a
+clipped label, the fourth from a scan whose method could not answer the question asked of it. Each had a story that fit.
