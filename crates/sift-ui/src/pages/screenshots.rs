@@ -1761,6 +1761,11 @@ fn heading_and_toolbar(
         theme,
         Glyph::ArrowUpDown,
         state.sort.label(),
+        if state.sort == Sort::Newest {
+            Glyph::ChevronUp
+        } else {
+            Glyph::ChevronDown
+        },
         state.sort_open,
     );
     let group = select(
@@ -1769,6 +1774,7 @@ fn heading_and_toolbar(
         theme,
         Glyph::LayoutGrid,
         state.group_by.label(),
+        Glyph::ChevronDown,
         state.group_open,
     );
 
@@ -2008,6 +2014,10 @@ fn select(
     theme: &Theme,
     glyph: Glyph,
     label: &str,
+    // **The suffix chevron is a parameter because the sort chip's is not a dropdown chevron.** The reference reads
+    // "Newest ^" with the caret pointing up and "Oldest v" with it down -- the chip shows the *direction* -- while its
+    // Date chip carries the ordinary v. Every other chip keeps the down chevron.
+    chevron: Glyph,
     open: bool,
 ) -> Rect {
     let label_galley = painter.layout_no_wrap(
@@ -2059,7 +2069,7 @@ fn select(
     );
     icons::draw(
         painter,
-        Glyph::ChevronDown,
+        chevron,
         Rect::from_center_size(
             egui::pos2(
                 rect.right() - SELECT_PADDING - SELECT_GLYPH / 2.0,

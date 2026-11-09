@@ -6954,3 +6954,12 @@ overpainted by a hover.
 build reads **Newest v**, the same dropdown chevron every other chip carries. Its Date chip carries v in both, so the sort chip's chevron is a
 special case: up for newest-first, down for oldest-first. The glyph is hardcoded in the shared chip helper and needs a parameter; that is the next
 round's first item, with `sort-ref.png` and `sort2-our.png` behind it.
+### The sort chip's chevron is a direction, and an index of where things live (2026-11-09)
+
+The chip now reads **Newest ^** against Date's **v**, matching the reference: the sort chip's chevron is the sort *direction*, not a dropdown
+indicator. `select` gained a `chevron: Glyph` parameter, the sort call passes `ChevronUp` for `Sort::Newest` and `ChevronDown` otherwise, the
+group call passes `ChevronDown`, and the helper draws whatever it is given. Both chips verified at 2x against the reference's own.
+
+**`docs/COMPONENTS.md`** now records where each shared element lives, verified by grep. Writing it took one command and immediately caught two
+things I had wrong from memory: `menu_placement` is in `home.rs`, not `shell.rs`, and `open_list` -- the dropdown renderer that cost most of the
+previous round to find -- is in `screenshots.rs` with no module of its own.
