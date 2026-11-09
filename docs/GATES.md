@@ -7299,3 +7299,24 @@ it and cannot be used to justify it.
 
 **Which is the counterexample to the last several rounds**: fixing what the number points at has been the productive loop, and here the number
 pointed at a region while the defect needed an eye on a single element. Both instruments, in that order -- band the region, then look inside it.
+### Two OPEN rows were already implemented (2026-11-09)
+
+The matrix has 443 OPEN rows and the project has a history of six of them being complete and merely unreached. This round tested whether that
+is a pattern: **138 OPEN rows claim their element is absent**, and two of the first four examined were wrong.
+
+| row | claim | what the code says | verdict |
+|---|---|---|---|
+| 42 | "no selection circle" | the circle, its 50-point hit area and its selected fill are all drawn (`screenshots.rs`: `CHECK_HIT = 50.0` and the overlay's check) | **VERIFIED** |
+| 103 | "group and its search absent" | the group is drawn at `panel.rs:1065-1079`; only the 16rem scroll panel and its search Input are missing | **OPEN-WITH-CAUSE** |
+
+**Row 42 was self-contradicting**, which is how it was caught: its *states and animation* cell already described our circle in detail -- "24-point circle
+in a 50-point hit area, drawn on the art's top-right; a press 22 points from the centre still selects" -- while its *gap* cell said "no selection
+circle". A row whose two cells disagree is a row nobody re-read after the work landed, and the states cell is the one with the measurement in it.
+
+**Row 103 is a partial**, which is the more common shape: the group exists, the scroll panel and search do not. Converting it all the way to VERIFIED
+would have been the same error in the other direction, so it went to OPEN-WITH-CAUSE with the file and line that names what is there and a sentence
+naming what is not.
+
+**The rate is the problem.** Two rows took about twenty minutes, most of it finding the code the row is about, and there are 138 absence-claims and
+54 rounds left -- 405 rows at 7 a round. The next round should build the search instead of doing it by hand: a script that takes each candidate
+row's element name and looks for its keywords in `crates/sift-ui/src`, printing the candidate `file:line` for a read rather than a grep by hand.
