@@ -6366,3 +6366,29 @@ The totals are sound; the columns are not, and should be read at 1440 only.
 **A suspicion tested and dropped.** That swing looked like the news carousel rotating between captures -- which would have made every sidebar
 figure a race. The reference captured three times over 24 seconds changes by **0** pixels in the sidebar, so it does not rotate, and the article
 difference recorded earlier is a real difference in which article is shown rather than a phase.
+### The measuring tool was wrong at four of the five sizes (2026-11-09)
+
+`compare.py`'s four slabs were literals -- `(0,0,1440,48)`, `(0,48,64,900)`, `(64,48,1140,900)`, `(1140,48,1440,900)` -- so at any other size it
+measured its sidebar inside the content column and its content inside the rail. The tell was a sidebar term reading 16 816 at 1440 and **1 196**
+at 1920 for the same page, which I had annotated as a slab artefact rather than fixed.
+
+They are derived now: 48 points of title bar, a 64-point rail, and a sidebar that is a **fixed 300-point panel at the right**, not a fraction of
+the width. The 1440 numbers are unchanged to the pixel (31 876 total, sidebar 16 816), which is the check that the derivation agrees with the
+literals at the size they were written for.
+
+**The sweep, re-split:**
+
+| size | total | titlebar | content | sidebar |
+|---|---:|---:|---:|---:|
+| 1280x720 | 28 171 | 2 854 | 14 863 | **10 057** |
+| 1366x768 | 35 839 | 2 729 | 22 618 | **10 095** |
+| 1440x900 | 31 876 | 1 715 | 12 948 | **16 816** |
+| 1600x900 | 45 815 | 2 995 | 25 606 | **16 817** |
+| 1920x1080 | 57 677 | 3 237 | 26 363 | **27 680** |
+
+**The sidebar grows with the window**: 10 057 at 1280, 16 816 at 1440, 27 680 at 1920. The panel itself is a fixed 300 points, so what is growing
+is not its size but what it holds -- the news card is taller and its art larger at these widths, and this build's card wraps its copy differently
+and scales its art differently. That is one earlier verdict (different article) plus a new one (different scaling), and the tool could not have told
+them apart while it was measuring the wrong columns.
+
+**Every per-slab figure in this file before today is 1440-only.** The totals stand; the columns at other sizes did not.
