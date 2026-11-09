@@ -4992,3 +4992,35 @@ which is also why the mid-fold capture could catch it at all: an idle page paint
 
 This is the **only** animation in the build. The reference has fades on menus and page transitions, and this work has not touched them:
 the mechanism is now here (progress, dt, repaint-while-moving) and the next one is cheaper than this was.
+### The five-size sweep, taken again -- and the captures that were lying (2026-11-09)
+
+The objective asks for verification at five sizes. Re-running it produced a result that was too good, and finding out why was the
+useful part.
+
+**The trap.** A set of captures named `rs-<WxH>.png` had been filed as reference captures. Comparing our current build against them
+gave **1 827 differing pixels at every single size** -- an identical total for five different frames, which is not a thing that happens.
+They are **this build\'s own earlier captures** (from a resize sweep of *our* app). The comparison was our app against itself, and the
+1 827 is what eight rounds of UI work moved.
+
+**The real sweep**, against the reference captured live at each size minutes ago:
+
+| size | differing | pixels | share |
+|---|---:|---:|---:|
+| 1280x720 | 46 230 | 921 600 | **5.02%** |
+| 1366x768 | 50 525 | 1 049 088 | **4.82%** |
+| 1440x900 | 51 333 | 1 296 000 | **3.96%** |
+| 1600x900 | 59 722 | 1 440 000 | **4.15%** |
+| 1920x1080 | 73 558 | 2 073 600 | **3.55%** |
+
+These are **worse than the figures this file carried** (27 619 / 35 286 / 31 255 / 45 259 / 57 062) because those were taken against
+earlier states of the reference and of this build, and the earlier numbers were never re-taken. The current table is the one to quote.
+
+**Two things were ruled out as causes on the way**, each by measuring rather than by guessing:
+
+| candidate | test | answer |
+|---|---|---|
+| the reference\'s news carousel rotating between captures | three captures 4 s apart, compared pairwise | **0 differing** -- it is static |
+| the news artwork drawn in the wrong colour | five pixels probed in both | **~6/255 apart** -- same gradient, ours a shade brighter |
+
+What is left is the text, which is what every previous round found: the sidebar\'s 16 818 at 1440x900 is the news card\'s title and body,
+whose line breaks differ by a word.
