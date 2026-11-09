@@ -6884,3 +6884,25 @@ and copy work of the last few rounds showing up at the one size it was tuned at.
 **The sidebar's 10 056 at 1280 against 27 298 at 1920** is the news card again: at narrow widths it wraps to more lines but its artwork is smaller,
 and at 1920 the artwork is large enough that the two builds' scaling differs across a bigger area. The panel is a fixed 300 points, so this is all
 content, not layout.
+### The 1920 sidebar is the artwork, not the text (2026-11-09)
+
+The sidebar's difference grows with the window -- 10 056 at 1280, 16 565 at 1440, **27 298 at 1920** -- and the panel is a fixed 300 points, so it
+had to be content. Banded at 1920, by 60-row slices over x 1620..1920:
+
+| rows | differing | what is there |
+|---|---:|---|
+| 660-719 | **11 053** | the news artwork |
+| 720-779 | **8 371** | the news artwork, lower half |
+| 540-659 | 5 820 | the card's title and copy |
+| everything else | ~2 000 | headings, banner, spacing |
+
+**Two thirds of the 27 298 is the promo image**, and the share it takes grows with the window because the image is drawn larger: at 1920 the card is
+390 points wide against 270 at 1440, so the same source is scaled over twice the area.
+
+That is a **different mechanism from every text finding so far** -- it is the sampler, not the glyphs. This build draws through a software
+rasteriser whose sampling is bilinear (`crates/sift-ui/src/soft/mod.rs`); the reference's is the compositor's. On a downscale of this ratio the two
+filters disagree on most pixels of a photograph and on none of a flat fill, which is exactly the shape the bands show.
+
+**The testable next step is a better filter, not a better layout**: a box or area average for large downscales is what a compositor does, and it is a
+few lines in the sampler. If the artwork's 19 424 drops, the mechanism is confirmed; if it does not, the difference is the source image and the filter
+is not the answer.
