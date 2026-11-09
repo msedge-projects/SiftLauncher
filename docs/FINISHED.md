@@ -9,7 +9,7 @@ clients in the same state, with a capture behind every claim.
 |---|---:|---|---|
 | Home | **32 781** | `refclean2.png` vs `field6.png` (2026-11-09, pointer parked, reference restarted) | type: the rasteriser |
 | Discover | **78 984** | `disc-ref2.png` vs `disc-cur.png` (2026-11-09) | type and card artwork |
-| Screenshots | **23 573** | `sweep-screenshots-*.png` (both empty -- the only state the reference can be shown) | the empty state\'s illustration |
+| Screenshots | **23 573** | `shot-ref3.png` vs `shot-our.png` (2026-11-09, both empty; the reference title checked before capture) | the empty state's illustration |
 | Instance page | **30 454** | `sweep-instance-ref.png` vs `inst-clean.png` (mods/ emptied first) | type |
 | Settings | **31 975** | `sweep-settings-*.png` (pinned backdrop) | the theme cards\' interior tone and the type |
 | Project -- Description | **71 398** | `projL-ref.png` vs `proj-gap4.png` | the body\'s type |
