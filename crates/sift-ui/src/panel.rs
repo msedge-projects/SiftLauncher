@@ -463,7 +463,9 @@ pub fn getting_started_card(
         );
         let ticked = done.get(index).copied().unwrap_or(false);
         if ticked {
-            painter.circle_filled(egui::pos2(row.left() + 20.0, row.center().y), 8.0, theme.SECONDARY);
+            // The disc is as dim as the label: the reference\'s whole row tops out at (61,68,69), so nothing in it is
+            // SECONDARY (150,162,176) -- measured with `element.py` over the box that contains the disc.
+            painter.circle_filled(egui::pos2(row.left() + 20.0, row.center().y), 8.0, theme.SURFACE_5);
             icons::draw(
                 painter,
                 Glyph::Check,
@@ -480,7 +482,10 @@ pub fn getting_started_card(
                 Stroke::new(1.5, theme.SECONDARY),
             );
         }
-        let ink = if ticked { theme.SECONDARY } else { theme.BASE };
+        // **A finished step is dimmer than this**, not merely struck through: the reference\'s own completed row reads
+        // (61,68,69) at its brightest, which is `SURFACE_5` (66,68,74); this build used `SECONDARY` (150,162,176) and
+        // measured 89 too light. Found with `tools/parity/element.py`, which sees the ink colour a frame count cannot.
+        let ink = if ticked { theme.SURFACE_5 } else { theme.BASE };
         painter.text(
             egui::pos2(row.left() + 36.0, row.center().y),
             Align2::LEFT_CENTER,
@@ -498,7 +503,7 @@ pub fn getting_started_card(
                     egui::pos2(row.left() + 36.0, row.center().y),
                     egui::pos2(row.left() + 36.0 + width, row.center().y),
                 ],
-                Stroke::new(1.0, theme.SECONDARY),
+                Stroke::new(1.0, theme.SURFACE_5),
             );
         }
     }

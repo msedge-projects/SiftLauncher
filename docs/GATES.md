@@ -5261,3 +5261,22 @@ here.
 
 **The rail map**, extended by pressing: y 123 Discover modpacks, y 178 Skin selector, **y 205 Screenshots**. The icons read, top to bottom:
 play, compass, t-shirt, picture, two stacked rectangles, then the instance\'s own icon, then `+`.
+### The completed step, dimmed to the reference\'s own tone (2026-11-09)
+
+`element.py` said the first checklist row\'s ink was **107 too light**, and the wide box said the whole row had nothing brighter than the
+reference\'s (61,68,69). Both were the same thing seen twice: this build drew a finished step in `SECONDARY` (150,162,176) where the
+reference uses something near `SURFACE_5` (66,68,74) -- for the label **and** the tick\'s disc, not just the label.
+
+| | reference | before | after |
+|---|---|---|---|
+| label ink (brightest) | (61,68,69) | (150,162,176) -- **off by 107** | **(66,75,73) -- off by 7** |
+| the disc | dim | `SECONDARY` | `SURFACE_5` |
+
+**And the frame did not move at all**: Home is 32 864 at threshold 40 and 50 298 at 20, identical to before. One row\'s ink and one 8-point
+disc are about two hundred pixels, most of which were already counted on both sides. The element instrument improved; the frame metric
+could not see it. That is the same asymmetry this file recorded for the filter row, in the opposite direction.
+
+**What is not verified**: the disc\'s position. Sampling its expected pixel (1192,114) in this build returns the row\'s fill, so the disc is
+drawn somewhere else -- the 2x crop shows a light disc where the reference has a dim one, and after the change it should be dim in both.
+Either the disc moved with the label\'s new inset, or that pixel belongs to the label\'s first letter. One probe would settle it and this round
+ran out before it was pointed at the right coordinates.
