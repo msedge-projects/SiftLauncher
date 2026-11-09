@@ -1750,6 +1750,36 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
     /// y 10..37; back and forward are 28 px outlined squares at x 176 and 212; the route's
     /// icon starts at 262 and its name at 283; the status line ends at 1278, six pixels
     /// before the window controls, which are 48 + 48 + 60 wide.
+/// **A tooltip under its target**, with the arrow on top pointing back up at it -- the reference\'s `top` placement
+/// flipped, which is what every title-bar button gets because there is no room above them. Measured off its own
+/// capture: the pill\'s top is 8 points below the button\'s bottom, the arrow is 7 tall, and the plate is `RAISED_BG`
+/// with a white label.
+fn tooltip_below(painter: &egui::Painter, anchor: Rect, label: &str, theme: &crate::theme::Theme) {
+    let galley = painter.layout_no_wrap(label.to_owned(), crate::fonts::body(15.0), theme.CONTRAST);
+    let plate = Rect::from_min_size(
+        egui::pos2(
+            (anchor.center().x - (galley.size().x + 20.0) / 2.0).max(4.0),
+            anchor.bottom() + 8.0,
+        ),
+        egui::vec2(galley.size().x + 20.0, galley.size().y + 17.0),
+    );
+    painter.rect_filled(plate, 8, theme.RAISED_BG);
+    painter.add(egui::Shape::convex_polygon(
+        vec![
+            egui::pos2(anchor.center().x, plate.top() - 7.0),
+            egui::pos2(anchor.center().x - 7.0, plate.top() + 1.0),
+            egui::pos2(anchor.center().x + 7.0, plate.top() + 1.0),
+        ],
+        theme.RAISED_BG,
+        egui::Stroke::NONE,
+    ));
+    painter.galley(
+        egui::pos2(plate.left() + 10.0, plate.center().y - galley.size().y / 2.0),
+        galley,
+        theme.CONTRAST,
+    );
+}
+
     fn title_bar(&mut self, ui: &mut Ui) {
         if std::env::var_os("SIFT_CHROME_PROBE").is_some() {
             eprintln!("title_bar called, painter clip={:?}", ui.painter().clip_rect());
@@ -1886,6 +1916,21 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
             Rect::from_center_size(download.center(), Vec2::splat(16.0)),
             self.theme.SECONDARY,
         );
+        // **"Download manager", under the button, after the same 300 ms the rail\'s tooltips wait.** The
+        // reference\'s own tooltip for this button says exactly that (`tb-980.png`).
+        if ui.rect_contains_pointer(download) {
+            let held = crate::motion::held_for(ui.ctx(), egui::Id::new("titlebar-download"), true);
+            if held.map(|ms| ms >= 300.0).unwrap_or(false) {
+                // **On the foreground layer.** The title bar is painted before the page, so a plate drawn here is
+                // covered by the content column -- the first version drew nothing visible at all.
+                let above = ui.ctx().layer_painter(egui::LayerId::new(
+                    egui::Order::Foreground,
+                    egui::Id::new("titlebar-tooltip"),
+                ));
+                Self::tooltip_below(&above, download, "Download manager", &self.theme);
+                ui.ctx().request_repaint();
+            }
+        }
         let update = Rect::from_min_size(egui::pos2(999.0, pill_top), egui::vec2(98.0, 34.0));
         painter.rect_stroke(
             update,

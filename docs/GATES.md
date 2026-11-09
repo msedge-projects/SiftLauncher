@@ -6134,3 +6134,21 @@ Now drawn as the reference draws it, and driven on both sides: the Servers icon 
 
 **Rows 213, 430 and 505 closed.** The timing (300 ms to show, 400 to hide, per `providers/tooltip.ts`) was already in the code and is recorded
 rather than timed; the geometry spec in row 507 (8-point offset, flip, arrow, default `top`) is matched for the rail only, so it stays open.
+### The title bar tooltips, and the layer that hid them (2026-11-09)
+
+The reference title-bar tooltips are real and match the rail design, with the placement flipped: the plate sits **below** the button and its
+arrow points **up**. Hovering the download ring shows **"Download manager"** -- the pill top edge at y 49, which is the button bottom (41)
+plus 8.
+
+This build had none. A reusable `tooltip_below` now draws the plate, and one call site uses it. Two things had to be right and the first was not:
+
+| attempt | result |
+|---|---|
+| draw it from the title bar own painter | **nothing visible** -- the title bar is painted before the page, and the content column covers y 49..85 |
+| the same call on an `Order::Foreground` layer | **the pill draws** (`otb2-on.png`), plate top 49, label "Download manager" |
+
+The rail tooltip never had this problem because it is drawn after the pages, in the shell last pass -- which is why the same design in the same
+file behaved differently in two places.
+
+**Row 514 stays open**: it asks for eight title-bar tooltips and this round delivered one. The mechanism is now one function call per target, so
+the remaining seven are calls rather than a new system.
