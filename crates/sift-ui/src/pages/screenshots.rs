@@ -604,12 +604,11 @@ enum Item {
 /// an image editor, an image clipboard, and a route out of a page whose `draw` returns a
 /// `bool` — so the menu carries every row this page can carry out, and each one does something
 /// when pressed.
-const MENU_ITEMS: [Item; 4] = [
-    Item::Open,
-    Item::AddToGroup,
-    Item::ShowInFolder,
-    Item::Delete,
-];
+// **Two rows the reference does not have, removed.** `showScreenshotOptions` (`index.vue:1058-1097`) lists Edit, Copy,
+// Show in folder, Go to instance, a divider, Delete -- and no "Open" (opening is the card's own click) and no "Add to group"
+// (groups are assigned by drag, by the selection bar, or by the card's copy/edit actions). This menu carried both anyway, which
+// made it a list of things this build can do rather than a list of things the reference offers.
+const MENU_ITEMS: [Item; 2] = [Item::ShowInFolder, Item::Delete];
 
 impl Item {
     /// The row's label.

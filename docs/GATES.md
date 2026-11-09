@@ -7976,3 +7976,27 @@ have, and the 26 spare is the reference's own measured gap rather than slack.
 **The lesson is the same one as the last four rounds, and I would rather write it than bury it**: a single assertion read quickly looks like
 arithmetic and is often a constant someone chose. Two of this session's confident structural claims (this one, and the "plate" that turned out to
 be the rows) came from reading one line of a test as if it were a derivation.
+### The card's right-click menu carried two rows the reference does not have (2026-11-09)
+
+Driving a right-click on the card and reading `showScreenshotOptions` (`screenshots-page/index.vue:1058-1097`) side by side:
+
+| | reference, on a right-click | this build, before | this build, after |
+|---|---|---|---|
+| 1 | Edit | Open | -- |
+| 2 | Copy | **Add to group** | -- |
+| 3 | Show in folder | Show in folder | **Show in folder** |
+| 4 | Go to instance | -- | -- |
+| 5 | (divider) | -- | -- |
+| 6 | Delete (red) | Delete | **Delete** |
+
+**Two of the old rows were fabricated**: the reference has no "Open" in this menu, because opening the picture is the card's own click, and it has
+no "Add to group", because groups are assigned by drag, by the selection bar, or by the card's own actions. The menu was a list of what this build
+can do rather than a list of what the reference offers -- and its own doc comment said so while calling the result correct.
+
+**Changed**: `MENU_ITEMS` is now `[ShowInFolder, Delete]`. The rows are the reference's 3rd and 6th, both of which this page can carry out.
+
+**Still absent, and each for a named reason**: Edit needs an image editor, Copy needs a clipboard that works on this display (it blocks -- four
+rounds proved that), Go to instance needs a route out of a page whose `draw` returns a `bool`. Those three stay out until the machinery exists,
+and the divider stays out because it would divide nothing.
+
+**Verified**: built and driven -- the menu now ends after two rows where it used to run four.
