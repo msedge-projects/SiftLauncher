@@ -6849,3 +6849,20 @@ direction: a difference that is obvious in a 4x crop is worth almost nothing to 
 **What to do instead**: match the *text* inside the card (name at 515, loader at 535) and let the plate land wherever it lands. The plate's
 position is worth ~200 px and the text's is worth ~1 000; fixing them in the order of what the metric can see is the only order that pays. That is
 the next attempt's shape, and it is a different experiment from the six that failed.
+### The card's text first, then its foot: 269 pixels (2026-11-09)
+
+The explanation from the previous entry -- the plate's fill is 17 points from the page and cannot pay for moving any text -- gives a different
+experiment, and it worked on the first try:
+
+| change | content | Home |
+|---|---:|---:|
+| baseline | 12 948 | 31 625 |
+| **the name and loader 10 points down** (gap 8 -> 18), plate untouched | **12 699** | **31 376** |
+| and the plate grown to 239 so its foot lands on the reference's 568 | **12 679** | **31 356** |
+
+**-269 for two numbers**, after six builds of moving the plate had made it worse every time. The order matters exactly as the arithmetic said it
+would: the text is worth a thousand pixels and the plate a couple of hundred, so moving the text first is the only sequence where the gains are not
+swamped by the losses.
+
+The card now has 38 points above its artwork against the reference's 13, and 20 below its loader against the reference's 21. The bottom matches;
+the top is still 25 out, and closing that would mean moving the plate up into the text -- which is the experiment that failed six times.

@@ -167,7 +167,9 @@ fn row_targets_at(rect: Rect, index: usize, shift: f32) -> (Rect, Rect, Rect) {
     const CARD_W: f32 = 168.0;
     // **215, not 208.** Measured on the reference's own card at x 150: 354..568. At 208 this build's grey loader line ran into the
     // plate's bottom edge, which is what the 2x crop shows; the extra 7 is the padding under it.
-    const CARD_H: f32 = 215.0;
+    // **239, so the plate foot lands on the reference's 568.** The card starts at 329 here and 354 there; 329 + 239 = 568 gives the
+    // same bottom edge, and 20 points of padding under the loader against the reference's 21.
+    const CARD_H: f32 = 239.0;
     const GAP: f32 = 12.0;
     let columns = ((rect.width() + GAP) / (CARD_W + GAP)).floor().max(1.0) as usize;
     let column = index % columns;
@@ -1895,7 +1897,7 @@ fn list(
         }
 
         painter.text(
-            egui::pos2(card.left() + 10.0, tile.bottom() + 8.0),
+            egui::pos2(card.left() + 10.0, tile.bottom() + 18.0),
             Align2::LEFT_TOP,
             &instance.name,
             fonts::semibold(15.0),
@@ -3342,7 +3344,9 @@ mod tests {
         // than the constant it used to read.
         // **215**: re-measured at the card\'s middle column, where its rounded corner cannot interfere -- the reference\'s
         // plate runs 354..568 at x 150. At 208 this build\'s loader line ran into the plate\'s bottom edge.
-        assert_eq!(card.height(), 215.0);
+        // **239**: the card starts 25 points higher than the reference's here, so it has to be 25 taller for its foot to land
+        // on the reference's 568. The plate's own fill is under the threshold; its bottom border is not.
+        assert_eq!(card.height(), 239.0);
         assert_eq!(card.width(), 168.0);
         assert!(card.contains_rect(play), "the pill is on the card");
         assert!(card.contains_rect(kebab), "the kebab is on the card");
