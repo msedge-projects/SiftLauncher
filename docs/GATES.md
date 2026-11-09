@@ -7781,3 +7781,26 @@ dialog and the delete confirmation all sit over a page whose difference they wil
 
 **What this corrects**: the 42 213 and 39 064 quoted in the two previous rounds both measured Settings-plus-Home and should not be used. The
 figure for Settings is **27 256 inside its own plate**, and it is the first one on this page that is about the page.
+### The Appearance pane sits four points low, and lifting it half-fixes it (2026-11-09)
+
+Cross-correlating each region of the Appearance pane against the reference over -4..+4 found a single number:
+
+| region | best shift before | best-shift difference | after the lift |
+|---|---:|---:|---:|
+| theme cards row | **+4** | 581 | **+1** (334) |
+| System theme row | **+4** | 178 | **+1** (80) |
+| the rail, beside them | **0** | 229 | unchanged |
+
+The rail is right where it is and the content column is four points low, so `content_rect` now starts at `HEADER_HEIGHT - CONTENT_LIFT` with
+`CONTENT_LIFT = 4.0`.
+
+**Half-fixed, not fixed**: the residual moved from +4 to +1, which means the true offset is **five** and I lifted four. The differences at the
+best shift halved, which is what a four-point correction of a five-point error looks like.
+
+**And the page's total went UP**: `sb-ref.png` against the new frame reads **45 536** where the previous frame read 42 213. So the lift moved the
+content onto its own rows and, in doing so, charged four points of every row twice over -- against the old position the rows overlapped the
+reference's by coincidence in some places.
+
+**So this is not yet a win and is recorded as such.** The next step is `CONTENT_LIFT = 5.0`, one build, and the same three-row probe: the cards
+and system rows should both prefer dy 0, and the total should fall below 42 213. If it does not, the lift comes out -- a change that halves one
+region's difference and raises the page's is not a fix until the total says so.
