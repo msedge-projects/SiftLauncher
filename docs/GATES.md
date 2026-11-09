@@ -6093,3 +6093,27 @@ consequence of a content difference -- one line, one height -- and no arrangemen
 with a comment saying the number is the measurement and the test follows it rather than the constant. Changing the constant to 215 failed it,
 which is the guard working: a height is a claim about the reference, and the claim now has a new value with its own measurement behind it
 (354..568 at x 150). Updated to 215 with that reason; **269 tests** pass.
+### The card: a coherent set of offsets, and why it is still wrong (2026-11-09)
+
+The missing third line does not exist. At the same absolute rows the reference\'s card carries exactly what this build\'s does -- a name, a loader
+line, then padding -- so the extra 29 points below the name are padding, not content, and the difference looked like three transposable offsets:
+
+| | reference (card 354..568) | this build (card 329..544) |
+|---|---|---|
+| art | 367..497 | 367..495 |
+| name ink | 515..527 | 505..515 |
+| loader ink | 535..547 | 518..528 |
+| plate end | 568 | 544 |
+
+Read as offsets from the card\'s top: the reference puts its tile 13 down and its name 18 below the tile; this build puts its tile 36 down and its
+name 8 below. Setting all three to the reference\'s -- `ROW_TOP` +25, the tile\'s inset 36 -> 13, the name\'s gap 8 -> 18 -- was measured at
+**33 595, worse by 811**, and reverted.
+
+**Why a set that matches the reference\'s own numbers is worse**: `card.min + 13` and `tile.bottom() + 18` are offsets in *this* engine, and this
+engine\'s glyph boxes are not the browser\'s. A name drawn 18 below a tile that was placed 13 below the card puts its ink somewhere the arithmetic
+does not predict, because egui puts a glyph two to four points into its line box depending on size -- the same asymmetry the copy\'s comment records
+for the news card ("+1 and the -4"). The reference\'s offsets cannot be copied; they have to be solved against this engine\'s line boxes.
+
+**Stopped here, deliberately.** Five attempts at this card across three rounds: 4 pixels gained, four reverts, one test corrected. The card sits at
+a measured optimum of 32 780 with `CARD_H` 215, and every further move I can justify from a capture makes it worse. Getting it right needs the
+line-box model written down first -- one paragraph of arithmetic, then one attempt -- rather than a sixth guess at an offset.
