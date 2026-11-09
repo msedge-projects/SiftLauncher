@@ -153,6 +153,13 @@ fn recent_path(entry: &Entry) -> std::path::PathBuf {
 /// tests aim at exactly the rects the drawing registers, which is the only way a printed
 /// number and a press can be the same number.
 fn row_targets(rect: Rect, index: usize) -> (Rect, Rect, Rect) {
+    row_targets_at(rect, index, 0.0)
+}
+
+/// The same grid, pushed down by a group header. The default is `0.0`, which is the ungrouped page
+/// and every measurement already recorded; a grouped page passes the header's height, and both the
+/// drawing and the press handling read it from here so a click cannot land on the card above.
+fn row_targets_at(rect: Rect, index: usize, shift: f32) -> (Rect, Rect, Rect) {
     // **A grid, as the reference draws it.** Driving its Home page (display :107) showed a wall of cards: the
     // first plate starts at x 88 and is 168 wide with the pack's icon filling its top and the name and
     // loader+version under it. This build drew one full-width row per instance with the Play pill and the kebab
@@ -166,7 +173,7 @@ fn row_targets(rect: Rect, index: usize) -> (Rect, Rect, Rect) {
     let card = Rect::from_min_size(
         egui::pos2(
             rect.left() + column as f32 * (CARD_W + GAP),
-            rect.top() + ROW_TOP + row as f32 * (CARD_H + GAP),
+            rect.top() + ROW_TOP + shift + row as f32 * (CARD_H + GAP),
         ),
         egui::vec2(CARD_W, CARD_H),
     );
@@ -244,6 +251,10 @@ const ADMONITION_BODY_LINE: f32 = 20.0;
 /// a `40px` avatar, the name `font-semibold`, the loader `text-sm font-medium text-secondary`
 /// (`ConfirmDeleteInstanceModal.vue:22-40`).
 const CARD_PAD: f32 = 12.0;
+
+/// The height a group header takes above the grid: the reference's row is a 24-point chevron and label
+/// over a rule, measured at 36 from the header's top to the first card.
+const GROUP_HEADER_H: f32 = 36.0;
 const CARD_RADIUS: u8 = 20;
 const CARD_AVATAR: f32 = 40.0;
 const CARD_GAP: f32 = 10.0;
@@ -1508,13 +1519,16 @@ fn list(
         .collect();
     let mut shown = shown;
     ordered(&mut shown, state.sort_label);
+    // A grouped page draws a header above the grid and moves the grid down by its height.
+    let grouped = matches!(state.group_label, Some(key) if key != "No grouping");
+    let grid_shift = if grouped { GROUP_HEADER_H } else { 0.0 };
 
     // Rule 1 of the drive: the rect comes from the program, never off a capture. Off unless
     // `SIFT_HOME_PROBE` is set, and it prints the numbers a press is aimed with.
     if std::env::var_os("SIFT_HOME_PROBE").is_some() {
         eprintln!("home page={rect:?} rows={}", shown.len().min(ROWS_SHOWN));
         for (index, instance) in shown.iter().take(ROWS_SHOWN).enumerate() {
-            let (card, play, kebab) = row_targets(rect, index);
+            let (card, play, kebab) = row_targets_at(rect, index, grid_shift);
             eprintln!(
                 "home row={index} id={:?} card={card:?} play={play:?} kebab={kebab:?}",
                 instance.id
@@ -1559,9 +1573,57 @@ fn list(
     // in its row's turn would be painted under the card below it.
     let mut anchored: Option<(String, Rect)> = None;
     let rows = shown.len().min(ROWS_SHOWN);
+    // **The group header**, when the second chip is grouping: the reference's is a chevron, the group's name
+    // and its count in a pill, over a rule at the row's foot (`ref-grouped.png`, grouped by Instance type, which
+    // reads "Custom 1"). One header per contiguous run of one name.
+    if grouped {
+        let name = match state.group_label {
+            Some("Loader") => shown.first().map(|entry| entry.loader.clone()).unwrap_or_default(),
+            Some("Game version") => shown.first().map(|entry| entry.version.clone()).unwrap_or_default(),
+            _ => "Custom".to_owned(),
+        };
+        // **At the grid's own top, not above it**: the cards were moved down by the header's height, so this is
+        // the space they vacated. Subtracting the height again drew it over the filter chips.
+        let top = rect.top() + ROW_TOP;
+        let painter = ui.painter();
+        crate::icons::draw(
+            painter,
+            crate::icons::Glyph::ChevronDown,
+            Rect::from_min_size(egui::pos2(rect.left() + 8.0, top + 4.0), Vec2::splat(16.0)),
+            theme.SECONDARY,
+        );
+        painter.text(
+            egui::pos2(rect.left() + 32.0, top + 12.0),
+            Align2::LEFT_CENTER,
+            name.clone(),
+            fonts::label(16.0),
+            theme.CONTRAST,
+        );
+        let name_width = painter
+            .layout_no_wrap(name.clone(), fonts::label(16.0), theme.CONTRAST)
+            .size()
+            .x;
+        let badge = Rect::from_min_size(
+            egui::pos2(rect.left() + 32.0 + name_width + 10.0, top + 3.0),
+            egui::vec2(22.0, 18.0),
+        );
+        painter.rect_filled(badge, 9.0, theme.BUTTON_BG);
+        painter.text(
+            badge.center(),
+            Align2::CENTER_CENTER,
+            format!("{}", shown.len()),
+            fonts::body(12.0),
+            theme.SECONDARY,
+        );
+        painter.rect_filled(
+            Rect::from_min_size(egui::pos2(rect.left(), top + 26.0), egui::vec2(rect.width(), 1.0)),
+            0,
+            theme.SURFACE_4,
+        );
+    }
     for (index, instance) in shown.iter().copied().take(ROWS_SHOWN).enumerate() {
         // The card, its pill and its kebab from the one function the probe and the tests read.
-        let (card, play, kebab) = row_targets(rect, index);
+        let (card, play, kebab) = row_targets_at(rect, index, grid_shift);
         let is_selected = selected_ids.contains(&instance.id);
         // A selected card's plate lifts one step, which is what the reference's capture shows while the ring is ticked.
         painter.rect_filled(

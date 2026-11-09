@@ -4924,3 +4924,19 @@ drawing rather than by wiring). It opens the reference\'s menu now:
 still one row with no section headers, so `populated -- group header` (row 32) and `empty -- empty group message` (row 53) stay OPEN --
 correctly. A menu row that changes a label and nothing else is exactly the kind of control this round was spent finding; the difference
 is that this one is written down as half-done instead of counted as done.
+### Grouping draws a header now, and moves the grid to make room (2026-11-09)
+
+The second chip named a grouping and drew nothing. The header is drawn now, and the cards move down by its height:
+
+| | reference (grouped by Instance type) | ours |
+|---|---|---|
+| the header | chevron, the group\'s name, its count in a pill, a rule under it | **same**, "Custom" and "1" (`gh2-our.png` vs `ref-grouped.png`) |
+| the cards | start below the rule | **start below the rule**, and pressing one still opens the instance (`gh-click.png`) |
+
+Two mistakes were made and both were visible immediately in a crop: the header was **drawn over the filter chips** (the grid\'s top was
+subtracted twice), and the count pill was placed at a fixed 100 points, which ran into any name longer than "Custom". The pill follows the
+laid-out name now.
+
+**What is still wrong, and is now its own OPEN row**: the header is drawn **once for the whole list** and names the first entry. Two
+loaders would share one header where the reference draws two sections. That is recorded as a new row rather than left implied by a
+"done" on the row above it -- the row that closed is the header itself, which was verified against the reference.
