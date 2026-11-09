@@ -164,6 +164,15 @@ impl Images {
         self.get_file_with(ctx, path, egui::TextureOptions::LINEAR, "smooth", cap)
     }
 
+    /// **Drop every cached texture for a file.** The cache evicts only on insert, so the picture the reader just closed
+    /// stayed resident for the rest of the process: one preview left 5.2 MB of texture in an 8 MiB budget that nothing
+    /// pushed it out of. The viewer calls this when it closes.
+    pub fn forget_file(&mut self, path: &std::path::Path) {
+        let needle = path.display().to_string();
+        self.entries.retain(|key, _| !key.contains(&needle));
+        trim_heap();
+    }
+
     /// The same file, sampled nearest instead of smooth.
     ///
     /// A screenshot is a photograph and wants bilinear filtering; a Minecraft skin is eight

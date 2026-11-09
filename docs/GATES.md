@@ -7250,3 +7250,32 @@ next step and it is small.
 
 **The general lesson, which is not about this viewer**: a cache that only evicts on insert cannot release the thing the reader just stopped
 using. Whatever the budget, the last-used entry stays until something else arrives to push it out.
+### The texture is released; RSS never follows it (2026-11-09)
+
+`SIFT_SOFT_MEM` prints the software backend's own texture total, which is the measurement this needed all along:
+
+| state | backend textures | RSS |
+|---|---:|---:|
+| the grid | **3 019 kB, 7 textures** | 24 964 kB |
+| the viewer open | **8 081 kB, 8 textures** (+5 062) | 33 776 kB |
+| viewer closed, still on the page | 8 081 kB, 8 | 33 788 kB |
+| back on the grid | **3 019 kB, 7** | 39 296 kB |
+
+**So the `forget_file` fix works**: the full-size texture leaves the backend when the cache drops it, and the 5 062 kB it was holding is
+gone by the backend's own count. What does **not** happen is RSS coming down with it -- it went *up*, from 33.8 to 39.3 MB, on a frame that
+released five megabytes of texture.
+
+**That settles what the RSS plateau is**: not live textures. The software backend accounts for every byte it holds and the count is small
+(3-8 MB) and honest, so the ~23 MB of RSS on an idle Home is **allocator retention and fragmentation**, not images. `malloc_trim` is
+already called on the path that frees the texture and it does not give the pages back, which is consistent with the freed blocks being small
+or interleaved rather than one mmapped arena.
+
+**Two consequences**:
+
+1. Future memory work should quote **backend texture bytes alongside RSS**, because they are different quantities and only one of them is
+   under this program's control. A probe already existed and two rounds were spent without it.
+2. Chasing RSS by changing caches is the wrong instrument: the previous round's 4 MiB experiment moved RSS by seven megabytes in the wrong
+   direction while the texture accounting barely changed.
+
+**What is still true**: `forget_file` is a real fix -- a preview no longer pins its picture for the life of the process -- and the viewer's
+texture now goes when the reader leaves the page, even though the operating system is told nothing about it.

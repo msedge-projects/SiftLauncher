@@ -2685,6 +2685,15 @@ fn toast(
 /// One screenshot, full size, over the page: the source's ImageViewerEditor at the index the
 /// pressed card holds (index.vue:1439-1478). Esc or a click outside the picture closes it;
 /// the arrow keys step through the list the card came from.
+/// **Close the preview and let go of its texture.** Dropping the index alone left a 5.2 MB full-size texture in the cache for
+/// the rest of the process, because that cache evicts only when something new is inserted and nothing was.
+fn close_viewer(state: &mut State, images: &mut Images, visible: &[Shot]) {
+    if let Some(shot) = state.viewer.and_then(|index| visible.get(index)) {
+        images.forget_file(&shot.path);
+    }
+    state.viewer = None;
+}
+
 fn viewer(
     ui: &mut Ui,
     page: Rect,
@@ -2697,7 +2706,7 @@ fn viewer(
         return false;
     };
     let Some(shot) = visible.get(index.min(visible.len().saturating_sub(1))) else {
-        state.viewer = None;
+        close_viewer(state, images, visible);
         return false;
     };
 
@@ -2750,7 +2759,7 @@ fn viewer(
         .interact(close, egui::Id::new("shots-viewer-close"), Sense::click())
         .clicked()
     {
-        state.viewer = None;
+        close_viewer(state, images, visible);
         return true;
     }
     let (clicked, pointer, escape, step) = ui.input(|input| {
@@ -2770,11 +2779,11 @@ fn viewer(
         )
     });
     if escape {
-        state.viewer = None;
+        close_viewer(state, images, visible);
         return true;
     }
     if clicked && !pointer.is_some_and(|at| picture.contains(at)) {
-        state.viewer = None;
+        close_viewer(state, images, visible);
         return true;
     }
     if step != 0 && !visible.is_empty() {
