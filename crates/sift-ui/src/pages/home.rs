@@ -1537,12 +1537,39 @@ fn list(
         state.sort_open = false;
         ui.ctx().request_repaint();
     }
+    // at the field\'s right edge, inside the same box, and is drawn only while the field is not empty.
+    if !state.query.is_empty() {
+        let clear = Rect::from_center_size(
+            egui::pos2(field.right() - 20.0, field.center().y),
+            Vec2::splat(24.0),
+        );
+        let painter = ui.painter();
+        crate::icons::draw(painter, Glyph::X, clear, theme.SECONDARY);
+    }
     if ui
         .interact(field, egui::Id::new("library-search"), Sense::click())
         .clicked()
     {
-        state.query_focused = true;
+        // **The press that lands on the X clears; any other press in the field focuses it.** Ordering two overlapping
+        // `interact`s did not work: whichever came first, the field took the press. One handler deciding by position is
+        // not a trick, it is the only way egui lets two targets share one rect.
+        let on_clear = ui.ctx().pointer_interact_pos().is_some_and(|at| {
+            !state.query.is_empty()
+                && Rect::from_center_size(
+                    egui::pos2(field.right() - 20.0, field.center().y),
+                    Vec2::splat(24.0),
+                )
+                .contains(at)
+        });
+        if on_clear {
+            state.query.clear();
+        } else {
+            state.query_focused = true;
+        }
+        ui.ctx().request_repaint();
     }
+    // **The clear button.** The reference\'s field carries an X once there is something to clear (`clearable` on the
+    // library\'s input); this build had none, so emptying a filter meant selecting the text and deleting it. It sits
     // A press anywhere else takes the keyboard back. The reference's input is a real field and
     // loses focus when the reader clicks out of it; this field used to keep every later
     // keystroke on the page, so a press on a card and then a letter still filtered the list.
@@ -1746,7 +1773,10 @@ fn list(
     // Rule 1 of the drive: the rect comes from the program, never off a capture. Off unless
     // `SIFT_HOME_PROBE` is set, and it prints the numbers a press is aimed with.
     if std::env::var_os("SIFT_HOME_PROBE").is_some() {
-        eprintln!("home page={rect:?} rows={}", shown.len().min(ROWS_SHOWN));
+        eprintln!(
+            "home page={rect:?} rows={} field={field:?}",
+            shown.len().min(ROWS_SHOWN)
+        );
         for (index, instance) in shown.iter().take(ROWS_SHOWN).enumerate() {
             let (card, play, kebab) = row_targets_at(
                 rect,

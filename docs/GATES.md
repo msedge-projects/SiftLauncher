@@ -5693,3 +5693,30 @@ differ by nothing at all.
 
 The vertical flip is still **not driven** -- the library has one card and it sits mid-page, so the flip needs a card near the floor. The
 test is arithmetic, not evidence from the screen, and it is written here as such.
+### The search field: Escape, a clear button, and why two `interact`s did not work (2026-11-09)
+
+One drive covered two rows and found a third thing missing.
+
+| step | what happened |
+|---|---|
+| click the field, type `Fabric` | the field\'s text appears at (127,262)-(168,271); the list is unchanged, correctly |
+| `Escape` | **the query clears and focus drops** -- typing "zzz" after it changes **nothing** |
+| the field with text in it | **no clear button at all**, where the reference has one |
+
+The clear button is drawn now: an X at the field\'s right edge, only while there is something to clear, and pressing it restores the
+`Search` placeholder.
+
+**Getting the press to land took three tries, and the reason is worth keeping:**
+
+| attempt | result |
+|---|---|
+| a second `interact` on the X\'s rect, registered **before** the field\'s | the field took the press |
+| the same `interact`, registered **after** the field\'s | the field took the press again |
+| the field\'s own handler checks whether the press was inside the X | **it clears** |
+
+egui resolves one press to one widget, and the field\'s rect contains the X\'s -- so whichever order they are registered in, one of them
+loses and it is not the one drawn on top. A single handler deciding by position is not a workaround for that; it is the only arrangement in
+which two targets can share one rect.
+
+The probe prints the field\'s rect now (`field=[[88,248]-[837,284]]`) -- the press had been aimed at a guess for two attempts, because
+nothing printed where the field was.
