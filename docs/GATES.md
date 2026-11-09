@@ -5480,3 +5480,25 @@ file\'s own drives -- but it had only been applied to Home\'s grid, never to the
 the card is 20 lower and 20 taller than the reference\'s -- two round numbers that make one another plausible, and neither verified against the
 reference\'s own program, which this build cannot run. What it can do is read the reference\'s edges where they are *unambiguous*: the card\'s ring
 is a 1-point line above a 17-point fill, and a scan for a full-width run of that ring colour, rather than any light run, would find only it.
+### The card\'s edges, found by the page background between cards (2026-11-09)
+
+The ring scan found only the card\'s **top** edge (y 48, one full-width run); its bottom is rounded and never reaches full width, and the fill
+sampled mid-card lands on a *row* rather than the card. What worked was the page background itself: scanning a column for runs of (22,24,28)
+finds exactly the gaps between cards.
+
+| | this build |
+|---|---|
+| page background above the card | **49..67** |
+| the card, drawn | **68..269** (202 tall) |
+| page background below it | **270..285** |
+| what the probe said was laid out | y 68, **234** tall |
+
+So the probe\'s 234 is the card plus the space it reserves; the card itself is drawn 202. The reference\'s card runs from y 54 to about 262
+-- its rows sit at 124, 172 and 220 in both, so the rows agree while the card around them does not.
+
+**The offset is the page\'s, not the card\'s**: `panel()` starts at `rect.top()`, and the rect the shell hands a project page starts at 68 where the
+reference\'s sidebar content starts at 54. That is a 14-point difference above the first card, affecting every card on the page, and it is where
+the next change belongs -- not in the card\'s own height, which the program says is right for where it is placed.
+
+**Not changed this round**: the offset, because it comes from the shell\'s rect and that rect is shared with Home, whose sidebar currently
+matches. Changing it without measuring Home first is how the last three rounds went.
