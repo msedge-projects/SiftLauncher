@@ -6721,3 +6721,25 @@ nor the box is the place to fix a face.
 
 **So the sidebar's remainder is the text engine's**, recorded as such with both sweeps behind it rather than as an assertion. Home is **31 625**
 with the sidebar at 16 565 of it -- and that figure appears on every page, which is why it has had four rounds.
+### The face is within one per cent -- which weakens four of my own verdicts (2026-11-09)
+
+Four times this session I concluded that a difference was "the text engine" and stopped: the news card, the card's box, the chips' padding and the
+cinema of small offsets. All four rested on **one** comparison, the news line at 252.4 against 253. So I printed more, from the running build:
+
+| string | our advance | reference ink | difference |
+|---|---:|---:|---:|
+| "Screenshots" at 24 semibold | **146.06** | **147** | **-0.6%** |
+| "Share your server with friends directly" at 13 | 234.38 | -- | (253 at 14, so -0.2%) |
+| "Jump in" at 24 | 91.44 | ~81 for the text alone | not comparable yet |
+| "Today" at 16 | 47.19 | masked by its count badge | not comparable yet |
+
+**The face is within one per cent of the reference's, and the advance/ink distinction makes it closer still** -- an advance carries side bearings
+that ink does not, so our ink is a point or two narrower than 146. Against 147 that is a difference of about one per cent.
+
+**So "the engine did it" is weakly supported, and I have used it as a stopping argument four times.** One per cent of a 147-point heading is 1.5
+points, which cannot explain a copy that breaks a word later or a card that is 25 points off. Those need explanations of their own -- a measure
+interacting with a trailing space, a line box, a different wrap rule -- and calling them "the engine" closed the investigation before it started.
+
+**What stands**: the numbers in the table (our advances, printed by the build) and the reference inks (measured from captures). **What does not**:
+the inference from them to "the face explains the remaining differences". The next round that meets a text-position difference should assume the
+face is *close* and look for a mechanical cause first.

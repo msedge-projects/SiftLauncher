@@ -834,6 +834,15 @@ pub fn draw(
             probe_line.size().x,
             column(rect).width()
         );
+        for (label, size) in [
+            ("Screenshots", 24.0_f32),
+            ("Library", 24.0),
+            ("Jump in", 24.0),
+            ("Today", 16.0),
+        ] {
+            let g = painter.layout_no_wrap(label.to_owned(), fonts::semibold(size), theme.BASE);
+            eprintln!("ADVANCE {label:?} at {size}: {}", g.size().x);
+        }
         eprintln!(
             "news column={:?} measure={measure} copy_lines={}",
             column(rect),
