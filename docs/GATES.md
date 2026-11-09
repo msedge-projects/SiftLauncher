@@ -4374,3 +4374,24 @@ in `fonts.rs` away.
 
 With the rounds remaining, that is the honest place to leave it: **the face is right, the width is off, and the measurement that would say
 by how much was not built.**
+### The type is right to four tenths of a percent (2026-11-08)
+
+Every page\'s remainder has been described in this file as "the type". That was a description, not a measurement, and the measurement says
+something narrower and more useful:
+
+| | reference | ours | difference |
+|---|---:|---:|---:|
+| "Fabulously Optimized", the project header\'s title | **249 px** | **248 px** | **1 px, 0.4%** |
+
+Same face (this build embeds **Inter** in five weights, the reference\'s family), same weight, same size, and widths that agree to within a
+pixel on a 249-pixel string.
+
+**So the remainder is not wrong type -- it is line breaks.** A long description accumulates that 0.4% into two or three pixels, and two or
+three pixels is exactly what decides whether the next word fits. One word moves, the line\'s content shifts, every glyph after it lands in a
+different place, and a threshold-40 comparison counts the whole rest of the line as different. A single wrap decision can be worth several
+thousand pixels on a page of prose, which is the size of the remainders this file has been recording.
+
+That changes what the last rounds should do, and what the next person should know: **the pages are not badly typeset, they are one word off
+in their line breaking**, and the fix -- if one is wanted -- is a fraction of a percent of advance width (`egui`\'s `FontTweak.scale`
+carries exactly this), not a new face, a new size or a new measure. It was not tried with the rounds remaining, because a change that moves
+every line break on every page wants a session of its own to measure both ways.
