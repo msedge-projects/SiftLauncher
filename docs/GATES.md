@@ -6704,3 +6704,20 @@ measurement picks it.
 
 This is also the first round where every number came from `pair.py` -- both windows the same size, both on the same page, both verified before
 the comparison ran.
+### The sidebar's two levers, both now at their measured optimum (2026-11-09)
+
+The news card's copy and its measure were the last two knobs on the largest recurring cost in the project -- 16 565 on every page. Both have been
+swept and both are at a turning point:
+
+| lever | values measured | best |
+|---|---|---|
+| `COPY_SIZE` | 12 / **13** / 13.5 / 14 | **13** (16 565) |
+| measure inset | **-20** / -27 | **-20** (16 565; -27 gives 16 700) |
+
+**Why narrowing did not help**, though the diagnosis said it should: at 13 points this build fits one more word per line than the reference, so a
+narrower box should force the reference's break. It does -- and the sidebar gets worse, because the break moves *and* all four lines shift with it,
+and the shifts cost more than the break gains. The wrap is a symptom of a face that is a few per cent narrower per character, and neither the size
+nor the box is the place to fix a face.
+
+**So the sidebar's remainder is the text engine's**, recorded as such with both sweeps behind it rather than as an assertion. Home is **31 625**
+with the sidebar at 16 565 of it -- and that figure appears on every page, which is why it has had four rounds.

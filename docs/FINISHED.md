@@ -7,7 +7,7 @@ clients in the same state, with a capture behind every claim.
 
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
-| Home | **32 780** | `refclean2.png` vs `back319b.png` (2026-11-09, pointer parked, reference restarted) | type, plus the news sidebar\'s first card being a different article |
+| Home | **31 625** | `homeOK-ref.png` vs `homeOK-our.png` (2026-11-09, verified pair: both 1440x900, both on Home, breadcrumbs 1.8% apart) | type (the news copy is now 13 points, the measured optimum), plus the news sidebar wrapping one word later per line than the reference |
 | Discover | **79 146** | `discV-ref.png` vs `discV-our.png` (2026-11-09, captured by `pair.py`: both windows verified 1440x900, both on Discover, breadcrumbs 4.8% apart) | type, card artwork, and the emoji in API summaries that this font has no glyph for |
 | Screenshots (populated) | **27 745** | `sc-away.png` vs `our-shots2.png` (2026-11-09, **one screenshot in both instances**) | 2 166 inside the card is the image resample; 3 688 elsewhere is the top chrome. Was 23 573 for two *empty* pages -- an empty page has nothing to misalign, and hid a 24-point double padding worth 11 338 |
 | Instance page | **30 471** | `inst-ref.png` vs `inst-our.png` (2026-11-09, both on Content, empty) | type; the sidebar is 16 816 of it |

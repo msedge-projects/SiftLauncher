@@ -816,6 +816,9 @@ pub fn draw(
     // **255: the reference's own measure, now that the title wraps.** The 30-point narrowing was applied when the title was
     // drawn unwrapped and never broke at all; with the galley drawn, the reference's measure gives the reference's breaks
     // and a wider box no longer means fewer lines.
+    // **-20 is the measured optimum too.** At -27 -- narrowing the box to force the reference break at "directly" -- the
+    // sidebar worsens to 16 700 from 16 565: the break moves, but every one of the four lines shifts with it and the
+    // shifts cost more than the break gains.
     let measure = column(rect).width() - 20.0;
     if std::env::var("SIFT_PANEL_PROBE").is_ok() {
         // **The reference\'s own first line, measured in this engine.** Its ink runs x 1160..1413 at 1440 wide, which is
