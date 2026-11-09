@@ -2070,6 +2070,108 @@ fn list(
     if modal_was_open {
         action = Action::None;
     }
+    // **The selection bar.** Selecting anything in the reference puts a bar at the foot of the content column:
+    // "N selected | Clear" on the left, "New group | Delete" on the right (`ContentSelectionBar.vue`). Measured from
+    // its own capture (`r1.png`): 64 points tall, the content\'s width less 32, fill (39,41,46).
+    if !selected_ids.is_empty() {
+        let bar = Rect::from_min_size(
+            egui::pos2(rect.left() + 16.0, rect.bottom() - 80.0),
+            egui::vec2(rect.width() - 32.0, 64.0),
+        );
+        let painter = ui.painter();
+        painter.rect_filled(bar, 14.0, theme.SURFACE_3);
+        let count = format!("{} selected", state.selected.len());
+        painter.text(
+            egui::pos2(bar.left() + 24.0, bar.center().y),
+            Align2::LEFT_CENTER,
+            count.clone(),
+            fonts::label(16.0),
+            theme.CONTRAST,
+        );
+        let count_width = painter
+            .layout_no_wrap(count, fonts::label(16.0), theme.CONTRAST)
+            .size()
+            .x;
+        let rule = bar.left() + 24.0 + count_width + 16.0;
+        painter.rect_filled(
+            Rect::from_min_size(egui::pos2(rule, bar.center().y - 12.0), egui::vec2(1.0, 24.0)),
+            0,
+            theme.SURFACE_5,
+        );
+        let clear = Rect::from_min_size(
+            egui::pos2(rule + 16.0, bar.center().y - 16.0),
+            egui::vec2(64.0, 32.0),
+        );
+        let clear_over = ui.rect_contains_pointer(clear);
+        painter.text(
+            egui::pos2(clear.left(), bar.center().y),
+            Align2::LEFT_CENTER,
+            "Clear",
+            fonts::label(16.0),
+            if clear_over { theme.CONTRAST } else { theme.SECONDARY },
+        );
+        if clear_over && ui.input(|input| input.pointer.primary_clicked()) {
+            state.selected.clear();
+            ui.ctx().request_repaint();
+        }
+        // **Delete acts on a single selection only**: a bulk delete has no confirmation flow in this build, and
+        // removing several folders behind one press is not a thing to add without one. `New group` is drawn and
+        // not wired -- the group modal does not exist here.
+        painter.text(
+            egui::pos2(bar.right() - 24.0, bar.center().y),
+            Align2::RIGHT_CENTER,
+            "Delete",
+            fonts::label(16.0),
+            theme.RED,
+        );
+        // **The glyph goes left of its label, by the label\'s own width.** Placing both by eye drew them on top of each
+        // other; `layout_no_wrap` knows how wide "Delete" is.
+        let delete_w = painter
+            .layout_no_wrap("Delete".to_owned(), fonts::label(16.0), theme.RED)
+            .size()
+            .x;
+        crate::icons::draw(
+            ui.painter(),
+            Glyph::Trash,
+            Rect::from_center_size(
+                egui::pos2(bar.right() - 24.0 - delete_w - 16.0, bar.center().y),
+                Vec2::splat(16.0),
+            ),
+            theme.RED,
+        );
+        painter.text(
+            egui::pos2(bar.right() - 120.0, bar.center().y),
+            Align2::RIGHT_CENTER,
+            "New group",
+            fonts::label(16.0),
+            theme.CONTRAST,
+        );
+        let new_w = painter
+            .layout_no_wrap("New group".to_owned(), fonts::label(16.0), theme.CONTRAST)
+            .size()
+            .x;
+        crate::icons::draw(
+            ui.painter(),
+            Glyph::BoxPlus,
+            Rect::from_center_size(
+                egui::pos2(bar.right() - 120.0 - new_w - 16.0, bar.center().y),
+                Vec2::splat(16.0),
+            ),
+            theme.CONTRAST,
+        );
+        if state.selected.len() == 1 {
+            let delete = Rect::from_min_size(
+                egui::pos2(bar.right() - 96.0, bar.center().y - 16.0),
+                egui::vec2(72.0, 32.0),
+            );
+            if ui.rect_contains_pointer(delete) && ui.input(|input| input.pointer.primary_clicked()) {
+                if let Some(id) = state.selected.iter().next() {
+                    state.confirm_delete = Some(id.clone());
+                    ui.ctx().request_repaint();
+                }
+            }
+        }
+    }
     // **The two filter-row menus, drawn here so the cards cannot paint over them.** They were drawn beside
     // their chips first and the first card covered them: the clicks worked and the menus were there, underneath.
     let pointer_pos = ui.ctx().pointer_interact_pos();

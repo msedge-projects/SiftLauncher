@@ -5561,3 +5561,22 @@ This build opened the instance every time, which throws away every tick the read
 
 So a reader can tick, then untick by pressing the card, and never leaves Home by accident. The modifier half of the rule is in the same
 expression but **untested**: the library has one instance, and an extension needs two.
+### The selection bar, drawn for the first time (2026-11-09)
+
+Selecting a card in the reference brings up a bar at the foot of the content column. This build had no bar at all: ticking a ring changed
+22 points of pixels and nothing else.
+
+Measured from the reference\'s own capture (`r1.png`): 64 points tall, the content\'s width less 32, sitting 80 above the content\'s floor, fill
+(39,41,46). Drawn now with its left group -- **"N selected" | rule | "Clear"** -- and its right group -- **"New group" and "Delete"**, the second
+in the destructive red, each with the reference\'s glyph.
+
+| what | state |
+|---|---|
+| the bar, its count, its fill and its rules | drawn (`bar4.png` against `r1.png`) |
+| `Clear` | **live** -- empties the selection, which is what its label says |
+| `Delete` | **live for a single selection**: it opens the same confirmation dialog the kebab\'s Delete does |
+| `Delete` with several ticked | **deliberately not wired** -- there is no bulk confirmation flow here, and one press removing several folders is not a thing to add without one |
+| `New group` | drawn, **not wired**: no group modal exists in this build |
+
+The glyphs were drawn on top of their labels first, because both were placed by eye; they are now placed from the label\'s laid-out width,
+which is the same fix the filter row needed and for the same reason.
