@@ -7581,3 +7581,27 @@ fix** and the difference it shows is not this build's. The finding is withdrawn.
 
 This is the second time this session that a capture pair has been treated as current without checking its age, and the first where the difference
 was convincing enough to write up. The check costs one `ls`: a capture older than the file it tests is evidence about the past.
+### Settings measured properly: 39 064, and the difference is the modal's geometry (2026-11-09)
+
+The 32 469 this table had carried was a frame I cannot date. A fresh verified pair, with **both clients on the Appearance tab** -- which took
+three attempts, because the first pair had the reference on Profile, the second had it on Discover after a click dismissed the modal, and the
+third matched -- reads **39 064** (titlebar 1 683, rail 318, content 34 095, sidebar 2 968).
+
+Banded by the flat finder, its heaviest cells are at **x 96-160, y 256-384**, about 5 300 flat pixels in eight cells. At 2x that region is the
+modal's own left rail in the reference and the **page behind it** in this build: our modal starts further right, so the rail falls outside it.
+
+**Two explanations were tested and both failed**:
+
+| hypothesis | measurement | verdict |
+|---|---|---|
+| the backdrop blur is missing (`backdrop-filter: blur(5px)`, `settings.rs:40`) | backdrop samples at four points: ref (22,24,28) (29,31,35) (29,31,35) (20,28,32) against ours (22,24,28) (29,31,35) (29,31,35) (17,25,28) | **within three units** -- the scrim is right, and the blur is a renderer item of a few pixels here, not thousands |
+| the scrim is too light | same samples | **no** |
+
+So the difference is **where the modal sits and how wide it is**, not how it is painted. The rail, the labels and the icons all match at 2x once
+the two are aligned, which is why the cells are concentrated at the modal's edge rather than across it.
+
+**Next**: measure the modal plate's rect on both -- its left, right and width -- and compare against `NewModal.vue`'s own dimensions. That is one
+capture and one source read, and it should close the largest flat cluster on the page.
+
+**Recorded**: `FINISHED.md` carried Settings at 32 469; the figure for the Appearance tab on this build is **39 064**, measured today, and the
+older number should not be quoted again.
