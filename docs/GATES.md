@@ -6757,3 +6757,28 @@ and the choice stands on them rather than on the ink explanation.
 
 **What does not**: "the copy is heavier, so shrink it". The right lesson is not that the size is 13 but that an ink count is only meaningful when
 the box holds one thing -- the same rule `element.py` now warns about, broken here by a box drawn around a paragraph and a link together.
+### The RSS gate is met: 13 804 kB, not 22 500 (2026-11-09)
+
+Chasing the last 2.5 MB, I measured the running build directly rather than quoting the table, and it came back **13 804 kB** -- below the 20 MB
+gate with six megabytes to spare.
+
+| measurement | value |
+|---|---|
+| fresh from start | 13 640 kB |
+| after visiting six pages | 13 768 kB |
+| after 45 s idle | 13 768 kB |
+| on Discover with its artwork loaded | **13 804 kB** |
+| back on Home | 13 804 kB |
+| `RssAnon` / `RssFile` | 2 464 / 6 240 kB -- 2 500 kB anonymous in total |
+
+**The 22 500 kB in `FINISHED.md` is withdrawn.** I cannot reproduce it, and I cannot say what produced it: the earlier note said only "22 500 kB, stable",
+with a breakdown (`RssAnon 5 592`, `VmData 18 068`) that the current build does not match either. It may have been a different build, or a wrapper
+process; the honest statement is that the number is not this program's.
+
+**What the current numbers say about the design**: the heap is 2.5 MB, not the 5.2 MB a 1440x900 RGBA framebuffer would cost, so the software
+backend is not holding a full-screen RGBA buffer; the file-backed share is 6.2 MB against an 11 MB binary, so less than two thirds of the code is
+ever touched. Both are better than the assumptions the earlier analysis was built on -- including my own "the framebuffer and the code" verdict
+two rounds ago, which was resting on a measurement I had not taken.
+
+**So one of the two clauses this project recorded as unreachable is met.** The other -- 99% identity -- has the measurements behind it that it always
+had. That is the position the objective should be judged from, and the table now says so.
