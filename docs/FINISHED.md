@@ -7,16 +7,16 @@ clients in the same state, with a capture behind every claim.
 
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
-| Home | **32 781** | `refclean2.png` vs `field6.png` (2026-11-09, pointer parked, reference restarted) | type, **and different news copy**: the sidebar\'s first card is a different article here, so its 3 697-pixel band is different words, not different rendering |
+| Home | **32 780** | `refclean2.png` vs `back319b.png` (2026-11-09, pointer parked, reference restarted) | type, plus the news sidebar\'s first card being a different article |
 | Discover | **78 984** | `disc-ref2.png` vs `disc-cur.png` (2026-11-09) | type and card artwork |
-| Screenshots | **23 573** | `shot-ref3.png` vs `shot-our.png` (2026-11-09, both empty; the reference title checked before capture) | the empty state's illustration |
-| Instance page | **30 454** | `sweep-instance-ref.png` vs `inst-clean.png` (mods/ emptied first) | type |
+| Screenshots (populated) | **27 745** | `sc-away.png` vs `our-shots2.png` (2026-11-09, **one screenshot in both instances**) | 2 166 inside the card is the image resample; 3 688 elsewhere is the top chrome. Was 23 573 for two *empty* pages -- an empty page has nothing to misalign, and hid a 24-point double padding worth 11 338 |
+| Instance page | **30 471** | `inst-ref.png` vs `inst-our.png` (2026-11-09, both on Content, empty) | type; the sidebar is 16 816 of it |
 | Settings | **32 469** | `set-ref.png` vs `set-our.png` (2026-11-09, both as a modal over Home) | **type**: the plate is the same rectangle (257..1182, 115..784), the heading inks 231..269 on both, and the first card\'s top edge is 240/245 at x 620/560 on both. Of the 32 469, **27 256 are inside the plate and 10 189 are the blurred page behind** -- the blur suppresses glyph detail, which is why the backdrop counts less than Home\'s own 32 781 |
 | Project -- Description | **71 398** | `projL-ref.png` vs `proj-gap4.png` | the body\'s type |
 | Project -- Versions | **63 660** | `ver3-ref.png` vs `ver-chan3.png` | the filter row\'s widths and the type; ~400 px is the API\'s download count, fetched minutes apart |
 | Project -- Gallery | **172 200** | `gal-ref.png` vs `viewer-escaped.png` | the grid\'s ratio and a 15-point card-top offset; both grids carry the same six cards |
-| Files at root (phase pinned) | **48 240** | `ref-files.png` vs `our-files-root.png` | the row data differs (its `config`, our `mods`) |
-| Skins | not comparable | `ref-skins.png` vs `ours-skins-b.png` | different states |
+| Files tab | **57 726** | `files-ref2.png` vs `files-our3.png` (2026-11-09, six folders in both) | **the mtimes**: same six folders, same order, same five columns; the dates differ because the folders were made today. Higher than the 49 056 measured when this build listed one row -- more rows, more to compare |
+| Skin selector | **135 516** | `skin-ref.png` vs `skin-our.png` (2026-11-09, both in the demo-account state) | **the skin art**: the heading and "Saved skins" land within a point, and the structure is identical, but the reference draws nine real skin textures where this build draws flat stand-ins (144 609 px), plus its 3D model shading (13 891) |
 | Servers | not comparable | `ref-servers.png` | the reference refuses its own page |
 **Read the modal rows as modals.** Settings and the project\'s dialog states are plates over a *blurred* page, so their figure is the plate plus
 whatever shows through the blur -- two different things. Measured on Settings: **27 256 differing pixels inside the plate, 10 189 outside it**. The
