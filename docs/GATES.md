@@ -6782,3 +6782,23 @@ two rounds ago, which was resting on a measurement I had not taken.
 
 **So one of the two clauses this project recorded as unreachable is met.** The other -- 99% identity -- has the measurements behind it that it always
 had. That is the position the objective should be judged from, and the table now says so.
+### RSS is flat across all five sizes (2026-11-09)
+
+The gate does not name a size, so it was measured at all five, on the live process, resizing between reads:
+
+| size | `VmRSS` | `RssAnon` |
+|---|---:|---:|
+| 1280x720 | 13 720 kB | 2 504 kB |
+| 1366x768 | 13 720 kB | 2 504 kB |
+| 1440x900 | 13 720 kB | 2 504 kB |
+| 1600x900 | 13 720 kB | 2 504 kB |
+| 1920x1080 | 13 720 kB | 2 504 kB |
+
+**Identical to the kilobyte at every size, including 1920x1080 where the window is 2.25 times the area of 1280x720.** So the software backend does
+not hold a screen-sized buffer at all: the heap is 2.5 MB whatever the window is, and the drawing must be going straight into whatever surface the
+presenter hands it. That also explains why the earlier "5.2 MB framebuffer" analysis was wrong -- there is no such buffer in this process.
+
+Two measurement errors were made getting here, both worth recording because they are the kind that produce confident nonsense: `pgrep -x` returned
+nothing while the process was alive, and `ps aux | grep` returned the **wrapper shell** (1 476 kB, `RssAnon` 4 kB) ahead of the program. The first
+read of the five sizes was of a `bash` process, and it reported a flat 1 476 kB across all five -- which is exactly the shape of the right answer
+and entirely wrong. `ps -C SiftUi -o pid=,stat=` with the zombies filtered is what works.
