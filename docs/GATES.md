@@ -5629,3 +5629,21 @@ on a card the page menu no longer appears.
 
 So `menu_popover` does not render from a zero-size anchor. The fix is to give it a real one -- the pointer plus the menu\'s own
 `bottom-start` placement -- rather than to keep guessing. Both failures are written down so the next attempt starts from them.
+### The card\'s own menu, at the pointer, and why it took three attempts (2026-11-09)
+
+A right press on a card opened the **page\'s** "+ New instance" menu. It now opens the card\'s own verb list at the pointer, placed
+`bottom-start` as the reference\'s `ContextMenu.vue:32-33` is: **Play, Edit, Duplicate instance, Open folder, Delete**.
+
+Three things had to be true, and each one was missing in turn:
+
+| what was missing | how it showed | fix |
+|---|---|---|
+| the page handler took the press first | "+ New instance" over a card | the page handler skips presses inside a card\'s rect |
+| `menu.open` was never called | setting the anchor alone drew **nothing** -- `menu_popover` returns early while `open_for` is `None` | the press opens the menu |
+| the kebab\'s block overwrote the anchor | the menu drew **under the card**, anchored to the kebab | `Menu::opened_at` remembers the pointer, and the kebab\'s block honours it |
+
+And one more that only the capture could show: with a zero-size anchor, `anchor.right() - width` put the panel **off the window\'s left
+edge**, because the placement assumes a right-aligned trigger. A pointer-opened menu now places its left edge at the pointer instead.
+
+The first two of those are the same class of failure this file keeps recording -- **a control that looks wired and is not**, because the
+thing it depends on was never called. The third is a familiar one too: two code paths writing one field, and the later one winning silently.

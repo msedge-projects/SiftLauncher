@@ -480,6 +480,10 @@ pub struct Menu {
     /// The id of the instance whose kebab popover is open. One at a time: two open menus on
     /// one page would each swallow the other's presses.
     pub open_for: Option<String>,
+    /// **Where a right press opened the menu**, when that is how it opened. The kebab\'s own block below sets the
+    /// anchor to the kebab whenever the menu is open, which overwrote the pointer and put the card\'s menu under the
+    /// card instead of under the cursor.
+    pub opened_at: Option<egui::Pos2>,
     /// The row the keyboard is on, if any. Set by the arrow keys, `Home`, `End` and the
     /// type-ahead, and the row `Enter` activates -- the reference's menu is reachable without a
     /// pointer (`button-menu.ts:102-131`).
@@ -496,6 +500,7 @@ impl Menu {
     /// arrow key starts at the top rather than resuming whatever the last menu highlighted.
     pub fn open(&mut self, id: &str) {
         self.open_for = Some(id.to_owned());
+        self.opened_at = None;
         self.highlight = None;
         self.typed.clear();
         self.typed_at = 0.0;
@@ -504,6 +509,7 @@ impl Menu {
     /// Close the menu and forget its keyboard state.
     pub fn close(&mut self) {
         self.open_for = None;
+        self.opened_at = None;
         self.highlight = None;
         self.typed.clear();
         self.typed_at = 0.0;
@@ -1872,10 +1878,21 @@ fn list(
         // **A right press on the card opens the card\'s own menu**, at the pointer (`instance-group/index.vue:645-648`:
         // `@contextmenu.prevent.stop` with `placement bottom-start, distance 0`). It used to open the *page\'s*
         // "+ New instance" menu, which is the wrong element: the card has its own verb list.
-        // **A right press on a card opens nothing yet.** The reference gives the card its own menu at the pointer
-        // (`instance-group/index.vue:645-648`); the page menu that used to appear there was the wrong element and is
-        // now suppressed for presses over a card. Two attempts to reuse the row popover with a zero-size anchor drew
-        // nothing visible -- see `docs/GATES.md` -- so the card's menu is a known hole rather than a half-drawn one.
+        // **A right press on a card opens the card\'s own menu at the pointer** (`instance-group/index.vue:645-648`).
+        // The first two attempts failed for one reason: `menu_popover` returns early unless `menu.open` has been
+        // called, so setting the anchor alone drew nothing. The anchor is a zero-size rect at the pointer, which the
+        // popover places above-right of -- the reference places it below-left (`bottom-start`), recorded as a
+        // difference rather than fixed here.
+        if ui.input(|input| input.pointer.secondary_clicked()) {
+            if let Some(at) = ui.ctx().pointer_interact_pos() {
+                if card.contains(at) {
+                    menu.open(&instance.id);
+                    menu.opened_at = Some(at);
+                    anchored = Some((instance.id.clone(), Rect::from_min_size(at, Vec2::ZERO)));
+                    ui.ctx().request_repaint();
+                }
+            }
+        }
         if card_response.clicked() && matches!(action, Action::None) {
             // **A press with a selection live toggles that card instead of opening it**, and so does a press with
             // Shift, Ctrl or Cmd held (`instance-card.vue:148-154`, `modified-selection.ts:11-19`). Opening an
@@ -1979,7 +1996,12 @@ fn list(
             }
         }
         if menu.open_for.as_deref() == Some(instance.id.as_str()) {
-            anchored = Some((instance.id.clone(), kebab));
+            // A menu opened by a right press stays where the press was; one opened by the kebab sits at the kebab.
+            let anchor = match menu.opened_at {
+                Some(at) => Rect::from_min_size(at, Vec2::ZERO),
+                None => kebab,
+            };
+            anchored = Some((instance.id.clone(), anchor));
         }
     }
     // Where the rows stopped: the last card's own bottom plus the 12-point row gap, which is
@@ -2469,10 +2491,16 @@ fn menu_popover(
     } else {
         (anchor.top() - MENU_DISTANCE - height).max(bounds.top())
     };
-    let panel = Rect::from_min_size(
-        egui::pos2(anchor.right() - width, top),
-        egui::vec2(width, height),
-    );
+    // **A pointer-opened menu is `bottom-start`**, as the reference\'s card context menu is
+    // (`ContextMenu.vue:32-33`: placement `bottom-start`, distance 0). The kebab\'s own menu hangs below-right of
+    // the kebab, and the zero-size anchor a right press gives has no right edge to align to -- left \'right() - width\'
+    // it landed off the window\'s left edge.
+    let left = if menu.opened_at.is_some() {
+        anchor.left().min(bounds.right() - width).max(bounds.left())
+    } else {
+        anchor.right() - width
+    };
+    let panel = Rect::from_min_size(egui::pos2(left, top), egui::vec2(width, height));
     // `bg-surface-3` is `RAISED_BG`; the ring is `--surface-5`, one step above it, which is
     // `SURFACE_5` and not `DIVIDER` (`variables.scss:238-239`).
     painter.rect_filled(panel, MENU_RADIUS, theme.RAISED_BG);
