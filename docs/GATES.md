@@ -4312,3 +4312,36 @@ The certain facts are recorded and the rest is left alone:
 measurement of the card\'s own geometry -- the `SIFT_PROJECT_PROBE` rows already emit `gallery` and `gallery-picture` rects, which is the
 instrument that would settle it without reading pixels at all. That is what the next reader of this row should use; guessing at tone
 boundaries cost two attempts and produced nothing.
+## Closing entry for this stretch (2026-11-08, rounds 219-248)
+
+**What was fixed, in the order it was found:**
+
+1. **A triangle with infinite corners** blacked the whole Project page. Four infinite vertices in a 5 729-vertex text mesh made every
+   edge test pass for every pixel. Found by dumping the framebuffer and asking which primitive wrote the pixel -- after thirteen rounds
+   had eliminated the UI, the layout, the surface, the buffer, the present path, the display and the window. One `continue` fixes it for
+   any mesh, anywhere.
+2. **A picture was an icon.** One `MAX_ICON = 160` cap served both; project body pictures are four hundred points wide. Split into
+   `MAX_ICON` and `MAX_PICTURE`, keyed separately. **222 886 -> 90 727** on the Project page.
+3. **The hosting banner was suppressed** by `shared = Rect::NOTHING` on project pages. Lifted into `panel::hosting_banner` and drawn by
+   both callers. **90 727 -> 72 350**.
+4. **Loaders and environments sat in the header\'s category chips** -- two chips that belong in the sidebar, where they already were.
+   **72 350 -> 71 380**.
+5. **The Versions filter row was four chips** where the reference has two comboboxes; replaced, with working menus, and driven.
+6. **Smaller corrections**, each measured: a monitor glyph on twenty cards that should be a globe (Discover 78 759 -> 78 538), a badge
+   narrower than its own words, a platform chip reading `fabric` with no mark, `1w ago` where the reference prints `last wk.`, a channel
+   indicator that was a bare dot, and a header rule four points low.
+
+**What is closed to further work, and why:**
+
+| clause | state | the number that says so |
+|---|---|---|
+| idle RSS under 20 MB | **not reachable** | 22 628 kB: 5 064 framebuffer, 7 508 own code at `-Oz`+LTO, 3 368 heap, 1 280 libc |
+| pixel parity | **type-bound** | every driven page within a few thousand pixels; the remainder is glyph metrics |
+| the Gallery tab | **measured, not explained** | 172 200, a 15-point card-top offset and an unmeasured picture ratio |
+
+**What the ledgers hold:** 666 nine-cell matrix rows (99 DONE, 38 VERIFIED, 455 OPEN, 20 OPEN-WITH-CAUSE, 15 RENDERER-RISK, 8
+BLOCKED-SERVICE, 12 NOT-IN-SOURCE); seven pages with a capture pair and a number in FINISHED; 264 tests green; 638 commits, tree clean.
+
+**And the honest sentence about the whole objective**: it is not achieved, it is not close to achieved in the sense the objective means
+by "1:1", and the distance that remains is now described rather than assumed -- one renderer property this build cannot reproduce, one
+gate its architecture cannot meet, and a type metric nobody has chosen to chase.
