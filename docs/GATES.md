@@ -5280,3 +5280,30 @@ could not see it. That is the same asymmetry this file recorded for the filter r
 drawn somewhere else -- the 2x crop shows a light disc where the reference has a dim one, and after the change it should be dim in both.
 Either the disc moved with the label\'s new inset, or that pixel belongs to the label\'s first letter. One probe would settle it and this round
 ran out before it was pointed at the right coordinates.
+### Two "Getting started" cards, and six points that would not move (2026-11-09)
+
+Last round\'s note said the ticked row\'s ink was 107 too light and that the disc\'s position was unverified. Both were wrong in the same way:
+**the measurement box straddled two rows.** Scanning the row\'s area for its brightest pixels showed the culprit at y **135** -- the *second*
+row\'s unticked ring -- not in the completed row at all. With the box corrected the completed label matched to 7, before any change.
+
+Then the real difference: sampling a column down the card gave the reference\'s completed label at **y 114** and this build\'s at **120**.
+
+**And there are two implementations of that card.** `panel.rs` has `getting_started_card` (used by a project page) and a second, larger
+routine that Home actually draws. Three edits went into the first one and changed nothing on screen -- a no-op build looks exactly like a
+broken knob, and this is the second time this file has recorded that.
+
+The right one uses `plan.steps_first` for its rows:
+
+| attempt | what moved | Home @40 |
+|---|---:|---:|
+| baseline | -- | **32 864** |
+| `steps_first - 6` (rows up, news held still) | the label reached y 114, **exactly the reference\'s** | 33 372 (+508) |
+| reverted the rows, moved the label to `row.center().y - 7` | **nothing moved** -- it is another label call | 33 331 (+467) |
+| reverted everything | -- | **32 864** |
+
+So aligning the label\'s ink to the reference\'s exact row costs 508 pixels, because the row\'s **fill** moves with it and the fill was what
+matched. The label sits six points lower inside its row here than in the reference, and only the label can move -- third time in this file
+that a metric prefers a misaligned element to an aligned one.
+
+**Reverted.** The tree is at 32 864 / 50 298, the numbers it had before the round, and the six-point offset is recorded rather than left as a
+half-made change in a card with two implementations.
