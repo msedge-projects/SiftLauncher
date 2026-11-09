@@ -5502,3 +5502,27 @@ the next change belongs -- not in the card\'s own height, which the program says
 
 **Not changed this round**: the offset, because it comes from the shell\'s rect and that rect is shared with Home, whose sidebar currently
 matches. Changing it without measuring Home first is how the last three rounds went.
+### The project sidebar: stopped, at its best-measured state (2026-11-09)
+
+Six rounds have now been spent on this column. The tally, all against the same reference capture and the same 258 000-pixel slab:
+
+| change | difference |
+|---|---:|
+| the state as found (card at y 68, 202 drawn, rows 52 below, pitch 44) | 19 559 |
+| rows to the reference\'s pitch of 48 and 34 tall, first row 70 below | **18 664** |
+| card height 218 returned instead of 234 | 19 681 |
+| card height 202 | 19 681 |
+| the card moved up 14 to the reference\'s own top of 54 | 19 595 |
+
+**Every change that moved the card towards where I measured the reference\'s card to be scored worse**, and the one change that helped was
+the rows inside it. That is a pattern, not noise: the reference\'s card is not where I keep measuring it. The page-background scan that located
+this build\'s card exactly (68..269) returns **no runs at all** on the reference\'s column, so the reference\'s cards do not have a
+page-coloured gap between them and the method does not transfer.
+
+**Decision: the column is left as it measures best** -- rows at the reference\'s pitch, card where the count prefers it -- and this is the last
+round that will move it without a new instrument. What is missing is the reference\'s own card rect, and the only ways to get it are a probe
+inside an app this build does not control, or an edge that is unambiguous in its pixels. Neither exists yet; three proxies have been tried and
+all three disagreed.
+
+Six rounds for one card, on a page whose total is 19 595 of a 1.3-megapixel frame -- 1.5%. The time was not well spent, and the record says so
+rather than presenting the churn as progress.
