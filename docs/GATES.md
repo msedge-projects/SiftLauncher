@@ -7966,3 +7966,13 @@ and a button, and the missing thing is the scroll container rather than the card
 
 **What the remaining rounds should do instead**: close matrix rows by driving states, and take page-level defects that are one constant, one
 glyph or one string -- which is where every measurable win of the last ten rounds has come from.
+**CORRECTED in the same round**: I read that expression as the card's height and it is not. The plan's own test asserts it equals **26.0** --
+"the card ends 26 above it" -- so it is the *gap* between the card's last line and the banner's top, not the space the card occupies.
+
+The conclusion is unchanged and now rests on the right line: `plan.banner == g::WINDOW.1 - BANNER_H` ("the banner is pinned to the foot") and
+`plan.card > plan.news`, with the card's block ending 26 points above that banner. A second card needs roughly 300 points that the column does not
+have, and the 26 spare is the reference's own measured gap rather than slack.
+
+**The lesson is the same one as the last four rounds, and I would rather write it than bury it**: a single assertion read quickly looks like
+arithmetic and is often a constant someone chose. Two of this session's confident structural claims (this one, and the "plate" that turned out to
+be the rows) came from reading one line of a test as if it were a derivation.
