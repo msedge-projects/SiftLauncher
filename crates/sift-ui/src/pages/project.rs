@@ -2619,6 +2619,14 @@ pub fn panel(ui: &mut Ui, rect: Rect, theme: &Theme, project: &Project) -> f32 {
             [has_instance, false, false],
             ["Create first instance", "Sign in to Minecraft", "Sign in to Modrinth"],
         );
+        // **Ask the program, not a crop.** The card's own height is invisible against its rows' rings in a capture:
+        // three proxies gave 218, 215 and 234. `SIFT_PANEL_PROBE=1` prints what was actually laid out.
+        if std::env::var_os("SIFT_PANEL_PROBE").is_some() {
+            eprintln!(
+                "panel card getting-started y={y:.1} h={used:.1} width={:.1}",
+                rect.width()
+            );
+        }
         y += used;
     }
     let painter = ui.painter();

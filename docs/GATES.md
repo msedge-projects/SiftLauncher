@@ -5461,3 +5461,22 @@ measured state and because oscillating between three proxies has cost three roun
 
 **The instrument to build next**: a probe that prints the sidebar\'s card rects the way `SIFT_HOME_PROBE` prints the grid\'s. Then this number is
 read rather than inferred, and the crop/ring/count argument ends.
+### The probe that ends the argument, and what it says (2026-11-09)
+
+`SIFT_PANEL_PROBE=1` prints the sidebar\'s cards as they are laid out, the way `SIFT_HOME_PROBE` prints Home\'s grid. On a project page:
+
+```
+panel card getting-started y=68.0 h=234.0 width=252.0
+```
+
+So this build draws the card at **y 68, 234 tall, 252 wide** -- which is the 234 the pixel count preferred, and neither the 218 of my crop nor
+the 214 of my ring scan. Both of those were readings of a *neighbouring* row\'s ring, as the third entry in this file suspected.
+
+**The instrument is the deliverable.** Three rounds went to crops, ring runs and column counts disagreeing about a number that the program knows
+exactly and would have printed on request. The lesson is not new here -- "the rect comes from the program, never off a capture" is rule one of this
+file\'s own drives -- but it had only been applied to Home\'s grid, never to the sidebar\'s cards.
+
+**Still open**: the reference\'s card rect. Its pixels give a top ring at 48 and a bottom somewhere near 262, and our probe says ours is 68..302, so
+the card is 20 lower and 20 taller than the reference\'s -- two round numbers that make one another plausible, and neither verified against the
+reference\'s own program, which this build cannot run. What it can do is read the reference\'s edges where they are *unambiguous*: the card\'s ring
+is a 1-point line above a 17-point fill, and a scan for a full-width run of that ring colour, rather than any light run, would find only it.
