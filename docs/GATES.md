@@ -5420,3 +5420,25 @@ but it has been wrong about both, and 1 017 pixels is not an argument.
 
 Tests were updated to the measured numbers rather than the old ones: 70 for the first row, 234 for the returned height, and the geometry
 test now asserts all of them, including that the drawing expressions mention the constants.
+### The 20 MB gate, measured again, and the image cache ruled out (2026-11-09)
+
+The gate had not been measured in a while. Built fresh, idle at 1440x900 with the pointer parked:
+
+| | value |
+|---|---|
+| **VmRSS** | **22 500 kB -- 22.5 MB**, against a 20 MB gate |
+| RssAnon | 5 592 kB |
+| VmData | 18 068 kB |
+
+Stable across three samples two seconds apart, so it is an idle floor rather than a warm-up.
+
+**The image cache was the obvious lever and it is not the one.** Decoded textures cost cap*cap*4 bytes in anonymous memory, and the caps
+were 640 for pictures and 160 for icons -- 1.6 MB and 100 kB per entry. Lowering them to 384 and 128 saved **112 kB**: 22 500 -> 22 388.
+
+That number says the cache holds almost nothing at idle on this page -- a handful of icons -- and that the 5.6 MB of anonymous memory is
+elsewhere: egui\'s own tessellation and texture atlas, the process\'s allocator, and the five-megabyte framebuffer that the software backend
+needs for a 1440x900 window in 32-bit colour. Reverted, because 112 kB is not worth a single icon being resampled.
+
+The gate therefore stands where it stood: **2.5 MB over, with the two biggest line items being the framebuffer this backend requires and the
+code itself.** Neither is reachable by configuration; both were measured, and the numbers are here so the next round does not spend its time
+on the cache again.
