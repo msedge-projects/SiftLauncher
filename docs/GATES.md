@@ -7226,3 +7226,27 @@ is the code's, and it is not explained by any of the above.
 **Cost of the detour**: three builds and most of two rounds, against the one build that would have answered it at the start. The instinct to
 blame the most recent change was wrong twice -- first arboard, then the cache -- and both times the reasoning was 'it changed just before the
 number did', which is not evidence.
+### Trimming the allocator after a synchronous decode: 5 MB of the 14 (2026-11-09)
+
+The viewer's 14 MB survived three explanations. Eviction was the second: the cache budget was cut to 4 MiB, below one full-size
+texture, so that the next grid insert would drop it -- and memory went **up**, 38 840 to 45 668 kB at the viewer, because the budget
+then evicted the grid's thumbnails too and they were decoded again on the next frame. Reverted to 8 MiB.
+
+The third explanation was right. `fetch` -- the asynchronous path -- calls `trim_heap()` when a reply lands, and `trim_heap` is
+`malloc_trim(0)` on Linux. The **synchronous** file decode, which is what the viewer uses, never called it, so the 5 MB bitmap that
+became the texture stayed in the allocator as a free arena. Adding the same trim after any synchronous decode of a megabyte or more:
+
+| state | before | after |
+|---|---:|---:|
+| grid | 24 920 kB | 25 036 kB |
+| viewer open | 38 840 kB | **33 828 kB** |
+| viewer closed | 38 840 kB | 33 872 kB |
+| back on Home | 38 840 kB | 33 924 kB |
+
+**Five megabytes back at the peak, and the plateau is unchanged**: closing the viewer still leaves the process about 9 MB above the grid,
+because the texture itself -- 5.2 MB -- is a cache entry under the 8 MiB budget and nothing evicts an entry that is under budget. Evicting
+it means removing that path's entry when the viewer closes, which needs a `forget` on the cache and a call at the close handler; that is the
+next step and it is small.
+
+**The general lesson, which is not about this viewer**: a cache that only evicts on insert cannot release the thing the reader just stopped
+using. Whatever the budget, the last-used entry stays until something else arrives to push it out.

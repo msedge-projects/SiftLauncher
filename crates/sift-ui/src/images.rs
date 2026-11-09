@@ -226,6 +226,13 @@ impl Images {
         let bytes = size[0].saturating_mul(size[1]).saturating_mul(4);
         self.entries.insert(key, Entry::Ready(texture.clone(), tick, bytes));
         self.evict();
+        // **Trim after a large synchronous decode.** `fetch` trims when an asynchronous reply lands, but a file decode --
+        // which is what the viewer does -- never did, so the 5 MB bitmap that became the texture stayed in the allocator as
+        // a free arena and the process never went back down: one preview read 38 840 kB with the viewer closed and the reader
+        // back on Home. Only worth a syscall when the decode was big.
+        if bytes >= 1024 * 1024 {
+            trim_heap();
+        }
         Some(texture)
     }
 
