@@ -6470,3 +6470,24 @@ cannot both be right, and `BASE` is exact.
 
 The page has gone **39 083 -> 26 482** over four rounds, 12 601 of it from the double padding and the rest from these two. What is left is 7 133
 of content, of which 2 166 is the image resample and the remainder is type on a page with a heading, two chips, a search field and a group header.
+### Discover: the emoji in the API text, and two smaller differences (2026-11-09)
+
+Discover re-measured on the current lab: **78 363** (content 58 360, sidebar 17 138) -- the largest populated page, and the second largest in the
+project after the Skin selector.
+
+At 1:1 the first two cards are otherwise the same object: same name, same author line, same summary, and the same five tag chips (Client,
+Lightweight, Multiplayer, Optimization, Fabric). Three differences are visible:
+
+| difference | what it is |
+|---|---|
+| the reference draws a **download glyph and a compact count** in front of the second card summary; this build prints **`????`** | characters this build has no glyph for -- emoji in the project summary, which is user-supplied API text |
+| the author line has an **external-link mark** after the name in the reference | this build omits it |
+| the card art | the reference shows real modpack icons, this build shows them too -- the art itself matches |
+
+**The `????` is a real limitation, not a bug to fix this round.** `ab_glyph` has no emoji fallback, so any character outside the bundled faces
+renders as a replacement box or a question mark. The reference uses the platform font stack and falls back to the system's emoji font. Closing it
+would mean bundling an emoji face -- several megabytes, against a 20 MB RSS gate and a build that is already 2.5 MB over it. That is a trade this
+project has already made once, for the text rasteriser, and the answer is the same: record the cause, do not pretend a knob exists.
+
+The external-link mark is **not** in that category: it is a 16-point glyph this build already has (`Glyph::ExternalLink` or similar), simply not
+drawn on this line. That is next round's work, and it is a call rather than a font.
