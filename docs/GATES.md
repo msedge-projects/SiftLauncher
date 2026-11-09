@@ -6530,3 +6530,23 @@ when correctly placed, so the cost says nothing about position. The 10x crop say
 
 **The note that denied it** -- claiming `LegacyProjectCard.vue` prints `by {author}` and nothing else -- had stood for many rounds. It was specific,
 cited a file, and was never checked. A subagent audit of the whole tree found nine more of the same shape; they are listed in the next entry.
+### Two of the audit's claims, adjudicated against the running reference (2026-11-09)
+
+A subagent listed ten comments that assert something *negative* about the reference ("the reference has no X"). Two were settled by driving
+the reference, and they came out in opposite directions:
+
+**Claim 4, supported.** `instance.rs:228` says the Screenshots tab is conditional on `showScreenshotsTabInInstances`. The reference's Settings
+-> **Features** carries three toggles in a row -- "Show Worlds tab in instances", "Show Files tab in instances", "Show Screenshots tab in
+instances" -- and only the third is **off** by default, while its neighbours are on. That is exactly the arrangement the claim describes, and it is
+the first time it has been checked against a capture rather than against a cited line.
+
+**Claim 5, refuted.** `settings.rs:2032` says "a signed-out body would be a state the reference does not have". The reference's Settings ->
+**Profile**, signed out, shows an **illustration of a green robot**, "Modrinth account required", "Sign in with a Modrinth account to customize your
+public profile.", and a green **Sign in** button with an arrow glyph. The claim is wrong: the reference has a signed-out body, and this build
+already draws most of it.
+
+**What the comparison found that no claim mentioned**: this build's Profile tab draws the same heading, copy and button, and **no illustration**.
+That is a real gap on a tab that is now reachable in both clients, and it is worth more than either adjudication.
+
+**Also visible in the same pair**: this build's Settings rail draws a scrollbar at its right edge where the reference's draws none -- the overlay
+convention recorded earlier, still unfixed.
