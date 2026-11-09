@@ -7148,3 +7148,28 @@ current box is its own rect from the frame probe) and reads the clipboard back w
 
 **Also worth recording**: `arboard` was added as a dependency, which is the first thing this project has added to the binary in a while. It
 built, but its cost to the 13 720 kB RSS figure has not been re-measured, and the RSS gate is the one clause that is currently met.
+### The RSS gate holds until one screenshot is opened (2026-11-09)
+
+Adding `arboard` for the card's copy button, I re-measured RSS as promised, and it read **28 108 kB** against the 13 720 kB certified two
+rounds ago. The dependency is not the cause, and the numbers say so:
+
+| | before | after |
+|---|---:|---:|
+| binary | 11 098 056 | **11 344 192** (+246 kB) |
+| `RssAnon` | 2 464 kB | **10 840 kB** (+8 376 kB) |
+| `RssFile` | 6 240 kB | 12 248 kB |
+
+A 246-kilobyte binary cannot cost eight megabytes of heap. The heap growth is the **image cache**: this session opened the full-size viewer once,
+which decodes a 1440x900 screenshot to RGBA -- 5.2 MB -- and uploads a texture of the same size. Closing the viewer, leaving the page and
+returning to Home all leave it in place (28 112, 28 152), so a single preview makes the process permanently ~2x its idle size.
+
+**So the gate's figure has a condition it did not have before**: 13 720 kB is the size of a process that has not opened a picture. The gate says
+"idle RSS under 20 MB", and 28 MB after one preview is not idle in the strict sense -- but a launcher whose memory doubles the first time a
+reader looks at a screenshot is not meeting the spirit of it either.
+
+**The fix is eviction, not a smaller cache**: the decoded image and its texture should be dropped when nothing has drawn them for a frame or two.
+The cache is `crates/sift-ui/src/images.rs`; the question is whether it keys on use-per-frame or keeps everything it has ever loaded, and the
+measurement above says it is the latter.
+
+**Recorded as a regression against a met gate** -- the first time this session has broken one. It is not caused by the copy button, but it was
+found by checking the copy button's cost, which is the argument for re-measuring after any dependency change rather than assuming.
