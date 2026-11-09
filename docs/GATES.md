@@ -7829,3 +7829,29 @@ the better number.
 **What a real fix would look like**: lift the *children* of the pane and not the pane -- the row layout's own start, not the rect it is clipped to.
 That is a different edit in a different place (`settings.rs`'s per-row draw, not `content_rect`), and it is the one the cross-correlation actually
 calls for. Recorded rather than attempted, because the round's two builds went to a lift that had to come out.
+### The metric rewards misalignment, and that is the most useful thing found today (2026-11-09)
+
+Lifting only the children (`CONTENT_PADDING_TOP` 28 -> 23, leaving `content_rect` alone) produced a frame **identical to the rect lift**:
+total 46 437, 31 721 inside the modal, the cards row at dy 0 with 334 differing. So the plate-edge theory was wrong; the two edits move the same
+pixels.
+
+**The explanation is in the metric, not the layout.** At dy +4 -- a *wrong* geometry -- the pages' rows sit four points apart, and across a
+sharp edge the two renderings' gradients overlap in a way that lands more often than not on the same side of the threshold. At dy 0 -- the
+*right* geometry -- every edge is compared with its true counterpart, and the differences that were being hidden by the offset become visible:
+
+| | dy +4 (wrong place) | dy 0 (right place) |
+|---|---:|---:|
+| theme cards row, best shift | 581 | **334** |
+| the same row, compared in place | 581 at +4 | **334 at 0** |
+| inside the modal | **27 256** | 31 721 |
+
+The row is *closer* by 247 pixels and the page is *worse* by 4 465. Both numbers are correct; they measure different things. A pixel count at a
+fixed threshold is not monotone in fidelity, because an offset can cancel.
+
+**So the right thing is to keep the correct geometry and say so.** The rows now sit where the reference's do; the count is higher because the
+comparison is now honest. `CONTENT_PADDING_TOP` stays at 23.
+
+**What this costs the objective**: every page figure in this project is a count, and a count can be improved by moving things slightly wrong. None
+of the earlier improvements were deliberate in that sense -- they were judged by the count -- but the possibility that some of the hundreds of
+pixels "saved" in earlier rounds came from a small misalignment is real and cannot be ruled out after the fact. What can be stated is the rule from
+here: **align first, then count**, and treat a count that improves when geometry moves away from the reference as a warning rather than a win.

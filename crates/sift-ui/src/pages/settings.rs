@@ -1280,7 +1280,11 @@ const CONTENT_PADDING: f32 = 24.0;
 /// The pane's top inset, which the capture puts four points above the horizontal one: the
 /// reference's first heading ink sits 117 points below its plate's top edge, and its cards sit
 /// 24 points in from the pane's sides. One constant cannot be both.
-const CONTENT_PADDING_TOP: f32 = 28.0;
+// **23, not 28: the rows, not the plate.** Cross-correlating the Appearance pane against the reference finds the theme cards
+// and the System row both preferring the reference five points higher, while the rail beside them prefers where it is. Lifting
+// `content_rect` by five moved the plate as well and cost 4 500 pixels (42 213 -> 46 437); lifting this padding moves only the
+// children, which is what the correlation asked for.
+const CONTENT_PADDING_TOP: f32 = 23.0;
 
 /// The space a section rule puts above itself: `mt-8` (`features-settings.vue:325`).
 // Measured: the reference's rule after the Appearance sync row sits 33 points below that
