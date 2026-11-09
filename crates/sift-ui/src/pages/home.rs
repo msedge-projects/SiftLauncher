@@ -637,6 +637,11 @@ pub struct State {
     /// **The groups the reader has folded shut**, by name. The reference\'s header chevron collapses its section;
     /// this set is what makes the chevron a control rather than a decoration.
     pub collapsed: std::collections::HashSet<String>,
+    /// The grouping the set above was folded under. **A fold belongs to the key that made it**: "Fabric" folded under
+    /// `Loader` must not arrive folded under `Game version`, where a group can share the name but not the meaning.
+    pub folded_under: Option<&'static str>,
+    /// How far each group has folded, 0 open to 1 shut, so a press moves the section instead of teleporting it.
+    pub fold_progress: std::collections::HashMap<String, f32>,
 }
 
 impl State {
@@ -1524,6 +1529,13 @@ fn list(
     ordered(&mut shown, state.sort_label);
     // A grouped page draws a header above the grid and moves the grid down by its height.
     let grouped = matches!(state.group_label, Some(key) if key != "No grouping");
+    // **A fold belongs to its key.** Changing the grouping drops every fold, or a group that happens to share a name
+    // with one folded under another key arrives shut.
+    if state.folded_under != state.group_label {
+        state.collapsed.clear();
+        state.fold_progress.clear();
+        state.folded_under = state.group_label;
+    }
 
 
     // A dialog that was already open when this frame began owns every press in it. `egui::Modal`
@@ -1592,15 +1604,28 @@ fn list(
     let columns = (((rect.width() + 12.0) / (168.0 + 12.0)).floor().max(1.0)) as usize;
     let mut group_shift = vec![0.0f32; group_names.len()];
     let mut cursor = 0.0f32;
-    for (group, count) in group_counts.iter().enumerate() {
+    // **The fold is animated**, 150 ms, which is what the reference\'s sections take to open and close. The
+    // progress per group is advanced here and the layout reads it, so a section moves instead of teleporting.
+    let dt = ui.input(|input| input.stable_dt).min(0.1);
+    let mut group_visible = vec![0.0f32; group_names.len()];
+    let mut group_folded = vec![false; group_names.len()];
+    for (group, name) in group_names.iter().enumerate() {
+        let target = if state.collapsed.contains(name) { 1.0 } else { 0.0 };
+        let progress = state.fold_progress.entry(name.clone()).or_insert(0.0);
+        if (*progress - target).abs() > f32::EPSILON {
+            let step = dt / 0.15;
+            *progress = if *progress < target {
+                (*progress + step).min(target)
+            } else {
+                (*progress - step).max(target)
+            };
+            ui.ctx().request_repaint();
+        }
+        group_folded[group] = *progress >= 1.0;
+        let rows = group_counts[group].div_ceil(columns) as f32;
+        group_visible[group] = rows * (208.0 + 12.0) * (1.0 - *progress);
         group_shift[group] = cursor;
-        // **A folded group takes only its header**, which is what the reference\'s chevron does.
-        let rows = if state.collapsed.contains(&group_names[group]) {
-            0
-        } else {
-            count.div_ceil(columns)
-        };
-        cursor += GROUP_HEADER_H + rows as f32 * (208.0 + 12.0);
+        cursor += GROUP_HEADER_H + group_visible[group];
     }
     if grouped {
         let painter = ui.painter();
@@ -1685,8 +1710,9 @@ fn list(
         // **A group's cards start below its own header**, not at it: with the shift alone the first group's cards
         // began exactly where its heading was drawn, and the card painted over the heading.
         let grid_shift = if grouped { group_shift[group_of[index]] + GROUP_HEADER_H } else { 0.0 };
-        // A folded group draws its header and nothing under it.
-        if grouped && state.collapsed.contains(&group_names[group_of[index]]) {
+        // A fully folded group draws its header and nothing under it; a folding one is clipped to the height
+        // it has left, so its cards slide out of view rather than vanishing at a midpoint.
+        if grouped && group_folded[group_of[index]] {
             continue;
         }
         // The card, its pill and its kebab from the one function the probe and the tests read.
@@ -1695,6 +1721,19 @@ fn list(
             if grouped { index_in_group[index] } else { index },
             grid_shift,
         );
+        // The clipped painter has to outlive the reference, so it is bound before the shadow.
+        let clipped;
+        let painter: &egui::Painter = if grouped {
+            let group = group_of[index];
+            let band = rect.top() + ROW_TOP + group_shift[group] + GROUP_HEADER_H;
+            clipped = painter.with_clip_rect(Rect::from_min_max(
+                egui::pos2(rect.left(), band),
+                egui::pos2(rect.right(), band + group_visible[group].max(0.0)),
+            ));
+            &clipped
+        } else {
+            painter
+        };
         let is_selected = selected_ids.contains(&instance.id);
         // A selected card's plate lifts one step, which is what the reference's capture shows while the ring is ticked.
         painter.rect_filled(

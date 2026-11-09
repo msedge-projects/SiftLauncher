@@ -4973,3 +4973,22 @@ The default page is unchanged by any of it: **Home still measures 31 339**, same
 
 **Still open**: the chevron\'s rotation is a different glyph rather than a rotated one (they agree at 16 points), and there is no
 animation on the fold -- the reference\'s sections open and close over ~150 ms, which this build does not do anywhere yet.
+### The first animation in this build, and it was found by pressing (2026-11-09)
+
+Until now the fold was a jump: the cards vanished at a midpoint and everything below teleported. It is a 150 ms tween now, which is
+what the reference\'s sections take, and the evidence is a capture **40 ms into it**:
+
+| | 40 ms after the press | settled |
+|---|---|---|
+| the folded section | its card **clipped part way**, the chevron already pointing right | gone, header only |
+| the section below | **part way up** | at the top |
+
+The layout reads a per-group progress `0..1`, the section\'s height is `rows * 220 * (1 - progress)`, and its cards are drawn through a
+painter clipped to that band, so they slide out rather than disappear. Frames are requested while any progress is short of its target,
+which is also why the mid-fold capture could catch it at all: an idle page paints at 2 fps and would have jumped straight to the end.
+
+**A fold now belongs to its key.** It was keyed by group name alone, so a "Fabric" folded under `Loader` would arrive folded under
+`Game version`, where the name means something else; the set is cleared when the grouping changes.
+
+This is the **only** animation in the build. The reference has fades on menus and page transitions, and this work has not touched them:
+the mechanism is now here (progress, dt, repaint-while-moving) and the next one is cheaper than this was.
