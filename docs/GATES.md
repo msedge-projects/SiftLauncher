@@ -7628,3 +7628,33 @@ build draws and the reference does not (the footer, or the dev row the `dev_mode
 
 **What this explains**: the flat cluster at x 96-160 is the region where the modal's rail sits, and a 4-point thumb plus the row-height difference
 it implies accounts for a few hundred of those pixels directly and for the rest by shifting every row below it.
+### The rail's numbers do not agree with the rail's pixels (2026-11-09)
+
+The probe printed, at 1440x900 with the Appearance tab open:
+
+```
+RAIL needed=728 visible=508 travel=220 thumb_h=354.5 rail=[[256 198] - [506 786]] dialog=[[256 114] - [1184 786]]
+```
+
+and the pixels say something else. Measured on the same pair:
+
+| | reference | this build |
+|---|---|---|
+| rail label centres | 311, 355, 399, ... 734 | **311, 355, 399, ... 738** |
+| pitch between rows | 44 | **44** |
+| `SURFACE_5` columns at x 440..560 | **only x 506** (the plate border) | **x 498..501** (a 4-point thumb) + x 506 |
+| dialog | 114..785 per the old capture | 114..786, 672 tall |
+
+So the rows sit at the same places, with the same pitch, in the same 672-point plate -- and this build believes its rail needs **728** points and
+therefore draws a thumb. Both cannot be true: if the rows ended at 738 in both, the content is about 600 tall and the pane about 580.
+
+**The estimate is the suspect, not the layout.** `rail_needed_height` (`settings.rs:3058`) sums `RAIL_ROW_HEIGHT + RAIL_ROW_GAP` per row and, per
+category, `CATEGORY_LINE + CATEGORY_PADDING + RAIL_ROW_GAP` plus a `CATEGORY_TOP_GAP` between them. Eight rows at 44 is 352; three category blocks
+would have to be 125 points each to reach 728, and the measured label spacing across a category boundary shows they are not.
+
+**The next step is arithmetic on the function itself**: print its running total after each row and category, and the point at which it diverges from
+the laid-out position. That is a probe on a pure function -- no window, no capture -- and it will name the term that is counted twice or sized
+wrong. The scrollbar is a symptom of that term and will disappear with it.
+
+**Recorded rather than fixed** because the round ended, but this one now has a number, a function and a line, and the disagreement between them is
+the whole of the remaining work.

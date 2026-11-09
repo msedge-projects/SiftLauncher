@@ -3363,6 +3363,17 @@ fn draw_rail(
         let visible = (scroller_bottom - scroller_top).max(1.0);
         let content = rail_needed_height(dev_mode);
         let travel = (content - visible).max(0.0);
+        if std::env::var_os("SIFT_RAIL_PROBE").is_some() {
+            eprintln!(
+                "RAIL needed={} visible={} travel={} thumb_h={} rail={:?} dialog={:?}",
+                content,
+                visible,
+                travel,
+                (visible * visible / content).max(24.0),
+                rail,
+                dialog
+            );
+        }
         if travel > 0.0 {
             let thumb_h = (visible * visible / content).max(24.0);
             let offset = (scroll / travel).clamp(0.0, 1.0) * (visible - thumb_h);
