@@ -4891,3 +4891,22 @@ and chevron. It is an `Option` now, with `None` meaning the reference\'s default
 
 **Not done**: the order of the cards is unchanged. With one instance there is nothing to reorder, so the comparator would be untestable --
 the menu, the selection and the chip are real and driven, and the ordering is the next slice, with a second instance to prove it.
+### The sort chip orders the cards, proved with two instances (2026-11-09)
+
+The menu opened and the chip changed; the list did not. Now it does, and the proof needed a second instance:
+
+| the library | `Last played` | `Name` |
+|---|---|---|
+| Fabric 26.3 (stamped `lastLaunchTime`) and Aardvark (never played) | **Fabric first** (`ord-last2.png`) | **Aardvark first** (`ord-name2.png`) |
+
+The two keys disagree, so the order is being computed rather than looked up -- and the same pair in the first attempt agreed, because
+**neither instance had a last-played time**: the default sort fell through to its name tie-break and both orders looked identical. The
+instance was not "sorted wrong", it was not being told apart.
+
+The comparator is `ordered(&mut shown, key)` with two tests: one asserts that two instances whose name order and last-played order
+disagree come out in opposite orders, the other that a key with no data behind it (`Hours played`) leaves the default order alone.
+**Three of the seven keys have no data in `Entry`** -- hours played, date created, date modified -- and they fall back to the
+reference's own default rather than inventing an order; that is written in the function, not left to be discovered.
+
+The lab was put back as it was found: Aardvark removed and the stamp deleted from Fabric's cfg, so every capture measures one instance
+again.

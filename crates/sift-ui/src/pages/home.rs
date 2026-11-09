@@ -1487,6 +1487,8 @@ fn list(
                 || entry.version.to_lowercase().contains(&needle)
         })
         .collect();
+    let mut shown = shown;
+    ordered(&mut shown, state.sort_label);
 
     // Rule 1 of the drive: the rect comes from the program, never off a capture. Off unless
     // `SIFT_HOME_PROBE` is set, and it prints the numbers a press is aimed with.
@@ -2449,6 +2451,80 @@ fn brighten(colour: Color32, factor: f32) -> Color32 {
 /// copied world carries cut off by [`clean_world_name`]. A folder that will not open, or a
 /// name that is not UTF-8, is skipped rather than reported: a Home page has no way to act on
 /// either, and a row that cannot be named is worse than no row.
+/// **Order the library the way the sort chip says.** `None` is the reference's default and what the loader
+/// already returns: most recently played first, never-played last, ties broken by name.
+///
+/// Three of the reference's seven keys -- `Hours played`, `Date created`, `Date modified` -- have no data
+/// behind them in `Entry`, so they fall back to that same default rather than inventing an order. A menu row
+/// that silently sorted by the wrong key would be worse than one that leaves the reference's own order alone.
+fn ordered(shown: &mut [&Entry], key: Option<&'static str>) {
+    match key {
+        Some("Name") => shown.sort_by(|a, b| {
+            a.name.to_lowercase().cmp(&b.name.to_lowercase()).then_with(|| a.id.cmp(&b.id))
+        }),
+        Some("Loader") => shown.sort_by(|a, b| {
+            a.loader
+                .to_lowercase()
+                .cmp(&b.loader.to_lowercase())
+                .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+        }),
+        Some("Game version") => shown.sort_by(|a, b| {
+            a.version
+                .cmp(&b.version)
+                .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+        }),
+        _ => shown.sort_by(|a, b| {
+            b.last_played
+                .cmp(&a.last_played)
+                .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+        }),
+    }
+}
+
+#[cfg(test)]
+mod order_tests {
+    use super::*;
+
+    fn entry(id: &str, name: &str, loader: &str, version: &str, last_played: i64) -> Entry {
+        Entry {
+            id: id.to_owned(),
+            name: name.to_owned(),
+            loader: loader.to_owned(),
+            version: version.to_owned(),
+            last_played,
+            project: None,
+        }
+    }
+
+    /// **The sort chip is not decoration**: two instances whose name order and last-played order
+    /// disagree must be listed in opposite orders by the two keys. This is the property the drive
+    /// proved on screen (`ord-last2.png` has Fabric first, `ord-name2.png` has Aardvark first).
+    #[test]
+    fn name_and_last_played_disagree() {
+        let played = entry("a", "Fabric 26.3", "Fabric", "26.3", 1_794_000_000_000);
+        let fresh = entry("b", "Aardvark", "Vanilla", "1.21", 0);
+        let mut by_play = vec![&played, &fresh];
+        ordered(&mut by_play, None);
+        assert_eq!(by_play[0].id, "a", "the played instance leads by default");
+        let mut by_name = vec![&played, &fresh];
+        ordered(&mut by_name, Some("Name"));
+        assert_eq!(by_name[0].id, "b", "Aardvark leads when sorted by name");
+    }
+
+    /// A key with no data behind it leaves the default order alone rather than inventing one.
+    #[test]
+    fn keys_without_data_keep_the_default() {
+        let played = entry("a", "Zeta", "Fabric", "26.3", 1_794_000_000_000);
+        let fresh = entry("b", "Alpha", "Vanilla", "1.21", 0);
+        let mut shown = vec![&played, &fresh];
+        ordered(&mut shown, Some("Hours played"));
+        assert_eq!(shown[0].id, "a");
+        let mut by_loader = vec![&played, &fresh];
+        ordered(&mut by_loader, Some("Loader"));
+        assert_eq!(by_loader[0].id, "a", "Fabric sorts before Vanilla");
+    }
+}
+
 fn read_worlds(instances: &[Entry]) -> Vec<(String, Vec<(String, String)>)> {
     let root = crate::data::instances_dir();
     instances
