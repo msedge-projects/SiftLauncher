@@ -7902,3 +7902,23 @@ old position also overlapped the label's own glyph run for part of its width.
 
 **The page total moved only 233**, because most of it is the dimmed Home page behind the modal: the split measured on this page is why the
 change's real value (1 082) is four times what the headline number shows.
+### Past the theme cards, the content drifts five points again (2026-11-09)
+
+After the Beta pill fix the modal's heaviest cells are 168 pixels or less, so this round tested each for **offset versus content** rather than
+looking at them one by one:
+
+| region | best shift | differing at best | verdict |
+|---|---:|---:|---|
+| the OLED preview card, 1030-1160 x 330-400 | **(0,0)** | 411 | aligned -- its difference is content, and its bars' colours match to the unit ((176,186,197) and (16,16,19) in both) |
+| the block below the cards, 520-700 x 560-620 | **(0,-5)** | 899 | **still five low** |
+
+So the content is aligned at the cards and five points out again a hundred points below them: the **gap between the theme cards and what follows is
+five points too large** in this build. The cards themselves are laid out at `y + row * (THEME_CARD_HEIGHT + THEME_FOOTER + THEME_CARD_GAP)`
+(`settings.rs:4718`), so the suspect is the step that advances `y` past that block rather than any of those three constants.
+
+**Not changed**: the round had one build left and the step that advances `y` was not located with certainty; a guessed constant would cost a build
+and then a revert. The lead is one read: find where `y` is advanced after the theme cards and subtract five.
+
+**Worth noting about the method**: treating "shift versus content" as the first question on every cluster turned two apparent colour defects into
+one alignment defect and one no-op -- the OLED bars are identical in both builds, and the eye that said otherwise was reading a 3x nearest-neighbour
+upscale of a three-colour region.
