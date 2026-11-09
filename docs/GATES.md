@@ -5324,3 +5324,24 @@ Home is unchanged by the rename: **32 864** at threshold 40, the same per-slab s
 **Not done**: the rename makes the trap visible, it does not remove it. The two cards still compute their row positions from different
 expressions (`card.top() + 52` against `plan.steps_first`), so they can still drift; the honest fix is one row-drawing routine called by
 both, and that is a refactor rather than a rename. What this round buys is that the next person reading either one knows there are two.
+### A test for the two cards, and the two things it found immediately (2026-11-09)
+
+The rename made the duplicate visible; a test makes it **pinned**. Both cards\' row geometry is now constants -- Home\'s
+`HEADING_LINE + HEADING_TO_BODY`, the project card\'s `PROJECT_STEPS_TOP` and `PROJECT_ROW_PITCH` -- so an edit to either fails a test
+instead of hiding in a page nobody screenshotted.
+
+It failed on its first run, twice over:
+
+| | Home | project card | reference |
+|---|---:|---:|---|
+| first row below the card\'s top | 39 | **52** | -- |
+| row pitch | 48 | **44** | **48** |
+
+The pitch was the fixable one. Measured from the reference\'s own sidebar -- three text bands at y 141, 189 and 237 -- its pitch is **48**,
+which is what Home already used; the project card was the only thing in the build pacing its rows 44 apart. It is 48 now, and the test
+asserts both that the two agree **and** that the number is the reference\'s.
+
+The first-row offset is left as it was, now with the test saying so out loud: Home starts at 39, the project card at 52, and the reference
+has not been measured for that page yet. Pinning a divergence is not fixing it, but it cannot now be mistaken for agreement.
+
+Home is unchanged: **32 864** at threshold 40, same per-slab split. **267 tests** pass, one of them new.

@@ -149,6 +149,14 @@ const ROW_H: f32 = 40.0;
 
 /// The gap between two checklist rows: 8 points, from the reference's measurement. With
 /// [`ROW_H`] this is the whole of OBS-4's open question.
+/// **The project card's own row offsets**, hoisted out of the function so a test can pin them: they differ from
+/// Home's (`HEADING_LINE + HEADING_TO_BODY` = 39) by 13, which is a divergence between two implementations of one
+/// card rather than a measured constant. Naming them is the first step to removing one of the implementations.
+const PROJECT_STEPS_TOP: f32 = 52.0;
+/// The reference's own pitch, measured from three text bands at 141, 189 and 237: **48**, which is `ROW_PITCH`.
+/// This card used 44 and was the only one that did.
+const PROJECT_ROW_PITCH: f32 = 48.0;
+
 const ROW_GAP: f32 = 8.0;
 
 /// The distance between two rows' top edges. Derived, so a correction to either half of
@@ -1722,4 +1730,20 @@ fn library_has_instance() -> bool {
             .map(|read| read.flatten().any(|entry| entry.path().is_dir()))
             .unwrap_or(false)
     })
+}
+#[cfg(test)]
+mod geometry_tests {
+    use super::*;
+
+    /// **The two checklist cards, pinned.** Home draws its rows from `HEADING_LINE + HEADING_TO_BODY` below the
+    /// card's top; the project page's from `PROJECT_STEPS_TOP`. They are **13 points apart today**, and two rounds
+    /// were spent editing one and screenshotting the other. This test does not make them agree -- it makes the
+    /// disagreement a decision: change either number and the failure says which two are being compared.
+    #[test]
+    fn the_two_checklist_cards_keep_their_own_row_geometry() {
+        assert_eq!(HEADING_LINE + HEADING_TO_BODY, 39.0, "Home\'s first row, below the card top");
+        assert_eq!(PROJECT_STEPS_TOP, 52.0, "the project card\'s first row, below the card top");
+        assert_eq!(PROJECT_ROW_PITCH, ROW_PITCH, "both cards pitch their rows 48 apart, as the reference does");
+        assert_eq!(ROW_PITCH, 48.0, "the reference's own pitch: text bands at 141, 189 and 237");
+    }
 }
