@@ -7,12 +7,12 @@ clients in the same state, with a capture behind every claim.
 
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
-| Home | **31 277** | `sweep-home-ref.png` vs `home-badge.png` | type: the rasteriser |
+| Home | **31 349** | `sweep-home-ref.png` vs `home-badge.png` | type: the rasteriser |
 | Discover | **78 538** | `sweep-discover-ref.png` vs `disc-globe.png` | type and card artwork |
-| Screenshots | **23 260** | `sweep-screenshots-*.png` (both empty -- the only state the reference can be shown) | the empty state\'s illustration |
-| Instance page | **30 608** | `sweep-instance-ref.png` vs `inst-clean.png` (mods/ emptied first) | type |
-| Settings | **32 212** | `sweep-settings-*.png` (pinned backdrop) | the theme cards\' interior tone and the type |
-| Project -- Description | **71 315** | `projL-ref.png` vs `proj-gap4.png` | the body\'s type |
+| Screenshots | **23 547** | `sweep-screenshots-*.png` (both empty -- the only state the reference can be shown) | the empty state\'s illustration |
+| Instance page | **30 454** | `sweep-instance-ref.png` vs `inst-clean.png` (mods/ emptied first) | type |
+| Settings | **31 975** | `sweep-settings-*.png` (pinned backdrop) | the theme cards\' interior tone and the type |
+| Project -- Description | **71 398** | `projL-ref.png` vs `proj-gap4.png` | the body\'s type |
 | Project -- Versions | **63 660** | `ver3-ref.png` vs `ver-chan3.png` | the filter row\'s widths and the type; ~400 px is the API\'s download count, fetched minutes apart |
 | Project -- Gallery | **172 200** | `gal-ref.png` vs `viewer-escaped.png` | the grid\'s ratio and a 15-point card-top offset; both grids carry the same six cards |
 | Files at root (phase pinned) | **48 240** | `ref-files.png` vs `our-files-root.png` | the row data differs (its `config`, our `mods`) |

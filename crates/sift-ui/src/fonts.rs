@@ -132,16 +132,12 @@ pub fn install(ctx: &egui::Context) {
         };
         definitions
             .font_data
-            .insert(
-                family.to_owned(),
-                std::sync::Arc::new(FontData::from_static(bytes).tweak(egui::FontTweak {
-                    // **One part in 250, measured.** "Fabulously Optimized" renders 248 points here and 249 in the
-                    // reference; the faces are the same family and weight, so the difference is in the advance. A
-                    // long line accumulates it into the two or three points that decide where a word wraps.
-                    scale: 1.004,
-                    ..Default::default()
-                })),
-            );
+            .insert(family.to_owned(), std::sync::Arc::new(FontData::from_static(bytes)));
+        // **No `FontTweak` scale, and the reason is measured.** "Fabulously Optimized" renders 248 points here against
+        // the reference\'s 249, and scaling every face by 1.004 makes it exactly 249 -- but across the six pages that
+        // could be re-measured it is a net **+564 pixels worse** (Home -72, Project -83, Screenshots -287; Instance
+        // +154, Settings +237, Discover +615). Matching the advance does not match the wrap: the measure each line is
+        // laid out in differs by a point or two as well, so two small errors were landing on the same word.
         definitions
             .families
             .insert(FontFamily::Name(family.into()), vec![family.to_owned()]);

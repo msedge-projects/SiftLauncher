@@ -4437,3 +4437,25 @@ that looks like -- a correct measurement, a mixed result, and the mix recorded r
 **Discover could not be measured at all**: the reference\'s own window had come back at **1436x848** instead of 1440x900, so the capture pair
 failed its size check. The harness caught it (compare.py refuses mismatched sizes), which is the guard working; the number needs a fresh
 pair and is left at its previous 78 538 rather than guessed.
+### The 0.4% was real and the fix was net worse: reverted (2026-11-08)
+
+The scale was applied, measured on all six pages, and taken back out:
+
+| page | before the scale | with it | change |
+|---|---:|---:|---:|
+| Home | 31 349 | 31 277 | **-72** |
+| Project -- Description | 71 398 | 71 315 | **-83** |
+| Screenshots | 23 547 | 23 260 | **-287** |
+| Instance page | 30 454 | 30 608 | **+154** |
+| Settings | 31 975 | 32 212 | **+237** |
+| Discover | 78 538 | 79 153 | **+615** |
+| **net** | | | **+564 worse** |
+
+**The measurement was right and the conclusion drawn from it was wrong.** The title\'s advance does match to the point (248 against 249,
+and 249 against 249 with the tweak), but matching the advance does not match the *wrap*: the measure a line is laid out in differs by a point
+or two as well, and those two small errors were landing on the same word. Fixing one of them moved the breaks away.
+
+So the font is left at its own metrics, with the whole experiment -- six numbers and the reason -- written into `fonts.rs` where the next
+person will look, because the alternative is that someone finds the 248/249 discrepancy and "fixes" it again.
+
+Home re-measured after the revert: **31 349**, exactly where it was.
