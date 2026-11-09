@@ -7091,3 +7091,30 @@ preview's string.
 text substitution in this file has already broken a build once. The next round starts by finding where the card's subtitle string is
 passed in (`grep` for the caller of whatever draws `file_name` at `screenshots.rs:2720`) and changes it there, with the capture pair
 `cardhover-ref.png` / `cardhover-our.png` as the before and after.
+### The card's second line now says one thing, and the card's buttons say the wrong things (2026-11-09)
+
+**Fixed**: the card's second line was drawing `instance_and_date`, the string the *preview* uses, where `card.vue:240` draws
+`showInstanceName ? instance_name : formatTime(created_at)`. The flag is threaded as `show_instance` from the page's `group_by` through
+`draw_card` to `draw_overlay`, set to `group_by != GroupBy::Instance` -- the reference's `isGlobal && groupBy !== 'instance'` with the
+global half true by construction.
+
+Verified on both clients' cards at rest: the reference reads `2026-11-09_12.00.00.png` / **Fabric 26.3**, and so does this build.
+
+**Found while verifying, and not fixed because fixing it needs machinery this build does not have**: the card's three hover actions are
+the wrong three.
+
+| | reference (`card.vue:248-275`) | this build (`screenshots.rs:2977-2982`) |
+|---|---|---|
+| first | `EditIcon` -- edit | `Action::Open` (a picture glyph) |
+| second | `ClipboardCopyIcon` -- **copy** | **`Action::Delete`** (a trash glyph) |
+| third | `MoreIcon` | `Action::More` |
+
+**The middle control is destructive where the reference's copies.** Drawing a clipboard glyph over a delete would be worse than the current
+mismatch -- it would promise a copy and perform a deletion -- so the glyphs stay until a copy action exists. That is real work: copying a
+file to the desktop clipboard through X11 selection ownership, with the failure path the reference has (the icon becomes a check).
+
+What the reference's *edit* does is also unestablished: the card's own click already opens the viewer, so the pencil is something else --
+most likely a rename, which `card.vue` would pass up as `emit('edit')`. `index.vue`'s handler for `@edit` is the next thing to read.
+
+**So the card now matches on its text and is recorded as wrong on its actions** -- which is the honest state, and better than matching the
+icons while the behaviour underneath lies.

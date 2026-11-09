@@ -2907,7 +2907,16 @@ fn draw_group(
         let selected = state.is_selected(&shot.path);
         let armed = matches!(&state.armed, Some(Arm::Card(path)) if path == &shot.path);
 
-        let hits = draw_card(ui.painter(), card, theme, shot, images, hovered, selected);
+        let hits = draw_card(
+            ui.painter(),
+            card,
+            theme,
+            shot,
+            images,
+            hovered,
+            selected,
+            state.group_by != GroupBy::Instance,
+        );
         probe_rows.push((format!("card {}", shot.file_name), card));
         probe_rows.push((format!("check {}", shot.file_name), hits.check));
         if let Some(actions) = hits.actions {
@@ -3040,6 +3049,7 @@ fn draw_card(
     images: &mut Images,
     hovered: bool,
     selected: bool,
+    show_instance: bool,
 ) -> CardHits {
     // The card's own fill, under the picture (card.vue:172).
     painter.rect_filled(rect, CARD_RADIUS, theme.SURFACE_2);
@@ -3062,7 +3072,7 @@ fn draw_card(
     }
 
     if hovered {
-        draw_overlay(painter, rect, theme, shot);
+        draw_overlay(painter, rect, theme, shot, show_instance);
     }
 
     // The checkbox, revealed on hover and always visible once selected (card.vue:206-214).
@@ -3160,7 +3170,17 @@ fn cover_uv(texture: Vec2, into: Vec2) -> Rect {
 /// (card.vue:233). Three stacked bands sample that ramp instead of a per-pixel mesh, and they
 /// are clipped to the plate: surface-1 is the page's own colour in both schemes, so the corner
 /// triangles the rectangular clip cannot round out do not show.
-fn draw_overlay(painter: &egui::Painter, plate: Rect, theme: &Theme, shot: &Shot) {
+fn draw_overlay(
+    painter: &egui::Painter,
+    plate: Rect,
+    theme: &Theme,
+    shot: &Shot,
+    // **The reference offers one or the other, never both** (card.vue:240): `showInstanceName ? instance_name :
+    // formatTime(created_at)`, with `show-instance-name="isGlobal && groupBy !== 'instance'"` (index.vue:1574). On this
+    // global page grouped by date that is the instance alone; this build drew both, joined by a dot, from the string the
+    // *preview* uses. The condition is passed in because the overlay is drawn per card and the mode lives on the page.
+    show_instance: bool,
+) {
     let painter = painter.with_clip_rect(plate);
 
     let fade = OVERLAY_FADE.min(plate.height());
@@ -3209,7 +3229,11 @@ fn draw_overlay(painter: &egui::Painter, plate: Rect, theme: &Theme, shot: &Shot
             egui::pos2(inner_left, date_top),
             egui::vec2(text_width.max(1.0), DATE_LINE),
         ),
-        &instance_and_date(shot.clone()),
+        &if show_instance {
+            shot.instance.clone()
+        } else {
+            stamp_label(shot.taken)
+        },
         fonts::body(DATE_SIZE),
         theme.SECONDARY,
     );
