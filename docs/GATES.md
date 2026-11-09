@@ -6392,3 +6392,20 @@ and scales its art differently. That is one earlier verdict (different article) 
 them apart while it was measuring the wrong columns.
 
 **Every per-slab figure in this file before today is 1440-only.** The totals stand; the columns at other sizes did not.
+### A test for the tool that produces every number (2026-11-09)
+
+`compare.py` had none, and the defect it just acquired a test for had been live since the first sweep. `--selftest` now asserts, at five sizes,
+that the four slabs cover exactly the frame, sit inside it, and do not overlap:
+
+| size | covered | frame | verdict |
+|---|---:|---:|---|
+| 1280x720, 1366x768, 1440x900, 1600x900, 1920x1080 -- derived | full | full | **ok** |
+| 1920x1080 -- the old literals | 1 296 000 | 2 073 600 | **FAIL** |
+
+The old literals pass at 1440 to the pixel (1 296 000 of 1 296 000) and fail at 1920 by three quarters of a million, which is exactly the shape of
+the bug: correct where it was written, silently wrong everywhere else, and producing numbers that look like measurements.
+
+The slabs moved into `slabs_for(width, height)` so the selftest exercises the same function the measurement does -- a test of a copy of the
+arithmetic would have passed while the tool stayed wrong.
+
+**Run it before a sweep.** `python3 tools/parity/compare.py --selftest` takes no captures and prints one line.
