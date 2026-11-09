@@ -7465,3 +7465,30 @@ thousands.
 
 **Two things this does not say.** It does not say the textured difference is invisible: at 1:1 a monitor glyph against a globe was obvious. And
 it does not say the work is finished: the flat share is still 25-36% of the difference, and every one of those is a real, fixable mismatch.
+### The sidebar's missing scrollbar is the text rasteriser, three steps downstream (2026-11-09)
+
+The flat-pixel finder put its heaviest cluster on a vertical band at x 1408-1440 running the height of the panel, about 1 000 flat pixels
+across eight cells. At 4x, the reference has a rounded **scrollbar** there in (66,68,74) and this build has none:
+
+| x | reference | this build |
+|---|---|---|
+| 1426 | (42,51,49) card | (59,68,66) card border |
+| 1434 | **(66,68,74) scrollbar** | (24,34,32) background |
+
+This is the same element measured in round 344 and left unexplained at 6 by 97. It is a scrollbar, and the reason it exists there and not here is
+a chain, not a style:
+
+1. the reference's news copy breaks one word earlier per line, because its glyph advances are a per cent wider than ours;
+2. its card is therefore **taller**, and the panel's content overflows the 900-point window;
+3. an overflowing panel gets an overlay scrollbar, which is the band;
+4. our copy fits, our card is shorter, our content does not overflow, and no scrollbar is drawn -- correctly, for content that fits.
+
+**So the scrollbar cannot be drawn to match without also matching the wrap**, and the wrap is the rasteriser. Drawing a scrollbar over content that
+does not overflow would be the fabricated affordance in its clearest form: a control that scrolls nothing.
+
+**What this is worth**: it converts "the sidebar differs by 16 565" into a chain whose first link is out of reach and whose later links are
+consequences. It also explains why the sidebar's difference grows with the window -- the taller the news card, the longer the scrollbar.
+
+**Recorded for the FINISHED statement**: the identity clause's floor is not one mechanism but a short chain, and the flat share that remains is
+partly *downstream* of the textured share rather than independent of it. That makes the reachable target smaller than the 0.6% quoted last round,
+and it is the honest number to carry.
