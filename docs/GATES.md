@@ -5796,3 +5796,28 @@ recorded months of rounds ago -- so the page has not regressed, and my "improvem
 
 Three presses were needed to get one comparison: 245 (Servers), 820 (Settings, which then had to be dismissed), then 205 (Screenshots,
 confirmed by cropping the title bar and reading it). The crop-and-read step is what turned a passing comparison into a checked one.
+### The rail, mapped by pressing every icon and reading the title (2026-11-09)
+
+Last round\'s wrong press meant the rail map I had been using was not trustworthy. It is now measured: each y was pressed, and the title bar
+cropped and read -- eight crops stacked into one image (`/tmp/rail.png`) so they could be compared at once.
+
+| y | title bar says | icon |
+|---:|---|---|
+| 65 | Home | play |
+| 123 | Discover modpacks | compass |
+| 178 | Skin selector | t-shirt |
+| 205 | Screenshots | picture |
+| 245 | *(still Screenshots)* | **nothing** -- empty rail |
+| 290 | **Servers** | stacked rectangles |
+| 365 | **Fabric 26.3** | the green instance icon |
+| 820 | Settings | opens a blurred backdrop over the page |
+
+**Two of my own notes were wrong and are corrected here:** y 245 is empty space, not the Servers icon; and y 365 is the **instance page**, not
+the `+` that creates one. The `+` sits between them and is not at either address I had written down.
+
+That explains the round before last: pressing 245 left Screenshots showing (no page change at all), which I read as "the reference is stuck",
+then Escape took the *previous* page -- Servers -- which I read as "245 is Servers". Both readings came from a single press on nothing, and
+the title crop would have said so at the time.
+
+**The rule this adds**: a rail press is not evidence of a destination unless the destination is read back. Position memory is what produced
+two mislabelled captures and a 113 657-pixel comparison of two different pages.
