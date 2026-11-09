@@ -6346,3 +6346,23 @@ subpixel phase. The same threshold that made the search field's 1 316 visible ma
 
 **The remaining 7 646 on this page** therefore sits in: the chips' 11 points of width, whatever the group header is doing (413 in rows 220-239),
 the image's 2 166, and the ordinary type difference on every string. Each is measurable; none of them is a 750-pixel constant like the last two.
+### Five sizes, re-run on the current build (2026-11-09)
+
+The objective asks for verification at five standard sizes, and the numbers behind that clause predate most of this session. Re-run on Home, both
+clients resized and the pointers parked:
+
+| size | differing pixels | share of the frame |
+|---|---:|---:|
+| 1280x720 | **28 171** | 3.05% |
+| 1366x768 | **35 839** | 3.41% |
+| 1440x900 | **31 876** | 2.46% |
+| 1600x900 | **45 815** | 3.18% |
+| 1920x1080 | **57 677** | 2.78% |
+
+**The per-slab split is only meaningful at 1440.** `compare.py` hard-codes its slabs for 1440x900, and the sweep shows what that does at other
+sizes: the sidebar term reads 16 816 at 1440 and **1 196** at 1920, which is not the sidebar getting better but the slab covering content instead.
+The totals are sound; the columns are not, and should be read at 1440 only.
+
+**A suspicion tested and dropped.** That swing looked like the news carousel rotating between captures -- which would have made every sidebar
+figure a race. The reference captured three times over 24 seconds changes by **0** pixels in the sidebar, so it does not rotate, and the article
+difference recorded earlier is a real difference in which article is shown rather than a phase.
