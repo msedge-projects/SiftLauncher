@@ -5752,3 +5752,19 @@ three measured corrections -- a small number for the work, and the honest scale 
 The passes were needed because each fix moved the other: enlarging the glyph pushed its box a point left, and the text had to move a point
 back to compensate. That is ordinary for adjacent elements, and it is why the box has to be re-measured after every change rather than
 extrapolated from the first.
+### The field\'s state, Enter, and focus -- three checks that closed three questions (2026-11-09)
+
+Last round\'s risk was that the field\'s numbers had been tuned against a reference capture taken mid-focus. They had not:
+
+| | `refclean2` | a fresh capture now |
+|---|---|---|
+| field fill | (52,54,60) | (52,54,60) |
+| glyph tone | (111,119,130) | (111,119,130) |
+
+so the placeholder, glyph and inset figures stand.
+
+**Enter does nothing** -- on either side. Typing `Fabric` and pressing Return changed **no pixel** in the reference and none here. That is a
+behaviour matched by *not* having a behaviour, which is the kind that is easy to get wrong by adding a sensible feature nobody asked for.
+
+**There is no focus ring.** The reference\'s field border reads (66,68,74) at (88,266) and at (600,248) whether it has the keyboard or not --
+identical to the byte. This build draws exactly that, so "the field\'s focus ring" was a thing I had worried about that does not exist.
