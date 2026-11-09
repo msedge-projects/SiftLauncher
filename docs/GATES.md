@@ -7605,3 +7605,26 @@ capture and one source read, and it should close the largest flat cluster on the
 
 **Recorded**: `FINISHED.md` carried Settings at 32 469; the figure for the Appearance tab on this build is **39 064**, measured today, and the
 older number should not be quoted again.
+### The Settings rail scrolls here and not in the reference (2026-11-09)
+
+Sampling across the modal at y 250 found the difference in one point:
+
+| x, y | reference | this build |
+|---|---|---|
+| 450, 200 | (39,41,46) modal plate | (39,41,46) |
+| **500, 250** | **(38,40,45)** rail | **(66,68,74)** -- `SURFACE_5` |
+| 600, 300 | (22,24,28) outside the modal | (22,24,28) |
+
+The (66,68,74) is the rail's **scrollbar thumb**, drawn at `settings.rs:3358-3377` from `rail.right() - 8.0`, 4 points wide.
+
+**The code is not wrong to draw it.** The draw is gated on `travel > 0.0`, where `travel = rail_needed_height(dev_mode) - visible` -- so this
+build's rail genuinely overflows its pane at 1440x900, and the reference's does not. That is the finding: not a stray decoration but a different
+answer to "does this list fit?", and the difference is in one of the two terms.
+
+**The numbers to compare next**: `rail_needed_height(dev_mode)` against the reference's own rail height, and the pane's visible height in both.
+The modal is `--modal-max-width: 60rem` (960) centered per `NewModal.vue:572`, and its height comes from the same component's `calc(100% - 2 *
+var(--gap-lg))` cap -- so if the two modals are the same height, the difference is the rail's content, and the likeliest candidate is a row this
+build draws and the reference does not (the footer, or the dev row the `dev_mode` argument exists for).
+
+**What this explains**: the flat cluster at x 96-160 is the region where the modal's rail sits, and a 4-point thumb plus the row-height difference
+it implies accounts for a few hundred of those pixels directly and for the rest by shifting every row below it.
