@@ -5087,3 +5087,35 @@ next attempt starts from them rather than from a crop.
 
 `refclean2.png` is the clean 1440 reference from that restart: it differs from `h1440-ref.png` by **925 pixels**, which is the check that it is
 the same state and worth comparing against.
+### The filter row: a control that is visibly wrong and measurably better (2026-11-09)
+
+At 4x the chip interiors are plainly different, and every difference was then measured and corrected:
+
+| | reference | this build |
+|---|---|---|
+| label ink | **306..320**, sampled **pure white (255,255,255)** | 308..319, **(176,186,197)** |
+| chip height / top | **40 points from y 288** | 32 from y 290 |
+| chip widths | **165 and 199** | 118 and 164 |
+| third control | funnel at 464, outlined button to 630 | a filled 122-wide chip |
+
+All of it was applied -- 16-point white labels, 40-point chips at 288, the reference\'s widths -- and it measured **worse a third time**:
+
+| attempt | filter-row band (80..700 x 284..332) | Home total |
+|---|---:|---:|
+| original (visibly wrong) | **3 186** | **32 265** |
+| widths + 16-point labels (grey) | 3 724 | 32 735 |
+| + white labels, 40-point chips | **3 785** | **32 876** |
+
+Each correction moved the drawing *towards* the reference and the band *away* from it. The explanation is in the geometry: the reference\'s
+chip fills are (52,54,60) on a (22,24,28) page, a 30-point step -- **under the 40 threshold**. Where this build draws no chip, the reference\'s
+chip does not count as a difference. Where this build draws a chip that is 32 tall and the reference\'s is 40, the *overlap* is free and only
+the 8-point fringe counts. **Making the chip the right size enlarges the region where two slightly-different fills must agree**, and a fill
+that is 2-3 points off -- invisible at this threshold on its own -- becomes a counted difference across the whole enlarged area.
+
+So the threshold-40 metric **cannot see** this row\'s most obvious errors (grey vs white text is 79 points, and does count -- but the text
+occupies a fraction of the chip) while it **punishes** fixing the ones it cannot see. Three attempts is enough to establish that: the row is
+reverted, and it is recorded here as a place where the objective\'s own measurement and its objective\'s own intent disagree.
+
+**What would settle it**: a per-element comparison (the GAP-MATRIX\'s own idea) that checks the chip\'s colour, height and type against the
+reference directly, rather than a whole-frame pixel count that cannot see them. That is a different instrument from `compare.py` and this
+round did not build it.
