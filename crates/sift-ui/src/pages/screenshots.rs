@@ -420,6 +420,12 @@ const GROUP_DATE: &str = "Date";
 /// `app.screenshots.group.none`.
 const GROUP_NONE: &str = "No grouping";
 
+/// `app.screenshots.group.custom`.
+const GROUP_CUSTOM: &str = "Custom group";
+
+/// `app.screenshots.group.ungrouped`.
+const GROUP_UNGROUPED: &str = "Ungrouped";
+
 /// `app.screenshots.group.today`.
 const TODAY: &str = "Today";
 
@@ -537,9 +543,10 @@ impl Sort {
 pub enum GroupBy {
     /// One heading per day-bucket or month: the stored default.
     Date,
-    /// One of the reader's own groups: the grid shows the screenshots assigned to it, under its own name. The
-    /// reference offers these beside Date, Instance and None, which is what the store added this session is for.
-    Custom(String),
+    /// **One entry, first in the list.** The reference's `custom` mode groups the grid by the reader's own groups --
+    /// one section per group, titled with its name -- and puts everything unassigned in a final "Ungrouped" section.
+    /// This build used to offer one entry *per* group, each one filtering the grid to itself.
+    Custom,
     /// One heading per instance the screenshot came from.
     Instance,
     /// One list with no heading at all (`index.vue:1510` hides the header, and `group.vue`
@@ -554,17 +561,12 @@ impl Default for GroupBy {
 }
 
 impl GroupBy {
-    /// The modes the select offers, in the source's order without `custom`.
-    /// The modes this build offers, before the reader's own groups: the store's are appended by `with_groups`.
-    pub const ALL: [GroupBy; 3] = [GroupBy::Instance, GroupBy::Date, GroupBy::None];
+    /// The select's entries, in the reference's order. The reference shows `instance` only on the global page, which this is.
+    pub const ALL: [GroupBy; 4] = [GroupBy::Custom, GroupBy::Instance, GroupBy::Date, GroupBy::None];
 
-    /// The select's list: the three stored modes, then one entry per custom group.
-    pub fn with_groups(groups: &[crate::groups::Group]) -> Vec<GroupBy> {
-        let mut all = GroupBy::ALL.to_vec();
-        for group in groups {
-            all.push(GroupBy::Custom(group.id.clone()));
-        }
-        all
+    /// The select's list. The groups add no entries: `custom` is one mode that groups by all of them.
+    pub fn with_groups(_groups: &[crate::groups::Group]) -> Vec<GroupBy> {
+        GroupBy::ALL.to_vec()
     }
 
     /// The label the group select shows for this value.
@@ -573,7 +575,7 @@ impl GroupBy {
             GroupBy::Date => GROUP_DATE,
             GroupBy::Instance => GROUP_INSTANCE,
             GroupBy::None => GROUP_NONE,
-            GroupBy::Custom(_) => "Group",
+            GroupBy::Custom => GROUP_CUSTOM,
         }
     }
 }
@@ -961,13 +963,8 @@ fn month_title(year: i32, month: u8) -> String {
 /// The group a shot belongs to under the selected mode, as `(id, title, header)`.
 fn bucket_key(mode: &GroupBy, shot: &Shot, now: Stamp) -> (String, String, bool) {
     match mode {
-        // A custom group's bucket is the group itself: the heading is the group's name and every shot that is not
-        // assigned to it lands in a "no group" bucket the caller drops.
-        GroupBy::Custom(id) => (
-            format!("group:{id}"),
-            id.clone(),
-            true,
-        ),
+        // Custom never reaches here: it builds its own sections from the group list. The arm exists for exhaustiveness.
+        GroupBy::Custom => ("all".to_owned(), ALL_SCREENSHOTS.to_owned(), false),
         GroupBy::None => ("all".to_owned(), ALL_SCREENSHOTS.to_owned(), false),
         GroupBy::Instance => (
             format!("instance:{}", shot.instance),
@@ -1012,16 +1009,51 @@ fn bucket_key(mode: &GroupBy, shot: &Shot, now: Stamp) -> (String, String, bool)
 /// descending unless the sort is `Oldest` (`:511-519`); instance groups are ordered by name,
 /// as the source's instance list is (`:443`); the no-grouping mode is one group and needs no
 /// order.
-fn groups(mode: &GroupBy, shots: &[Shot], now: Stamp, sort: Sort, assignments: &std::collections::BTreeMap<String, String>) -> Vec<Group> {
-    // A custom group shows only the shots assigned to it.
-    let shots: Vec<Shot> = match mode {
-        GroupBy::Custom(id) => shots
+fn groups(
+    mode: &GroupBy,
+    shots: &[Shot],
+    now: Stamp,
+    sort: Sort,
+    assignments: &std::collections::BTreeMap<String, String>,
+    custom: &[crate::groups::Group],
+) -> Vec<Group> {
+    // **The `custom` mode is its own builder.** One section per group, titled with the group's name and holding the shots
+    // assigned to it, then a final "Ungrouped" section for everything else -- the shape of `groupBy === 'custom'` in
+    // screenshots-page/index.vue, where the sections are `custom:${group.id}` and `custom:ungrouped`.
+    if matches!(mode, GroupBy::Custom) {
+        let mut out: Vec<Group> = custom
             .iter()
-            .filter(|shot| assignments.get(&shot.file_name).is_some_and(|group| group == id))
-            .cloned()
-            .collect(),
-        _ => shots.to_vec(),
-    };
+            .map(|group| Group {
+                id: format!("custom:{}", group.id),
+                title: group.name.clone(),
+                header: true,
+                shots: shots
+                    .iter()
+                    .filter(|shot| assignments.get(&shot.file_name) == Some(&group.id))
+                    .cloned()
+                    .collect(),
+            })
+            .collect();
+        out.push(Group {
+            id: "custom:ungrouped".to_owned(),
+            title: GROUP_UNGROUPED.to_owned(),
+            header: true,
+            shots: shots
+                .iter()
+                .filter(|shot| {
+                    assignments
+                        .get(&shot.file_name)
+                        .is_none_or(|id| !custom.iter().any(|group| &group.id == id))
+                })
+                .cloned()
+                .collect(),
+        });
+        // The shots arrive already in the reader's sort order, so each section keeps it.
+        return out;
+    }
+    // A custom group shows only the shots assigned to it.
+    // The `custom` mode returned above; every other mode groups the whole list.
+    let shots: Vec<Shot> = shots.to_vec();
     let shots = shots.as_slice();
     let mut out: Vec<Group> = Vec::new();
     for shot in shots {
@@ -1043,7 +1075,7 @@ fn groups(mode: &GroupBy, shots: &[Shot], now: Stamp, sort: Sort, assignments: &
     }
 
     match mode {
-        GroupBy::Custom(_) => {}
+        GroupBy::Custom => {}
         GroupBy::Instance => out.sort_by(|a, b| a.title.cmp(&b.title)),
         GroupBy::Date => {
             let newest = |group: &Group| group.shots.iter().map(|shot| shot.taken).max();
@@ -1374,7 +1406,14 @@ pub fn draw(
             NO_RESULTS_BODY,
         );
     } else {
-        let blocks: Vec<(Group, f32)> = groups(&state.group_by, &visible, today, state.sort, &state.groups.assignments)
+        let blocks: Vec<(Group, f32)> = groups(
+            &state.group_by,
+            &visible,
+            today,
+            state.sort,
+            &state.groups.assignments,
+            &state.groups.groups,
+        )
             .into_iter()
             .map(|group| {
                 let height = block_height(
@@ -1449,16 +1488,7 @@ pub fn draw(
         let modes = GroupBy::with_groups(&state.groups.groups);
         let labels: Vec<String> = modes
             .iter()
-            .map(|mode| match mode {
-                GroupBy::Custom(id) => state
-                    .groups
-                    .groups
-                    .iter()
-                    .find(|group| &group.id == id)
-                    .map(|group| group.name.clone())
-                    .unwrap_or_else(|| mode.label().to_owned()),
-                other => other.label().to_owned(),
-            })
+            .map(|mode| mode.label().to_owned())
             .collect();
         let labels: Vec<&str> = labels.iter().map(String::as_str).collect();
         let chosen = modes
@@ -3707,7 +3737,7 @@ mod tests {
     }
 
     #[test]
-    fn a_custom_group_holds_only_its_assigned_shots() {
+    fn the_custom_mode_sections_every_group_then_lists_the_rest_ungrouped() {
         let shot = |name: &str| Shot {
             instance: "Parity".to_owned(),
             file_name: name.to_owned(),
@@ -3718,18 +3748,24 @@ mod tests {
         let mut assignments = std::collections::BTreeMap::new();
         assignments.insert("a.png".to_owned(), "parity-group".to_owned());
         let now = Stamp { year: 2026, month: 10, day: 21, hour: 12, minute: 0 };
-        let mode = GroupBy::Custom("parity-group".to_owned());
-        let grouped = groups(&mode, &shots, now, Sort::Newest, &assignments);
-        assert_eq!(grouped.len(), 1, "one heading for one group");
-        assert_eq!(grouped[0].shots.len(), 1, "only the assigned shot");
-        assert_eq!(grouped[0].shots[0].file_name, "a.png");
-        // And the select offers it beside the three stored modes.
-        let listed = GroupBy::with_groups(&[crate::groups::Group {
+        let listed_groups = [crate::groups::Group {
             id: "parity-group".to_owned(),
             name: "Parity group".to_owned(),
-        }]);
-        assert_eq!(listed.len(), 4);
-        assert_eq!(listed[3], mode);
+        }];
+        let grouped = groups(&GroupBy::Custom, &shots, now, Sort::Newest, &assignments, &listed_groups);
+        assert_eq!(grouped.len(), 2, "one section per group, then ungrouped");
+        assert_eq!(grouped[0].id, "custom:parity-group");
+        assert_eq!(grouped[0].title, "Parity group", "the section is titled with the group name");
+        assert_eq!(grouped[0].shots.len(), 1, "only the assigned shot");
+        assert_eq!(grouped[0].shots[0].file_name, "a.png");
+        assert_eq!(grouped[1].id, "custom:ungrouped");
+        assert_eq!(grouped[1].title, "Ungrouped");
+        assert_eq!(grouped[1].shots.len(), 1, "b.png belongs to no group");
+        assert_eq!(grouped[1].shots[0].file_name, "b.png");
+        // And the select offers `custom` as one mode, first: the groups add no entries of their own.
+        let listed = GroupBy::with_groups(&listed_groups);
+        assert_eq!(listed.len(), 4, "custom, instance, date, none");
+        assert_eq!(listed[0], GroupBy::Custom);
     }
 
     #[test]
@@ -3740,7 +3776,7 @@ mod tests {
             shot("a", "2026-12-24_10.00.00.png", 2026, 12, 24),
             shot("a", "2026-07-01_10.00.00.png", 2026, 7, 1),
         ];
-        let out = groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default());
+        let out = groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default(), &[]);
         let titles: Vec<&str> = out.iter().map(|group| group.title.as_str()).collect();
         assert_eq!(
             titles,
@@ -3758,13 +3794,13 @@ mod tests {
             shot("a", "2026-07-19_10.00.00.png", 2026, 7, 19),
             shot("a", "2026-05-02_10.00.00.png", 2026, 5, 2),
         ];
-        let out = groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default());
+        let out = groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default(), &[]);
         assert_eq!(out.len(), 2, "July and May, and no June or August between them");
         assert!(
             out.iter().all(|group| !group.shots.is_empty()),
             "every group the rule emits has at least one screenshot"
         );
-        assert_eq!(groups(&GroupBy::Date, &[], now(), Sort::Newest, &Default::default()).len(), 0);
+        assert_eq!(groups(&GroupBy::Date, &[], now(), Sort::Newest, &Default::default(), &[]).len(), 0);
     }
 
     /// **A group with one item is still a group.** The source draws a heading and its count for
@@ -3776,7 +3812,7 @@ mod tests {
             shot("a", "2026-09-30_16.58.09.png", 2026, 9, 30),
             shot("a", "2026-09-02_08.00.00.png", 2026, 9, 2),
         ];
-        let out = groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default());
+        let out = groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default(), &[]);
         assert_eq!(out.len(), 2);
         assert_eq!(out[0].shots.len(), 1, "October's group holds its one shot");
         assert_eq!(out[1].shots.len(), 2);
@@ -3795,7 +3831,7 @@ mod tests {
             shot("d", "earlier.png", 2026, 11, 10),
             shot("e", "older.png", 2026, 10, 30),
         ];
-        let out = groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default());
+        let out = groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default(), &[]);
         let titles: Vec<&str> = out.iter().map(|group| group.title.as_str()).collect();
         assert_eq!(
             titles,
@@ -3821,7 +3857,7 @@ mod tests {
             shot("a", "monday.png", 2026, 11, 16),
             shot("a", "sunday.png", 2026, 11, 15),
         ];
-        let out = groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default());
+        let out = groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default(), &[]);
         let titles: Vec<(&str, usize)> = out
             .iter()
             .map(|group| (group.title.as_str(), group.shots.len()))
@@ -3835,7 +3871,7 @@ mod tests {
     fn a_groups_shots_keep_the_order_they_arrived_in() {
         let newest = shot("a", "2026-10-21_14.32.07.png", 2026, 10, 21);
         let oldest = shot("a", "2026-10-02_18.03.12.png", 2026, 10, 2);
-        let out = groups(&GroupBy::Date, &[oldest.clone(), newest.clone()], now(), Sort::Newest, &Default::default());
+        let out = groups(&GroupBy::Date, &[oldest.clone(), newest.clone()], now(), Sort::Newest, &Default::default(), &[]);
         assert_eq!(
             out[0].shots,
             vec![oldest.clone(), newest.clone()],
@@ -3843,7 +3879,7 @@ mod tests {
         );
 
         let by_name = in_sort_order(&[newest.clone(), oldest.clone()], Sort::Name);
-        let out = groups(&GroupBy::Date, &by_name, now(), Sort::Newest, &Default::default());
+        let out = groups(&GroupBy::Date, &by_name, now(), Sort::Newest, &Default::default(), &[]);
         assert_eq!(
             out[0].shots,
             vec![oldest, newest],
@@ -3861,15 +3897,15 @@ mod tests {
         ];
         let months = |groups: Vec<Group>| -> Vec<String> { groups.iter().map(|g| g.id.clone()).collect() };
         assert_eq!(
-            months(groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default())),
+            months(groups(&GroupBy::Date, &shots, now(), Sort::Newest, &Default::default(), &[])),
             ["date:month:2026-07", "date:month:2026-05"]
         );
         assert_eq!(
-            months(groups(&GroupBy::Date, &shots, now(), Sort::Oldest, &Default::default())),
+            months(groups(&GroupBy::Date, &shots, now(), Sort::Oldest, &Default::default(), &[])),
             ["date:month:2026-05", "date:month:2026-07"]
         );
         assert_eq!(
-            months(groups(&GroupBy::Date, &shots, now(), Sort::Name, &Default::default())),
+            months(groups(&GroupBy::Date, &shots, now(), Sort::Name, &Default::default(), &[])),
             ["date:month:2026-07", "date:month:2026-05"],
             "a name sort keeps the newest group first"
         );
@@ -3884,7 +3920,7 @@ mod tests {
             shot("Fabulously Optimized", "a.png", 2026, 10, 22),
             shot("Vanilla Plus", "c.png", 2026, 10, 23),
         ];
-        let out = groups(&GroupBy::Instance, &shots, now(), Sort::Newest, &Default::default());
+        let out = groups(&GroupBy::Instance, &shots, now(), Sort::Newest, &Default::default(), &[]);
         let titles: Vec<(&str, usize)> = out
             .iter()
             .map(|group| (group.title.as_str(), group.shots.len()))
@@ -3896,7 +3932,7 @@ mod tests {
         );
         assert_eq!(out[1].id, "instance:Vanilla Plus");
 
-        let flat = groups(&GroupBy::None, &shots, now(), Sort::Newest, &Default::default());
+        let flat = groups(&GroupBy::None, &shots, now(), Sort::Newest, &Default::default(), &[]);
         assert_eq!(flat.len(), 1);
         assert_eq!(flat[0].shots.len(), 3);
         assert!(!flat[0].header, "the no-grouping mode hides the header");
@@ -3923,15 +3959,14 @@ mod tests {
         assert_eq!(Sort::ALL.map(Sort::label), [SORT_NEWEST, SORT_OLDEST, SORT_NAME]);
     }
 
-    /// The group-by select offers the three modes that need no stored groups, in the source's
-    /// order with custom left out.
+    /// The group-by select offers the four modes in the reference's `groupOptions` order:
+    /// custom, instance, date, none -- with `custom` as one mode rather than one entry per group.
     #[test]
     fn the_group_select_offers_the_modes_this_build_can_group_by() {
         assert_eq!(
-            // `ALL` is the three stored modes; `with_groups` appends the reader's own, which a browser's select lists
-            // after them.
             GroupBy::ALL.map(|mode| mode.label().to_owned()).to_vec(),
             vec![
+                GROUP_CUSTOM.to_owned(),
                 GROUP_INSTANCE.to_owned(),
                 GROUP_DATE.to_owned(),
                 GROUP_NONE.to_owned()

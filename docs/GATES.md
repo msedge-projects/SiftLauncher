@@ -6999,3 +6999,28 @@ grouping function all key off it -- so it is the next round's work rather than a
 
 **The general lesson**: three attempts to drive a dropdown cost a round and produced nothing; reading the component took three commands. The source
 has been in the workspace the whole time and answers questions a capture cannot -- the *conditional* (isGlobal) and the exact string set among them.
+### The group mode is one entry that groups by all of them (2026-11-09)
+
+The state-model difference recorded last round is fixed, on the reference's own shape rather than a guess:
+
+| | before | after |
+|---|---|---|
+| the mode's value | `Custom(group_id)` -- a payload | **`Custom`** -- a unit mode |
+| the select's entries | instance, date, none, then one per group | **custom, instance, date, none** |
+| a group's entry label | "Group", one per group | **"Custom group"**, once |
+| the grid under `custom` | filtered to that one group | **one section per group, then "Ungrouped"** |
+
+The sections follow the source exactly: `custom:${group.id}` titled with the group's name, and a final `custom:ungrouped` titled
+**Ungrouped** holding every shot whose assignment names no live group. Shots arrive already in the reader's sort order, so each
+section keeps it and no second sort is needed.
+
+**Two tests changed with the model**, which is the point of having them: `a_custom_group_holds_only_its_assigned_shots` became
+`the_custom_mode_sections_every_group_then_lists_the_rest_ungrouped` and now asserts both a group's section and the ungrouped one; and
+the select's test asserts the four labels in the reference's order. **269 pass.**
+
+**Captured**: the open menu reads Custom group / Instance / Date / No grouping, Date selected on the green plate, with "Custom group"
+on the chip behind it.
+
+**Not done, and it is in the source**: `instance` is offered only when `isGlobal`. This build's Screenshots page *is* the global one, so
+the condition is satisfied today -- but there is no instance-scoped variant of this page to satisfy it for, so the flag has nothing to
+switch. Recording it as an open question rather than implementing a condition with no branch to guard.
