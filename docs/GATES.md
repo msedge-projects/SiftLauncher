@@ -4804,3 +4804,26 @@ project title found a difference of one point in 249, so the error scales with t
 
 **This is the floor from the inside**: the ink is in the right place to within a pixel and a half, and every stem after the first drifts
 by a fraction of one. Nothing in this build can round the same way as Chrome.
+### The Add filter control: right shape, two wrong attempts, reverted (2026-11-09)
+
+The library\'s filter row differs structurally and I could see it plainly:
+
+| | reference | ours |
+|---|---|---|
+| the row | two dropdown chips, a standalone **funnel**, a vertical rule, then an **outlined `+ Add filter`** | three identical chips, the third with a chevron |
+
+Two attempts to draw it, both measured, both worse than leaving it:
+
+| attempt | Home |
+|---|---:|
+| three chips (as it was) | **31 339** |
+| rule + outlined button, third chip removed | 31 547 (**+208**) |
+| ... plus the standalone funnel, button moved 14 points right | 31 581 (**+242**) |
+
+Both were reverted. The reason is not that the shape is wrong -- it is right -- but that **I could not measure the reference\'s button** to
+place it: two bbox probes over the region both returned their own crop edges (`455..699`), which is the same instrument failure this file
+has recorded before, and a hand-guessed rectangle that is 10 points out costs more than a wrong chip that happens to overlap.
+
+**The way to do this one is not a probe at all**: the reference sizes that button from its own contents (`px-3 py-1` plus a 16-point plus, a
+gap and the label), so the width should be *derived from the laid-out text* the way every other button in this build is, not guessed from a
+crop. That is a half-hour job with the right instrument, and it is written down here instead of being attempted a third time blind.
