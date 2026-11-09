@@ -5526,3 +5526,21 @@ all three disagreed.
 
 Six rounds for one card, on a page whose total is 19 595 of a 1.3-megapixel frame -- 1.5%. The time was not well spent, and the record says so
 rather than presenting the churn as progress.
+### Escape did nothing, and now clears the selection (2026-11-09)
+
+Driven with the card\'s ring at the coordinates the program prints (`home row=0 ... card=[[88,329]-[256,537]]`, ring centre 210,388):
+
+| step | what changed |
+|---|---|
+| a press on the ring | **(199,377)-(221,399)** -- the 22-point circle, and nothing else |
+| `Escape` | **nothing at all** |
+
+So the ring toggled correctly and Escape was not wired to the selection. It is now: the same 22-point box changes back, and the frame after
+Escape is **pixel-identical** to the frame before the press (`f0.png` against `f2.png`: no difference at threshold 40).
+
+That is the whole behaviour -- tick, change your mind, one key, nothing left ticked -- and it closes the matrix row that recorded the
+reference doing it.
+
+**A lab note from the same drive**: the reference was still sitting on a *project page* from a previous round, so hunting for its ring on
+Home found a "How to install" button instead. The reference is not reset between rounds and does not reset itself; the only way to know which
+screen it is on is to look at it.

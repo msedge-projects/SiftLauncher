@@ -1097,6 +1097,13 @@ fn list(
     }
     if ui.input(|input| input.key_pressed(egui::Key::Escape)) {
         state.page_menu = None;
+        // **Escape clears a multi-selection**, as the reference does: a reader who has ticked cards and changed
+        // their mind should not have to find each ring again. Measured before this: a ticked card, Escape, and
+        // **no pixel changed** (`e1.png` -> `e2.png` diff: None).
+        if !state.selected.is_empty() {
+            state.selected.clear();
+            ui.ctx().request_repaint();
+        }
     }
     // One directory walk per change of instance list, not per frame.
     state.refresh_worlds(instances);
