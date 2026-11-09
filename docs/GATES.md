@@ -7710,3 +7710,24 @@ no change: it costs a build, a test run and the reader's trust in the next "fixe
 
 The finding stands and is now smaller and sharper: the rows that overflow the rail are not drawn from `rail_rows`, and `state.drawn_rail` --
 computed once at :2522, taken at :2840 -- is where to look.
+### The rail's tail: a short rule this build draws and the reference does not (2026-11-09)
+
+Cropping the foot of the rail at (250,620)-(530,760) in both, at 2x, shows the last thing in the column before the footer:
+
+| | reference | this build |
+|---|---|---|
+| INSTANCE DEFAULTS heading | present | present |
+| "Java and memory" row | present, same y and pitch | present, same y and pitch |
+| between that row and the footer | **nothing** | a **short horizontal rule**, about thirty points wide |
+| the footer | Modrinth App 0.22.0 / Linux ... | Sift Launcher 0.1.62 / linux 0.1.62 |
+
+So the earlier reading -- that extra tabs were drawn below the pane -- was wrong twice over: there are no extra tabs, the rows agree row for row,
+and the difference at the foot is one short rule plus the footer's own text. That also explains why the `retain` was a no-op and why the region the
+flat finder flagged sat at the rail's *bottom* rather than across it.
+
+**Not yet identified**: the rule's draw call. The rail is wrapped in a `ScrollArea` whose pane is `rail.min .. footer.top() - 8`
+(`settings.rs:3189`, `:3224`), and either that area's frame or a footer divider is the candidate. The next step is to disable the pane's frame and
+re-capture -- a one-line change with an unambiguous before and after, which is exactly what the last three attempts at this element lacked.
+
+**The footer's text is a deliberate difference**, recorded last round: this build names itself. It should not be "fixed" by copying the
+reference's product name.
