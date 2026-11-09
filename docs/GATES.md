@@ -7440,3 +7440,28 @@ the interface less like the reference in order to hide an environment limitation
 
 **The probe stays in the code**, printing only on failure or success, because it is three lines and it is what turned a silent hang into a
 readable one.
+### Why 99% is out of reach, in one measurement (2026-11-09)
+
+The objective asks for at most 1% of pixels differing at threshold 40. On a 1440x900 frame that is **12 960 pixels**. Rather than argue about
+it, this classifies every differing pixel by what the *reference* is drawing there, using the local contrast of its 3x3 neighbourhood: a fill or
+a rule is flat, a glyph edge or a photograph is textured.
+
+| page | differing | **flat** (geometry, colour) | **textured** (glyph edges, artwork) |
+|---|---:|---:|---:|
+| Home | 33 004 | 8 188 | **24 816** (75%) |
+| Screenshots | 39 822 | 14 482 | **25 340** (64%) |
+
+**The textured class alone is 1.9 times the entire budget on Home.** No arrangement of layout, spacing or colour can bring the total under
+12 960 while 24 816 pixels differ on glyph edges and photographs, because those two classes are not drawn by this project:
+
+* **glyph edges** are `ab_glyph`'s coverage rasteriser against the reference's WebKit text antialiasing. Measured earlier at 13 215 differing
+  pixels for the same glyphs at threshold 120 -- the shapes agree, the edge coverage does not;
+* **photographs** are this build's bilinear sample against a compositor's filter. Measured on the news artwork alone: 19 424 pixels at 1920.
+
+**So the honest statement of the clause is arithmetic, not effort**: at most 1% is unreachable on this backend at these sizes, with the split
+above as the reason, and the reachable target is the flat share -- 8 188 on Home, 14 482 on Screenshots -- which is 0.6% and 1.1% of the frame
+respectively. That is where every pixel improvement of the last many rounds has come from, and it is why they arrive in hundreds rather than
+thousands.
+
+**Two things this does not say.** It does not say the textured difference is invisible: at 1:1 a monitor glyph against a globe was obvious. And
+it does not say the work is finished: the flat share is still 25-36% of the difference, and every one of those is a real, fixable mismatch.
