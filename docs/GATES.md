@@ -6906,3 +6906,29 @@ filters disagree on most pixels of a photograph and on none of a flat fill, whic
 **The testable next step is a better filter, not a better layout**: a box or area average for large downscales is what a compositor does, and it is a
 few lines in the sampler. If the artwork's 19 424 drops, the mechanism is confirmed; if it does not, the difference is the source image and the filter
 is not the answer.
+### The no-results state was drawn, 160 points too low (2026-11-09)
+
+Driving a query that matches nothing into both clients showed the reference's **No matching screenshots** state and, in this build, an empty page.
+The code had the copy and the branch (`visible.is_empty()` -> `empty_state`), so the strings were right and nothing appeared.
+
+A probe settled it in one build: `visible=0`, `list_rect=[[88,208]-[1116,876]]`, so the state *was* being drawn -- **centred**. Measured on the
+reference, the block is not centred at all:
+
+| | reference | this build, centred |
+|---|---|---|
+| illustration | rows **273..383** | 411..509 |
+| heading | rows **439..460** | ~530 |
+| body | rows **473..484** | ~554 |
+
+In a 668-point list area a centred 262-point block starts at 411 -- **138 points below the reference's** -- and with the state that low it sat under
+the fold of a crop and read as absent.
+
+**The fix is the source's own geometry**: the block is anchored **76 points below the list top**, with an 110-point illustration, a 56-point gap, a
+21-point heading line, 13, and an 11-point body line. The 76 rather than 65 came from the probe: the list area actually starts at **197**, not the 208
+the page's padding suggests, so 65 left everything eleven points high.
+
+**Measured after**: the no-results screen at 1440x900 reads **39 559** (content 20 461, sidebar 16 565). Both clients draw the same illustration,
+the same heading and the same body at the same height, where one of them previously drew nothing.
+
+**Why this state had never been caught**: every earlier capture of this page was of a populated library or the *empty library* state, which is a
+different branch and which sits correctly. The no-results state needs a query that matches nothing, and no round had typed one.

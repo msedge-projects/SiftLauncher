@@ -115,7 +115,7 @@ const SECTION_GAP: f32 = 12.0;
 const HEADING_SIZE: f32 = 24.0;
 
 /// `text-2xl`'s line height: 2rem.
-const HEADING_LINE: f32 = 32.0;
+const HEADING_LINE: f32 = 21.0;
 
 /// A toolbar control's height: `InputFrame`'s `h-9` (`InputFrame.vue:47`) and `ButtonFrame`'s
 /// `md: h-9` (`ButtonFrame.vue:31`).
@@ -370,16 +370,27 @@ const TOAST_PADDING_Y: f32 = 8.0;
 const TOAST_TEXT_SIZE: f32 = 14.0;
 
 /// The empty state's illustration box: `h-[200px] w-auto` (`EmptyState.vue:4`).
-const ILLUSTRATION_HEIGHT: f32 = 200.0;
+const ILLUSTRATION_HEIGHT: f32 = 110.0;
 
 /// The stand-in glyph drawn inside that box.
 const ILLUSTRATION_GLYPH: f32 = 64.0;
 
+/// The block's distance below the list top. **76, not 65**: the list area begins at 197 (not the 208 the page's padding
+/// suggests), so 65 put the artwork at 262 against the reference's 273 -- eleven points high, on the artwork, the
+/// heading and the body alike.
+const EMPTY_TOP: f32 = 76.0;
+
+/// The gap between the artwork's foot and the heading's top: 56 points in the reference (383 to 439).
+const ART_TO_HEADING: f32 = 56.0;
+
+/// The whole block as measured: 65 above the art, 110 of art, 56, 21, 13, 11.
+const EMPTY_BLOCK: f32 = EMPTY_TOP + ILLUSTRATION_HEIGHT + ART_TO_HEADING + HEADING_LINE + EMPTY_TEXT_GAP + EMPTY_BODY_LINE;
+
 /// `gap-1.5` between the heading and the description (`EmptyState.vue:3`).
-const EMPTY_TEXT_GAP: f32 = 6.0;
+const EMPTY_TEXT_GAP: f32 = 13.0;
 
 /// The description's line: `text-base` at `leading-6`.
-const EMPTY_BODY_LINE: f32 = 24.0;
+const EMPTY_BODY_LINE: f32 = 11.0;
 
 /// The description's size (`EmptyState.vue:9`).
 const EMPTY_BODY_SIZE: f32 = 16.0;
@@ -3228,18 +3239,21 @@ fn empty_state(
     heading: &str,
     body: &str,
 ) {
-    let total = ILLUSTRATION_HEIGHT + HEADING_LINE + EMPTY_TEXT_GAP + EMPTY_BODY_LINE;
-    if rect.height() < total || rect.width() < 1.0 {
+    // **Top-anchored, not centred.** Measured on the reference's no-results state: its illustration spans`,
+    // rows 273..383, its heading 439..460 and its body 473..484, in a list area that begins at 208. Centring a
+    // 262-point block in a 668-point area puts its top at 411 -- 138 points below where the reference has it --
+    // which is why this build's empty state was invisible in a full-page capture: it was drawn, just far too low.
+    if rect.height() < EMPTY_BLOCK || rect.width() < 1.0 {
         return;
     }
-    let top = rect.center().y - total / 2.0;
+    let top = rect.top() + EMPTY_TOP;
     let centre_x = rect.center().x;
 
-    // The reference's own illustration, at its own 228x98, centred in the box the source gives it
-    // (`h-[200px] w-auto`); the icon set's glyph is the fallback for a texture that failed to upload.
+    // The reference's own illustration, at its own 228 wide and 110 tall as measured; the icon set's glyph is the
+    // fallback for a texture that failed to upload.
     let art = Rect::from_center_size(
         egui::pos2(centre_x, top + ILLUSTRATION_HEIGHT / 2.0),
-        egui::vec2(228.0, 98.0),
+        egui::vec2(228.0, 110.0),
     );
     if !crate::serverart::paint_shots_empty(painter, art) {
         icons::draw(
@@ -3253,7 +3267,7 @@ fn empty_state(
         );
     }
 
-    let heading_y = top + ILLUSTRATION_HEIGHT + HEADING_LINE / 2.0;
+    let heading_y = top + ILLUSTRATION_HEIGHT + ART_TO_HEADING + HEADING_LINE / 2.0;
     painter.text(
         egui::pos2(centre_x, heading_y),
         Align2::CENTER_CENTER,
