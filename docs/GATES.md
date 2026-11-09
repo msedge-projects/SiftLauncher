@@ -5024,3 +5024,28 @@ earlier states of the reference and of this build, and the earlier numbers were 
 
 What is left is the text, which is what every previous round found: the sidebar\'s 16 818 at 1440x900 is the news card\'s title and body,
 whose line breaks differ by a word.
+### Correction: the sweep two paragraphs up compared a grouped reference (2026-11-09)
+
+The table above is **wrong and is superseded by this one**. Its reference captures were taken with the reference still grouped by
+`Instance type` -- a state left over from driving its Custom group menu earlier in the session. A grouped reference and an ungrouped
+build differ by every group header, every shifted card and a rule across the content column, which is most of what the numbers were
+measuring.
+
+It was found by looking at the band with the most differences and seeing a **"Custom 1" header** in the reference crop that this build
+does not draw -- rather than by re-reading the numbers, which looked plausible.
+
+**The reference was reset to `Custom group` and all five sizes re-taken**, both sides ungrouped:
+
+| size | differing | pixels | share |
+|---|---:|---:|---:|
+| 1280x720 | 31 775 | 921 600 | **3.45%** |
+| 1366x768 | 39 444 | 1 049 088 | **3.76%** |
+| 1440x900 | 35 479 | 1 296 000 | **2.74%** |
+| 1600x900 | 49 413 | 1 440 000 | **3.43%** |
+| 1920x1080 | 61 295 | 2 073 600 | **2.96%** |
+
+These agree with the shape of the older figures (27.6k / 35.3k / 31.3k / 45.3k / 57.1k) to within the drift of nine rounds of work, which
+is the check the wrong table failed: it was 40-50% higher everywhere, and nothing in those nine rounds did that.
+
+**The rule this breaks is the oldest one in this file**: leave the lab as found, and check both screens before measuring. The reference
+was left grouped, and the sweep was taken without looking at it.
