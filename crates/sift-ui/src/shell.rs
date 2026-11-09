@@ -3805,9 +3805,11 @@ fn card(
     );
     let by_at = egui::pos2(title_at.x + title.size().x + 10.0, title_at.y + 2.0);
     painter.galley(by_at, by.clone(), theme.SECONDARY);
-    // **No external-link glyph.** This drew one after the author, and the reference's card has neither the icon nor the
-    // import for it: `LegacyProjectCard.vue` prints `by {author}` and nothing else. An affordance the reference does not
-    // draw is a promise this build cannot keep.
+    // **No external-link glyph yet, and the note that said the reference has none is wrong.** At 6x the reference's first card
+    // draws a square-with-an-arrow about six points right of the author name; a note here claimed `LegacyProjectCard.vue`
+    // prints `by {author}` and nothing else, and was believed for many rounds. Drawing it at the byline's end cost 171 pixels
+    // rather than saving any, which means the placement is wrong, not the idea: the position has to be measured off the
+    // reference before it is drawn again.
 
     // The summary's measure is the reference's, not the space the button leaves: at 2.2x
     // its first card breaks after "in a", which is a ~440-point line, so the second line
