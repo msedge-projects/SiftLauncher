@@ -6515,3 +6515,18 @@ So the fix is to place it from ink, not from the layout: find the byline galley'
 carries it) and centre vertically on the text's ink rows, which for this card are 249..262's neighbours.
 
 **Also recorded**: the same note that denied the glyph had been in the file for many rounds, specific enough to sound checked. It was not.
+### The external-link mark is drawn, and the number goes up (2026-11-09)
+
+The reference draws a 14x14 square-with-an-arrow 8 points after its byline (ink ends x 611, glyph 619..632). This build now draws the same
+glyph after its own byline, and the page scores **78 534 against 78 363 without it** -- 171 pixels worse.
+
+**Kept, deliberately.** At 10x the two marks are the same design; the reason ours lands wrong is that our byline is about ten points wider than
+the reference's, so the mark follows the text further right. The metric is measuring our text width, which is a separate defect, and deleting a real
+affordance to make a count smaller is precisely the fake measurement this project forbids.
+
+**A correction to last round.** I had concluded the placement was wrong because 171 pixels is what a fully misplaced 196-pixel glyph would cost.
+That was sound arithmetic on a wrong premise: the glyph's *shape* differs from the reference's by enough to cost nearly all of its own pixels even
+when correctly placed, so the cost says nothing about position. The 10x crop says the position is right.
+
+**The note that denied it** -- claiming `LegacyProjectCard.vue` prints `by {author}` and nothing else -- had stood for many rounds. It was specific,
+cited a file, and was never checked. A subagent audit of the whole tree found nine more of the same shape; they are listed in the next entry.

@@ -3805,11 +3805,24 @@ fn card(
     );
     let by_at = egui::pos2(title_at.x + title.size().x + 10.0, title_at.y + 2.0);
     painter.galley(by_at, by.clone(), theme.SECONDARY);
-    // **No external-link glyph yet, and the note that said the reference has none is wrong.** At 6x the reference's first card
-    // draws a square-with-an-arrow about six points right of the author name; a note here claimed `LegacyProjectCard.vue`
-    // prints `by {author}` and nothing else, and was believed for many rounds. Drawing it at the byline's end cost 171 pixels
-    // rather than saving any, which means the placement is wrong, not the idea: the position has to be measured off the
-    // reference before it is drawn again.
+    // **The mark, drawn where the reference has it -- and it costs pixels, which is the right trade.** The reference's glyph
+    // is a 14x14 square-with-an-arrow at (619,249), 8 points after its byline ink ends at 611. This build draws the same glyph
+    // after its own byline, and its byline is ~10 points wider than the reference's, so the mark lands right of where the
+    // reference puts it and the page scores **171 pixels worse**. The interface is now more faithful and the metric is worse;
+    // the metric is measuring our text width, which is a separate defect, and dropping a real affordance to improve a number
+    // is the fake-measurement this project forbids.
+    crate::icons::draw(
+        painter,
+        Glyph::External,
+        Rect::from_center_size(
+            egui::pos2(
+                by_at.x + by.size().x + 13.0,
+                by_at.y + by.size().y / 2.0,
+            ),
+            Vec2::splat(14.0),
+        ),
+        theme.SECONDARY,
+    );
 
     // The summary's measure is the reference's, not the space the button leaves: at 2.2x
     // its first card breaks after "in a", which is a ~440-point line, so the second line
