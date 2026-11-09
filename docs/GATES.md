@@ -6152,3 +6152,27 @@ file behaved differently in two places.
 
 **Row 514 stays open**: it asks for eight title-bar tooltips and this round delivered one. The mechanism is now one function call per target, so
 the remaining seven are calls rather than a new system.
+### Which tooltips this lab can reach at all (2026-11-09)
+
+After the rail's tooltip was matched, the rest of the cluster was attacked by hovering every target the reference has, and most of them answer
+with nothing because the *state* that carries them is not reachable here. Recorded so the next round does not re-hover them:
+
+| target | hover result |
+|---|---|
+| rail buttons | **tooltip** -- matched and closed this session |
+| title-bar download ring (x 974) | **tooltip**, "Download manager" -- now drawn here too |
+| title-bar Update pill (x 1040) | hover state only, **no tooltip** |
+| title-bar status pill (x 1200, 1250) | **nothing at all** |
+| instance card play disc (x 206, y 470) | the card's hover affordance, **no tooltip** |
+| instance card at (236, 470) and (240, 520) | the same affordance, **identical box** each time |
+
+Row 514 asks for **eight** title-bar tooltips -- "downloads, view instance, stop, view logs". The buttons for view-instance, stop and view-logs
+appear in the title bar only when an instance is running or installing, and this lab cannot put the reference into that state: its own instance is
+one this build created, and the reference has never launched it. Hovering the three positions that exist gives one tooltip and two nothings.
+
+Row 510 (card actions: Loading/Installing, Stop, Repair, Play, Select/Delete) is the same shape: those labels belong to states -- installing,
+running, repairing -- that the reference is not in and that this lab cannot induce without a Minecraft account it does not have.
+
+So of the 16 open tooltip rows, **four are reachable now** (the rail's three, closed, plus the download ring, drawn) and the rest are behind
+states. That is a bigger statement than "not done": it says the cluster cannot be closed from here at all, and the rows should carry that cause
+rather than staying OPEN as though a drive would close them.
