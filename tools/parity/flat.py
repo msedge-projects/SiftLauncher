@@ -16,8 +16,18 @@ CELL = 32
 
 
 def main():
-    ref = Image.open(sys.argv[1]).convert("RGB")
-    our = Image.open(sys.argv[2]).convert("RGB")
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    ref = Image.open(args[0]).convert("RGB")
+    our = Image.open(args[1]).convert("RGB")
+    # `--rect L,T,R,B` restricts the scan: a modal over a page inherits the page\'s difference, so half a modal page\'s
+    # figure can be about the thing behind it (measured on Settings: 27 941 of 55 197).
+    box = None
+    for i, a in enumerate(sys.argv):
+        if a == "--rect" and i + 2 < len(sys.argv):
+            values = [int(v) for v in sys.argv[i + 1].split(",")]
+            box = (values[0], values[1], values[2], values[3])
+    left, top = (box[0], box[1]) if box else (64, 48)
+    right, bottom = (box[2], box[3]) if box else (ref.size[0], ref.size[1])
     if ref.size != our.size:
         print("sizes differ:", ref.size, our.size)
         return 2
@@ -25,8 +35,8 @@ def main():
     rp, op = ref.load(), our.load()
     cells = Counter()
     total = flat = 0
-    for y in range(48, h - 1):
-        for x in range(64, w - 1):
+    for y in range(top, min(bottom, h - 1)):
+        for x in range(left, min(right, w - 1)):
             a = rp[x, y]
             b = op[x, y]
             if max(abs(a[i] - b[i]) for i in range(3)) <= 40:
