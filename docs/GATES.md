@@ -5345,3 +5345,27 @@ The first-row offset is left as it was, now with the test saying so out loud: Ho
 has not been measured for that page yet. Pinning a divergence is not fixing it, but it cannot now be mistaken for agreement.
 
 Home is unchanged: **32 864** at threshold 40, same per-slab split. **267 tests** pass, one of them new.
+### The constants were dead, and the test said they were fine (2026-11-09)
+
+Last round\'s entry ended with a risk: "a passing test may be read as agreement". It was worse than that -- the test asserted two
+constants that **nothing read**. `PROJECT_STEPS_TOP` and `PROJECT_ROW_PITCH` were defined, the test compared them, and the drawing
+still said `card.top() + 58.0 + index as f32 * 44.0`, unchanged. Measured on the running build: the project sidebar\'s rows were still
+44 apart after a commit that claimed 48.
+
+Both are wired in now, and the test asserts the **drawing expression itself** (`card.top() + PROJECT_STEPS_TOP`,
+`index as f32 * PROJECT_ROW_PITCH`) rather than the constants, so a dead constant cannot pass again.
+
+The pitch fix is verified on screen this time:
+
+| | reference | before | after |
+|---|---|---|---|
+| the project sidebar\'s row bands | 141, 189, 237 | 186, 230 (**44** apart) | 184, 232 (**48** apart) |
+
+**What is still wrong**: the rows are 43 points too low (184 against 141) while both cards\' headings sit at y 85. So the offset is not the
+heading and not the pitch -- it is the distance between them inside the card, which on this page is 99 here against 57 in the reference.
+`PROJECT_STEPS_TOP` is 52 and the heading inset is 13, which should put the first row about 39 below the heading, not 99. Something between
+the heading and the row loop is adding ~40 points that this round did not find.
+
+The card\'s height was left at its tested value: changing it with the pitch broke the project page\'s own test at 204 against the
+reference\'s 178, so the height and the pitch are now pinned separately and the height\'s own 26-point error is recorded here rather than
+folded into this change.

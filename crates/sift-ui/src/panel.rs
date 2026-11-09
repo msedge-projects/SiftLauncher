@@ -432,6 +432,8 @@ pub fn project_getting_started_card(
     let painter = &painter;
     let pointer = ui.input(|input| input.pointer.hover_pos());
     let mut pressed = None;
+    // The card's own height stays as the project page's test asserts it (188); only the rows inside it moved to the
+    // named constants. Changing both at once failed that test at 204, which is the reference's 178 plus 26.
     let card = Rect::from_min_size(rect.min, egui::vec2(rect.width(), 40.0 + 3.0 * 44.0));
     painter.rect_filled(card, 12, fill);
     painter.rect_stroke(card, 12, Stroke::new(1.0, ring), egui::StrokeKind::Inside);
@@ -456,7 +458,10 @@ pub fn project_getting_started_card(
             // **+58, not +34.** Measured off the reference: its sidebar heading's ink runs 84..95 and its first row's
             // 138..155 -- 54 below the heading's top -- on *both* Home and a project page alike. With +34 this card
             // drew its rows 24 points above the reference's.
-            egui::pos2(card.left() + 16.0, card.top() + 58.0 + index as f32 * 44.0),
+            egui::pos2(
+                card.left() + 16.0,
+                card.top() + PROJECT_STEPS_TOP + index as f32 * PROJECT_ROW_PITCH,
+            ),
             egui::vec2(card.width() - 32.0, 40.0),
         );
         let response = ui.interact(row, egui::Id::new(("getting-started-step", index)), egui::Sense::click());
@@ -1741,6 +1746,18 @@ mod geometry_tests {
     /// disagreement a decision: change either number and the failure says which two are being compared.
     #[test]
     fn the_two_checklist_cards_keep_their_own_row_geometry() {
+        // **A constant nothing reads is a lie in a test.** These two were defined and left unused for a round while
+        // the drawing still said `58.0` and `44.0`, and the assertions below passed anyway. These two lines assert
+        // the drawing expression itself -- it appears nowhere else -- so dead constants cannot pass again.
+        let source = include_str!("panel.rs");
+        assert!(
+            source.contains("card.top() + PROJECT_STEPS_TOP"),
+            "the card positions its rows from the constant"
+        );
+        assert!(
+            source.contains("index as f32 * PROJECT_ROW_PITCH"),
+            "the card pitches its rows from the constant"
+        );
         assert_eq!(HEADING_LINE + HEADING_TO_BODY, 39.0, "Home\'s first row, below the card top");
         assert_eq!(PROJECT_STEPS_TOP, 52.0, "the project card\'s first row, below the card top");
         assert_eq!(PROJECT_ROW_PITCH, ROW_PITCH, "both cards pitch their rows 48 apart, as the reference does");
