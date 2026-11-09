@@ -7320,3 +7320,29 @@ naming what is not.
 **The rate is the problem.** Two rows took about twenty minutes, most of it finding the code the row is about, and there are 138 absence-claims and
 54 rounds left -- 405 rows at 7 a round. The next round should build the search instead of doing it by hand: a script that takes each candidate
 row's element name and looks for its keywords in `crates/sift-ui/src`, printing the candidate `file:line` for a read rather than a grep by hand.
+### A finder for already-implemented rows, and six more closed (2026-11-09)
+
+The hand search cost twenty minutes for two rows. `tools/parity/rows.py` replaces it: for every OPEN row it pulls the **quoted literals**
+out of the reference cells and greps `crates/sift-ui/src` for them. Reference copy is verbatim from 0.22.0, so a literal that exists in our
+source means the element that shows it very probably exists too.
+
+```
+python3 tools/parity/rows.py --limit 14     14 candidates from 228 OPEN rows in a few seconds
+```
+
+**It found candidates and it also found its own trap.** Row 309's "Export ZIP" matched at `screenshots.rs:85` -- inside a doc comment that
+says Export ZIP is *not* implemented. A comment about an absence contains the absent feature's name, so a hit must be read before it is
+believed, and the tool's job is to make the reading cheap rather than to skip it. Every hit below was checked for a *draw* call, not just a
+string.
+
+| row | element | the code |
+|---|---|---|
+| 17 | hero title | `home.rs:844` -- "Welcome to Modrinth", drawn |
+| 18 | hero description | `home.rs:852` -- "Ready to start playing?", drawn |
+| 118 | Discover, no results | `shell.rs:3597` -- the exact sentence, drawn |
+| 266 | skins demo account bar | `skins.rs:1990` -- the button, from `SIGN_IN_MICROSOFT` |
+| 304 | screenshots empty state | `screenshots.rs:1316` -- through `empty_state` |
+| 305 | screenshots no-results | `screenshots.rs:1413` -- driven and measured this session |
+
+**Six rows in one pass against two by hand**, and the counts moved from 56/443 to **62/437**. The remaining lead list is printed by the tool and
+each pass costs seconds, so the limit is reading rather than finding.
