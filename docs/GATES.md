@@ -6307,3 +6307,23 @@ two rounds that the "obvious" 24-point shift was already correct.
 **What that leaves**: the search field's 1 316 is the largest single band, and it is measurable -- its plate, its placeholder and its magnifier can
 each be boxed separately, as the library's field was. That is the next piece of this page, and it is a search for *which* element rather than for
 an offset.
+### The search field was 48 points narrow, and the plate said so (2026-11-09)
+
+Boxing the plate of the field, instead of the 20-row band that contains it, gave the answer in one measurement:
+
+| | plate fill | plate rows | plate columns |
+|---|---|---|---|
+| reference | (52,54,60) | 117..150 | **89..1114** |
+| this build | (52,54,60) | 117..150 | **89..1066** |
+
+Fill and rows already matched; the plate ended **48 points early**, and 48 is `2 x PAGE_PADDING` -- the width still subtracted the padding that
+the position no longer added. Removing it from the width closes the gap exactly: the plate now runs 89..1114 on both sides.
+
+| | content | total |
+|---|---:|---:|
+| before | 8 396 | 27 745 |
+| after | **7 646** | **26 995** |
+
+**The band had said 1 316 differing pixels in rows 120-139 and could not say which element they were in.** The box said it in one line: same
+fill, same rows, different right edge. That is the second time in two rounds that boxing one element beat banding a row, and the cause is the same
+as the padding bug one round earlier -- a rect that is already padded, used as though it were not.

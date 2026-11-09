@@ -1723,8 +1723,9 @@ fn heading_and_toolbar(
     // at a 256-point floor and the button content-sized after it.
     let row_top = heading_at.y + HEADING_LINE + SECTION_GAP;
     let button_width = text_button_width(painter, NEW_GROUP, theme);
-    let search_width = (rect.width() - 2.0 * PAGE_PADDING - CONTROL_GAP - button_width)
-        .max(SEARCH_MIN_WIDTH);
+    // **No PAGE_PADDING here either.** The rect is already the padded column, and subtracting the padding twice made this field
+    // 48 points narrow: measured, its plate ran 89..1066 where the reference's runs 89..1114, and 2 x 24 is exactly the gap.
+    let search_width = (rect.width() - CONTROL_GAP - button_width).max(SEARCH_MIN_WIDTH);
     let search = Rect::from_min_size(
         egui::pos2(rect.left(), row_top),
         egui::vec2(search_width, CONTROL_HEIGHT),
