@@ -4656,3 +4656,28 @@ is laid out for the final size rather than for any of the intermediate ones.
 **A note on the one flagged result**: the 1366x768 capture first reported its sidebar at 946 instead of 1066. That was the checker reading the
 green **New instance** button in the content column -- sampling `x` from `width-420` walked into it. The sidebar is at 1066, exactly
 `width - 300`, and the number was the instrument, not the product.
+### The reference has a minimum window size and this build did not (2026-11-09)
+
+Found by resizing both to a size smaller than either had been tried at:
+
+| request | reference | ours before | ours now |
+|---|---|---|---|
+| 800x600 | **1100x700** | 800x600 | **1100x700** |
+| 1024x768 | **1100x768** | 1024x768 | **1100x768** |
+| 1440x900 | 1440x900 | 1440x900 | 1440x900 |
+
+**The reference\'s own `tauri.conf.json` says why** -- the source is on GitHub and was read for this:
+
+```json
+"windows": [{ "width": 1280, "height": 800, "minWidth": 1100, "minHeight": 700,
+              "resizable": true, "decorations": false, "titleBarStyle": "Overlay" }]
+```
+
+This build had `with_min_inner_size(960, 540)`, and even the corrected `1100x700` was **advisory**: with no window manager on this
+display nothing reads size hints, so `xdotool windowsize 800 600` took the window to 800x600 while the reference refused. The resize
+handler now asks for the minimum back itself, which is what produces the table above.
+
+**The source is reachable and will be used for behaviour questions the captures cannot decide** -- `modrinth/code`, branch `main` (its
+default branch, pushed 2026-11-07), with `apps/app-frontend` for the interface and `apps/app/tauri.conf.json` for the window. One caution
+recorded for the next reader: **the repository is not 0.22.0**. Its `Home` template now says `gap-3` where the 0.22.0 binary\'s does
+`gap-4`, so the source is a guide and the running binary is the authority; where the two disagree, the binary wins.

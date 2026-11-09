@@ -272,6 +272,10 @@ impl Soft {
     }
 }
 
+/// The window\'s own minimum, from the reference\'s `tauri.conf.json` (`minWidth` / `minHeight`).
+const MIN_WIDTH: f32 = 1100.0;
+const MIN_HEIGHT: f32 = 700.0;
+
 impl ApplicationHandler for Soft {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = Rc::new(
@@ -282,7 +286,11 @@ impl ApplicationHandler for Soft {
                             crate::geometry::WINDOW.0,
                             crate::geometry::WINDOW.1,
                         ))
-                        .with_min_inner_size(LogicalSize::new(960.0, 540.0))
+                        // **The reference\'s own minimum**, from its `tauri.conf.json`: `"minWidth": 1100,
+                        // "minHeight": 700`. This window allowed 960x540, so it would shrink past the size at which
+                        // the reference still has to lay out — visible by resizing the reference to 800x600, where
+                        // it clamps to 1100x700 and this build followed the request.
+                        .with_min_inner_size(LogicalSize::new(1100.0, 700.0))
                         .with_title("Sift Launcher")
                         .with_decorations(false),
                 )
@@ -302,6 +310,21 @@ impl ApplicationHandler for Soft {
             WindowEvent::Resized(size) => {
                 if std::env::var_os("SIFT_RESIZE_PROBE").is_some() {
                     eprintln!("resized to {size:?}");
+                }
+                // **The reference\'s minimum, enforced rather than hinted.** `tauri.conf.json` says
+                // `"minWidth": 1100, "minHeight": 700`, and the reference clamps a 800x600 request to that;
+                // `with_min_inner_size` alone only sets a hint, and with no window manager on this display nothing
+                // reads it -- `xdotool windowsize 800 600` took this window to 800x600 where the reference stayed at
+                // 1100x700. So the size asks for the minimum back itself.
+                let width = size.width as f32 / self.scale;
+                let height = size.height as f32 / self.scale;
+                if width < MIN_WIDTH || height < MIN_HEIGHT {
+                    if let Some(window) = self.window.as_ref() {
+                        window.request_inner_size(winit::dpi::LogicalSize::new(
+                            width.max(MIN_WIDTH),
+                            height.max(MIN_HEIGHT),
+                        ));
+                    }
                 }
                 self.dirty = true;
             }
