@@ -4827,3 +4827,22 @@ has recorded before, and a hand-guessed rectangle that is 10 points out costs mo
 **The way to do this one is not a probe at all**: the reference sizes that button from its own contents (`px-3 py-1` plus a 16-point plus, a
 gap and the label), so the width should be *derived from the laid-out text* the way every other button in this build is, not guessed from a
 crop. That is a half-hour job with the right instrument, and it is written down here instead of being attempted a third time blind.
+### The gallery\'s crop is right, and my eyes were not (2026-11-09)
+
+The Gallery\'s pictures looked about ten per cent more zoomed than the reference\'s, which reads exactly like a `cover` fit gone wrong. A
+probe inside `cover_uv` says otherwise:
+
+```
+cover_uv texture [350.0 197.0] into [332.0 166.0] scale 0.94857144 shown [1.0 0.9]
+```
+
+**A 350x197 source (16:9) covered into a 332x166 box shows 90% of its height and all of its width** -- and the reference, covering a
+full-size 16:9 source into the same box, shows the same 88.8%. The crops agree to a pixel; what differed was the two screenshot crops I
+was comparing, taken at y 265 and y 267.
+
+**Two wrong instruments in one round**: a bbox probe that kept returning its own crop edges, and a crop pair whose offsets differed by the
+amount I was trying to explain. Both are the same mistake in different clothes -- measuring a thing without first pinning the frame it is
+measured in. The probe was worth building: it turned "looks zoomed" into two numbers that agree.
+
+The Gallery\'s 164 485 is therefore its **text**, like every other page, and the picture\'s softness against the reference is the difference
+between downscaling a 350-point texture and downscaling a 1920-point one -- which the 20 MB memory clause forbids us from matching.
