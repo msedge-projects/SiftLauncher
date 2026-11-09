@@ -1299,8 +1299,8 @@ pub fn draw(
     let mut owed = search_field(ui, chrome.search, state);
 
     let list_rect = Rect::from_min_max(
-        egui::pos2(rect.left() + PAGE_PADDING, chrome.list_top),
-        egui::pos2(rect.right() - PAGE_PADDING, rect.bottom() - PAGE_PADDING),
+        egui::pos2(rect.left(), chrome.list_top),
+        egui::pos2(rect.right(), rect.bottom() - PAGE_PADDING),
     );
     if list_rect.width() < 1.0 || list_rect.height() < 1.0 {
         return owed;
@@ -1705,7 +1705,7 @@ fn heading_and_toolbar(
     state: &mut State,
     _total: usize,
 ) -> Chrome {
-    let heading_at = egui::pos2(rect.left() + PAGE_PADDING, rect.top() + PAGE_PADDING);
+    let heading_at = egui::pos2(rect.left(), rect.top() + PAGE_PADDING);
     // h1.m-0.text-2xl.font-bold.text-contrast (index.vue:1486). font-bold is Inter 700, one
     // weight above the library's text-2xl font-semibold heading.
     //
@@ -1726,7 +1726,7 @@ fn heading_and_toolbar(
     let search_width = (rect.width() - 2.0 * PAGE_PADDING - CONTROL_GAP - button_width)
         .max(SEARCH_MIN_WIDTH);
     let search = Rect::from_min_size(
-        egui::pos2(rect.left() + PAGE_PADDING, row_top),
+        egui::pos2(rect.left(), row_top),
         egui::vec2(search_width, CONTROL_HEIGHT),
     );
     search_plate(painter, search, theme, state);
@@ -1742,7 +1742,7 @@ fn heading_and_toolbar(
     let selects_top = row_top + CONTROL_HEIGHT + TOOLBAR_ROW_GAP;
     let sort = select(
         painter,
-        egui::pos2(rect.left() + PAGE_PADDING, selects_top),
+        egui::pos2(rect.left(), selects_top),
         theme,
         Glyph::ArrowUpDown,
         state.sort.label(),

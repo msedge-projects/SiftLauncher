@@ -6198,3 +6198,22 @@ than silently: it is the exact failure this file has recorded four times, and th
 
 **The lab now differs from before**: both instances hold `2026-11-09_12.00.00.png`, so the empty-state figures in FINISHED.md are no longer
 reproducible without deleting it. Both states are recorded here so either can be restored.
+### The Screenshots page was padded twice: 24 points, 11 338 pixels (2026-11-09)
+
+With both pages populated for the first time, the page head was compared at 1:1 and the whole of this build's content sat **24 points right** of the
+reference's: heading, search field and sort chips, all of it, by exactly one `PAGE_PADDING`.
+
+The cause is a double padding. The rect this page is handed is already the content column, inset 24 from the gutter -- the reference's own heading
+starts at 88, which is that inset -- and the page then added `PAGE_PADDING` again, putting it at 112.
+
+| | content | total |
+|---|---:|---:|
+| before | 19 734 | 39 083 |
+| after four `rect.left() + PAGE_PADDING` -> `rect.left()` | **8 396** | **27 745** |
+
+**11 338 pixels from one constant**, which is more than the previous ten rounds combined and more than every measurement of glyph tone, caret
+position and card height put together. The empty-state page had hidden it completely: an empty page has no list to misalign, and its centred
+illustration is centred in whatever rect it is given, padded or not.
+
+That is the argument for populating the reference rather than comparing empty states -- the same round that made the page reachable found the
+largest defect in it, and no amount of measuring the empty version would have.
