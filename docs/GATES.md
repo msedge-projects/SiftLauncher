@@ -4701,3 +4701,24 @@ Two behaviour fixes on the worst page, both found by cropping one card rather th
 
 The card\'s 10 911 differing pixels break down as icon 2 241, title 2 715, summary 1 018, chips 1 277 and the right column 2 545, which is
 what a card of repeated type looks like when a metric is 0.4% off: **every line is nearly right and every line is counted**.
+### Bilinear sampling, and why the old note was wrong (2026-11-09)
+
+The rasteriser sampled textures **nearest-neighbour**, with a note saying bilinear had been tried and changed "two pixels". It was
+changed here and measured on the four pages that actually draw scaled images:
+
+| page | nearest | **bilinear** | change |
+|---|---:|---:|---:|
+| Gallery | 165 797 | **164 485** | **-1 312** |
+| Discover | 78 059 | **77 486** | **-573** |
+| Project -- Description | 71 255 | 71 526 | +271 |
+| Home | 31 255 | 31 310 | +55 |
+| **net** | | | **-1 559** |
+
+**The old measurement cannot have exercised the sampler.** Every card icon, avatar and gallery picture here is a large texture drawn
+small, and nearest turns those into aliased blocks; the pages that draw the most scaled imagery improve most, and the two that draw their
+art at or near 1:1 get a hair worse from the softening. Four texel reads and a mix per pixel buys 1 559 pixels, and the note that
+discouraged it has been replaced with this table.
+
+**What bilinear did not fix**: the hosting banner mark still draws as a striped square where the reference has clean rings, so that is
+not aliasing. It is the next thing to look at, along with the wordmark, which this build paints all in green where the reference sets
+the word "modrinth" in white and "hosting" in green.

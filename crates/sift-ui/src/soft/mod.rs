@@ -335,19 +335,40 @@ impl Painter {
                             a.uv.y * w0 + b.uv.y * w1 + c.uv.y * w2,
                         ),
                     };
-                    // **Nearest sampling.** Bilinear was tried and measured: 73 660 against 73 662 differing pixels, two
-                    // pixels, for four texel reads and a mix per pixel. It did not earn its cost, so the simple sampler
-                    // stays -- and the note stays with it so the experiment is not run again by accident.
+                    // **Bilinear.** This was nearest-neighbour, with a note saying bilinear had been tried and moved two
+                    // pixels. That measurement cannot have exercised the sampler: every icon in the interface is a large
+                    // texture drawn small, and nearest makes them alias into stripes -- the hosting banner's mark was a
+                    // striped square where the reference has clean rings. Four texel reads and a mix, per textured pixel.
                     let (width_px, height_px) = (texture.image.size[0], texture.image.size[1]);
-                    let tx = ((u * width_px as f32) as isize).clamp(0, width_px as isize - 1) as usize;
-                    let ty = ((v * height_px as f32) as isize).clamp(0, height_px as isize - 1) as usize;
-                    let texel = texture.image.pixels[ty * width_px + tx];
+                    let fx = (u * width_px as f32 - 0.5).clamp(0.0, (width_px - 1) as f32);
+                    let fy = (v * height_px as f32 - 0.5).clamp(0.0, (height_px - 1) as f32);
+                    let x0 = fx.floor() as usize;
+                    let y0 = fy.floor() as usize;
+                    let x1 = (x0 + 1).min(width_px - 1);
+                    let y1 = (y0 + 1).min(height_px - 1);
+                    let tx = fx - x0 as f32;
+                    let ty = fy - y0 as f32;
+                    let p00 = texture.image.pixels[y0 * width_px + x0];
+                    let p10 = texture.image.pixels[y0 * width_px + x1];
+                    let p01 = texture.image.pixels[y1 * width_px + x0];
+                    let p11 = texture.image.pixels[y1 * width_px + x1];
+                    let mix = |a: f32, b: f32, c: f32, d: f32| {
+                        let top = a + (b - a) * tx;
+                        let bottom = c + (d - c) * tx;
+                        top + (bottom - top) * ty
+                    };
+                    let texel = (
+                        mix(p00.r() as f32, p10.r() as f32, p01.r() as f32, p11.r() as f32),
+                        mix(p00.g() as f32, p10.g() as f32, p01.g() as f32, p11.g() as f32),
+                        mix(p00.b() as f32, p10.b() as f32, p01.b() as f32, p11.b() as f32),
+                        mix(p00.a() as f32, p10.a() as f32, p01.a() as f32, p11.a() as f32),
+                    );
                     // Premultiplied texel times premultiplied vertex: a glyph is white at coverage alpha, so this is its
                     // coverage applied to the label's colour; a picture is its own colour times the tint.
-                    src[0] = src[0] * texel.r() as f32 / 255.0;
-                    src[1] = src[1] * texel.g() as f32 / 255.0;
-                    src[2] = src[2] * texel.b() as f32 / 255.0;
-                    src[3] = src[3] * texel.a() as f32 / 255.0;
+                    src[0] = src[0] * texel.0 / 255.0;
+                    src[1] = src[1] * texel.1 / 255.0;
+                    src[2] = src[2] * texel.2 / 255.0;
+                    src[3] = src[3] * texel.3 / 255.0;
                 }
                 let alpha = src[3] / 255.0;
                 if alpha <= 0.0 {
