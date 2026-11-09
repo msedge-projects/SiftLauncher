@@ -5178,3 +5178,25 @@ numerically wrong, and it is the number a reader would have quoted.
 **What to use from here**: `tools/parity/element.py` for any single element (it sees colour to the point), `compare.py` at 40 for the
 objective\'s figure as written, and `compare.py --threshold 20` when the question is "is this frame getting closer", because at 20 the
 measure is monotone with the drawing being right on the rows this file has tested.
+### The five-size table, third time, from a restarted reference (2026-11-09)
+
+The two earlier tables in this file were both contaminated. The first compared a grouped reference with an ungrouped build; the second
+was taken from a reference that still carried the **focus ring** a click leaves on a chip, which costs about 2 600 pixels at every size.
+
+The reference was restarted, confirmed clean at the ring\'s own pixel, and all five sizes re-captured. The current build:
+
+| size | differing @40 | share | differing @20 | share |
+|---|---:|---:|---:|---:|
+| 1280x720 | **29 153** | **3.16%** | 46 319 | 5.03% |
+| 1366x768 | **36 825** | **3.51%** | 54 110 | 5.16% |
+| 1440x900 | **32 863** | **2.54%** | 50 298 | 3.88% |
+| 1600x900 | **46 795** | **3.25%** | 66 583 | 4.62% |
+| 1920x1080 | **57 752** | **2.79%** | 98 380 | 4.74% |
+
+These are the lowest figures this file has recorded at all five sizes, and they include the corrected filter row whose 40-threshold cost
+(+599 at 1440) is visible in the table as the difference between the two thresholds: at 20 the same frame is 4 264 better than the
+uncorrected one.
+
+**The rule, now with a third instance behind it**: *restart the reference and check a known pixel before any sweep*. A click leaves the
+ring, a click also leaves a grouping, and both survive everything short of a restart. Every "the numbers moved" episode in this file is
+one of those two.
