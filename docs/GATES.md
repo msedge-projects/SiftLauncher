@@ -6241,3 +6241,24 @@ class as the glyphs: a different sampler, not a misplaced box.
 
 so it was Screenshots' own, and the other pages were not carrying it. Two matched within a point, which is the check worth repeating on any page
 that looks "a shade off to the right" -- and cheap, since it needs only the first ink column rather than a populated page.
+### The Skin selector: layout matches, the skins are stand-ins (2026-11-09)
+
+`compare.py` on this page reads **135 516** -- the largest single page figure in the project, and the one most likely to be a shift. It is not.
+The heading and the "Saved skins" label land within a point:
+
+| | reference | this build |
+|---|---|---|
+| "Skin selector" ink | (89,78)-(419,95) | (89,77)-(419,94) |
+| "Saved skins" ink | (412,82)-(550,96) | (412,83)-(551,97) |
+
+and the structure is the same on both: the big model at the left, the Saved skins card with "+ Add skin / Drag and drop", the "Defaults skins"
+heading, a row of four, a second row, "Drag to rotate", "Edit skin", the demo-account banner and "Sign in to Modrinth".
+
+The difference is the **art**. Splitting it: 13 891 pixels inside the big model's area, **144 609** everywhere else -- the nine default skins,
+which the reference draws from real skin textures and this build draws as flat coloured stand-ins, plus the 3D model's shading against a flat
+silhouette.
+
+**So this page cannot reach 1% without those textures.** It is a content difference, not a layout one, and it is the same shape as the news
+card's different article: the interface is in the right place and the thing inside it is different. Recorded rather than attempted, because
+drawing nine skin textures by hand would be inventing assets to make a number smaller -- the fake-measurement this project forbids, in its most
+literal form.
