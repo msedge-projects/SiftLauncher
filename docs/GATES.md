@@ -7753,3 +7753,31 @@ wide, and only one row of it matched -- which is what a clip would leave).
 **The bisect is one line at a time**: disable each candidate, rebuild, and compare `clip-our.png` against the new frame. The comparison is exact and
 cheap -- two captures, `compare.py`, zero if nothing changed and a number if it did. That is how the last two no-ops should have been tested, and
 it is what the next round does first.
+### Two measurement faults, one of them three rounds old (2026-11-09)
+
+**Fault one: my tolerances were stricter than the project's own metric.** Three rounds went into a "226 by 1 rule at y 785 that this build draws
+and the reference does not". It does not exist. Scanning the same row again with a wider tolerance:
+
+| | y 785, rule-coloured samples over x 260..1180 | pixels at x 300/500/700/900/1100 |
+|---|---|---|
+| reference | **447** | (66,68,74) at every one |
+| this build | **447** | (66,68,74) at every one |
+
+The rule is in both, identically. My probes had been matching against `(66,68,74)` within 3, 6 and 8 units -- while the project's own metric is
+**threshold 40**. A pixel 2 units out failed my scan and passes `compare.py`, so I spent three rounds bisecting a difference the measurement
+standard would not count. **Every probe now states its tolerance, and the tolerance is the project's 40 unless there is a reason.**
+
+**Fault two: a modal inherits the page behind it.** With both clients on the same tab and the same size, Settings reads 55 197 differing -- but split
+by the dialog's own rect, 256..1184 by 114..786:
+
+| region | differing pixels |
+|---|---:|
+| inside the modal | **27 256** |
+| outside it -- the dimmed page behind | **27 941** |
+
+Half of the figure is the Home page showing through the scrim, which this build draws differently for reasons that have nothing to do with Settings.
+So **Settings' own number is 27 256**, and every modal page measured this way needs the same split: the Screenshots viewer, the create-instance
+dialog and the delete confirmation all sit over a page whose difference they will otherwise be charged for.
+
+**What this corrects**: the 42 213 and 39 064 quoted in the two previous rounds both measured Settings-plus-Home and should not be used. The
+figure for Settings is **27 256 inside its own plate**, and it is the first one on this page that is about the page.
