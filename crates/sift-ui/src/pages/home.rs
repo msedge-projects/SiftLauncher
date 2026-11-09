@@ -2426,7 +2426,14 @@ fn list(
 ///   into the page -- aligning to `anchor.right() - width` put a zero-size anchor's menu off the window's left edge.
 ///
 /// `top` is decided by the caller: it depends on the panel's height and the space below the anchor.
-fn menu_placement(anchor: Rect, bounds: Rect, size: Vec2, pointer_opened: bool, top: f32) -> Rect {
+fn menu_placement(anchor: Rect, bounds: Rect, size: Vec2, pointer_opened: bool) -> Rect {
+    // Below the anchor when it fits, above it when it does not, and never above the page.
+    let below = anchor.bottom() + MENU_DISTANCE;
+    let top = if below + size.y <= bounds.bottom() {
+        below
+    } else {
+        (anchor.top() - MENU_DISTANCE - size.y).max(bounds.top())
+    };
     let left = if pointer_opened {
         anchor.left().min(bounds.right() - size.x).max(bounds.left())
     } else {
@@ -2434,7 +2441,6 @@ fn menu_placement(anchor: Rect, bounds: Rect, size: Vec2, pointer_opened: bool, 
     };
     Rect::from_min_size(egui::pos2(left, top), size)
 }
-
 fn menu_popover(
     ui: &mut Ui,
     theme: &Theme,
@@ -2502,13 +2508,7 @@ fn menu_popover(
     // it opens upward: the flip the reference's floating panels do when there is no room
     // below the trigger (`FloatingPanel.vue:52-69`). A menu that opened off the window would
     // be a menu the reader cannot reach on the last row.
-    let below = anchor.bottom() + MENU_DISTANCE;
-    let top = if below + height <= bounds.bottom() {
-        below
-    } else {
-        (anchor.top() - MENU_DISTANCE - height).max(bounds.top())
-    };
-    let panel = menu_placement(anchor, bounds, egui::vec2(width, height), menu.opened_at.is_some(), top);
+    let panel = menu_placement(anchor, bounds, egui::vec2(width, height), menu.opened_at.is_some());
     // `bg-surface-3` is `RAISED_BG`; the ring is `--surface-5`, one step above it, which is
     // `SURFACE_5` and not `DIVIDER` (`variables.scss:238-239`).
     painter.rect_filled(panel, MENU_RADIUS, theme.RAISED_BG);
@@ -3396,13 +3396,24 @@ mod tests {
         // A right press at x 150 puts the panel's left edge at 150. The old code used `right() - width`, which
         // produced -50 here -- off the page, and exactly what a capture showed.
         let at = Rect::from_min_size(egui::pos2(150.0, 400.0), Vec2::ZERO);
-        let panel = menu_placement(at, bounds, size, true, 408.0);
+        let panel = menu_placement(at, bounds, size, true);
         assert_eq!(panel.left(), 150.0, "the pointer's own column");
         let near = Rect::from_min_size(egui::pos2(1120.0, 400.0), Vec2::ZERO);
-        let clamped = menu_placement(near, bounds, size, true, 408.0);
+        let clamped = menu_placement(near, bounds, size, true);
         assert_eq!(clamped.right(), bounds.right(), "clamped to the page's right edge");
         let kebab = Rect::from_min_size(egui::pos2(222.0, 499.0), egui::vec2(28.0, 28.0));
-        let hanging = menu_placement(kebab, bounds, size, false, 300.0);
+        let hanging = menu_placement(kebab, bounds, size, false);
+        // **The vertical flip**, which had no test until this round: a menu with room below hangs below, and one
+        // against the floor goes above its anchor instead of off the page.
+        assert_eq!(hanging.top(), kebab.bottom() + MENU_DISTANCE, "below the kebab when it fits");
+        let near_floor = Rect::from_min_size(egui::pos2(300.0, 860.0), Vec2::ZERO);
+        let flipped = menu_placement(near_floor, bounds, size, true);
+        assert_eq!(
+            flipped.top(),
+            near_floor.top() - MENU_DISTANCE - size.y,
+            "above the pointer when there is no room below"
+        );
+        assert!(flipped.top() >= bounds.top(), "and never above the page");
         assert_eq!(hanging.right(), kebab.right(), "right-aligned to the kebab");
     }
 

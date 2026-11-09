@@ -5677,3 +5677,19 @@ behaviour-preserving, which is the least a refactor owes.
 **Also cleaned**: the comment block that carried the old inline maths had literal backslashes in it (`\'`), left by the escaping on a
 previous insert. They were inside `//` so the build never noticed, but they were noise in the one place a reader looks for why the number is
 what it is.
+### The other half of the placement, and what "behaviour-preserving" means here (2026-11-09)
+
+Last round\'s risk was specific: `menu_placement` covered the left edge and the caller still computed `top`, untested. Both halves are in
+the function now -- below the anchor when it fits, above it when it does not, never above the page -- with two more assertions:
+
+| case | expected |
+|---|---|
+| the kebab\'s menu, room below | top = kebab\'s bottom + the menu distance |
+| a press at y 860, no room below | top = pointer − distance − height, and **not above the page** |
+
+**269 tests** pass, and the running build\'s card menu is **byte-identical** to the one captured before the refactor -- the same PNG
+hash, not just the same appearance. That is the strongest form "behaviour-preserving" takes in this file: two captures of the same state that
+differ by nothing at all.
+
+The vertical flip is still **not driven** -- the library has one card and it sits mid-page, so the flip needs a card near the floor. The
+test is arithmetic, not evidence from the screen, and it is written here as such.
