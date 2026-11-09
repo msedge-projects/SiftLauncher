@@ -5611,3 +5611,21 @@ The check glyph went from 14 to 16 with it (`CheckIcon size-4`).
 **Not done**: the 200 ms opacity fade. The reference fades the ring in (`opacity-0 ... group-hover:opacity-100`,
 `transition-opacity duration-200 ease-out`); this build draws it at once, as it draws every hover state. That is recorded in the row rather than
 claimed, and it is the same missing mechanism as the menu fades.
+### A card\'s right press showed the page\'s menu, and now shows nothing (2026-11-09)
+
+Driving a right press on a card at (150,400) opened **"+ New instance"** -- the page\'s own menu -- because the page handler took every press
+inside the content rect. The reference gives the card its own menu at the pointer (`instance-group/index.vue:645-648`).
+
+The page handler is now **guarded by the cards\' rects**: off a card it still opens "+ New instance" (driven: a press at (700,600) changes
+(718,623)-(848,635) at threshold 40; the panel\'s own fill is only 17 points from the page, so the panel does not count and the text does), and
+on a card the page menu no longer appears.
+
+**Two attempts to draw the card\'s own menu failed, and the card now opens nothing:**
+
+| attempt | result |
+|---|---|
+| `card_response.secondary_clicked()` sets the popover\'s anchor | **no change at all** -- a widget that senses only clicks does not report secondary clicks |
+| raw `pointer.secondary_clicked()` plus `card.contains(at)`, anchoring the row popover with a **zero-size rect** | the press changed only the ring\'s own 42x117 area; the popover never drew |
+
+So `menu_popover` does not render from a zero-size anchor. The fix is to give it a real one -- the pointer plus the menu\'s own
+`bottom-start` placement -- rather than to keep guessing. Both failures are written down so the next attempt starts from them.

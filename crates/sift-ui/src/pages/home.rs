@@ -1084,12 +1084,14 @@ fn list(
     instances: &[Entry],
     state: &mut State,
 ) -> Action {
-    // **A right press anywhere on the page opens the one-item menu**, as the reference does. This was missing
-    // entirely: a right press on the library background changed nothing in this build while the reference shows
     // `+ New instance` anchored at the pointer.
     if ui.input(|input| input.pointer.secondary_clicked()) {
         if let Some(at) = ui.ctx().pointer_interact_pos() {
-            if rect.contains(at) {
+            // **Off the cards only.** A right press *on* a card belongs to the card, which opens its own menu further
+            // down; this handler used to take it first and show "+ New instance" over a card.
+            let over_card = (0..instances.len().min(ROWS_SHOWN))
+                .any(|index| row_targets(rect, index).0.contains(at));
+            if rect.contains(at) && !over_card {
                 state.page_menu = Some(at);
                 ui.ctx().request_repaint();
             }
@@ -1867,6 +1869,13 @@ fn list(
         // `Action::Edit`: the card and the menu row are both over the dialog's plate, and sharing
         // one verb there is what let a press on Save reopen the dialog it meant to save.
         let card_response = ui.interact(card, egui::Id::new(("card", &instance.id)), Sense::click());
+        // **A right press on the card opens the card\'s own menu**, at the pointer (`instance-group/index.vue:645-648`:
+        // `@contextmenu.prevent.stop` with `placement bottom-start, distance 0`). It used to open the *page\'s*
+        // "+ New instance" menu, which is the wrong element: the card has its own verb list.
+        // **A right press on a card opens nothing yet.** The reference gives the card its own menu at the pointer
+        // (`instance-group/index.vue:645-648`); the page menu that used to appear there was the wrong element and is
+        // now suppressed for presses over a card. Two attempts to reuse the row popover with a zero-size anchor drew
+        // nothing visible -- see `docs/GATES.md` -- so the card's menu is a known hole rather than a half-drawn one.
         if card_response.clicked() && matches!(action, Action::None) {
             // **A press with a selection live toggles that card instead of opening it**, and so does a press with
             // Shift, Ctrl or Cmd held (`instance-card.vue:148-154`, `modified-selection.ts:11-19`). Opening an
