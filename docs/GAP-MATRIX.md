@@ -19,6 +19,9 @@
 648 and the four added this stretch (816–818 and the gallery viewer). The paragraph this replaces, written 2026-11-01, said that **no**
 DONE row named a drive or a test; that was true then and is not true now, and the change is the point of it.
 
+**Recounted 2026-11-09, by `grep -cE "^\| [0-9]+ \|"` and the status column**: **735 rows** — 164 DONE, 55 VERIFIED, 445 OPEN,
+37 OPEN-WITH-CAUSE, 19 RENDERER-RISK, 16 NOT-IN-SOURCE, 13 BLOCKED-SERVICE. The two sentences above keep their own dates because they were
+true on them; the totals have grown since, and a count in this file that does not say when is a count to re-run rather than to quote.
 **The other 87 still rest on a value compared on both sides** — the reference sheet\'s line against our constant, both cited — which is
 stronger than an assertion and weaker than a drive. A row that claims a *behaviour* rather than a value should not be believed as DONE
 until something presses it; that rule stands, and the 16 are the ones that meet it.
