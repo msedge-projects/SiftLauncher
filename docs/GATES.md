@@ -7056,3 +7056,38 @@ under the right chip.
 
 **A hazard worth writing down for later rounds**: a fixture that depicts the interface is a bad fixture for comparing the interface. Every
 future crop of this page has to remember that roughly a third of it is a picture of the app.
+### The card's second line is a choice, not a pair (2026-11-09)
+
+`card.vue`'s footer, verbatim:
+
+```html
+<div v-tooltip="screenshot.file_name" class="truncate text-sm font-semibold">{{ screenshot.file_name }}</div>
+<div class="truncate text-xs text-secondary">
+  {{ showInstanceName ? screenshot.instance_name : formatTime(screenshot.created_at) }}
+</div>
+```
+
+and `index.vue:1574` sets `:show-instance-name="isGlobal && groupBy !== 'instance'"`.
+
+**So the second line is either the instance or the time, never both** -- and on a global page grouped by date it is the **instance alone**.
+Measured on both clients' cards at rest:
+
+| | second line |
+|---|---|
+| reference | **Fabric 26.3** |
+| this build | **Fabric 26.3 · Nov 9, 2026, 3:18 PM** |
+
+This build formats both at `instance_and_date` (`screenshots.rs:1120`), which the doc comment there says correctly is the *preview's*
+description for a global screenshot (`index.vue:668-673`) -- a different element from the card's second line. The card is drawing the
+preview's string.
+
+**The conditions to carry**, since they are three-valued rather than one:
+
+* `isGlobal && groupBy !== 'instance'` -> the instance name;
+* otherwise -> the formatted time, in the reference's `dateStyle: 'medium', timeStyle: 'short'` spelling, which `stamp_label` already matches;
+* the card's own `v-tooltip` on the first line is the file name, which this build also has.
+
+**Not fixed in this round**: the card's footer is drawn through a shared helper that I did not locate before the round ran out, and a
+text substitution in this file has already broken a build once. The next round starts by finding where the card's subtitle string is
+passed in (`grep` for the caller of whatever draws `file_name` at `screenshots.rs:2720`) and changes it there, with the capture pair
+`cardhover-ref.png` / `cardhover-our.png` as the before and after.
