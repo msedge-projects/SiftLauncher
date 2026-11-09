@@ -5049,3 +5049,41 @@ is the check the wrong table failed: it was 40-50% higher everywhere, and nothin
 
 **The rule this breaks is the oldest one in this file**: leave the lab as found, and check both screens before measuring. The reference
 was left grouped, and the sweep was taken without looking at it.
+### The filter row, measured exactly, drawn exactly, and worse (2026-11-09)
+
+The content column\'s worst bands were the filter row, so it was measured from a clean live reference by ink runs per column:
+
+| element | reference (x) | this build before |
+|---|---|---|
+| chip 1 "Last played" | **88..252** (165 wide) | 88..205 (118) |
+| chip 2 "Custom group" | **255..453** (199) | 214..377 (164) |
+| third control | a **funnel at 464**, then an **outlined `+ Add filter` to 630** | a third 122-wide chip |
+| chip label ink, rows | **306..320** (15) | 308..319 (12) |
+
+All of it was rebuilt to those numbers -- chips 165 and 199 wide with 16-point labels, a funnel at 464, an outlined button to 630 -- and the
+result measured **worse, twice**:
+
+| | before | after |
+|---|---:|---:|
+| Home at 1440x900 | 32 265 | **32 735** |
+| the filter row\'s own band (80..700 x 284..332) | 3 186 | **3 724** |
+| the cards band, as a control | 2 388 | **2 388** |
+
+The cards band is identical to the pixel, so nothing leaked; the regression is inside the row that was made more accurate. Its chip labels now
+sit on **exactly** the reference\'s ink rows (306..320 both) and its chips have **exactly** the reference\'s widths -- and the band still scores
+538 worse. So the remaining difference is in what is *inside* those correctly-sized chips: the glyph, its inset, the chevron\'s, and the
+outlined button\'s border landing on x 629 where the reference\'s is on 630. Matching every dimension that can be measured from ink runs
+does not match the drawing inside them, and this round did not have the instrument to see that.
+
+**Reverted**, and the tree is back to 32 265 with the cards band unchanged. The measurements above are the useful part and are recorded so the
+next attempt starts from them rather than from a crop.
+
+**Two lab lessons from the same round**, both about the reference\'s own state:
+
+- a chip that has been clicked keeps a **magenta focus ring** -- (255,160,255) around the chip -- through clicks elsewhere and pointer moves,
+  so a capture taken after driving its menus is not the default state;
+- the ring clears only on a **restart** of the reference, which needed its real process name (`ModrinthApp`, not `AppRun`); several zombie
+  entries make `pgrep` look like it is still running when the live one is a different pid.
+
+`refclean2.png` is the clean 1440 reference from that restart: it differs from `h1440-ref.png` by **925 pixels**, which is the check that it is
+the same state and worth comparing against.
