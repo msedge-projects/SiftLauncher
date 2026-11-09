@@ -6433,3 +6433,24 @@ for a box straddling three.
 **`--selftest`** builds both cases as synthetic images and checks the detection: one element with ink reports that element's fill and its brightest
 pixel, and a three-way box reports a share under half. The first version of the test used a 50/50 split, which sits *exactly* on the threshold and
 asserted a warning that correctly did not fire -- the test was wrong, not the tool, and it is now a three-way split.
+### Two points of chip padding, 409 pixels (2026-11-09)
+
+The chips were measured across eight rows each, taking the union so no glyph could break the run:
+
+| | chip 1 | chip 2 | gap |
+|---|---|---|---|
+| reference | 88..221 | 230..342 | 9 |
+| before | 88..218 | 227..334 | 9 |
+
+so the chips were **3 and 5 points narrow with the gap already right**, and the width is `2 * padding + 2 * glyph + two gaps + the label measure`.
+The label measures cannot be shared between two different strings, so padding is the only knob that moves both: 10 -> 12.
+
+| | chip 1 | chip 2 | content | total |
+|---|---|---|---:|---:|
+| after | 88..222 | 231..342 | **7 237** | **26 586** |
+
+Within a point on both, and the second chip's right edge exact. **409 pixels for two points of padding**, which is the best exchange rate since
+the double padding -- and the same method: box the element, trust its fill, change one number, measure.
+
+**The chips were 3 and 5 narrow because two different strings measured narrow**, and a shared constant cannot fix two different errors exactly. 12
+splits the difference: chip 1 ends a point late, chip 2 a point early, and the row's total width lands on the reference's.

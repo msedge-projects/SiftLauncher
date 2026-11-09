@@ -158,7 +158,10 @@ const BUTTON_GLYPH: f32 = 20.0;
 const BUTTON_TEXT_SIZE: f32 = 16.0;
 
 /// `px-2.5` on a `Combobox`'s trigger, which is a `ButtonFrame` (`Combobox.vue:80`).
-const SELECT_PADDING: f32 = 10.0;
+// **12, not 10.** Measured on the populated page: the two chips run 88..221 and 230..342 in the reference
+// against 88..218 and 227..334 here -- 3 and 5 points narrow, with the gap between them already matching. The
+// label measures differ per string (this face is narrower than Inter for both), so padding is the only shared knob.
+const SELECT_PADDING: f32 = 12.0;
 
 /// The combobox's prefix and suffix glyphs at `size-5` (`toolbar.vue:60,74`).
 const SELECT_GLYPH: f32 = 20.0;
