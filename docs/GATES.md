@@ -6217,3 +6217,27 @@ illustration is centred in whatever rect it is given, padded or not.
 
 That is the argument for populating the reference rather than comparing empty states -- the same round that made the page reachable found the
 largest defect in it, and no amount of measuring the empty version would have.
+### What is left on the populated Screenshots page (2026-11-09)
+
+After the double padding came out (39 083 -> 27 745), the page's remaining content difference splits cleanly:
+
+| region | differing pixels |
+|---|---:|
+| inside the card's image area (92..500, 275..492) | **2 166** |
+| elsewhere in the content band (200..620) | **3 688** |
+
+The caption is not among them: its ink box is (96,496)-(587,542) here against (95,496)-(588,542) in the reference, and the instance line below it
+matches the same way. So the image area's 2 166 is the screenshot **being resampled** to the card's size -- a 1440x900 capture drawn into a
+400-point box, where this renderer's bilinear sampling and the reference's GPU filtering disagree on every interpolated pixel. That is the same
+class as the glyphs: a different sampler, not a misplaced box.
+
+**The double padding is not everywhere.** The same check on three other pages, by the first ink column at the page head:
+
+| page | reference | this build |
+|---|---:|---:|
+| Discover | 110 | 111 |
+| Skins | 88 | 89 |
+| Servers | (no ink in reach) | 88 |
+
+so it was Screenshots' own, and the other pages were not carrying it. Two matched within a point, which is the check worth repeating on any page
+that looks "a shade off to the right" -- and cheap, since it needs only the first ink column rather than a populated page.
