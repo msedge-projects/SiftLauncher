@@ -5228,3 +5228,36 @@ by pressing it and reading the title, not by counting down a list:
 | 178 | Skin selector |
 
 The rest are unmapped and will be found the same way, one press at a time.
+### The sidebar costs 16 816 on every page, and the pages beneath it are closer than their totals say (2026-11-09)
+
+Screenshots, measured with the pointer parked on both sides and the reference restarted:
+
+| page | total @40 | titlebar | rail | **content** | **sidebar** |
+|---|---:|---:|---:|---:|---:|
+| Home | 32 863 | 1 693 | 397 | 13 957 | 16 816 |
+| Screenshots | **23 573** | 2 107 | 426 | **4 224** | **16 816** |
+
+**The sidebar is the same 16 816 on both pages, to the pixel.** It is shared chrome: the "Getting started" card, the news card and the hosting
+ad are drawn identically whichever page is open, so its difference is a **fixed cost carried by every page measurement** in this file. Of
+Screenshots\' 23 573, the page\'s own content is 4 224 -- 0.8% of the content slab, which is the closest any page-area has measured.
+
+That reframes the whole table: the numbers this file has been comparing page-to-page are dominated by a constant, and the pages are being
+judged on the smaller part. A 4 224 content difference and a 13 957 one are the real page figures; 23 573 and 32 863 are those plus the
+same sidebar.
+
+**The sidebar was then audited with `element.py`, box by box** (`shots-ref.png` against `shots-our.png`):
+
+| element | fill | brightest | ink rows | extent |
+|---|---|---|---|---|
+| "Getting started" heading | off by 1 | **off by 0** | **off by 0** | **off by 0** |
+| news title | off by 1 | off by 1 | -- | **off by 0** |
+| news body | off by 1 | **off by 0** | +0/-1 | **off by 0** |
+| first step row\'s text | off by 1 | **off by 107** | -- | -7 bottom |
+
+So the sidebar\'s colours and positions match to a point or two: its 16 816 is **text**, wrapped a word differently, exactly as the earlier
+floor work found. The one outlier is the first step row, whose text is 107 darker than the reference\'s -- that row is the struck-through
+"Create first instance", and this build dims it more than the reference does. That is a real, fixable difference and it is the next thing
+here.
+
+**The rail map**, extended by pressing: y 123 Discover modpacks, y 178 Skin selector, **y 205 Screenshots**. The icons read, top to bottom:
+play, compass, t-shirt, picture, two stacked rectangles, then the instance\'s own icon, then `+`.
