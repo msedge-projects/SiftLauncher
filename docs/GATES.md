@@ -8520,3 +8520,22 @@ has no observable effect and therefore cannot be told from a no-op.
 **What the news-list work therefore needs**: more cards, not a clip. At 1440x900 this build draws one article and the reference draws one and a half --
 because the reference's list continues below the fold, and the fold is the banner. A second card drawn where the plan puts the first plus one card's
 height would land inside the banner's own area, which is when the clip earns its place.
+### The second card is drawn and immediately clipped away (2026-11-10)
+
+Implemented the loop the last round specified: two articles, the second at `plan.card + rows.height + 16`, both inside a clip at `banner_top`. It built
+and ran, and **nothing appeared**: the two-card frame is identical to the one-card frame apart from 47 pixels, and the sidebar slab moved 14 579 ->
+14 626.
+
+**Why**: the second card starts at `plan.card + rows.height + NEWS_CARD_GAP`, which is at or below `banner_top`, so the clip that was needed to keep it
+out of the banner removes all of it. The two changes cancel.
+
+**What that proves**: this build's first card is **taller than the reference's**. At 1440x900 the reference fits one and a half cards above its banner,
+which is only possible if its card is shorter than the space this build's one card occupies. So the news list has never been a card-count problem --
+the count is a consequence of the card's height, and until the height matches, adding cards will keep drawing them into the clip.
+
+**Measured, for the next attempt**: the card's own rows come from `news_rows(copy_height, title_height)` (`panel.rs:1508`) -- art 150, the title's
+measured two lines, the copy's measured height, and `DATE_LINE`. The reference's article card is shorter than 260 points at this width; what to find is
+which of those four terms is over-tall, by measuring the reference's date line against this build's (`news_rows` puts it at `copy + copy_height +
+COPY_TO_DATE`, and the copy's own ink starts within a point in both).
+
+**Reverted** -- a change that moves 47 pixels in the wrong direction and shows nothing has no claim to stay.
