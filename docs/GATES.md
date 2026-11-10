@@ -9298,9 +9298,9 @@ loader line cleanly beneath it, where before the two overlapped by half their he
 
 | | before | after |
 |---|---:|---:|
-| Home, four slabs | 28 521 | **28 521** |
+| Home, four slabs | 28 521 | **28 467** |
 
-**The page total did not move.** Two overlapping strings of the same text cost almost the same as two separated ones at threshold 40 -- which is precisely why this
+**The page total moved by 54 pixels** -- two tenths of one per cent. Two overlapping strings of the same text cost almost the same as two separated ones at threshold 40 -- which is precisely why this
 defect survived every count for the whole session, and why the 4x crop was the only instrument that could see it.
 
 **So this is the clearest case yet of the count and the clone disagreeing**: a visible, unarguable improvement in the product, invisible to the metric the objective
