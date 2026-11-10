@@ -1373,7 +1373,15 @@ pub fn ui(&mut self, ui: &mut Ui) -> bool {
         self.content_surface(ui);
         let mut rail_animating = false;
         rail_animating |= self.rail_column(ui);
+        let rail = rail_animating;
         rail_animating |= self.right_panel(ui);
+        // **Who is keeping the loop alive.** Set `SIFT_IDLE_PROBE` and this prints the rail's and the panel's animation
+        // claims apart on every frame. It exists because the app once burned a fifth of a core on a still page -- the cause
+        // was a fixed half-second repaint tick in `panel.rs`, found by counting frames rather than by reading the code -- and
+        // a future idle regression should be diagnosable the same way.
+        if std::env::var_os("SIFT_IDLE_PROBE").is_some() {
+            eprintln!("idle rail={rail} panel={}", rail_animating);
+        }
 
         // The status is live, not the snapshot the page was opened with: the button has to move when the launcher
         // starts preparing, and a clone taken at open time never changes.
