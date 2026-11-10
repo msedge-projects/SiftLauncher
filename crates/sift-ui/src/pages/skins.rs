@@ -2725,17 +2725,19 @@ mod tests {
     /// leaves the grid empty -- which is what puts the no-matches state on screen.
     #[test]
     fn the_query_matches_names_and_authors() {
-        assert_eq!(visible_skins(Model::Classic, Some("over")).len(), 1);
-        assert_eq!(visible_skins(Model::Classic, Some("OVER")).len(), 1);
+        // **The eight names are the reference's `Default skins` section**, not invented ones, so the searchable
+        // strings here are the catalogue's: `ale` matches `Alex` and nothing else in the classic tab.
+        assert_eq!(visible_skins(Model::Classic, Some("ale")).len(), 1);
+        assert_eq!(visible_skins(Model::Classic, Some("ALE")).len(), 1);
         assert_eq!(
-            visible_skins(Model::Classic, Some("GRAVEL")).len(),
+            visible_skins(Model::Classic, Some("GRAVELJAW")).len(),
             1,
             "the author is searchable too"
         );
         assert_eq!(visible_skins(Model::Classic, Some("zzz")).len(), 0);
-        assert_eq!(visible_skins(Model::Slim, Some("aurora")).len(), 1);
+        assert_eq!(visible_skins(Model::Slim, Some("sunny")).len(), 1);
         assert_eq!(
-            visible_skins(Model::Slim, Some("aurora")),
+            visible_skins(Model::Slim, Some("sunny")),
             vec![SKINS[7]],
             "the match is the skin, not a copy of its fields"
         );
