@@ -9,7 +9,7 @@ rows are DONE and 65 VERIFIED of 800 status-bearing rows (a further 38 OPEN-WITH
 
 **What is not met, in one line each**: 99 per cent identity (75 per cent of what remains is glyph edges and photo resampling -- 24 816
 pixels on Home against a 12 960 budget); idle RSS under 20 MB as the lab runs today (22 472 kB on this tree, and the same tree read
-13 720 kB earlier -- the difference is the host's page cache, not the code); **475 of 800** matrix rows OPEN; and the sidebar's news list,
+13 720 kB earlier, and **22 680 kB measured on this build** -- see the decomposition below); **475 of 800** matrix rows OPEN; and the sidebar's news list,
 which needs a scroll container rather than a draw call.
 
 **Two measurement bases, stated because they differ**: `compare.py` reads **46 204** for Settings across its four slabs, while a

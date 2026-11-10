@@ -8132,3 +8132,24 @@ pane, so shortening the step under the first row drags the rest with it.
 **What is now established about these five pixels**: the reference's second card row is five higher, and the layout cannot express that by changing
 the row step, because the step also positions everything after the cards. Expressing it needs the cards' block to *report* a height that is five
 short of where its last row ends -- not to move its last row up.
+### RSS, decomposed: 22 680 kB of which 5 600 is the app (2026-11-09)
+
+Measured on the current build, idle for thirty seconds after sizing the window, with the process's own counters rather than a total:
+
+| field | kB | what it is |
+|---|---:|---|
+| **VmRSS** | **22 680** | what `ps` and every RSS gate reads |
+| RssAnon | **5 600** | the application's own heap and stacks |
+| RssFile | 12 016 | mapped pages of the 11 MB executable (`stat` says 11 264 824 bytes) |
+| RssShmem | 5 064 | shared memory -- the X server's framebuffer |
+
+**So the 20 MB gate fails on a number that is two-thirds not-the-application**: the binary's own pages, resident because it is executed from disk
+with no separate data files, plus the framebuffer it draws into. The application's heap is **5 600 kB**, which is the figure a memory requirement is
+usually about.
+
+**Why the same tree read 13 720 kB earlier**: `RssFile` is page cache for an executable, so it grows as the binary is touched and shrinks under
+memory pressure -- the code differs by nothing between those measurements. That is why the earlier figure and this one are both true, and why neither
+is a property of the build.
+
+**A lab note found while measuring**: `ps` shows **299 defunct `SiftUi` processes** -- one per restart this project has done without a reaping parent.
+They hold no memory, and they explain why `pgrep` occasionally returned a dead pid. Harmless, worth knowing.
