@@ -9641,3 +9641,27 @@ not moved.
 **And the per-element table is the honest summary of the clone**: Home's seven elements run 90.9 to 99.9 per cent identical, the whole frame 97.8, and the
 ordering follows texture rather than layout. Nothing in the page is wrong in the way a misplacement is wrong; everything carries glyph edges and, where there are
 photographs, resampling.
+### The 50 per cent idle CPU was the reference's renderer, not this build (2026-11-10)
+
+Reported by the user: near 50 per cent CPU at idle with nothing heavy running. Measured with `top -bn1`, which reports *instantaneous* usage rather than `ps`'s
+lifetime average:
+
+| process | %CPU | note |
+|---|---:|---|
+| **WebKitWebProcess (the reference)** | **199.3** | 71 GB VIRT, 4h45m old -- the runaway |
+| Xvfb | 25.3 | drawing for it |
+| **SiftUi (this build)** | **12.7** | idle on its last page |
+| ModrinthApp | 9.5 | the reference's host process |
+
+**Killing the runaway WebKit process took idle from 77 per cent used to 46**, and Xvfb to **0 ticks in 5 seconds** -- it had been redrawing for the reference's
+spinning renderer.
+
+**The reference's renderer is the bug**: a WebKit process at 199 per cent with a wedged window, which is the same wedged state that captured at 1248x262 for four
+rounds. It was left running while I measured pixels, and it was spinning the whole time.
+
+**This build's own idle is ~21 per cent** (104 ticks in 5 s), which is also wrong but is a separate question: `main.rs:169-176` requests a repaint only while a
+dialog is open or `shell.ui()` reports an animation in flight, so an idle frame should sleep. What keeps it awake is being traced -- the page it was left on
+(Discover) may be reporting an animation every frame, or the software backend may be redrawing regardless.
+
+**Operationally**: the reference app should not be left running between comparisons. It is a memory-heavy Electron/WebKit client that spins when its window is
+unfocused or wedged, and this lab has had it open for days.
