@@ -8041,3 +8041,27 @@ bar rather than to this page. Export ZIP needs archive machinery this build does
 the toolbar and would be a second entry point to the same dialog.
 
 **Captures**: `fab-ref.png` and `fab-our.png`, cropped to 300..1140 by 700..890.
+### Why the selection bar's rows and its shape are one change (2026-11-09)
+
+The bar's rectangle is computed by one function and its buttons are drawn by another:
+
+```rust
+// screenshots.rs:1380
+let bar_rect = selection_bar_rect(painter, list_rect, theme, selection.len());
+// and further down, separately:
+let clear = Rect::from_min_size(...);   // the Clear button
+let delete = Rect::from_min_size(pos2(bar.right() - BAR_PADDING_X - delete_width, ...));
+```
+
+So the width comes from `selection_bar_rect` (which knows the count and the theme) and the rows come from the drawing code below it. Adding
+**New group** therefore means: add the button to the drawing *and* teach `selection_bar_rect` to reserve its width -- two functions, in step, or
+the new row overflows the pill.
+
+**That is the same coupling the reference avoids**: its `FloatingActionBar` measures its own children, so rows and width cannot disagree. The
+difference is not the missing action, it is that this build's bar is sized by a separate calculation rather than by what it draws.
+
+**So the recorded fix is a refactor, not an addition**: make `selection_bar_rect` derive its width from the same list the drawing iterates. That is
+one change that would then let New group, Export ZIP and the reference's wide shape arrive together -- and it is why three attempts to add a single
+button would each have been reverted.
+
+**Recorded with the two line numbers** so the next attempt starts at `:1380` and the `clear`/`delete` block rather than hunting again.
