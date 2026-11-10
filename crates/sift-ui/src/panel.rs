@@ -780,7 +780,26 @@ pub fn draw(
     // identical pair appears with this tick restored, so it distinguishes nothing. The CPU saving is real; whether the carousel
     // still advances under the change is unmeasured. Re-try it with a probe that prints the slide index each time the news card
     // draws, not with two screengrabs compared by md5.
-    ui.ctx().request_repaint_after(std::time::Duration::from_millis(500));
+    // **A probe that prints the slide, so the change can be judged by the thing it affects.** The previous attempt at this
+    // was reverted because its evidence -- two captures eleven seconds apart, byte-identical -- could not tell a carousel
+    // that advanced from one that did not. This prints the index every time the card draws, which can.
+    if std::env::var_os("SIFT_SLIDE_PROBE").is_some() {
+        let index = NEWS_SLIDES
+            .iter()
+            .position(|candidate| std::ptr::eq(candidate, slide))
+            .unwrap_or(0);
+        eprintln!("slide index={index} t={:.1}", seconds);
+    }
+    // **Wait for the next cut, not for a half-second tick.** A fixed tick redraws the whole window twice a second for a
+    // carousel that changes every ten, which is 13.7 per cent of a core on a still page; asking instead for the moment the
+    // slide changes is one frame per ten seconds. Only while the carousel is actually running -- a pinned slide needs no
+    // frames at all.
+    if pinned.is_none() {
+        let into = seconds % NEWS_SLIDE_SECONDS;
+        let until = (NEWS_SLIDE_SECONDS - into).max(0.05);
+        ui.ctx()
+            .request_repaint_after(std::time::Duration::from_secs_f64(until));
+    }
 
     // The sidebar is the surface's right column, not a panel bolted onto it: the
     // reference's `.app-sidebar` paints `--brand-gradient-bg` --

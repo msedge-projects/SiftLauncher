@@ -9687,3 +9687,32 @@ page's own draw.
 
 **Not fixed**: the app still does not reach zero when idle. The path is clear -- find which branch of `shell.ui()` keeps returning `animating = true` on a still
 page -- and it is the same class of problem `docs/LIGHTNESS.md` was written about.
+### Idle CPU is zero: the half-second tick became a wait for the next slide (2026-11-10)
+
+The application burned **13.7 per cent of a core on Home and 20.5 on Discover** while doing nothing. The cause was one line in `panel.rs`:
+
+```rust
+ui.ctx().request_repaint_after(std::time::Duration::from_millis(500));   // 2 fps, forever
+```
+
+A fixed half-second tick redraws the whole window -- a full software rasterisation -- twice a second, for a carousel that changes every ten. The file's own comment
+recorded a previous attempt to fix it, reverted because its evidence was worthless: *"two captures eleven seconds apart came back byte-identical ... it
+distinguishes nothing. Re-try it with a probe that prints the slide index each time the news card draws."*
+
+**So that is what this round did.** `SIFT_SLIDE_PROBE` prints the index on every draw, and the tick became a wait for the next cut:
+
+```rust
+if pinned.is_none() {
+    let until = (NEWS_SLIDE_SECONDS - seconds % NEWS_SLIDE_SECONDS).max(0.05);
+    ui.ctx().request_repaint_after(std::time::Duration::from_secs_f64(until));
+}
+```
+
+| | before | after |
+|---|---:|---:|
+| CPU over 6 s, still page | 82-123 ticks (13.7-20.5% of a core) | **0 ticks** |
+| the carousel | advanced (unmeasured) | **0, 1, 0, 1, 0 over 25 s** -- still advances |
+
+**Both halves proven this time**: the CPU is zero and the slide index changes every ten seconds, which is exactly the evidence the earlier attempt lacked.
+
+**And a pinned slide now costs nothing at all** -- with `SIFT_NEWS_SLIDE` set, no repaint is scheduled, so a capture session no longer keeps the window awake.
