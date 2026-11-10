@@ -8678,3 +8678,23 @@ and reverted -- no drawing code, so its effect is attributable.
 
 **What to expect**: the grid's characters change from invented ones to the reference's own, which should fix the *colours* and leave the *shape*
 difference (sprite against render) in place. The page's number will move; by how much is the measurement.
+### The skins grid now shows the reference's own eight defaults: 135 498 -> 132 429 (2026-11-10)
+
+The change the last two rounds prepared, done as one data edit plus the loader written and reverted before it:
+
+* `SKINS`' eight invented names (`Overgrown`, `Copper Patina`, ...) became the reference's `Default skins` section -- **Alex, Ari, Efe, Kai,
+  Makena, Noor, Steve, Sunny**;
+* `skin_texture` looks each name up in the baked catalogue (`crate::skins_assets::by_name`) and composes that front view, falling back to the authored
+  atlas only for names the catalogue does not carry.
+
+| | before | after |
+|---|---:|---:|
+| the Skins page, four slabs | 135 498 | **132 429** |
+| its content slab | 119 165 | **116 256** |
+
+**Minus 3 069**, and the grid shows the reference's characters rather than invented ones: an orange Alex, a blue Steve, a purple Ari, where before
+there were near-identical dark pride skins. The crop at (560..1120, 300..620) puts them side by side.
+
+**What it does not fix, and cannot**: the reference renders a **3D model** and this build composes a **16x32 sprite** scaled up. The characters are now
+the right ones and the shapes are still flat -- which is why 3 069 of 144 609 came back and not more. That ceiling is a renderer, not a texture, and it
+is the honest end of this page's artwork.

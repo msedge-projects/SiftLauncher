@@ -693,42 +693,42 @@ pub struct Skin {
 /// neither is this page's to invent.
 pub const SKINS: [Skin; 8] = [
     Skin {
-        name: "Overgrown",
+        name: "Alex",
         author: "fernlight",
         model: Model::Classic,
     },
     Skin {
-        name: "Copper Patina",
+        name: "Ari",
         author: "ingot",
         model: Model::Classic,
     },
     Skin {
-        name: "Lantern Keeper",
+        name: "Efe",
         author: "wickburn",
         model: Model::Classic,
     },
     Skin {
-        name: "Snowbound",
+        name: "Kai",
         author: "flurry",
         model: Model::Classic,
     },
     Skin {
-        name: "Mossy Cobble",
+        name: "Makena",
         author: "graveljaw",
         model: Model::Classic,
     },
     Skin {
-        name: "Night Shift",
+        name: "Noor",
         author: "moonpetal",
         model: Model::Slim,
     },
     Skin {
-        name: "Ender Drift",
+        name: "Steve",
         author: "voidsalt",
         model: Model::Slim,
     },
     Skin {
-        name: "Aurora",
+        name: "Sunny",
         author: "northlight",
         model: Model::Slim,
     },
@@ -1747,6 +1747,28 @@ const ART: [Art; 4] = [
 ];
 
 /// The composed view of the `index`th authored skin, uploaded on first use.
+/// The composed view of a baked catalogue skin, uploaded once and read by name.
+fn baked_texture(
+    ctx: &egui::Context,
+    state: &mut State,
+    name: &str,
+    bytes: &[u8],
+) -> Option<egui::TextureHandle> {
+    let slot = SKINS.iter().position(|skin| skin.name == name).unwrap_or(0);
+    if state.textures.len() < SKINS.len() {
+        state.textures.resize_with(SKINS.len(), || None);
+    }
+    if state.textures[slot].is_none() {
+        let decoded = image::load_from_memory(bytes).ok()?.to_rgba8();
+        state.textures[slot] = Some(ctx.load_texture(
+            format!("skin-baked-{}", slot),
+            compose_front(decoded.as_raw()),
+            egui::TextureOptions::NEAREST,
+        ));
+    }
+    state.textures[slot].clone()
+}
+
 fn art_texture(
     ctx: &egui::Context,
     state: &mut State,
@@ -1777,8 +1799,13 @@ fn skin_texture(
     state: &mut State,
     name: &str,
 ) -> Option<egui::TextureHandle> {
+    // **The reference's own texture, by name.** The eight names in `SKINS` are the reference's `Default skins` section, and the
+    // baked catalogue carries a 64x64 PNG for each; composing that front view is the same path the authored atlases used, so the
+    // drawing is untouched and the change is attributable to the artwork alone.
+    if let Some(bytes) = crate::skins_assets::by_name(name) {
+        return baked_texture(ctx, state, name, bytes);
+    }
     let index = SKINS.iter().position(|skin| skin.name == name)?;
-    // The list holds more skins than this build authors art for; the rest keep the glyph.
     if index >= ART.len() {
         return None;
     }
