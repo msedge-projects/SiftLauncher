@@ -139,6 +139,32 @@ ones where both clients start from the same files and the same sign-in -- which,
 
 **What a reader should take from this**: a number in the table is the difference between two *programs-in-states*, not between two programs. Where the states
 differ, the number says so in its own cell, and no amount of page-level work will move it.
+## Per element, Home at 1440x900 (2026-11-10)
+
+The page totals average good elements with bad ones, so this is the same pair measured region by region -- `kb-ref.png` against `kb-our.png`, both 1440x900,
+the card hovered in both, the reference freshly restarted (its window had been wedged at 1248x262 for four rounds).
+
+| element | differing | of | identical |
+|---|---:|---:|---:|
+| title bar | 14 | 11 520 | **99.9%** |
+| nav rail | 446 | 37 488 | **98.8%** |
+| page heading | 668 | 26 624 | **97.5%** |
+| sidebar checklist | 3 191 | 60 975 | **94.8%** |
+| "Jump in" strip | 4 370 | 77 100 | **94.3%** |
+| library card (with its artwork) | 2 704 | 42 140 | **93.6%** |
+| sidebar news card | 8 009 | 88 000 | **90.9%** |
+| **the whole frame** | 28 866 | 1 296 000 | **97.8%** |
+
+**Every element is above ninety per cent identical, and none reaches 99.** That is a different statement from the page total, and a truer one: nothing here
+is wrong in the way a misplacement is wrong -- the title bar is fourteen pixels from perfect -- and nothing is perfect either, because each element carries glyph
+edges and (for the cards) photograph resampling.
+
+**The worst element is the news card at 90.9%**, which is the artwork -- a 266x150 photographic plate -- and **the best is the title bar at 99.9%**, which is a
+flat bar with a logo and a string. The ordering of this table is the ordering of how much texture each element contains, which is the same finding the textured-share
+analysis reached from the other direction.
+
+**What the 99 per cent clause needs**: every element above 99, so the frame is above 99. Five of seven elements would need to gain 1 to 5 points, and the two
+that carry photographs would need to gain 7 and 9 -- which is the resampler, not the layout.
 ## What each page's number is actually made of (2026-11-10)
 
 A single figure per page hides the only distinction that matters for the remaining work: whether the difference is *layout this build can fix* or
