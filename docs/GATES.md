@@ -9267,3 +9267,20 @@ the page's (22,24,28), and the corner from the dimmed (17,25,29) to the undimmed
 
 **Cost**: one round, no build. That is the cheapest kind of row in the ledger and the instance header's cluster was the second-cheapest -- the expensive rows are
 the ones that assert a transition's *timing*, and those are the ones worth leaving open rather than pretending.
+### The library card's title and its meta line overlap (2026-11-10)
+
+Found while trying to reach a context menu: the reference window had been left at 1248x262 (so the pair was refused by the size check), and the only capture that
+came out of the round was this build's own -- which showed, at 4x, the card's title **"Fabric 26.3"** and the meta line's first field **"Fabric 26.3"** drawn on
+top of each other, overlapping by about half a line's height.
+
+**It is unmistakable at 4x and almost invisible at 1:1**, which is why it has survived every page count for the whole session: two strings of the same text
+overlapping by a few points cost a few hundred pixels on a page whose figure is 28 521.
+
+**Where it is**: the library card's two text rows in `pages/home.rs` -- the name under the artwork and the meta line beneath it. The crop is
+`ctx2-our.png` at (85..300, 495..545), and the overlap is visible in the top third of it.
+
+**Not fixed**: the round ended while locating it, and this is the kind of change that must be built and re-cropped to be worth anything -- the test is the same
+crop showing two separated lines.
+
+**What it argues for, again**: a page's total ranks this defect below a thousand invisible sub-pixel differences. The only instruments that find it are a crop at 4x
+and an eye, and the only rule that would have caught it earlier is looking at every card's text at 4x once.
