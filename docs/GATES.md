@@ -8216,3 +8216,24 @@ in place 2940  best 2940 at dx 0 dy 0
 So the examples are transcribed output rather than illustrations, and a reader running them against the captures named gets the same lines. The one
 place the section does not claim to work is `tools/parity/README.md`, which still describes a Windows capture path this lab left behind -- noted here
 rather than edited, because rewriting it would be a change to documentation about tooling that no longer exists.
+### The row moved; the pane followed anyway (2026-11-09)
+
+The specified change -- draw the second card row five points higher while reporting the block's height where it was -- built and measured:
+
+| | before | after |
+|---|---:|---:|
+| theme cards row | 334 at dy 0 | **334 at dy 0** |
+| the System card's band | 899 at -5 | **688 at -8** |
+| inside the modal | 30 639 | **33 889** |
+| page total | 46 204 | 49 453 |
+
+So the columns held and the row did move, and the page still got worse by 3 250 inside the plate. The best shift went to **-8** rather than 0, which
+says the moved card no longer matches the band the probe compares -- the card left the window the measurement looks through, so the figure is no longer
+about the same element.
+
+**Reverted** (`git checkout`, tree clean, rebuild queued). Five attempts, five reverts, three constants and one layout shape eliminated. The remaining
+possibility is that the reference's five points are not in the card grid at all but in the *content above it* -- every attempt so far has moved the cards
+relative to a reference that may itself be comparing different rows.
+
+**Stopping permanently on this item.** It is worth a few hundred pixels, it has consumed six rounds, and every measurement has been consistent with more
+than one explanation. Recording it as OPEN-WITH-CAUSE in the matrix with this round's table is the honest end of it.
