@@ -9231,3 +9231,21 @@ family, since the reference's line is a few points above its background), then t
 **Why this one is worth more than its pixels**: a rule under a header is a structural line -- its absence makes the instance page read as one undivided
 surface instead of a header above content. It cost no count to find (the scan is ten lines) and its fix is six. The rows that assert a single measurable
 property are the ones this budget should have been closing all along.
+### The instance header's cluster: padding and icon verified, the metadata line within two rows (2026-11-10)
+
+Three rows of the same cluster measured in one sitting, against the same pair of captures:
+
+| row | property | reference | this build | verdict |
+|---|---|---|---|---|
+| 125 | header block inset (avatar from the content edge) | 48 | **48** | **VERIFIED** |
+| 127 | instance icon | 64x64 at x 88..151 | 64x64 at x 88..151 | **VERIFIED** (last round) |
+| 126 | rule under the header | y 152, 225 columns | y 152, 225 columns | **VERIFIED** (last round, after the fix) |
+| 130/131 | the metadata line (playtime, last played) | ink rows 96..128 | 96..126 | **within two rows**, not closed -- the reference's line runs 2 lower |
+| 132 | metadata separators | 906 bright pixels in the line | 873 | **within 4 per cent**, not closed |
+
+**So the header cluster is now five rows decided: three verified, two measured to within a couple of pixels and left open rather than claimed.** The two open
+ones need their separator's own rectangle rather than a line-wide ink count, because the 33-pixel difference could be the bullet's size, the space around it, or
+one glyph's rasterisation.
+
+**What the cluster cost**: one build (the rule) and about twenty minutes of measurement for five rows. That is the rate the ledger needs -- a hundred rows in
+twenty rounds -- and it is only available where the rows assert a single property against a capture that already exists.
