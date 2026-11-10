@@ -8562,3 +8562,28 @@ between the art and the title, and the card's own top needs to follow the sectio
 
 **Reverted and recorded rather than attempted**, because the two-term change needs its own build and verification and this round's went to establishing
 which term is wrong -- the thing the last three rounds guessed at.
+### The news card, fixed as a pair: Home 29 370 -> 28 521 (2026-11-10)
+
+The two-term change from last round's diagnosis, applied together and measured on both numbers:
+
+| term | before | after |
+|---|---:|---:|
+| `NEWS_HEADING_TO_CARD` | 33 | **41** |
+| `ART_TO_TITLE` | 24 | **16** |
+
+| measurement | before | after | reference |
+|---|---:|---:|---:|
+| the article's art band | 362..471 | **370..479** | **370..479** |
+| the copy's first ink row | 565 | **565** | 566 |
+| Home, four slabs | 29 370 | **28 521** | -- |
+| the sidebar slab | 14 579 | **13 730** | -- |
+
+**The art is now on the reference's band to the pixel and the copy did not move**, which is exactly what the pair was chosen to do: the card's top
+rose eight and its art-to-title gap fell eight, so the art moved and everything after it stayed. Home fell **849**, all of it in the sidebar.
+
+**One prediction was wrong and the suite caught it.** I changed the test's card-to-banner assertion from 26 to 18 on the reasoning that a card whose top
+moved down eight would end eight lower. It does not: `rows.height` is derived from the copy, which did not move, so the card's *height* fell by the same
+eight and the gap stayed at **26**. The assertion is restored to 26 with that reasoning recorded, and 269 tests pass.
+
+**So this is the first change since the checklist to improve a measurement and the total at once**, and the reason is that it corrected two terms
+whose errors were opposite. Every earlier attempt on this card moved one of them.

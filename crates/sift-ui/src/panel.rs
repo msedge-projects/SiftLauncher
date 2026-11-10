@@ -216,7 +216,11 @@ const NEWS_INSET: f32 = 4.0;
 
 /// The gap between the `News` heading and the card: the section's heading is `mb-4`
 /// (`App.vue:2531`), 16 points.
-const NEWS_HEADING_TO_CARD: f32 = 33.0;
+// **41, with `ART_TO_TITLE` at 16, measured as a pair.** The article's art band reads y 370..479 in the reference and
+// 362..471 here, while the copy's first ink row is already in place (566 against 565). So the card's top is eight high
+// *and* its art-to-title gap eight too large -- moving either alone trades the art against the copy, which is what the
+// two previous rounds did in opposite directions (622 worse either way).
+const NEWS_HEADING_TO_CARD: f32 = 41.0;
 
 /// The gap above the news section, which is **twenty points wider than the one above it**: the reference's "News"
 /// ink sits at 315..326 where this build's sat at 295..306, and its getting-started rows end at the same 251 as
@@ -233,7 +237,7 @@ const NEWS_HEADING_DROP: f32 = 29.0;
 /// reference, and moving this number is not it.
 // **24: the reference puts its title's ink at 519..533, 20 points under a plate that ends at 499.** This drew the ink at
 // 510..525 with the gap at 16 -- nine points high, measured from the two captures' text bands.
-const ART_TO_TITLE: f32 = 24.0;
+const ART_TO_TITLE: f32 = 16.0;
 
 /// The title's size: `text-base` (16) at the h3's semibold, measured from the reference's own
 /// ink -- 251 points wide and 16 tall where 14 points here drew 210 wide and 15 tall.
@@ -1731,6 +1735,8 @@ mod tests {
         assert_eq!(
             plan.banner - (plan.card + plan.news_rows.height),
             26.0,
+            // **Still 26**: the card's top rose eight and its height fell eight by the same change, so the gap is
+            // where it was. The 18 this briefly asserted was my arithmetic, not the layout's.
             "and the card ends 26 above it"
         );
         assert!(plan.card > plan.news, "the card sits below its own heading");
