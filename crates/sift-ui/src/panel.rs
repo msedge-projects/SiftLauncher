@@ -134,6 +134,9 @@ const HEADING_LINE: f32 = 24.0;
 // has to shrink by the same 8 points the pitch did, or the rows land under the wrong row of the reference.
 const HEADING_TO_BODY: f32 = 15.0;
 
+/// How much lower the checklist's rows start than the heading gap alone: measured at 9 by the strike's y in both clients.
+const STEPS_TOP_NUDGE: f32 = 9.0;
+
 /// The disclosure chevron on the `Getting started` heading: `DropdownIcon` at `size-5`
 /// (`ui/components/base/Accordion.vue:36`), 20 points.
 const CHEVRON: f32 = 20.0;
@@ -1547,7 +1550,11 @@ struct Plan {
 fn plan_with_copy(panel: Rect, copy_height: f32, title_height: f32) -> Plan {
     let column = column(panel);
     let getting_started = panel.top() + TOP_PAD;
-    let steps_first = getting_started + HEADING_LINE + HEADING_TO_BODY;
+    // **Nine points lower than the heading gap alone puts them.** Measured on the right panel with both clients on Discover: the
+    // "Getting started" heading is at y 85 in both, the strike through the first row at **148 in the reference and 139 here**, and
+    // the News heading at 313 against 300 -- so the rows start nine short and the card below them nine high. `HEADING_TO_BODY` is
+    // shared with other panels, so the nudge is local rather than a change to it.
+    let steps_first = getting_started + HEADING_LINE + HEADING_TO_BODY + STEPS_TOP_NUDGE;
     // The next heading is measured from the last row's bottom, not its top: the space
     // belongs to the section boundary, and a row is 36 tall.
     // **Not the section**: shifting the whole news section down by 20 measured far worse (sidebar 17 602 ->

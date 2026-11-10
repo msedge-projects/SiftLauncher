@@ -8360,3 +8360,21 @@ a displaced element, and the tell is that both frames carry the "missing" ink at
 
 **Withdrawn**: "the two clients read different libraries, so the checklist shows a different first step". The libraries may still differ, but this cell is
 not evidence of it, and the caveat added to `FINISHED.md` last round should be read as unproven rather than established.
+### The checklist's rows now sit where the reference's do: strike at y 148 in both (2026-11-09)
+
+`STEPS_TOP_NUDGE = 9.0`, added only to the steps' start (`panel.rs:1550`) because `HEADING_TO_BODY` is shared with other panels -- the lesson from
+the card gap, where changing a shared constant distorted the cards.
+
+| measurement | before | after | reference |
+|---|---:|---:|---:|
+| the strike's y in the first row | 139 | **148** | **148** |
+| the News heading's ink | 300 | **307** | 313 |
+| Discover, four slabs | 79 574 | 79 695 | -- |
+
+**The rows are aligned exactly** and the section below moved most of the way to where it belongs. The page total rose by 121 (0.15 per cent),
+which by this project's rule is a warning rather than a win -- but the target of this change was never the total: Discover's count is 83 per cent
+artwork, and a nine-point shift in one card moves the artwork comparison in ways that have nothing to do with the card. The direct measurement is the
+strike's y, and it now matches to the pixel in both clients.
+
+**Kept, on that basis, and recorded with both numbers** so the judgement can be re-examined rather than assumed: aligned rows and six points still
+to find in the section gap below the card, against a total that moved 0.15 per cent in the wrong direction.
