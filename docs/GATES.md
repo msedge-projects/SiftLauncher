@@ -8258,3 +8258,25 @@ on a rect that differs, or right-aligned to a different edge -- and the missing 
 
 **Why this is worth a row**: Discover has never been examined cluster by cluster in this session, and its flat share is only 18 per cent, which means
 almost every non-artwork difference it carries is still unlisted.
+### Discover's pager is right-aligned to the row, not to the row's inner edge (2026-11-09)
+
+The 27-point offset found last round is located:
+
+```rust
+// shell.rs:2459
+fn draw_pager(&mut self, ui: &mut Ui, right_edge: f32, y: f32, tag: &str)
+// and its one call, shell.rs:3430
+self.draw_pager(ui, row.right(), row.center().y, "top");
+```
+
+The pager is laid out from `row.right()` inwards, and the reference's sits in a padded container -- the comment at `:2537` already records that its
+page 1 reads `1 2 ... 961 >`, i.e. it is a container-wrapped pager rather than a bare run of buttons. So the fix is the edge it is measured from, not
+the list it draws: ours starts 27 points further right because it is anchored to the row's outer edge.
+
+**Not built this round**: the round's build went to a reverted attempt and there was no rebuild time left after locating this. The change is one
+argument at `:3430` (or one inset inside `draw_pager`), and the measurement to check it against is the brand-green ink centre: **943 in the reference,
+970 here**.
+
+**Also unverified from the earlier crop**: whether the reference's trailing `9`/`961` and its final chevron are both drawn here. The comment at `:2537`
+says the chevron logic was considered; the capture says the reference's row ends with a numeral after the ellipsis and this build's does not, which
+would be a second defect in the same widget.
