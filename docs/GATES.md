@@ -8422,3 +8422,19 @@ is.
 
 **Worth stating plainly**: the wrong version was committed and reported as a fix, and the only reason it did not stand is that the suite ran. That is the
 clause working exactly as intended, and it is the second time this session a test has caught a change I had already called correct.
+### Verified on screen: the checklist aligns and Discover drops 1 933 (2026-11-09)
+
+The corrected nudge -- rows and the card's foot moved, the plan left alone -- built and captured against the reference in the same state:
+
+| measurement | before any nudge | after the wrong one | after this one | reference |
+|---|---:|---:|---:|---:|
+| the strike's y | 139 | 148 | **148** | 148 |
+| Discover, four slabs | 79 574 | 79 695 | **77 641** | -- |
+| the sidebar slab | 17 139 | 17 207 | **15 153** | -- |
+
+**So the checklist's rows are aligned to the pixel and the artwork kept its place**, and the page fell **1 933** where the wrong version had raised it by
+121. The sidebar slab fell 1 986, which is where almost all of it lands, as it should for a change inside the right panel.
+
+**This is the shape a fix should have**: a direct measurement that matches exactly (the strike's y), a page total that falls, and the slab that owns the
+element carrying the whole of the movement. Two rounds produced it -- one wrong, caught by the suite, and one right -- and the difference between them was
+whether the nudge was applied where the drawing happens or where the plan does.
