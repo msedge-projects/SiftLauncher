@@ -9716,3 +9716,27 @@ if pinned.is_none() {
 **Both halves proven this time**: the CPU is zero and the slide index changes every ten seconds, which is exactly the evidence the earlier attempt lacked.
 
 **And a pinned slide now costs nothing at all** -- with `SIFT_NEWS_SLIDE` set, no repaint is scheduled, so a capture session no longer keeps the window awake.
+### Every page idles at zero: the caret and the toast stopped polling (2026-11-10)
+
+After the panel's tick was replaced by a wait for the next slide, a sweep of all five pages still found three drawing on a still screen:
+
+| page | before | after |
+|---|---:|---:|
+| Home | 0 ticks / 5 s | **0** |
+| Discover | 0 | **0** |
+| Skins | 9 (1.8% of a core) | **0** |
+| Screenshots | 7 (1.4%) | **0** |
+| Servers | 10 (2.0%) | **0** |
+
+**Two polls were responsible, both in `screenshots.rs`:**
+
+1. **The search caret** asked for a frame every 500 ms whether or not the field had the caret. It is now gated on `state.search_focused`, the same flag the
+   caret is drawn from -- so an unfocused field costs nothing.
+2. **The toast** asked for a frame every 100 ms while it was up -- ten full-page redraws for a plate whose only change is that it disappears. It now asks for
+   `current.until - seconds`, the deadline it was polling for.
+
+**The Skins and Servers figures closed with them**, which was not obvious before the fix: both pages draw the same shell, and the shell carries the toast and
+the search field. So one page's poll was three pages' idle cost.
+
+**The whole ladder, in order**: 77 per cent machine-busy to 17 (the reference's runaway WebKit at 199 per cent of a core), then this build's 13.7-20.5 per cent
+to zero (a half-second repaint tick, then a caret and a toast). **The application now uses no measurable CPU on any of its five pages when nothing is happening.**

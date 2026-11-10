@@ -1894,10 +1894,13 @@ fn search_field(ui: &mut Ui, rect: Rect, state: &mut State) -> bool {
         }
     }
 
-    // The caret blinks at 1 Hz, so a frame is owed in half a second whether or not a key
-    // arrives. Asking for one keeps the field alive without a repaint every frame.
-    ui.ctx()
-        .request_repaint_after(std::time::Duration::from_millis(500));
+    // The caret blinks at 1 Hz, so a frame is owed in half a second **while the field has the caret**. It used to be asked
+    // for unconditionally, which kept this page drawing twice a second with nothing focused: measured at 1.4 per cent of a
+    // core on a still page, against zero on Home. The gate is the same flag the caret is drawn from.
+    if state.search_focused {
+        ui.ctx()
+            .request_repaint_after(std::time::Duration::from_millis(500));
+    }
     changed
 }
 
@@ -2672,8 +2675,12 @@ fn toast(
         galley,
         theme.CONTRAST,
     );
+    // **Wake when the toast expires, not ten times a second.** This asked for a frame every 100 ms while a toast was up, which
+    // is ten redraws of the whole page for a plate whose only change is that it disappears. `current.until` is the deadline it
+    // was polling for, so ask for exactly that.
+    let remaining = (current.until - seconds).max(0.01);
     ui.ctx()
-        .request_repaint_after(std::time::Duration::from_millis(100));
+        .request_repaint_after(std::time::Duration::from_secs_f64(remaining));
     false
 }
 
