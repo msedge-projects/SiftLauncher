@@ -9575,3 +9575,25 @@ own row -- it opens the edit dialog, which the reference reaches from the card's
 
 **Recorded rather than fixed**: five rows of menu work is not a five-round job, and the honest close is that the card's menu is a known, measured divergence with
 its item-by-item gap written down.
+### The library card is 93.6 per cent identical, and its hover state matches (2026-11-10)
+
+Second comparison from the healthy lab: the card hovered with the pointer over it, both windows verified at 1440x900.
+
+| region | differing pixels | share |
+|---|---:|---:|
+| the card alone (x 88..260, y 345..590) | **2 704 of 42 140** | **6.4%** |
+| Home, four slabs, with the card hovered | 28 866 | 2.2% of the frame |
+
+**So the card is the closest-matching element measured in this project** -- 93.6 per cent identical *including its artwork*, which is the part that has capped
+every other page. The crop shows why: the green tile, the play pill at its bottom-right, the selection ring at its top-right and the two text lines under it all
+land in the same places.
+
+**With one correction to the record**: the card's title and meta line are separated now (round 461), and this pair includes that fix -- the meta line was
+overlapping the title in every earlier capture of this element.
+
+**And no kebab appears in either client on hover**, which is what the round set out to find. The reference's card menu is opened by a right press on the card
+(measured last round: nine items to this build's five), not by a hover affordance.
+
+**What this is worth**: a positive verification of the page's most-repeated element, at a figure that is an order of magnitude better than any page total. The
+page reads 28 866 because the sidebar, the chrome and the type are in it; the card itself is nearly right, and that is the kind of statement the table could
+never make.
