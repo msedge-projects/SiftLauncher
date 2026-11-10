@@ -8854,3 +8854,22 @@ reference makes pressable; the zero on an already-selected card is the control t
 
 **Not fixed yet**: both switches need wiring, and "Advanced rendering" may have no behaviour behind it in this build at all -- which would make it a
 deliberate omission rather than a defect, and should be recorded as such rather than silently wired to nothing.
+### One of the two dead switches is a defect; the other matches the reference (2026-11-10)
+
+Ran the same sweep against the reference, after finding its own rows (its "Sync theme across devices" switch sits at y **679**, its
+"Advanced rendering" at 780 and is visibly dimmed):
+
+| press | this build | reference | reading |
+|---|---:|---:|---|
+| `Sync theme across devices` | **0** | **1 147** | **a real defect here** -- the reference flips its switch and this build does not |
+| `Advanced rendering` | **0** | **0** | **not a defect** -- the reference's switch is disabled and does nothing either |
+
+**So the sweep's two zeros had different meanings**, which is exactly why the reference has to be pressed and not inferred. `Advanced rendering` should
+be drawn **disabled** -- the reference's label is dimmed and ours is not -- and its row should close against that rather than against a working switch.
+
+**And a layout difference fell out of the same look**: the reference's `Sync theme across devices` row is at y **679** where this build's is at **643**,
+36 points higher. The two dialogs' content is otherwise aligned at the top (the theme cards match to the pixel), so the 36 is somewhere between the cards
+and this row -- the same family as the five-point drift already recorded there, but six times larger and easier to find.
+
+**Not fixed**: both. The switch needs its press wired to the state the probe already prints, and `Advanced rendering` needs the reference's dimmed
+treatment; the 36 points need one measurement of the row above it before anything moves.
