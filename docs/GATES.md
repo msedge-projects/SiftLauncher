@@ -9446,3 +9446,22 @@ objective asked for: a row per element with a capture behind every *done* needs,
 
 **What would fix it**: add the capture name to the 240 rows' evidence column. That is mechanical, needs no measurement, and can be done for the rows whose
 pairs still exist -- which is most of them, since the session's captures are all in one directory.
+### The rail row hovers, and the reference's own hover could not be captured (2026-11-10)
+
+Row 210 asserts `hover:bg-surface-...` on an unselected rail row. Driven: pointer away, capture, pointer over `Features` (y 290..330), capture:
+
+| | fill at three points |
+|---|---|
+| this build, pointer away | (39,41,46) at all three |
+| this build, pointer over | **(52,54,60)** at all three |
+| this build vs the reference, un-hovered | (39,41,46) in both |
+
+**So the hover is implemented and raises the row by 13 points on every channel**, and the un-hovered row matches the reference exactly.
+
+**What is missing is the reference's own hover value**: two attempts to capture it produced files of identical size (44 961 bytes) that **PIL cannot open** --
+the same corrupt result twice, so the capture path to that window failed rather than the measurement. Row 210 therefore closes on "hover exists with fill
+(52,54,60)" and **not** on "the same fill as the reference", which is a weaker claim than the row asks for and is recorded as such.
+
+**This is the third kind of evidence gap this session has produced** -- after the rows with no capture and the rows citing only the reference -- and it is the
+most ordinary: a capture that silently failed. The check that would have caught it is the one `compare.py` already does on size and brightness, applied to every
+capture at the moment it is taken rather than at the moment it is used.
