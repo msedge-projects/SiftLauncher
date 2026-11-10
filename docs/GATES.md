@@ -8611,3 +8611,27 @@ command `skins.ts` invokes, which will name the endpoint.
 **Why this matters more than another sidebar point**: 144 609 pixels sit on one page's artwork, and every other open item in this session has been worth
 hundreds. If the endpoint serves the same nine defaults, fetching and drawing them is the largest single improvement still available -- and it is also the
 kind of work that a rasteriser cannot undo, unlike the glyph edges that cap the rest.
+### The stand-ins are procedural art, not missing files (2026-11-10)
+
+With the reference's 45 textures committed, the page's drawing path is now known exactly:
+
+```rust
+// skins.rs:1775
+fn skin_texture(ctx, state, name) -> Option<TextureHandle> {
+    let index = SKINS.iter().position(|skin| skin.name == name)?;
+    if index >= ART.len() { return None; }   // "more skins than this build authors art for"
+    art_texture(ctx, state, index)           // procedurally authored art, not a skin file
+}
+```
+
+So the flat characters are **authored in `ART`**, not the result of missing assets -- which is why the page has never shown a real skin. Two changes follow, and
+they are separable:
+
+1. **The texture**: `skin_texture` should load `assets/skins/NN-<name>.png` (committed last round, 45 files, 130 535 bytes) instead of `art_texture`.
+2. **The drawing**: `default_card` (`skins.rs:1407`) currently blits the whole sheet into a `height/2`-wide box -- the entire 64x64 texture squashed into a
+   portrait column. A front view is a composition of the sheet's own faces: head `(8,8)-(16,16)`, body `(20,20)-(28,32)`, right arm `(44,20)-(48,32)`,
+   left arm `(36,52)-(40,64)` for 64x64 skins, with the legs at `(4,20)` and `(20,52)`.
+
+**Which to do first**: the drawing, on the existing stand-in art. Changing the texture first puts a real skin through a squash that has never been
+evaluated for it, and the page's 144 609-pixel difference is in the *shape* of the character (a tall flat plate) as much as in its colours. The
+measurement to beat is the same on both: the page's four-slab total, 135 498 at last count.
