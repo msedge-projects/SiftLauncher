@@ -1,5 +1,8 @@
 # Gap matrix — Sift Launcher versus Modrinth App 0.22.0
 
+> **Read the evidence register first.** It is at the end of this file and states what `DONE` and `VERIFIED` rest on, which captures decided the rows
+> closed this session, and the one structural limitation of this ledger: **no row cites this build's own source** -- every citation is to the reference.
+
 ## How to read this file
 
 **This is a ledger, not a wish list.** Every row is one claim about the product, and a claim is only worth what its evidence is worth. The `status` column says *what is known*; the `ours (file:line)` and `gap` cells are where the proof has to be. A row that says only "missing", with nothing read and nothing captured behind it, is a row nobody has checked — and this project has already paid for that: six features were recorded here as unbuilt and every one of them turned out to be complete and merely unreached (the Files panel, the tab bar, the card body, the category filter, the instance card's context menu and the search field's clear button). Each was judged from a press that missed. The rule that came out of it is the one this file is now read by: **a press that does nothing is evidence about the press, not about the feature.**
