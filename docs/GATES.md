@@ -9597,3 +9597,27 @@ overlapping the title in every earlier capture of this element.
 **What this is worth**: a positive verification of the page's most-repeated element, at a figure that is an order of magnitude better than any page total. The
 page reads 28 866 because the sidebar, the chrome and the type are in it; the card itself is nearly right, and that is the kind of statement the table could
 never make.
+### Discover's per-element table is invalid: the two clients show different results (2026-11-10)
+
+Attempted the same element-by-element measurement on Discover, which came out much worse than Home's:
+
+| element | identical |
+|---|---:|
+| title bar | 99.9% |
+| nav rail | 91.5% |
+| category chips | 89.3% |
+| first card row | 84.2% |
+| sidebar panel | 81.2% |
+
+and the page pair reads **123 024** where earlier Discover pairs read 77 465.
+
+**Those numbers are not a fidelity measurement.** The two clients are showing **different result sets** -- Discover's content is whatever the last query
+returned, and the reference was restarted this round (so it re-fetched its defaults) while this build still holds the state from earlier in the session. A card row
+of different cards differs on most of its pixels for reasons that have nothing to do with rendering.
+
+**So the table is recorded as a failed pair, not a result**, and it is the cleanest example of the rule this session learned repeatedly: a figure is only about
+the page when both clients show the same content, and on a search-driven page that means the same query and the same results -- which needs the reference and this
+build to be given the same search by hand, not merely to be on the same page.
+
+**What survives**: the title bar at 99.9% is content-independent (it is the same on every page), and it reproduces Home's figure exactly. The rest of the row is
+unusable.
