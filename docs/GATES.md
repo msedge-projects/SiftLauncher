@@ -9318,3 +9318,17 @@ After the library card's title was found printed through its own meta line, the 
 **So the card's overlap was specific to the card**, not a pattern across the page's text. That is worth knowing: the defect looked like it might be a family (a spacing constant shared by several widgets), and three crops say it was one draw with its own offset.
 
 **And the checklist is the case where a crop is the weaker instrument**: at 2x the strike is invisible, at 1 pixel in a colour two steps from the text, and only the scan at y 148 could decide it. The rule is not "crops beat counts" but "each defect has one instrument that can see it" -- overlapping text needs a crop, a 1-point rule needs a scan, and a placement needs a cross-correlation.
+### Settings' rows inspected closely: clean, and the copy matches word for word (2026-11-10)
+
+Cropped the dialog's lower rows at 1.5x (`set463.png`, x 520..1180, y 620..780):
+
+* `Sync theme across devices` in semibold, its description in two lines breaking after **"keep a"**, the switch at the row's right -- **the same break and the same
+  words as the reference's own capture**, which reads "Use this theme everywhere you're signed in. Turn this off to keep a / separate theme on this device."
+* No overlap, no clipping, no stray glyphs.
+
+**So the Settings dialog, which is the most measured surface in the project, also passes the eye test** -- the fourth text cluster inspected this way and the third to
+be clean. The one defect found by this method remains the library card's title, and it was a single draw with its own offset rather than a family.
+
+**The method's tally, honestly**: four clusters inspected, one real defect, three clean. That is a worse hit rate than the row-by-row ledger (which has closed
+row after row) and a far better one than the page counts for *visible* defects (which found none of them). It is worth keeping in the rotation but not worth
+spending the remaining rounds on wholesale.
