@@ -9166,3 +9166,20 @@ taken on an earlier date than the reference's copy. The 34 000-pixel difference 
 
 **So the table's Screenshots figure is kept with that caveat rather than replaced**, and the honest statement is that this build and the reference hold
 different files with different dates -- not that the page disagrees with the reference.
+### The news slide is a fifth non-rendering state, worth 20 542 pixels (2026-11-10)
+
+Re-measuring Home after the theme restore gave **49 063** against the table's 28 521, with the sidebar at 34 272 instead of 13 730. The cause was in the
+launch line, not the page: that session had been started without `SIFT_NEWS_SLIDE=1`, so the sidebar's article was cycling every ten seconds and had rotated
+away from the one the reference shows.
+
+| launch | Home | sidebar slab |
+|---|---:|---:|
+| without the pin | 49 063 | 34 272 |
+| with `SIFT_NEWS_SLIDE=1` | **28 521** | **13 730** |
+
+**So 20 542 pixels -- 70 per cent of the whole sidebar difference -- is which article is showing.** The table's figure is the pinned one, and the state section in
+`FINISHED.md` now lists the article alongside the theme, the account, the screenshot dates and the instance folder dates as something that must match before a
+number means anything.
+
+**That is five state differences now, and only one of them (the theme) is under the instruments' control.** The other four -- account, screenshot files, folder
+dates and the article -- are properties of the two clients' data, and a figure that straddles them is measuring data.

@@ -130,6 +130,7 @@ carrying one of them is not read as a defect.
 | theme | dark | dark (**after a sweep left it light for several rounds**) | none now; `compare.py` and `pair.py` both refuse a mismatched pair |
 | account | signed in (a demo account) | **signed out** | every account-dependent control: the Settings sync switch refuses its press by design (`layout.vue:60-75`), the sidebar's checklist step differs, Skins shows no saved skins |
 | screenshot files | taken today | taken yesterday | the Screenshots page: the reference groups under "Today", this build under "Yesterday", and the label shifts the layout -- 61 007 against 26 483 for a pair whose files matched |
+| **news article** | one fixed article | **cycles every 10 s** (`NEWS_SLIDE_SECONDS`) | the sidebar on every page. Unpinned, Home reads **49 063**; pinned with `SIFT_NEWS_SLIDE=1` it reads **28 521** -- a 20 542-pixel difference that is entirely which article is showing |
 | instance folder dates | made on the reference's own days | made earlier | the Files tab: same six folders, same order, same five columns, different mtimes (57 726 against 49 056 when this build listed one row) |
 
 **So four of the page figures in the table above contain a component that is data rather than rendering**, and the two account-dependent ones (Settings'
