@@ -58,6 +58,9 @@ def main():
     for role, display in DISPLAYS.items():
         wid = window(display, TITLES[role])
         got_w, got_h = geometry(display, wid)
+        # **The window manager lies**: `xdotool windowsize` sets a geometry that `getwindowgeometry` reads back
+        # correctly and that `import -window` ignores -- the reference app enforces its own surface size. The only
+        # trustworthy check is on the PNG that came out, which is what this now asserts.
         ok = (got_w, got_h) == (want_w, want_h)
         print(f"{role}: wanted {want_w}x{want_h}, got {got_w}x{got_h} -- {'ok' if ok else 'MISMATCH'}")
         if not ok:
@@ -65,7 +68,23 @@ def main():
         else:
             path = f"/scratch/.scratch/cap/{tag}-{role}.png"
             run(f"DISPLAY={display} import -window {wid} {path}")
-            print(f"  captured {path}")
+            # the capture, not the geometry, is the evidence
+            probe = subprocess.run(
+                # the container sees `/scratch/...`; this script runs on the host, where the repo is the working
+                # directory -- so the same file is `.scratch/...`
+                ["python3", "-c", f'from PIL import Image; print(*Image.open("{path.replace(chr(47) + chr(115) + chr(99) + chr(114) + chr(97) + chr(116) + chr(99) + chr(104) + chr(47), "")}").size)'],
+                capture_output=True,
+                text=True,
+            ).stdout.split()
+            try:
+                got = (int(probe[0]), int(probe[1]))
+            except (IndexError, ValueError):
+                got = None
+            if got != (want_w, want_h):
+                print(f"  captured {path} but it is {got} -- REFUSED")
+                fails += 1
+            else:
+                print(f"  captured {path} ({got[0]}x{got[1]})")
     if fails:
         print("REFUSED: a window did not take the size, so no pair from here is comparable")
         return 3

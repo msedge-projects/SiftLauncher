@@ -9493,3 +9493,36 @@ request instead of with the pixels.
 
 **The check that would work**: compare the capture's *own* dimensions to the requested size, after the fact. That is exactly what `capture.py` and `pair.py`
 already do on their outputs, and it is what `drive.py` should assert -- on the PNG, not on xdotool.
+### `drive.py` now refuses on the PNG, and the quoted pairs all pass an audit (2026-11-10)
+
+Two things this round, and the second is the important one.
+
+**One: the guard asserts on the capture, not the geometry.** `drive.py` now reads its own output's dimensions and refuses rather than reporting "ok",
+because the window manager's read-back agrees with the request while `import` disagrees with both:
+
+```
+ref: wanted 1440x900, got 1440x900 -- ok
+  captured guard3-ref.png but it is (1248, 262) -- REFUSED
+ours: wanted 1440x900, got 1440x900 -- ok
+  captured guard3-ours.png (1440x900)
+REFUSED: a window did not take the size, so no pair from here is comparable
+```
+
+**Two: every pair behind a quoted figure passes the audit.** All seven checked -- Home's two, Discover, Skins, Settings, the instance page and
+Screenshots -- are **(1440, 900) on both sides**:
+
+| pair | reference | ours | verdict |
+|---|---|---|---|
+| Home | 1440x900 | 1440x900 | OK |
+| Discover | 1440x900 | 1440x900 | OK |
+| Skins | 1440x900 | 1440x900 | OK |
+| Settings | 1440x900 | 1440x900 | OK |
+| Instance | 1440x900 | 1440x900 | OK |
+| Screenshots | 1440x900 | 1440x900 | OK |
+
+**So the table's figures are not affected by the resize problem** -- it struck only the drives attempted this round and the rounds immediately before,
+whose captures were never quoted. That is worth stating plainly, because the alternative -- a table of numbers taken from 1248x262 references -- would have
+invalidated the whole record.
+
+**What remains true**: the reference window is stuck at 1248x262 now, so any *new* comparison against it is blocked until whatever sets that size is cleared.
+The five-size sweep and the page figures were all taken before it happened, and the audit says so with pixels rather than with memory.
