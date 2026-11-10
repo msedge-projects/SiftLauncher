@@ -8587,3 +8587,27 @@ eight and the gap stayed at **26**. The assertion is restored to 26 with that re
 
 **So this is the first change since the checklist to improve a measurement and the total at once**, and the reason is that it corrected two terms
 whose errors were opposite. Every earlier attempt on this card moved one of them.
+### The biggest remaining gap is reachable: the lab has network, and the skins come over it (2026-11-10)
+
+The matrix's largest cluster is **skins (23 OPEN rows)**, and the page's largest single difference is its artwork: nine real skin textures against
+this build's flat stand-ins, **144 609 pixels**. The question was whether that art is obtainable, and the answer is yes.
+
+**The data directories do not have them** -- `/tmp/ref107` holds only caches and a screenshot, and the extracted AppImage contains no file with
+`skin` in its name.
+
+**But the lab has a network**, which nothing in this session had established:
+
+```
+$ getent hosts textures.minecraft.net
+2603:1061:14:64::1  mr-afd-azuredge.tm-azurefd.net  textures.minecraft.net ...
+$ curl -s -o /tmp/s.png -w "%{http_code}" <a skin texture url>
+200   (1 469 bytes)
+```
+
+**Where the app gets its list**: `Skins.vue` calls `@/helpers/skins.ts`, and that helper's only import is `invoke` from `@tauri-apps/api/core` -- so the
+catalogue and the textures are fetched by the app's **Rust** side, not by a URL the frontend names. The next step is the reference's Rust source for the
+command `skins.ts` invokes, which will name the endpoint.
+
+**Why this matters more than another sidebar point**: 144 609 pixels sit on one page's artwork, and every other open item in this session has been worth
+hundreds. If the endpoint serves the same nine defaults, fetching and drawing them is the largest single improvement still available -- and it is also the
+kind of work that a rasteriser cannot undo, unlike the glyph edges that cap the rest.
