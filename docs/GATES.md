@@ -9740,3 +9740,32 @@ the search field. So one page's poll was three pages' idle cost.
 
 **The whole ladder, in order**: 77 per cent machine-busy to 17 (the reference's runaway WebKit at 199 per cent of a core), then this build's 13.7-20.5 per cent
 to zero (a half-second repaint tick, then a caret and a toast). **The application now uses no measurable CPU on any of its five pages when nothing is happening.**
+### Settings element by element, and what RSS is made of now (2026-11-10)
+
+The same treatment given to Home, on the Settings pair (`sb-ref.png` against `ink-fixed.png`, both 1440x900):
+
+| element | differing | of | identical |
+|---|---:|---:|---:|
+| title bar | 72 | 11 520 | **99.4%** |
+| content plate | 21 612 | 528 000 | **95.9%** |
+| rail rows | 4 262 | 78 480 | **94.6%** |
+| rail footer | 0 | 26 160 | **100% -- a trivial match**: both sides are uniform background there, so this measures nothing |
+
+**So the ordering is the same as Home's**: the chrome is within a point of perfect, the content is within five, and the rail -- which carries the most type per
+square point -- is the worst at 94.6. Nothing here is misaligned; it is all glyph edges.
+
+**And RSS, on a long-lived instance** (five pages visited, Skins' 3D models built, the screenshots list loaded):
+
+| | bytes |
+|---|---:|
+| VmRSS | 34 640 kB |
+| RssAnon (the application's own heap) | **16 008 kB** |
+| RssFile (the binary and its assets, page cache) | 13 568 kB |
+| RssShmem | 5 064 kB |
+
+**The anonymous heap has tripled since it was measured at 5 600 kB**, which is what visiting every page costs: the skin atlases, the 3D model, the screenshot
+thumbnails. **It is under the 20 MB bar on its own** (16 008), and the total is not (34 640) because two thirds of it is file-backed pages that the kernel owns and
+can evict.
+
+**What the gate would need**: either a smaller working set -- evict the page caches the tabs no longer show -- or the acknowledgement, already in `FINISHED.md`,
+that `ps`'s RSS counts 19 MB of things this process does not allocate.
