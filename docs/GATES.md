@@ -9249,3 +9249,21 @@ one glyph's rasterisation.
 
 **What the cluster cost**: one build (the rule) and about twenty minutes of measurement for five rows. That is the rate the ledger needs -- a hundred rows in
 twenty rounds -- and it is only available where the rows assert a single property against a capture that already exists.
+### Escape and click-outside both close the modal: rows 194 and 195 (2026-11-10)
+
+Two behavioural rows decided by driving the running app, with no build needed:
+
+| action | frame change | centre pixel | corner pixel | reading |
+|---|---:|---|---|---|
+| before either (modal open) | -- | (52,54,60) the plate | (17,25,29) the scrim | the dialog is up |
+| **Escape** | 126 644 | (22,24,28) the page | (39,41,46) the page's own ground | **closed** |
+| **click outside** | 126 644 | (22,24,28) the page | (39,41,46) | **closed** |
+
+**The two produce the identical number because they produce the identical frame** -- both remove the plate and the scrim and leave the page in the same state, which is
+itself a small confirmation that neither leaves a residue behind.
+
+**And the samples prove it rather than the count**: a count of 126 644 alone could be the dialog *opening*; the centre pixel going from the plate's (52,54,60) to
+the page's (22,24,28), and the corner from the dimmed (17,25,29) to the undimmed (39,41,46), says which way it went.
+
+**Cost**: one round, no build. That is the cheapest kind of row in the ledger and the instance header's cluster was the second-cheapest -- the expensive rows are
+the ones that assert a transition's *timing*, and those are the ones worth leaving open rather than pretending.
