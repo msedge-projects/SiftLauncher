@@ -8341,3 +8341,22 @@ first step, and the checklist is the one part of the page that reflects that.
 **Not changed**, because changing the drawing would have made a working path wrong. **What would settle it**: run both clients against the same
 library contents, or capture the checklist on a page where neither has an instance -- neither is available in the rounds left, which is why this is
 recorded rather than fixed.
+### CORRECTED: both draw the strike; the checklist sits nine points apart (2026-11-09)
+
+Last round concluded the two frames showed different *steps*, because this build's row looked ticked but not struck. That was wrong, and the measurement is
+simple: a horizontal bright run inside the checklist's rows -- the strike itself -- is present in **both**, 111 pixels wide in the reference and 112 here.
+
+| | strike's y | width |
+|---|---:|---:|
+| reference | **148** | 111 |
+| this build | **139** | 112 |
+
+So the line is drawn in both and is the same length; the **checklist sits nine points higher here**. The `done` path (`panel.rs:1026-1044`) is running
+correctly in both, and nothing about the strike needed changing.
+
+**What this means for the cell**: the 224 differing pixels at x 1184 y 128 are a **nine-point offset in the right panel's Getting started card**, not a
+missing decoration -- the same family as the Settings card-row drift, and the same caution applies: a difference that looks like a missing style is often
+a displaced element, and the tell is that both frames carry the "missing" ink at different coordinates.
+
+**Withdrawn**: "the two clients read different libraries, so the checklist shows a different first step". The libraries may still differ, but this cell is
+not evidence of it, and the caveat added to `FINISHED.md` last round should be read as unproven rather than established.
