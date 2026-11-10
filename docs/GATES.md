@@ -8942,3 +8942,18 @@ and refuses at a difference over 25, with the reason printed. The threshold is n
 **What it protects against is not a bug but a class of them**: every press this lab makes is a mutation that persists -- the theme, the switches, the
 selection -- so a measurement taken after a sweep is a measurement of the sweep as much as of the page. Sizes and breadcrumbs both passed during the scare;
 neither could see it. Brightness can.
+### `Advanced rendering`: near-invisible in the reference, and not worth a round (2026-11-10)
+
+The dimming fix I expected to be one line is not worth making, and the reason is where the row sits. At 2x, the reference's `Advanced rendering` label
+is **barely legible** -- it is the last row of the plate, at the fold, and its disabled treatment leaves it a few points above the background. This build's
+row is at y **804** after the +36 correction, which puts it below the crop band entirely, so the two are not even showing the same part of the plate.
+
+**A colour probe could not resolve it either**: sampling the brightest pixel in the band returned **(66, 68, 74) -- the background** -- for both clients,
+which is what a label a few points above its own ground looks like to a max() over a box.
+
+**So the row is recorded as OPEN-WITH-CAUSE rather than fixed**: the reference draws it dimmed because its switch is disabled, this build draws it undimmed
+or off-crop, and the difference is worth a handful of pixels on a row nobody can read. Spending a build on it would be the fourth round in a row on this
+dialog's spacing, and the dialog is now at 46 115 with its rows aligned to the pixel.
+
+**What would justify revisiting it**: a capture of the plate scrolled to its foot, which neither client currently produces -- the Settings modal does not scroll
+to this row in either build at 1440x900.
