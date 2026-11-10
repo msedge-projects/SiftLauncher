@@ -9017,3 +9017,24 @@ element onto the reference's position can increase the count where the move chan
 and the plate figure is the honest one for the dialog; they disagree here, and both are recorded.
 
 **The table now carries 31 311 with that trade written into its cell**, rather than the older number that flattered the change.
+### The Screenshots page has no dead rectangles among its five probed targets (2026-11-10)
+
+Pressed each rectangle `SIFT_SHOTS_PROBE` prints, with a before and after capture and a diff between them:
+
+| target | frame change | reading |
+|---|---:|---|
+| `new group` | 726 549 | opens its dialog |
+| `sort` | 11 189 | opens its list |
+| `group` | 18 299 | opens its list |
+| `GroupBy` title | 108 624 | collapses the group |
+| the card's `check` | **0**, then **1 998** | **live** -- the zero was my own fault |
+
+**The check's first zero was a state artefact, not a defect.** The press before it collapsed the group, so the card moved and the coordinate printed a moment
+earlier no longer pointed at it. Re-expanding and pressing the same printed rect gave 1 998 -- the selection ring and the scrim.
+
+**So the sweep has now been run on two pages and found exactly one real defect** (the "Jump in" strip), one false alarm caused by comparing different
+account states, and one false alarm caused by my own mutation of the page. That is the instrument's real hit rate, and it is worth knowing: the runtime
+sweep is good at confirming interactions work and poor at finding the ones that do not, because most zeros have a mundane cause.
+
+**What it does prove**, and did not before: these five interactions on this page were driven, captured and measured rather than assumed -- which is what the
+objective asks for. The matrix rows for them can close on this evidence.
