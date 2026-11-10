@@ -132,7 +132,7 @@ match -- i.e. the part of the figure that a layout fix could reach.
 | Project page | 172 200 | tabs: 1 226 / 804 / 2 899 / 758 | its four tabs' content is within **~5 700** in total; the other ~167 000 is page chrome, the 19 804 sidebar and artwork |
 | Skins | 132 429 | -- | nine (now correct) default skins composed as 16x32 sprites where the reference renders 3D models -- a renderer, not a texture |
 | Discover | 77 462 | -- | 83% artwork; only 17% of its difference is flat (non-textured) at all |
-| Settings | 46 115 | 30 639 inside its plate | the rest is the dimmed page behind the modal, charged to Settings for nothing |
+| Settings | 46 115 | **31 311** inside its plate | the rest is the dimmed page behind the modal, charged to Settings for nothing. The inside figure rose by ~670 when the rows moved to the reference's y 679 -- aligning an element can cost a count, the same trade measured on the news card |
 | Screenshots | 26 483 | -- | card artwork resampling and the top chrome |
 
 **The pattern in that table is the argument**: on every page measured this way, the figure is dominated by text rasterisation and image resampling, and the

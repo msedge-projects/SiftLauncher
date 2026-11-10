@@ -9002,3 +9002,18 @@ budget); the scrolling ones need their content's own top measured -- `gallery()`
 **And what it means for the page's 172 200**: at their best shifts the four tabs differ by 1 226, 804, 2 899 and 758 -- so the content of the project page is
 **within about 5 700 pixels of the reference in total**, and the remaining ~167 000 is the page chrome, the sidebar (19 804) and artwork. The largest
 figure in the table is not a content defect.
+### The Settings table row was a figure from before its own last change (2026-11-10)
+
+Writing the ceiling-versus-content table, I quoted Settings' inside-plate figure as 30 639 -- which was measured **before** the +36 row correction. Re-measured
+on the current capture:
+
+| | before the +36 | now |
+|---|---:|---:|
+| Settings, four slabs | 46 204 | **46 115** |
+| inside its plate | 30 639 | **31 311** |
+
+**So the row correction improved the page total by 89 and made the plate itself 672 worse**, which is the same trade the news card made at round 404: moving an
+element onto the reference's position can increase the count where the move changes how two renderings' edges overlap. The page total is the arbiter for a page,
+and the plate figure is the honest one for the dialog; they disagree here, and both are recorded.
+
+**The table now carries 31 311 with that trade written into its cell**, rather than the older number that flattered the change.
