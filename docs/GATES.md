@@ -8657,3 +8657,24 @@ confusion the staging was meant to avoid.
 
 **Next attempt, in order**: (1) `default_card` draws the composed view at `compose_front`'s own aspect, measured against the reference's cell shape;
 (2) map the catalogue properly -- the reference's `Default skins` section first, by name, not by index into this build's list.
+### The skins grid is the reference's eight defaults, and ours is not (2026-11-10)
+
+Two facts that settle the mapping, both read out of the reference's own asset file:
+
+**The visible section is `Default skins`**, whose entries are, in order: **Alex, Ari, Efe, Kai, Makena, Noor, Steve, Sunny** -- each shipped twice,
+once `Classic` and once `Slim`, which is why the 45 baked files contain duplicate names. The reference's grid at 1440x900 shows eight of them.
+
+**Our `SKINS` list is eight sample names of this build's own invention**, so no index into the baked catalogue can line up with it: index 0 of the
+baked set is `Mr. Pack - Asexual`, a pride skin, which is why the attempt last round drew three near-identical dark characters and scored 11 752 worse.
+
+**And the aspect was never the problem.** `VIEW_W = 16`, `VIEW_H = 32` (`skins.rs:1535`) and `default_card` draws into `height/2 x height` -- the
+same 1:2. What the reference's cells show is a **3D model rendered at high resolution**; what this build draws is a **16x32 sprite** scaled up, which
+is inherently blocky and cannot match a shaded render whatever texture is behind it. So the artwork swap is worth doing for *colour* fidelity and
+cannot by itself close 144 609 pixels.
+
+**The change the next attempt should make, in one edit**: replace `SKINS`' eight names with the reference's eight defaults (classic variants), keep
+the labels, and map each name to its baked texture by name rather than by index. That is a data change in one array plus the loader already written
+and reverted -- no drawing code, so its effect is attributable.
+
+**What to expect**: the grid's characters change from invented ones to the reference's own, which should fix the *colours* and leave the *shape*
+difference (sprite against render) in place. The page's number will move; by how much is the measurement.
