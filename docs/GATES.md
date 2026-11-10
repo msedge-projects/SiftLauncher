@@ -8760,3 +8760,26 @@ to be worth anything -- the reference navigates on that press, so the test is a 
 **Worth noting what kind of defect this is**: the strip is *visually* right and *behaviourally* dead, which no pixel count can find. It is the first
 clear example this session of the objective's "every interaction" clause failing while the fidelity clause passes, and there are likely to be others among
 the 434 OPEN rows that only a drive can expose.
+### The two-line fix is not two lines: `list`'s action is declared 500 lines later (2026-11-10)
+
+Added the `interact` on the strip's rect with `Action::Open`, exactly as planned, and it did not compile:
+
+```
+src/pages/home.rs:1171:13: error[E0425]: cannot find value `action` in this scope
+```
+
+**Because the strip is inside `fn list(...) -> Action` (`home.rs:1089`), and that function's own `let mut action = Action::None;` is at line
+**1654** -- five hundred lines after the strip. The `action` at 1032 belongs to a different function. And the strip's rect is a `let` inside the
+`if let Some(recent)` block, so it is out of scope by the time the function's action exists.
+
+**So the fix needs one of two shapes**, neither of which is two lines:
+
+1. a `let mut jump_in: Option<String> = None;` declared before the strip, set by the press, and applied to `list`'s `action` after line 1654;
+2. moving the strip's block (or its press) to where the action lives -- a much larger change to a 570-line function.
+
+**Shape 1 is the honest one** and is about four lines: the declaration, the assignment, and the application. **Reverted** rather than half-wired, and
+recorded with the line numbers so the next attempt does not rediscover this.
+
+**What this says about the defect's cost**: the strip is dead because the function that draws it collects its actions in one place at the end, and the strip
+was added to the drawing side without a matching entry on the collecting side. That is a plausible reason for a whole class of these: anything drawn early
+in a long function and pressed early has no action to set. The probes can find them; the fixes are each a small threading job.
