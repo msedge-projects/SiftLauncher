@@ -8378,3 +8378,19 @@ strike's y, and it now matches to the pixel in both clients.
 
 **Kept, on that basis, and recorded with both numbers** so the judgement can be re-examined rather than assumed: aligned rows and six points still
 to find in the section gap below the card, against a total that moved 0.15 per cent in the wrong direction.
+### `NEWS_HEADING_DROP` is a no-op on the heading that is out (2026-11-09)
+
+The News heading reads **307** against the reference's **313**, and the constant that carries it looked like `NEWS_HEADING_DROP = 29.0`
+(`panel.rs:222`), used at `:1243` as `plan.news + NEWS_HEADING_DROP`. Changed to 35, built and measured:
+
+| | before | after |
+|---|---:|---:|
+| the News heading's ink | 307 | **307** |
+| Discover, four slabs | 79 695 | **79 695** |
+
+**Identical**, so that constant is not on the path of the heading this probe finds -- either another heading is drawn above it in the same
+x-range, or the pager draws `NEWS` somewhere else as well. Reverted; the tree is clean and the binary rebuilt from HEAD.
+
+**What the probe measures**: the first row in x 1165..1330, y 300..360 whose bright pixels exceed twelve. On this page the sidebar holds *two*
+headings in that column -- `News` and, above the category list on Discover, `Category` -- so a six-point difference in one and a six-point difference in
+the other are the same measurement to this test. That is the flaw, and the next attempt should print both rectangles rather than inferring from ink.
