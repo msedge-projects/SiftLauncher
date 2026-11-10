@@ -383,6 +383,15 @@ fn header(
     let top = rect.top() + HEADER_TOP;
     let avatar = Rect::from_min_size(egui::pos2(rect.left(), top), egui::vec2(AVATAR, AVATAR));
 
+    // **The rule under the header, which this page drew nowhere.** The reference has a 1-point line across the header's
+    // foot at y 152 -- sixteen below the 64-point avatar's bottom -- and a scan for a straight neutral run across x 200..1100
+    // found it at 152 in the reference and at no row between y 130 and 320 here. Row 126 of the matrix.
+    painter.hline(
+        rect.left()..=rect.right(),
+        avatar.bottom() + 16.0,
+        egui::Stroke::new(1.0, theme.SURFACE_5),
+    );
+
     // The avatar: a tinted plate with the reference's cube outline on it. The plate is the
     // stylesheet's \`--color-button-bg\` by way of \`color-mix(... 5%)\` (\`Avatar.vue:323-325\`); the
     // 5% wash moves the fill by less than a channel step, so the flat button fill is what it

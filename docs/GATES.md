@@ -9215,3 +9215,19 @@ and the crop at (80..900, 130..175) shows it: a faint line across the reference'
 family, since the reference's line is a few points above its background), then the same scan to confirm y 152 appears.
 
 **Row 127 closes on this round's evidence**: the instance icon is 64x64 at x 88..151 in both, with a one-pixel difference at its top edge from antialiasing.
+### The instance header has its rule now: y 152 in both (2026-11-10)
+
+`header()` in `pages/instance.rs` now draws an `hline` at `avatar.bottom() + 16.0` in the theme's `SURFACE_5` -- the reference's own offset, since its avatar is
+64 points tall from y 72 and its rule is at 152.
+
+| | rule rows found by the scan | columns matched |
+|---|---|---:|
+| reference | y **152** | 225 of 225 |
+| this build, before | none in y 130..320 | 0 |
+| this build, after | y **152** | **225 of 225** |
+
+**So the missing element is drawn and lands on the reference's row to the pixel.** Row 126 closes on this evidence, giving the matrix its 69th VERIFIED row.
+
+**Why this one is worth more than its pixels**: a rule under a header is a structural line -- its absence makes the instance page read as one undivided
+surface instead of a header above content. It cost no count to find (the scan is ten lines) and its fix is six. The rows that assert a single measurable
+property are the ones this budget should have been closing all along.
