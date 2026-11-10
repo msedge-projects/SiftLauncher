@@ -24,7 +24,7 @@ with one folder, a reference with no screenshot. They are kept because they are 
 comparable with the table above or with each other.
 
 **Read the modal rows as modals.** Settings and the project\'s dialog states are plates over a *blurred* page, so their figure is the plate plus
-whatever shows through the blur -- two different things. Measured on Settings: **27 256 differing pixels inside the plate, 10 189 outside it**. The
+whatever shows through the blur -- two different things. Measured on Settings (`sb-ref.png` vs `pad-our.png`): **31 721 inside the plate and 27 941 outside it** -- the page behind the scrim, which this build draws differently for reasons that have nothing to do with Settings. An earlier pair split 27 256 / 10 189 because its reference was on a different tab. The
 backdrop\'s count is far below Home\'s own 32 781 because the blur suppresses glyph detail, so a modal row understates its dialog and cannot be
 compared with a full-page row. Rows below that are modals: Settings, and the project page\'s dialog states.
 
