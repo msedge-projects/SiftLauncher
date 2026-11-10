@@ -9129,3 +9129,22 @@ pixels is still a press that worked -- but no pixel figure from them can be comp
 **And what it argues for**: `pair.py`'s brightness guard exists because of the first version of this mistake and would have refused every one of these captures. It
 is not used by the sweeps, which drive xdotool and compare directly. The guard needs to move into `compare.py` as well, so that no comparison anywhere can
 silently straddle two themes.
+### `compare.py` now refuses two themes, so the trap is closed everywhere (2026-11-10)
+
+`pair.py` has refused a light/dark pair since round 442; the sweeps and every ad-hoc measurement use `compare.py`, which did not. It does now, with the same
+measurement behind the threshold:
+
+```
+$ python3 tools/parity/compare.py <dark ref> <dark ours>      -> total 46115 | titlebar 1537 | rail 391 | ...
+$ python3 tools/parity/compare.py <dark ref> <light ours>     -> REFUSED: mean brightness 43.0 against 191.1
+```
+
+**Both halves are load-bearing**: a guard that refuses good pairs would be worse than none, and a guard that accepts bad ones is none. The pair that measured
+46 115 is the same pair every Settings figure this session comes from; the pair it refuses is the capture that produced the withdrawn border finding.
+
+**So the class is closed at the instrument**: there are exactly two comparison tools in `tools/parity`, and both now refuse a theme mismatch before printing a
+number. A future sweep that presses the Light card can no longer produce a figure that looks like a page difference -- it produces a refusal with the two
+brightness values in it.
+
+**And the probe from last round is committed with it**: `SIFT_SHOTS_BORDER_PROBE` prints the selected card's rect, `CONTRAST`, `BG`, `SECONDARY` and
+`RAISED_BG`, which is what turned a border reading into a theme question in one line.

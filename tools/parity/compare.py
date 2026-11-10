@@ -78,6 +78,23 @@ def main() -> None:
 
     a = Image.open(ref).convert("RGB")
     b = Image.open(ours).convert("RGB")
+
+    # **Refuse two different themes.** A sweep pressed this build's "Light" theme card and the choice persisted across restarts, so
+    # a run of captures compared a light client against a dark reference -- and the border reading that came out of it was withdrawn
+    # a round later. Sizes and pages were identical; only the theme differed. Mean brightness separates the two by two orders of
+    # magnitude: a light/dark pair measured 104.3 apart where a real layout change moves it by a couple of points.
+    def mean_luma(im):
+        grey = im.convert("L").resize((64, 40))
+        pixels = list(grey.getdata())
+        return sum(pixels) / max(len(pixels), 1)
+
+    luma_a, luma_b = mean_luma(a), mean_luma(b)
+    if abs(luma_a - luma_b) > 25.0:
+        print(
+            "REFUSED: mean brightness %.1f against %.1f -- the two captures are in different themes, and every number "
+            "below would measure that instead of the page" % (luma_a, luma_b)
+        )
+        return 3
     if a.size != b.size:
         print(f"size mismatch {a.size} vs {b.size}")
         return
