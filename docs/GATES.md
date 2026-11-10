@@ -8197,3 +8197,22 @@ rasteriser to change, not the page.
 
 **Note on the two bases**: 33 004 here is `flat.py`'s whole-frame count; `compare.py` reads 31 356 for the same pair across its four slabs. The ratio is
 computed from one tool on one frame, so it is internally consistent; the absolute figures are not interchangeable and are labelled with their tool.
+### The reproduction section's examples are its own output (2026-11-09)
+
+Each command in `FINISHED.md`'s "How to reproduce" section was run against the pairs its examples name, and prints what the section shows:
+
+```
+$ python3 tools/parity/compare.py .scratch/cap/sb-ref.png .scratch/cap/cur-our.png
+total 46204 | titlebar 1537 | rail 391 | content 41208 | sidebar 3068
+
+$ python3 tools/parity/flat.py .scratch/cap/homeCh239-ref.png .scratch/cap/homeCh239-our.png | head -1
+differing 33004, flat 8188 (25%)
+
+$ python3 tools/parity/align.py .scratch/cap/homeCh239-ref.png .scratch/cap/homeCh239-our.png
+in place 2940  best 2940 at dx 0 dy 0
+  aligned: no shift beats in-place
+```
+
+So the examples are transcribed output rather than illustrations, and a reader running them against the captures named gets the same lines. The one
+place the section does not claim to work is `tools/parity/README.md`, which still describes a Windows capture path this lab left behind -- noted here
+rather than edited, because rewriting it would be a change to documentation about tooling that no longer exists.
