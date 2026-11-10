@@ -8902,3 +8902,21 @@ state explains.
 
 **The lesson, in its sharpest form yet**: a behavioural comparison is only valid if both clients are in the same *state*, and state includes who is signed
 in. The lab has no signed-in account for this build, so every account-dependent control will look dead here and be live there.
+### The rows under the theme cards were 36 points high: now at 679 in both (2026-11-10)
+
+`height + ROW_GAP + 2.0` became `+ 38.0` -- the same term attempted at round 383, which then measured 5 points too far and was reverted. This time the
+target came from pressing both clients rather than from an ink probe: the reference's `Sync theme across devices` switch is at **y 679**, this build's was
+at **643**, and the theme cards above them match to the pixel.
+
+| | before | after | reference |
+|---|---:|---:|---:|
+| `Sync theme across devices` row | 643 | **679** | **679** |
+| Settings, four slabs | 46 204 | **46 115** | -- |
+| its sidebar slab | 3 068 | **2 359** | -- |
+
+**And a scare worth recording**: the first measurement after the change read **829 926**. The row had landed exactly on 679 and the page had become
+unrecognisable -- because my own sweep two rounds earlier had pressed the **Light** theme card, and this build persists the choice. The client was in light
+mode and the reference in dark. Pressing `Dark` and re-measuring gave 46 115.
+
+**So the sweep changes state, and state persists.** Every probe-driven press in this lab is a mutation: the theme, the switches, the selection. A later
+measurement is only comparable if the state it was taken in is known, which is the same lesson as the signed-out switch, arriving from the other side.

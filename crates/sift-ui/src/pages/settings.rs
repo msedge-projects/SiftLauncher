@@ -4878,7 +4878,11 @@ fn draw_body(
                 // **Two points longer than the cards themselves.** The reference's "Sync theme across devices" row starts at
                 // y 648 and this build's at 646, while the cards above it are identical -- the white Light card occupies
                 // x 532..942, y 232..398 in both. So the two points are in the block's own accounting, not in a card.
-                height + ROW_GAP + 2.0
+                // **38, not 2: the rows under the cards sit 36 points low in the reference.** Its "Sync theme across devices"
+                // switch is at y 679 where this build's is at 643, while the theme cards above match to the pixel -- so the
+                // whole difference is between the cards' foot and the first row. Pressed both clients to find it: the reference
+                // flips that switch and this build refuses it, which is the signed-out state and is correct.
+                height + ROW_GAP + 38.0
             }
             Block::Admonition { text: words } => {
                 // `Admonition.vue:4`: `rounded-2xl border p-4`, and the warning variant is
