@@ -9058,3 +9058,25 @@ selected-versus-unselected crop (for the border). All three are cheap and none w
 
 **So the ledger stays as it was**, and the sweep's contribution is recorded as what it is: five interactions confirmed live at a coarse grain, which is the
 objective's "driven" clause satisfied for those five and not its "every state" clause.
+### A selected card's border is white in the reference and near-black here (2026-11-10)
+
+Row 294 asserts `selected !border-contrast`. Measured on the card's left edge at y 400, x 86..95:
+
+| | x86 | x87 | x88 | x89 | x90 and right |
+|---|---:|---:|---:|---:|---:|
+| reference, selected | 22,24,28 | 22,24,28 | **(255,255,255)** | 40,43,47 | 40,43,47 (fill) |
+| this build, selected | 235,235,235 | 235,235,235 | **(5,6,9)** | 12,14,20 | 24,25,28 (fill) |
+
+**So the reference draws a bright 1-point border on a selected card and this build draws a near-black 2-point one.** The code intends the reference's:
+`screenshots.rs:3166-3176` strokes `theme.CONTRAST` at twice `STROKE_WIDTH` when `selected`. The intent and the pixels disagree, so one of three things is true
+and this round did not distinguish them:
+
+1. the card measured is not the card `selected` refers to (the check press changed the frame by 1 998 and the scrim appeared, so *something* selected);
+2. the scrim is painted over the border despite the comment saying the border is last;
+3. `theme.CONTRAST` is not the near-white this build assumes for this widget.
+
+**What settles it**: sample the same edge on a card the probe prints as selected, and print the theme's `CONTRAST` value in the same frame -- both one-liners, both
+next round.
+
+**Why it is worth a row of its own**: a selected card is a *common* state on this page, and a 2-point near-black border against a 1-point white one is visible at
+1:1 without a threshold. It is the kind of difference the 99 per cent clause actually cares about, unlike the textured edges that dominate the counts.
