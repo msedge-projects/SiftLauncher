@@ -9423,3 +9423,26 @@ Measured now:
 **A stale row is its own kind of defect**: a reader trusting the ledger would conclude a whole element was missing when it had been drawn and measured for eighty
 rounds. The matrix is a record of what has been proved, and this row had drifted out of date without anyone noticing -- which is why the rows that assert a single
 measurable property benefit from being re-measured rather than trusted.
+### The ledger maps the reference, not this build (2026-11-10)
+
+A staleness sweep over the matrix's 240 DONE and VERIFIED rows, checking whether their citations still resolve:
+
+```
+rows with our-source citations: 0
+rows citing a missing file:      0
+DONE/VERIFIED total:           240
+```
+
+**Not one row cites this build.** Every citation is to the reference -- `packages/ui/...`, `apps/app-frontend/...` -- so the ledger records *what Modrinth
+does* and a status, but not *where this build does it*. Two consequences follow, and both matter for the objective's "a capture behind every done" clause:
+
+1. **A DONE row cannot be checked for staleness from the row itself.** The row 211 case -- stale for eighty rounds, claiming a pill was missing that had been
+   drawn and measured -- had no way of being caught by reading the matrix. It was caught by looking at the screen.
+2. **The captures are the only evidence**, and they are files in `.scratch/cap/` whose names are not recorded in the rows. A reader can see the claim and its
+   status but not the pair that decided it.
+
+**So the ledger is a map of the reference with a progress column, not a map of the clone.** That is a legitimate thing to have built, and it is not what the
+objective asked for: a row per element with a capture behind every *done* needs, at minimum, the capture's name in the row.
+
+**What would fix it**: add the capture name to the 240 rows' evidence column. That is mechanical, needs no measurement, and can be done for the rows whose
+pairs still exist -- which is most of them, since the session's captures are all in one directory.
