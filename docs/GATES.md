@@ -9548,3 +9548,30 @@ measured at the same coordinates last round. Row 210's earlier "weaker claim" be
 
 **The operational lesson**, worth writing down because it cost four rounds: when `xdotool windowsize` does not take, **restart the client** before concluding
 anything about its geometry -- and check the capture's own size, not the window manager's.
+### The library card's context menu has five of nine items, and one the reference lacks (2026-11-10)
+
+First comparison made possible by the window unblock: right-clicking the library card on Home at 1440x900, both clients verified at that size by `drive.py`.
+Both open a menu; the lists differ materially.
+
+| # | reference | this build |
+|---|---|---|
+| 1 | Play | Play |
+| 2 | **Add to favorites** | -- |
+| 3 | **Add content** | -- |
+| 4 | **View instance** | -- |
+| 5 | Duplicate instance | Duplicate instance |
+| 6 | Open folder | Open folder |
+| 7 | **Copy path** | -- |
+| 8 | **Edit icon** (with a submenu chevron) | -- |
+| 9 | Delete | Delete |
+| -- | -- | **Edit** (not in the reference's list) |
+
+**So the menu carries five of the reference's nine rows, omits four, and adds one it does not have.** The reference also groups them with dividers after rows 2, 3
+and 8; this build draws none in the crop.
+
+**What each missing row needs**: *Add to favorites* and *Add content* are actions this build has no notion of; *View instance* duplicates the card's own press;
+*Copy path* is a clipboard write (blocked on this display, as the screenshot copy is); *Edit icon* is a submenu this build has no art for. **Edit** is this build's
+own row -- it opens the edit dialog, which the reference reaches from the card's kebab instead.
+
+**Recorded rather than fixed**: five rows of menu work is not a five-round job, and the honest close is that the card's menu is a known, measured divergence with
+its item-by-item gap written down.
