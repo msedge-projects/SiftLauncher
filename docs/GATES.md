@@ -9148,3 +9148,21 @@ brightness values in it.
 
 **And the probe from last round is committed with it**: `SIFT_SHOTS_BORDER_PROBE` prints the selected card's rect, `CONTRAST`, `BG`, `SECONDARY` and
 `RAISED_BG`, which is what turned a border reading into a theme question in one line.
+### Three pages re-measured in a known dark state (2026-11-10)
+
+After the theme withdrawal, the three pages whose figures came from sweeps were re-captured with the client confirmed dark at the moment of capture
+(`bg` sampled from the frame itself, and `compare.py`'s new guard as a second check):
+
+| page | background | figure | against the table |
+|---|---|---:|---|
+| Discover | (39,41,46) | **77 465** | 77 462 -- unchanged to within three pixels |
+| Skins | dark (sampled over artwork) | **132 429** | 132 429 -- identical |
+| Screenshots | (22,24,28) | **61 007** | the table says 26 483, and **the pair is not comparable** |
+
+**Discover and Skins are confirmed**: the sweep's mutation did not reach their figures, and both reproduce. **Screenshots is not**: at the same size and
+theme, the two clients differ by the group's own label -- the reference says "Today 1" and this build says "Yesterday 1" -- because the screenshot file was
+taken on an earlier date than the reference's copy. The 34 000-pixel difference between the two figures is that label and the layout it shifts, and it is a
+**data** difference of the same kind the Files tab carries in its mtimes.
+
+**So the table's Screenshots figure is kept with that caveat rather than replaced**, and the honest statement is that this build and the reference hold
+different files with different dates -- not that the page disagrees with the reference.
