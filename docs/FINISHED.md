@@ -120,6 +120,28 @@ wash and reverted; what moved the number since was **geometry and standalone typ
 | the strip's name, then its badge and meta | 32 158 -> 31 949 |
 | both page headings, each measured against its own ink | 31 949 -> 31 215 |
 | the sidebar's "News" heading | 31 215 -> 31 049 |
+## What each page's number is actually made of (2026-11-10)
+
+A single figure per page hides the only distinction that matters for the remaining work: whether the difference is *layout this build can fix* or
+*rendering it cannot*. Every row below was measured, and the "at best alignment" column is the same comparison with the page shifted to its best
+match -- i.e. the part of the figure that a layout fix could reach.
+
+| page | headline | at best alignment | the rest is |
+|---|---:|---:|---|
+| Home, 1440x900 | 28 521 | -- | **75% textured**: 24 816 of 33 004 differing pixels are glyph edges and photo resampling, 1.9x the 1% budget on their own |
+| Project page | 172 200 | tabs: 1 226 / 804 / 2 899 / 758 | its four tabs' content is within **~5 700** in total; the other ~167 000 is page chrome, the 19 804 sidebar and artwork |
+| Skins | 132 429 | -- | nine (now correct) default skins composed as 16x32 sprites where the reference renders 3D models -- a renderer, not a texture |
+| Discover | 77 462 | -- | 83% artwork; only 17% of its difference is flat (non-textured) at all |
+| Settings | 46 115 | 30 639 inside its plate | the rest is the dimmed page behind the modal, charged to Settings for nothing |
+| Screenshots | 26 483 | -- | card artwork resampling and the top chrome |
+
+**The pattern in that table is the argument**: on every page measured this way, the figure is dominated by text rasterisation and image resampling, and the
+part that layout can reach is hundreds to a few thousand pixels. That is why the 99 per cent clause is out of reach here and why closing more layout rows
+moves the totals by tenths of a percent.
+
+**What is genuinely reachable, and where the effort went**: tab content insets (2 to 16 points, four tabs measured), the sidebar's news card and checklist
+(worth 2 800 per screen at four of five sizes), the Settings rows (36 points, now at 679 in both), and -- separately from any pixel -- the dead press on the
+"Jump in" strip, which no count could have found.
 ## What is plainly not finished, with the reason and the starting point (2026-11-10)
 
 Every item here was found by measurement or by reading 0.22.0, and every one is open. They are listed together because the clause table
