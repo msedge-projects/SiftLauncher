@@ -9407,3 +9407,19 @@ control, which is a different job.
 for off-brand text, which is why measuring the constant alone would have cleared a row that was not correct.
 
 **Row 209 closes**, and with it the rail's cluster: 205's heading ink, 207's pitch, 208's count and 209's selected row are all measured now.
+### The Beta pill matches, and row 211 was stale (2026-11-10)
+
+Row 211 read "not implemented -- no Beta pill beside Language", which stopped being true at round 386 when the pill was moved to the row's right end.
+Measured now:
+
+| | reference | this build |
+|---|---|---|
+| pill box | x 433..474, y 388..407 (42x20) | x 432..473, y 388..407 (42x20) |
+| fill | (37,71,56) | (36,76,58) |
+| ink | **(27,217,106)** | **(27,217,106)** |
+
+**Same size, same row, same ink to the unit, fill within five** -- and a one-point x offset that is the pill's own left edge rounding. **Row 211 VERIFIED.**
+
+**A stale row is its own kind of defect**: a reader trusting the ledger would conclude a whole element was missing when it had been drawn and measured for eighty
+rounds. The matrix is a record of what has been proved, and this row had drifted out of date without anyone noticing -- which is why the rows that assert a single
+measurable property benefit from being re-measured rather than trusted.
