@@ -1,6 +1,6 @@
 # Definition of finished, and where the work stands
 
-**Position at the end of the 420-round budget (2026-11-10, 897 commits, 269 tests passing).** This is a working launcher that opens
+**Position at the end of the 480-round budget (2026-11-10, 979 commits, 269 tests passing).** This is a working launcher that opens
 Modrinth-shaped pages, and it is **not** a 1:1 clone. Four of the objective's six clauses are measured and unmet; two are unreachable
 on this backend for reasons of arithmetic. The rest of this file is the evidence, page by page, and the history of what changed it.
 

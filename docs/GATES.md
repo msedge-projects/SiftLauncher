@@ -9621,3 +9621,23 @@ build to be given the same search by hand, not merely to be on the same page.
 
 **What survives**: the title bar at 99.9% is content-independent (it is the same on every page), and it reproduces Home's figure exactly. The rest of the row is
 unusable.
+### Final state, measured (2026-11-10)
+
+| | value |
+|---|---|
+| commits | **979** |
+| tests | **269 pass, 0 fail** |
+| tree | clean |
+| release binary | 11 403 416 bytes, built from HEAD |
+| matrix | **164 DONE, 77 VERIFIED, 422 OPEN** |
+| docs | GATES 9 622 lines, FINISHED 612, GAP-MATRIX 5 731 |
+| tools | 17 parity scripts |
+| idle RSS, this launch | **31 584 kB** (was 22 680 on a fresh launch; `RssFile` grows as the binary is touched) |
+
+**The last figure is worth its own note**: RSS rose from 22 680 to 31 584 across a long session without a code change, which is the page-cache behaviour already
+documented -- the same executable resident in more of its pages. The application's own heap (`RssAnon`) was 5 600 kB when measured directly, and that number has
+not moved.
+
+**And the per-element table is the honest summary of the clone**: Home's seven elements run 90.9 to 99.9 per cent identical, the whole frame 97.8, and the
+ordering follows texture rather than layout. Nothing in the page is wrong in the way a misplacement is wrong; everything carries glyph edges and, where there are
+photographs, resampling.
