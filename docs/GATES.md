@@ -8173,3 +8173,6 @@ rather than the Home page these captures show.
 **The clause is met in the sense it can be**: five standard dimensions, both clients at each, same page, same state, captured and compared. It is not met
 at the fidelity the objective asks for, and no size is close to its 1 per cent budget -- the figures are recorded so the distance is visible rather than
 summarised.
+**Checked rather than inferred**: the previous round's five-size comparison assumed the reference captures were on Home because three of the four
+figures reproduced exactly. Cropping the top strip of each reference at 1280, 1366, 1600 and 1920 shows the **"Jump in"** strip in all four, so they
+are on Home and the comparison is same-page at every size.
