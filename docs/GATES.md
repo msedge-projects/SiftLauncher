@@ -9106,3 +9106,26 @@ finding is much larger than a border; if `BG` is dark, reading 2 is right and th
 
 **Which is why this is the right place to stop the round**: the selected border is a 1-point difference, and the question it has opened is whether the app's
 theme fields are consistent at all. That deserves the round it will take, not the last ten minutes of this one.
+### The theme persisted to Light, and the selected-border finding is withdrawn (2026-11-10)
+
+The probe print that resolved the border question read:
+
+```
+contrast=#1A_20_2C  bg=#EB_EB_EB  secondary=#48_4D_54  raised=#F8_F8_F8
+```
+
+**`bg=#EBEBEB` is light.** Sampling the live page confirmed it: **(235,235,235)** where the reference has (39,41,46). The client had been running in the
+**light theme** -- the choice my sweep made two rounds earlier had persisted across every restart since.
+
+**So the selected card's border finding is withdrawn.** `#1A202C` is the *correct* ink for a light page; the reference's (255,255,255) is the correct ink for a
+dark one. The comparison was two different themes, and the 2-point near-black border I called a defect is a light-theme border on a light-theme card. That is the
+fourth time this session a pair has been invalid for a state reason -- the pager, the checklist, the signed-out switch, and now the theme.
+
+**Restored**: pressed `Dark`, and the page reads **(29,31,35)**, the dark family the reference is in.
+
+**What this costs**: the screenshots sweeps in rounds 447-451 ran in the light theme. Their *diffs* remain valid -- a press that changes a light frame by 726 549
+pixels is still a press that worked -- but no pixel figure from them can be compared with a dark reference.
+
+**And what it argues for**: `pair.py`'s brightness guard exists because of the first version of this mistake and would have refused every one of these captures. It
+is not used by the sweeps, which drive xdotool and compare directly. The guard needs to move into `compare.py` as well, so that no comparison anywhere can
+silently straddle two themes.
