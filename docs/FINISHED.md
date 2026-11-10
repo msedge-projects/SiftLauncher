@@ -4,7 +4,7 @@
 Modrinth-shaped pages, and it is **not** a 1:1 clone. Four of the objective's six clauses are measured and unmet; two are unreachable
 on this backend for reasons of arithmetic. The rest of this file is the evidence, page by page, and the history of what changed it.
 
-**What is met**: the tree builds and the suite passes (269 tests); five screen sizes are captured side by side and measured; 164 matrix
+**What is met**: the tree builds and the suite passes (269 tests); five screen sizes are captured side by side and measured on the final build (**27 933 / 36 268 / 31 356 / 45 470 / 57 864** for 1280x720, 1366x768, 1440x900, 1600x900 and 1920x1080); 174 matrix
 rows are DONE and 65 VERIFIED of 800 status-bearing rows (a further 38 OPEN-WITH-CAUSE, 16 NOT-IN-SOURCE, 19 RENDERER-RISK and 13 BLOCKED-SERVICE), each with a capture or a source line; every slice is committed with its measurement.
 
 **What is not met, in one line each**: 99 per cent identity (75 per cent of what remains is glyph edges and photo resampling -- 24 816

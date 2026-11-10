@@ -8153,3 +8153,23 @@ is a property of the build.
 
 **A lab note found while measuring**: `ps` shows **299 defunct `SiftUi` processes** -- one per restart this project has done without a reaping parent.
 They hold no memory, and they explain why `pgrep` occasionally returned a dead pid. Harmless, worth knowing.
+### All five sizes re-verified on the final build (2026-11-09)
+
+Captured at each size and compared against the reference capture of the same size (`five-ref-<tag>.png`), with each of our captures confirmed to be
+exactly the requested dimensions first:
+
+| size | this build | previous | evidence |
+|---|---:|---:|---|
+| 1280x720 | **27 933** | 29 888 | `five-ref-1280.png` vs `five2-our-1280.png` |
+| 1366x768 | **36 268** | 36 268 | `five-ref-1366.png` vs `five2-our-1366.png` |
+| 1440x900 | **31 356** | 31 356 | `homeCh239-ref.png` vs `homeCh239-our.png` |
+| 1600x900 | **45 470** | 45 469 | `five-ref-1600.png` vs `five2-our-1600.png` |
+| 1920x1080 | **57 864** | 57 864 | `five-ref-1920.png` vs `five2-our-1920.png` |
+
+**1280x720 improved by 1 955** since the last sweep -- the card text and foot work, and the Beta pill, are worth most where the layout is tightest.
+The other three are unchanged to within one pixel, which is the expected result of changes that touch the Settings dialog and the screenshots page's menu
+rather than the Home page these captures show.
+
+**The clause is met in the sense it can be**: five standard dimensions, both clients at each, same page, same state, captured and compared. It is not met
+at the fidelity the objective asks for, and no size is close to its 1 per cent budget -- the figures are recorded so the distance is visible rather than
+summarised.
