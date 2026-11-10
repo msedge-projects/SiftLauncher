@@ -8475,3 +8475,31 @@ That is what a shared-panel fix should look like, and it is the largest single i
 
 **Final state of this tree**: 269 tests pass, the release binary is built from HEAD, the working tree is clean at 912 commits, and every figure quoted
 in `FINISHED.md` was re-measured on this build rather than carried forward.
+### The sidebar has no clip, so its copy draws through the banner (2026-11-10)
+
+Resuming after the round cap. The sidebar's news block is the largest remaining structural gap, and the first thing found is smaller and more concrete
+than the card count: **`panel.rs` contains no `with_clip_rect` at all.**
+
+```
+$ grep -n "with_clip_rect\|set_clip_rect\|clip_rect" crates/sift-ui/src/panel.rs
+(nothing)
+```
+
+So the news card's fourth copy line is drawn wherever it lands, and at 1440x900 it lands **on top of the pinned hosting banner** -- in the reference
+the same line is cut by the banner's own top edge. The crop at (1150..1440, 270..700) shows both side by side: the reference's "managed by you." ends
+above the banner, while this build's "your server..." runs into it.
+
+**The fix is one clip**, and it is also the precondition for the card count: a scrolling or overflowing news list is only safe once the area is clipped at
+`banner_top`, which the plan already computes (`panel.rs:880`, `panel.bottom() - BANNER_H`). The shape is
+
+```rust
+let painter = painter.with_clip_rect(Rect::from_min_max(
+    pos2(column.left(), plan.news - 24.0),
+    pos2(column.right(), banner_top),
+));
+```
+
+wrapping the news block's art, title, copy and date -- all of which currently call `painter` directly.
+
+**Also established this round, so it is not tried again**: the copy's line breaks cannot be matched by narrowing the measure. `panel.rs:826-828` records
+the measurement -- "at -27 ... the sidebar worsens to 16 700 from 16 565: the break moves, but every one of the four lines shifts with it".
