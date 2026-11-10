@@ -8438,3 +8438,26 @@ The corrected nudge -- rows and the card's foot moved, the plan left alone -- bu
 **This is the shape a fix should have**: a direct measurement that matches exactly (the strike's y), a page total that falls, and the slab that owns the
 element carrying the whole of the movement. Two rounds produced it -- one wrong, caught by the suite, and one right -- and the difference between them was
 whether the nudge was applied where the drawing happens or where the plan does.
+### The "News heading six points out" was a toggle label, and the label was wrong (2026-11-09)
+
+Cropping the band the probe called the News heading (x 1160..1400, y 290..340) shows it is **not a heading at all**: it is the
+`Hide already installed` switch, and the two clients read different words --
+
+| | label |
+|---|---|
+| reference | `Hide already installed` |
+| this build | `Hide content already installed` |
+
+So three rounds of "the heading is six points low" were measuring a label that was a different length. The probe took the first bright row in that band,
+which was this switch's text in both clients -- the y difference was the glyph heights of two different strings, not a misplaced heading.
+
+**The string was wrong, and the reference says so twice**: `Browse.vue:574` has `defaultMessage: 'Hide already installed'` and
+`en-US/index.json:258` reads `"Hide already installed"`. The constant now matches, and the comment above it -- which claimed this build used the *shorter*
+wrong string -- is corrected, since it described the opposite of the line beneath it.
+
+| | before | after |
+|---|---:|---:|
+| Discover, four slabs | 77 641 | **77 462** |
+| the sidebar slab | 15 153 | **14 974** |
+
+**Both labels read identically in the capture**, and the whole 179-pixel gain lands in the sidebar slab, which is where the label lives.

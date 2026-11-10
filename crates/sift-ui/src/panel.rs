@@ -89,7 +89,11 @@ const SEE_MORE: &str = "See more categories";
 /// The switch above the list, from `app.browse.hide-installed`.
 /// The reference's own label, which wraps to two lines in its column ("Hide content already" / "installed").
 /// This build's shorter "Hide already installed" fitted on one, which is the wrong words *and* the wrong shape.
-const HIDE_INSTALLED: &str = "Hide content already installed";
+// **The reference's own words, from its catalogue and not its render.** `Browse.vue:574` has
+// `defaultMessage: 'Hide already installed'` and `en-US/index.json:258` agrees; this constant carried
+// "Hide content already installed", which is neither the reference's string nor a shorter alias of it --
+// the comment above claimed the opposite of what the line below did.
+const HIDE_INSTALLED: &str = "Hide already installed";
 const SEE_LESS: &str = "See less";
 
 /// One category row's height, and how many the panel lists before a `See more` would go.
