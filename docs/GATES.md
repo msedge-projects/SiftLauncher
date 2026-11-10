@@ -9526,3 +9526,25 @@ invalidated the whole record.
 
 **What remains true**: the reference window is stuck at 1248x262 now, so any *new* comparison against it is blocked until whatever sets that size is cleared.
 The five-size sweep and the page figures were all taken before it happened, and the audit says so with pixels rather than with memory.
+### The reference window was wedged, and a restart unblocked it (2026-11-10)
+
+Four rounds were lost to a reference window that captured at 1248x262 while `xdotool getwindowgeometry` reported it at 1440x900. It was not a stored
+preference -- its data directory has no window-size JSON -- and it was not the application refusing to resize: **a restart fixed it**. The reference now opens at
+1280x800 and takes 1440x900 on request, and `drive.py` confirms it:
+
+```
+ref:  wanted 1440x900, got 1440x900 -- ok
+  captured unblock-ref.png (1440x900)
+ours: wanted 1440x900, got 1440x900 -- ok
+  captured unblock-ours.png (1440x900)
+```
+
+**So the diagnosis in the last round was right about the symptom and wrong about the cause**: the geometry read-back does disagree with the capture, but only
+while the window is wedged -- a state a restart clears. The guard is still the right instrument, because it catches the wedged case in one line rather than four
+rounds; what it is not is evidence that the application cannot be resized at all.
+
+**And the hover row closes completely**: with both windows at 1440x900, the reference's hovered rail row reads **(52,54,60)**, which is exactly what this build
+measured at the same coordinates last round. Row 210's earlier "weaker claim" becomes the full one.
+
+**The operational lesson**, worth writing down because it cost four rounds: when `xdotool windowsize` does not take, **restart the client** before concluding
+anything about its geometry -- and check the capture's own size, not the window manager's.
