@@ -1,5 +1,25 @@
 # Definition of finished, and where the work stands
 
+**Position at the end of the 420-round budget (2026-11-10, 837 commits, 269 tests passing).** This is a working launcher that opens
+Modrinth-shaped pages, and it is **not** a 1:1 clone. Four of the objective's six clauses are measured and unmet; two are unreachable
+on this backend for reasons of arithmetic. The rest of this file is the evidence, page by page, and the history of what changed it.
+
+**What is met**: the tree builds and the suite passes (269 tests); five screen sizes are captured side by side and measured; 164 matrix
+rows are DONE and 65 VERIFIED, each with a capture or a source line; every slice is committed with its measurement.
+
+**What is not met, in one line each**: 99 per cent identity (75 per cent of what remains is glyph edges and photo resampling -- 24 816
+pixels on Home against a 12 960 budget); idle RSS under 20 MB as the lab runs today (22 472 kB on this tree, and the same tree read
+13 720 kB earlier -- the difference is the host's page cache, not the code); 434 of 735 matrix rows OPEN; and the sidebar's news list,
+which needs a scroll container rather than a draw call.
+
+**Two measurement bases, stated because they differ**: `compare.py` reads **46 204** for Settings across its four slabs, while a
+whole-frame scan of the same pair splits **30 639 inside the dialog and 27 941 behind it**. The slab scan excludes rows the whole-frame one
+counts, so a figure from one is not comparable with a figure from the other. Where a row below names one number, its method is in its own cell.
+
+**What would change the answer**: a text renderer that rasterises glyph edges the way WebKit does, and an image resampler that matches the
+reference's filtering. Both are backend work rather than page work, and both are outside what 420 rounds of page-by-page porting could reach.
+
+
 The bar: every screen at **≤2 000 differing pixels** in a 50/50 blend against the reference at 1440x900, both
 clients in the same state, with a capture behind every claim.
 
