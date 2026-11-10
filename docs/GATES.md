@@ -8957,3 +8957,27 @@ dialog's spacing, and the dialog is now at 46 115 with its rows aligned to the p
 
 **What would justify revisiting it**: a capture of the plate scrolled to its foot, which neither client currently produces -- the Settings modal does not scroll
 to this row in either build at 1440x900.
+### The Gallery grid is ten points low, not fifteen (2026-11-10)
+
+The project page's Gallery is the largest single page figure in the table (172 200), and the cause recorded for it was a "15-point card-top offset". Measured
+by cross-correlating the grid region (x 80..700, y 200..700) against the reference over -24..+24:
+
+| shift | differing pixels |
+|---:|---:|
+| **-10** | **5 215** |
+| -12 | 5 297 |
+| -8 | 5 631 |
+
+So the grid is **ten** points out, and at that shift it is 5 215 -- meaning the grid's *own* contribution at correct alignment is small and most of the
+172 200 is elsewhere (the page's chrome and the sidebar's 19 804).
+
+**Where the ten points are**: `gallery()` draws into a `ScrollArea` whose content starts at `inner`, so the offset is the **tab content's start** rather
+than anything inside the grid. That is the same family as the Settings dialog's rows (36), the news card (8) and the checklist (9): this build's tab
+content begins a few points below the reference's on every page that has tabs.
+
+**Not changed**: the fix should be one constant -- the tab content's inset -- and changing it would move the Gallery, Description, Versions and Files tabs
+together, so it wants one measurement that covers all four rather than a nudge to this grid.
+
+**What the number says about the page**: correcting the grid's offset would be worth at most a few thousand of the 172 200, because at its best alignment
+the grid still differs by 5 215. The remaining ~140 000 is the page's chrome, the sidebar and the artwork -- which is the same rasteriser ceiling as every
+other page, not a layout error.
