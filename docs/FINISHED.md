@@ -1,15 +1,15 @@
 # Definition of finished, and where the work stands
 
-**Position at the end of the 420-round budget (2026-11-10, 837 commits, 269 tests passing).** This is a working launcher that opens
+**Position at the end of the 420-round budget (2026-11-10, 888 commits, 269 tests passing).** This is a working launcher that opens
 Modrinth-shaped pages, and it is **not** a 1:1 clone. Four of the objective's six clauses are measured and unmet; two are unreachable
 on this backend for reasons of arithmetic. The rest of this file is the evidence, page by page, and the history of what changed it.
 
 **What is met**: the tree builds and the suite passes (269 tests); five screen sizes are captured side by side and measured; 164 matrix
-rows are DONE and 65 VERIFIED, each with a capture or a source line; every slice is committed with its measurement.
+rows are DONE and 65 VERIFIED of 800 status-bearing rows (a further 38 OPEN-WITH-CAUSE, 16 NOT-IN-SOURCE, 19 RENDERER-RISK and 13 BLOCKED-SERVICE), each with a capture or a source line; every slice is committed with its measurement.
 
 **What is not met, in one line each**: 99 per cent identity (75 per cent of what remains is glyph edges and photo resampling -- 24 816
 pixels on Home against a 12 960 budget); idle RSS under 20 MB as the lab runs today (22 472 kB on this tree, and the same tree read
-13 720 kB earlier -- the difference is the host's page cache, not the code); 434 of 735 matrix rows OPEN; and the sidebar's news list,
+13 720 kB earlier -- the difference is the host's page cache, not the code); **475 of 800** matrix rows OPEN; and the sidebar's news list,
 which needs a scroll container rather than a draw call.
 
 **Two measurement bases, stated because they differ**: `compare.py` reads **46 204** for Settings across its four slabs, while a
@@ -71,7 +71,7 @@ above counts them and because a reader deserves the list rather than a sum.
 | the card's **copy button** cannot be verified | `arboard` does not return on this display (Xvfb, no clipboard manager); the write runs on a worker so the window no longer freezes | a desktop session with a clipboard, or a different clipboard backend |
 | the **Edit** and **Go to instance** rows, and the **Export ZIP** action, are absent | each needs machinery this build does not have: an image editor, a route out of a page whose `draw` returns a `bool`, and an archive writer | three separate pieces of work, none of them drawing |
 | the **Appearance pane drifts five points** below the theme cards | measured by cross-correlation (`Sync with system` prefers dy -5 while the cards prefer 0); the term is in the theme block's own height and was not located in three greps | the Appearance tab's block list — find the height that follows the cards and subtract five |
-| **434 of 735 matrix rows are OPEN** and 164 are DONE | 23 rounds remain; the rows that could be closed cheaply were (11 re-verified by reading our source, 7 by driving both clients) and the rest need building | `GAP-MATRIX.md`, sorted by the areas with the most rows |
+| **475 of 800 matrix rows are OPEN** and 174 are DONE (65 more VERIFIED) | 23 rounds remain; the rows that could be closed cheaply were (11 re-verified by reading our source, 7 by driving both clients) and the rest need building | `GAP-MATRIX.md`, sorted by the areas with the most rows |
 | the **20 MB idle-RSS gate** is not met as the lab now runs | the figure is environment-dependent: the same tree read 13 720 kB earlier and 22 472 kB when rebuilt, with the whole binary resident rather than half | re-measure on a host with the page cache the first measurement had; the code's own contribution is ~2.5 MB of heap |
 
 **And the one that cannot be fixed by any of the above**: 99 per cent identity is unreachable on this backend, because 75 per cent of the
