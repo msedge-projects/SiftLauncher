@@ -23,6 +23,45 @@ reference's filtering. Both are backend work rather than page work, and both are
 The bar: every screen at **≤2 000 differing pixels** in a 50/50 blend against the reference at 1440x900, both
 clients in the same state, with a capture behind every claim.
 
+## How to reproduce any figure in this file (2026-11-10)
+
+The lab is two X displays in one container: **:100** is Sift Launcher, **:101** is Modrinth App 0.22.0 run from its extracted AppImage with its own
+`XDG_DATA_HOME`. Both windows are sized to the same dimensions before a capture, and every figure below is one of these four commands.
+
+**One page, four slabs** -- the headline number in the table below:
+
+```
+python3 tools/parity/compare.py <ref>.png <ours>.png
+-> total 46204 | titlebar 1537 | rail 391 | content 41208 | sidebar 3068
+```
+
+**Where the difference sits**, clustered into 32-point cells, with an optional rect for a modal (whose page inherits the difference of the page behind it):
+
+```
+python3 tools/parity/flat.py <ref>.png <ours>.png [--rect L,T,R,B] | head -12
+-> differing 33004, flat 8188 (25%)   # textured = differing - flat
+```
+
+**Whether a page is aligned at all** -- because a count at a fixed threshold is not monotone in fidelity, and an offset can flatter it:
+
+```
+python3 tools/parity/align.py <ref>.png <ours>.png [--rect L,T,R,B]
+-> in place 2940  best 2940 at dx 0 dy 0
+->   aligned: no shift beats in-place
+```
+
+**Whether two captures are comparable** -- refuses a size mismatch, warns when the breadcrumbs disagree, names the page:
+
+```
+python3 tools/parity/pair.py <name> --rail 205 --settle 5
+```
+
+**And for the matrix**: `python3 tools/parity/rows.py --limit 10` lists OPEN rows whose reference literals or identifiers already exist in this
+source -- the cheapest way to find a row that is done but not marked.
+
+**Two cautions that cost this project rounds**: a pixel count at threshold 40 can be *improved* by moving content slightly wrong (measured: dy +4
+scored 27 256 inside the Settings plate where dy 0 scored 31 721), so check alignment before trusting a count; and a probe whose tolerance is
+tighter than 40 will report differences the standard does not count, which is how three rounds were once spent on a rule that was in both builds.
 ## Measured, with evidence
 
 | screen | differing pixels | evidence | where the remainder is |
