@@ -8806,3 +8806,30 @@ interaction clause failing while its fidelity clause passed -- and the first of 
 
 **Four rounds for four lines**, and the three that found it were worth more than the one that wrote it: the press that did nothing, the probe that
 showed no strip rect existed, and the grep that showed `action` was 500 lines downstream.
+### The dead-press scan finds nothing, and that is the finding (2026-11-10)
+
+Wrote `tools/parity/deadpress.py` to find the class named at round 436 -- functions that name an `Action`, paint, and register no press:
+
+```
+$ python3 tools/parity/deadpress.py
+0 candidates: functions that name an Action, paint, and register no press
+```
+
+**Zero, and the reason matters**: the strip lived inside `fn list`, which *does* register presses (the card, the kebab). A function-level scan
+cannot see a dead row inside a live function, which is exactly where this one was. The tool is committed with that limitation written into its own
+docstring rather than left to mislead someone into thinking the class is empty.
+
+**What would find it** is a runtime sweep -- press each rectangle the page prints and diff the frame before and after, flagging the ones where nothing
+changes and the reference does something. That is one probe per page and one capture per rect, which is affordable for the pages that have probes
+(Home, Screenshots, Settings, Project, Skins) and not for the ones that do not.
+
+**Measured while here: the instance page's active tab matches.** On `inst2-ref.png` against `strip-fixed.png`, both in the same state:
+
+| property | reference | this build |
+|---|---:|---:|
+| active pill y extent | 174..209 | 174..209 |
+| active pill height | **36** | **36** |
+| active pill width | 121 | 116 |
+
+So the instance page's tab strip has the same geometry as the category chips to the pixel, and the same 4-5 point width difference -- which is the
+label's own measure and appears on every `px-4` pill in the app. That is one font-metric cause behind several rows rather than several causes.
