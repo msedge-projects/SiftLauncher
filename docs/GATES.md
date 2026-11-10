@@ -8280,3 +8280,23 @@ argument at `:3430` (or one inset inside `draw_pager`), and the measurement to c
 **Also unverified from the earlier crop**: whether the reference's trailing `9`/`961` and its final chevron are both drawn here. The comment at `:2537`
 says the chevron logic was considered; the capture says the reference's row ends with a numeral after the ellipsis and this build's does not, which
 would be a second defect in the same widget.
+### The pager inset could not be verified, so it was reverted (2026-11-09)
+
+The change built (`PAGER_INSET = 27.0`, applied at `shell.rs:3430` as `row.right() - Self::PAGER_INSET`) and the verification failed for a reason that has
+nothing to do with the change: **this build cannot be put into the reference capture's state.**
+
+| attempt | result |
+|---|---|
+| click rail y 160 | landed on **Skins** -- wrong row, compared 205 535 against a Discover reference |
+| click rail y 62 | **Discover with no query**, no results, no pager -- no green ink to measure |
+| click at (500,62), type `sodium`, Return | **identical frame** (132 862), so the text never went into the field |
+
+So the diff between the reference capture and this app is not just the pager: the reference's frame has a populated search, and reproducing it needs a
+working text field and a network answer -- neither of which this round could drive.
+
+**Reverted**, because a change whose effect was never observed is a change I cannot tell from a no-op. The tree is clean, the rebuild is queued, and the
+finding stands as written last round: the pager is anchored to `row.right()` where the reference's sits 27 points in, with the ink measurement (943
+against 970) as the check to run once a populated Discover can be reached.
+
+**One thing learned about the lab**: the rail's Discover row is at y **62**, not the 205 used earlier in the session -- 205 is Screenshots. Three
+captures were spoilt by that in this session alone.
