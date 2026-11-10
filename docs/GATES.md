@@ -8737,3 +8737,26 @@ coordinate to fix. The next round should print Home's rects, press the printed o
 
 **What the pair does establish**: the two clients' Home pages at 1440x900 were within 32 715 of each other immediately before the press, so the rows are
 drawn alike; the divergence is in what happens when one is pressed.
+### The "Jump in" strip is drawn and never made pressable (2026-11-10)
+
+Last round's ambiguity is resolved, and it was not a missed coordinate:
+
+* `SIFT_HOME_PROBE` prints this build's instance rectangles -- `card=[[88,329]-[256,568]]`, `play`, `kebab` -- and **no strip row at all**;
+* pressing the **library card** at (120,400) **navigates** to the instance page, whose header matches the reference's (icon, name, loader line, and the
+  Content / Files / Worlds / Logs / Share tabs);
+* pressing the **strip row** at (170,145) does nothing.
+
+**So the row is drawn and never registered for input.** `home.rs:1132-1300` draws the strip, its icon, its name, its badge, its meta line and its Play
+button with `painter` calls only -- there is no `ui.interact` anywhere in that block. The library card does the opposite: `ui.interact(card,
+egui::Id::new(("card", &instance.id)), Sense::click())` at `:1924` and reports `Action::Open(instance.id.clone())` at `:1955`.
+
+**The fix is two lines, mirroring the card**: an `interact` on the strip's rect with an id keyed by the instance, and `Action::Open` on a press. It needs one
+care -- the strip's Play button and its badge sit inside that rect, so the press must not fire from them, which is why the card's own handler sits *after*
+its children's.
+
+**Recorded rather than attempted**: the round ran out after establishing the cause, and this is the kind of two-line change that must be built and driven
+to be worth anything -- the reference navigates on that press, so the test is a capture of our instance page after pressing the strip.
+
+**Worth noting what kind of defect this is**: the strip is *visually* right and *behaviourally* dead, which no pixel count can find. It is the first
+clear example this session of the objective's "every interaction" clause failing while the fidelity clause passes, and there are likely to be others among
+the 434 OPEN rows that only a drive can expose.
