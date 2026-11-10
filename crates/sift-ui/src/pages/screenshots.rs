@@ -3156,6 +3156,12 @@ fn draw_card(
         }
     }
 
+    // **What the selected border actually is**, printed rather than assumed: a measured discrepancy between "the code strokes
+    // CONTRAST" and "the pixel reads (5,6,9)" needs the theme value and the rect in the same frame to be resolvable.
+    if selected && std::env::var_os("SIFT_SHOTS_BORDER_PROBE").is_some() {
+        eprintln!("card selected rect={rect:?} contrast={:?}", theme.CONTRAST);
+    }
+
     // The border last, over the scrim: border border-surface-5 (card.vue:172), which the
     // selected state replaces with contrast (card.vue:174).
     painter.rect_stroke(

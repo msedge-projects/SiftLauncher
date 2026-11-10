@@ -9080,3 +9080,29 @@ next round.
 
 **Why it is worth a row of its own**: a selected card is a *common* state on this page, and a 2-point near-black border against a 1-point white one is visible at
 1:1 without a threshold. It is the kind of difference the 99 per cent clause actually cares about, unlike the textured edges that dominate the counts.
+### A probe print resolves the selected border, and raises a bigger question (2026-11-10)
+
+Added `SIFT_SHOTS_BORDER_PROBE`, which prints the selected card's rect and the theme's `CONTRAST` in the same frame:
+
+```
+card selected rect=[[88.0 247.0] - [596.0 532.8]] contrast=#1A_20_2C_FF
+left edge x86..95 at y400: (235,235,235) (235,235,235) (26,32,44) (26,32,44) (54,56,61) ...
+```
+
+**So the border is drawn exactly as the code says** -- `(26,32,44)` is `#1A202C`, the printed `CONTRAST`, at double width in x88..89. Nothing is painting over it.
+The defect is not in the card.
+
+**The theme values say something else is wrong**: `theme.rs:456` defines `DARK` with `CONTRAST: #FFFFFF`, and `theme.rs:632` defines `LIGHT` with
+`CONTRAST: #1A202C`. The frame printed **the light preset's value**, and the page renders on a dark ground -- a light-theme ink on a dark-theme background.
+
+**Two readings, and this round cannot separate them**:
+
+1. the app is genuinely in `LIGHT` and something else paints the dark ground -- in which case every `CONTRAST` label on every page is dark-on-dark and the
+   pages only look right where the text uses a different field;
+2. the theme in use is `DARK` and this widget is handed a `LIGHT` instance -- in which case the bug is local to the card.
+
+**What separates them is one print**: the same probe printing `theme.BG` and `theme.SECONDARY` beside `CONTRAST`. If `BG` is light, reading 1 is right and the
+finding is much larger than a border; if `BG` is dark, reading 2 is right and the fix is wherever the two themes are mixed.
+
+**Which is why this is the right place to stop the round**: the selected border is a 1-point difference, and the question it has opened is whether the app's
+theme fields are consistent at all. That deserves the round it will take, not the last ten minutes of this one.
