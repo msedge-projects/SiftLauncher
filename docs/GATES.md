@@ -8110,3 +8110,25 @@ the rows**, and that step is not `THEME_CARD_GAP`.
 **Stopping here by decision, not by running out**: four attempts and five rounds on these five pixels have eliminated the arm's tail and the gap constant and
 identified the element exactly. The next attempt should read the theme card's *row step* in the layout at `settings.rs:4718` rather than any constant in scope,
 and with 13 rounds left there is a better use for them than a fifth guess.
+### The row gap, separated and tried: columns held, total rose (2026-11-09)
+
+The layout at `settings.rs:4718` uses one constant for both pitches -- `row * (THEME_CARD_HEIGHT + THEME_FOOTER + THEME_CARD_GAP)` and
+`column * (THEME_CARD_WIDTH + THEME_CARD_GAP)` -- which is why shrinking the shared one moved the columns and the cards' own difference nearly tripled.
+Separating them (`THEME_ROW_GAP = 12.0`, used only in the row term) is the right shape of change, and it did what it was meant to do:
+
+| | before | after |
+|---|---:|---:|
+| theme cards row, best shift | 334 at dy 0 | **334 at dy 0** -- columns untouched |
+| the System card, best shift | 899 at -5 | **688 at -8** |
+| inside the modal | 31 721 | **35 794** |
+| page total | 46 204 | 51 297 |
+
+**The card moved and the page got worse.** Its own difference fell from 899 to 688, but everything below it in the pane moved up five points and cost
+more than that -- the same shape as the `CONTENT_LIFT` attempt four rounds ago, and for the same reason: the System card is not the last thing in the
+pane, so shortening the step under the first row drags the rest with it.
+
+**Reverted**; the rebuild is queued and the binary will be current at the start of the next round. Nothing was committed while unverified.
+
+**What is now established about these five pixels**: the reference's second card row is five higher, and the layout cannot express that by changing
+the row step, because the step also positions everything after the cards. Expressing it needs the cards' block to *report* a height that is five
+short of where its last row ends -- not to move its last row up.
