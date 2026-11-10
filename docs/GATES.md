@@ -8065,3 +8065,27 @@ one change that would then let New group, Export ZIP and the reference's wide sh
 button would each have been reverted.
 
 **Recorded with the two line numbers** so the next attempt starts at `:1380` and the `clear`/`delete` block rather than hunting again.
+### The theme block's tail is not what moves that row (2026-11-09)
+
+The arm that draws the theme cards ends with `height + ROW_GAP + 2.0`, and its comment records that the +2 was added when a row below it was
+measured two points high. The cross-correlation says the block below the cards prefers **dy -5**, so the term looked like the cause. Changed to
+`- 3.0`, built and measured:
+
+| | before | after |
+|---|---:|---:|
+| inside the modal | 31 721 | **32 544** |
+| "Sync with system", best shift | -5 (899 differing) | **-5 (475)** |
+| page total | 46 204 | 48 048 |
+
+**The row's offset did not move** -- still -5 -- while the rows *after* the theme block shifted and cost 823 pixels. So that term positions the block's
+own height for whatever follows it and not the row in question, and the -5 lives somewhere between the cards' top and that row.
+
+**Reverted and verified**: the frame reads **46 204** again, the figure before the attempt.
+
+**What this eliminates**: the block's tail. What remains between the cards and the row is the cards' own height (`THEME_CARD_HEIGHT + THEME_FOOTER,
+114 + 43`) and the row's own top inset. The difference between 475 and 899 is itself informative: the change halved that row's differing pixels while
+leaving its best shift at -5, which is the signature of a *vertical scale* difference rather than a pure offset -- the row moved less than its
+neighbours did.
+
+**Two builds to learn that one term is innocent**, which is the honest rate for this kind of search; the next attempt should test the cards' own
+height (114 + 43) against the reference's, rather than another constant downstream of it.
