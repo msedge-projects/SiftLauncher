@@ -8019,3 +8019,25 @@ pair reads 54 970 with the card selected, against 39 559 unselected -- the diffe
 **Why this is worth a row**: it is the first time this session that a "does not work" turned out to be a press outside a printed rectangle, which is
 the exact failure the matrix's own preamble warns about ("a press that does nothing is evidence about the press, not about the feature"). The probe
 that settles it existed the whole time, behind `SIFT_SHOTS_PROBE`.
+### The selection bar is a floating action bar, and ours is a different bar (2026-11-09)
+
+With one screenshot selected on both, the foot of the page shows a floating bar -- and not the same one:
+
+| | reference | this build |
+|---|---|---|
+| shape | a **wide** bar spanning the content column, sitting just above its foot | a **narrow pill**, centred |
+| left | "1 selected" | "1 selected" |
+| then | a divider, **Clear** | **Clear** |
+| then | **New group**, **Export ZIP**, a divider, **Delete** | **Delete** |
+
+The source (`index.vue:1643-1690`) renders a `FloatingActionBar` with `shown="selectionActive"`: selected count, a `h-6 w-px bg-surface-5`
+divider, Clear, then `ml-auto` New group, Remove from group (only when grouped items are selected), Export ZIP, and Delete.
+
+**So this build has the bar's frame and two of its five actions.** New group and Export ZIP are missing, and its geometry is a centred pill rather
+than a full-width bar -- which is the same `FloatingActionBar` component the Home library uses, so the difference is likely shared.
+
+**Recorded as OPEN with both causes named**: two rows' worth of missing actions (`New group`, `Export ZIP`), and a shape that belongs to the shared
+bar rather than to this page. Export ZIP needs archive machinery this build does not have (`screenshots.rs:85` says so); New group already exists on
+the toolbar and would be a second entry point to the same dialog.
+
+**Captures**: `fab-ref.png` and `fab-our.png`, cropped to 300..1140 by 700..890.
