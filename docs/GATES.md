@@ -8089,3 +8089,24 @@ neighbours did.
 
 **Two builds to learn that one term is innocent**, which is the honest rate for this kind of search; the next attempt should test the cards' own
 height (114 + 43) against the reference's, rather than another constant downstream of it.
+### The drifted element is the System card, and its gap is inside the card (2026-11-09)
+
+Two attempts, both reverted, and one identification that matters:
+
+| attempt | prediction | result |
+|---|---|---|
+| theme arm's tail `+2.0` -> `-3.0` | the row below moves up 5 | the row **did not move**; the rows after it shifted and cost 823 |
+| `THEME_CARD_GAP` 17 -> 12 | the second card row moves up 5 | **the cards themselves degraded** (334 -> 890 differing at dy 0) and the row went to -8 |
+
+**What the second attempt proved**: `THEME_CARD_GAP` is used **inside** the card as well as between rows -- reducing it distorted the preview's own layout, which is
+why the cards' difference nearly tripled. So the row pitch is not exposed as one constant.
+
+**What the crop proves**: the drifted band at y 540-640 is the **fourth card**, the full-width "Sync with system" card (`ThemeChoice::System`, labelled at
+`settings.rs:1519`), drawn on the second row of the card grid. Row 0 is aligned to the reference and row 1 is five low, so what is wrong is the **step between
+the rows**, and that step is not `THEME_CARD_GAP`.
+
+**Reverted and verified**: the page reads **46 204** again, and the tree is clean at HEAD because neither change was committed while it was unverified.
+
+**Stopping here by decision, not by running out**: four attempts and five rounds on these five pixels have eliminated the arm's tail and the gap constant and
+identified the element exactly. The next attempt should read the theme card's *row step* in the layout at `settings.rs:4718` rather than any constant in scope,
+and with 13 rounds left there is a better use for them than a fifth guess.
