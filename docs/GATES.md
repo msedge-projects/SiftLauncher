@@ -8300,3 +8300,26 @@ against 970) as the check to run once a populated Discover can be reached.
 
 **One thing learned about the lab**: the rail's Discover row is at y **62**, not the 205 used earlier in the session -- 205 is Screenshots. Three
 captures were spoilt by that in this session alone.
+### WITHDRAWN: the pager was never 27 points out (2026-11-09)
+
+The "Discover's pagination row sits 27 points right" finding (rounds 407-408) is **wrong**, and the fix I wrote for it would have introduced a 27-point error.
+
+With Discover finally in the reference's state -- populated, which took mapping the rail with `SIFT_TITLE_PROBE` (Home, Discover at **y 120**, Skins,
+Screenshots, Servers; the 205 used all session is Screenshots) -- the brand-green ink on the current-page pill measures:
+
+| | green pixels | centre |
+|---|---|---:|
+| reference | 941..946 | **943** |
+| this build | 925..960 | **942.5** |
+
+**Half a point apart.** The earlier measurement compared this build on Discover-with-no-results against a reference with results, where the pager's width
+and therefore its start differ because the page count differs. The offset was in the pair, not in the widget.
+
+**So `PAGER_INSET` was reverted for the right reason and the finding it came from is withdrawn.** Two rounds went to it: one to measure an invalid pair,
+one to build and revert a change that would have broken a working alignment.
+
+**Discover now compares at 79 574** against the reference's 82 179 for the same state -- the closest this page has been, and the first figure for it that
+was taken on both clients in the same state.
+
+**The lesson, third time in ten rounds**: a finding is only a finding once both frames are known to show the same thing. Every invalid pair this session
+produced a confident, precise, wrong number -- 27 points, 10 189 pixels outside a plate, a 226-wide rule -- and each cost at least one round.
