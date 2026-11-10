@@ -9665,3 +9665,25 @@ dialog is open or `shell.ui()` reports an animation in flight, so an idle frame 
 
 **Operationally**: the reference app should not be left running between comparisons. It is a memory-heavy Electron/WebKit client that spins when its window is
 unfocused or wedged, and this lab has had it open for days.
+### Fixed: 77 per cent busy down to 17. What is left is this build's own repaint (2026-11-10)
+
+After killing the reference's runaway WebKit process, measured from `/proc/stat` over six seconds rather than from `top`, whose own 26 per cent was inflating the
+reading:
+
+| | before | after |
+|---|---:|---:|
+| machine busy | ~77% | **17%** |
+| Xvfb | 25% CPU | **0 ticks in 5 s** |
+| this build, on Discover | 12.7% (top), 20.5% (ticks) | **20.5% of a core** |
+| this build, on Home | -- | **13.7% of a core** |
+
+**So the 50 per cent the user saw was the reference application**, left running for days with a wedged window: a WebKitWebProcess at 199 per cent and 71 GB of
+virtual address space. Killing it took the machine from 77 per cent busy to 17. **The reference should not be left running between comparisons.**
+
+**What remains is this build's own idle cost**, which is real and page-dependent: **13.7 per cent of a core on Home and 20.5 per cent on Discover**, against an
+Xvfb that is now at zero. `main.rs:169-176` requests a repaint only while a dialog is open or `shell.ui()` reports an animation in flight, so whatever keeps it
+awake is in what `shell.ui()` returns -- two different pages both report an animation, and the difference between them (13.7 against 20.5) is the size of the
+page's own draw.
+
+**Not fixed**: the app still does not reach zero when idle. The path is clear -- find which branch of `shell.ui()` keeps returning `animating = true` on a still
+page -- and it is the same class of problem `docs/LIGHTNESS.md` was written about.
