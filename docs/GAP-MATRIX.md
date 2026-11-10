@@ -5700,3 +5700,29 @@ is 44 -- but its own top edge was not measured directly, so it stays OPEN.
 **The one real difference**: the pill is **4 points narrower** here (103 against 107) with its text the same size and colour,
 which puts the difference in the label's own measure rather than the pill's box -- `px-4` plus a bold label. That is a font-metric
 difference of the kind that caps the rest of this project, not a layout error.
+
+## Evidence register (2026-11-10)
+
+**What a status means here.** `OPEN` is not done. `DONE` means the element is implemented and was compared at some point. `VERIFIED` means it was
+*measured* against the reference on the date in `GATES.md`. The rows cite the **reference's** source, not this build's -- verified: of 240 DONE and
+VERIFIED rows, **none** cites a file in `crates/`. That is a real limitation of this ledger and it is recorded rather than papered over.
+
+**Where the captures are.** All pairs live in `.scratch/cap/`. Rows closed before round ~450 do not name their captures in the row; the `GATES.md`
+entry for that round does. The rows below were closed this session and their evidence is named here:
+
+| row | element | evidence |
+|---|---|---|
+| 62 | tabs — pill box | `discV-ref.png` vs `hide-our.png`: pill 36 tall at y 77..112 in both |
+| 63 | tabs — inactive label ink | same pair: #ffffff in both |
+| 125 | header — block padding | `inst2-ref.png` vs `inst-div.png`: avatar inset 48 in both |
+| 126 | header — divider | same pair: rule at y 152, 225 of 225 columns, after the fix |
+| 127 | header — instance icon | same pair: 64x64 at x 88..151 in both |
+| 194 | modal shell — click outside | `out-before.png` vs `out-after.png`: plate (52,54,60) to page (22,24,28) |
+| 195 | modal shell — Escape | `esc-before.png` vs `esc-after.png`: the same transition |
+| 207 | rail — row pitch | `SIFT_RAIL_ROWS` output: 246, 290, 334, 378 -- 44 apart |
+| 208 | rail — row count | the same output: `rail rows=13` |
+| 209 | rail — selected row | `sb-ref.png` vs `ink-fixed.png`: brand ink (27,217,106) in both |
+| 211 | rail — Language badge | the same pair: 42x20 at y 388..407, ink (27,217,106) |
+
+**What is still missing**, and cannot be added honestly: for the other ~229 DONE and VERIFIED rows, the capture that decided them was taken in an earlier
+session or is named only in `GATES.md` by round. Adding a filename to those rows now would be inventing evidence rather than recording it.
