@@ -8176,3 +8176,24 @@ summarised.
 **Checked rather than inferred**: the previous round's five-size comparison assumed the reference captures were on Home because three of the four
 figures reproduced exactly. Cropping the top strip of each reference at 1280, 1366, 1600 and 1920 shows the **"Jump in"** strip in all four, so they
 are on Home and the comparison is same-page at every size.
+### The textured share, re-derived on the final build at two sizes (2026-11-09)
+
+The claim that makes 99 per cent unreachable is that most of the remaining difference is edge texture rather than layout. It was measured once, and
+the record has quoted it ever since; this is it re-derived on the current build, with the tool that produces both halves of the number:
+
+```
+$ python3 tools/parity/flat.py <ref> <ours> | head -1
+Home 1440x900: differing 33 004, flat  8 188 (25%)   -> textured 24 816 (75%)
+Home 1280x720: differing 28 042, flat  7 295 (26%)   -> textured 20 747 (74%)
+```
+
+`flat.py` counts a differing pixel as flat when its 3x3 neighbourhood in the reference varies by 12 or less, so textured is `differing - flat` and needs
+no second tool. **The ratio holds at both sizes to within a percentage point**, which is what a rasteriser difference should do and what a layout
+difference would not: a misplaced box keeps its flat interior and moves its edges, so its flat share would rise with the size, not stay at a quarter.
+
+**Against the budget**: 1 per cent of 1440x900 is 12 960 pixels, so the textured 24 816 alone is **1.9x the entire allowance**, and the flat 8 188 is
+62 per cent of it. Closing to 99 per cent would require the textured share to fall by more than half while the flat share stayed put -- i.e. the
+rasteriser to change, not the page.
+
+**Note on the two bases**: 33 004 here is `flat.py`'s whole-frame count; `compare.py` reads 31 356 for the same pair across its four slabs. The ratio is
+computed from one tool on one frame, so it is internally consistent; the absolute figures are not interchangeable and are labelled with their tool.
