@@ -8833,3 +8833,24 @@ changes and the reference does something. That is one probe per page and one cap
 
 So the instance page's tab strip has the same geometry as the category chips to the pixel, and the same 4-5 point width difference -- which is the
 label's own measure and appears on every `px-4` pill in the app. That is one font-metric cause behind several rows rather than several causes.
+### The runtime sweep works, and it found two dead switches (2026-11-10)
+
+Pressing each rectangle `SIFT_SETTINGS_PROBE` prints, capturing before and after, and comparing the two frames:
+
+| press | frame change | reading |
+|---|---:|---|
+| theme card `Dark` | **0** | already selected -- correct, and the control that shows the test works |
+| theme card `Light` | 846 127 | switches the theme |
+| row `Sync theme across devices` | **0** | **dead** |
+| row `Advanced rendering` | **0** | **dead** |
+| row `System window frame` | 632 547 | flips its switch |
+
+**So two of the five targets do nothing when pressed**, and the probe reports their controls with state (`Switch { on: false }` and
+`Switch { on: true }`), which means they are drawn as live switches and read as dead ones. That is the same class as the "Jump in" strip: a control that
+pixels cannot distinguish from a working one.
+
+**The method is now a loop, not a ritual**: a list of presses, a before and an after, and a diff. The zero that matters is the one on a control the
+reference makes pressable; the zero on an already-selected card is the control that proves the test can tell the difference.
+
+**Not fixed yet**: both switches need wiring, and "Advanced rendering" may have no behaviour behind it in this build at all -- which would make it a
+deliberate omission rather than a defect, and should be recorded as such rather than silently wired to nothing.
