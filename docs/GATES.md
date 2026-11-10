@@ -9183,3 +9183,17 @@ number means anything.
 
 **That is five state differences now, and only one of them (the theme) is under the instruments' control.** The other four -- account, screenshot files, folder
 dates and the article -- are properties of the two clients' data, and a figure that straddles them is measuring data.
+### The pin matters on Home and not on Discover or Skins (2026-11-10)
+
+Re-measured both pages with `SIFT_NEWS_SLIDE=1` set, since yesterday's figures were taken without it:
+
+| page | unpinned | pinned | reading |
+|---|---:|---:|---|
+| Discover | 77 465 | **77 465** | **identical** -- its sidebar draws the category list, not News (`panel.rs`'s `else` branch), so the article never shows |
+| Skins | 132 429 | **132 428** | one pixel -- its News card is present but the article had not rotated |
+
+**So the pin is worth 20 542 pixels on Home and nothing on Discover**, which is not obvious and is exactly the kind of thing a figure should say. The state table in
+`FINISHED.md` records the article as a state that must match; this round showed that on two of three pages it already did.
+
+**All three figures now stand in a fully-specified state**: dark theme (background sampled from the frame), the news slide pinned, the same page on both
+clients, both windows 1440x900. Home **28 521**, Discover **77 465**, Skins **132 428**.
