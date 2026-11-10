@@ -9391,3 +9391,19 @@ folder dialog). The next attempt should search the rail's own draw for where the
 
 **What it would look like**: a selected row whose label is as green as the reference's, which is visible at 1:1 and is exactly the kind of difference the count
 cannot rank -- a handful of glyphs in a 46 000-pixel page.
+### The selected rail row's label is brand green now: (27,217,106) in both (2026-11-10)
+
+`TabbedModal.vue:189` gives a selected row `text-brand`, and this build drew `theme.BUTTON_TEXT_SELECTED` -- an ink meant for text *on* a brand-filled
+control, which is a different job.
+
+| | reference | before | after |
+|---|---|---|---|
+| selected row, brightest brand ink | **(27,217,106)** | (31,157,85) | **(27,217,106)** |
+| Settings, four slabs | -- | 46 115 | 46 135 |
+
+**Exact match on the ink**, and the page moved by 20 pixels -- which is the third time this stretch that a visible fix has been invisible to the count.
+
+**The constant was never wrong**: `DARK.BRAND` is (0x1b,0xd9,0x6a) = (27,217,106), the reference's own value. The defect was one line choosing an on-brand ink
+for off-brand text, which is why measuring the constant alone would have cleared a row that was not correct.
+
+**Row 209 closes**, and with it the rail's cluster: 205's heading ink, 207's pitch, 208's count and 209's selected row are all measured now.

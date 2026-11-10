@@ -3332,8 +3332,12 @@ fn draw_rail(
         if hovered {
             clipped.rect_filled(entry.row, RAIL_ROW_RADIUS, theme.BUTTON_BG);
         }
+        // **`text-brand`, not an on-brand ink.** `TabbedModal.vue:189` gives a selected row `text-brand` -- plain brand green over the
+        // 30% wash -- and this build drew `BUTTON_TEXT_SELECTED`, an ink meant for text *on* a brand-filled control. Measured on the
+        // `Appearance` row: the reference's brightest (27,217,106), this build's (31,157,85), with `DARK.BRAND` already equal to the
+        // reference's value. Row 209.
         let ink = if is_selected {
-            theme.BUTTON_TEXT_SELECTED
+            theme.BRAND
         } else {
             theme.BASE
         };
