@@ -9332,3 +9332,18 @@ be clean. The one defect found by this method remains the library card's title, 
 **The method's tally, honestly**: four clusters inspected, one real defect, three clean. That is a worse hit rate than the row-by-row ledger (which has closed
 row after row) and a far better one than the page counts for *visible* defects (which found none of them). It is worth keeping in the rotation but not worth
 spending the remaining rounds on wholesale.
+### The rail's rows agree in position; the rows that ask for a count do not close (2026-11-10)
+
+Tried to close rows 207 (row pitch) and 208 (row count at rest) from the dark pair already captured, by finding the rail's rows in both frames.
+
+**Text ink bands**: the reference yields 15 bands and this build 16, but the bands split on glyph gaps, so the counts are not row counts. Their **centres**
+mostly coincide: 225, 304, 311, 353, 443, 483, 527, 566, 573, 617 and 658 appear in **both**, with the remaining bands differing by 1 to 5 points.
+
+**Row plates**: a scan for the rows' own fill in a column inside the rail found **no bands at all** in either frame, so that approach is wrong for this rail --
+either the fill is not in the colour window I chose or the column I sampled is outside the rows.
+
+**So neither row closes.** What can be said is narrower and still useful: **eleven of the sixteen ink centres are identical to the point**, which is consistent with
+the same row pitch and the same row count, and is not the same as measuring either. The rows stay OPEN rather than being marked VERIFIED on a resemblance.
+
+**What would decide them**: the rail's row rectangles, which `SIFT_SETTINGS_PROBE` prints for the *content* but not for the rail; one eprintln in the rail's own
+loop would give the pitch and the count directly, the way the Home probe did for its cards.
