@@ -120,6 +120,24 @@ wash and reverted; what moved the number since was **geometry and standalone typ
 | the strip's name, then its badge and meta | 32 158 -> 31 949 |
 | both page headings, each measured against its own ink | 31 949 -> 31 215 |
 | the sidebar's "News" heading | 31 215 -> 31 049 |
+## The state a figure was taken in, and where it cannot be matched (2026-11-10)
+
+Four differences between the two clients are **not rendering** and cannot be closed by any page change. Each is recorded here once so that a figure
+carrying one of them is not read as a defect.
+
+| state | reference | this build | which figures it touches |
+|---|---|---|---|
+| theme | dark | dark (**after a sweep left it light for several rounds**) | none now; `compare.py` and `pair.py` both refuse a mismatched pair |
+| account | signed in (a demo account) | **signed out** | every account-dependent control: the Settings sync switch refuses its press by design (`layout.vue:60-75`), the sidebar's checklist step differs, Skins shows no saved skins |
+| screenshot files | taken today | taken yesterday | the Screenshots page: the reference groups under "Today", this build under "Yesterday", and the label shifts the layout -- 61 007 against 26 483 for a pair whose files matched |
+| instance folder dates | made on the reference's own days | made earlier | the Files tab: same six folders, same order, same five columns, different mtimes (57 726 against 49 056 when this build listed one row) |
+
+**So four of the page figures in the table above contain a component that is data rather than rendering**, and the two account-dependent ones (Settings'
+sync switch and the sidebar checklist) were both investigated as defects before being understood. The pages whose figures can be compared like-for-like are the
+ones where both clients start from the same files and the same sign-in -- which, in this lab, is Home, Discover and the project pages.
+
+**What a reader should take from this**: a number in the table is the difference between two *programs-in-states*, not between two programs. Where the states
+differ, the number says so in its own cell, and no amount of page-level work will move it.
 ## What each page's number is actually made of (2026-11-10)
 
 A single figure per page hides the only distinction that matters for the remaining work: whether the difference is *layout this build can fix* or
