@@ -8717,3 +8717,23 @@ that is because its figure had already been re-taken after the news-card fix whi
 **So the honest reading of this stretch**: the sidebar work is worth about **2 800 pixels per screen** at four of the five standard sizes, and the
 skins work is worth 3 069 on its own page. Neither moves the 99 per cent clause, whose budget at 1280x720 is 9 216 pixels: even the best screen
 (1280x720 at 25 099) is 2.7 times it.
+### The instance row opens the instance page in the reference and does nothing here (2026-11-10)
+
+Drove the same press in both clients -- (170, 145) on Home's "Jump in" strip, inside the one instance's row -- and captured each afterwards:
+
+| | after the press |
+|---|---|
+| reference | the **instance page**: its icon, "Fabric 26.3", "Fabric 26.3  •  Never played", and the Content / Files / Worlds / Logs / Share tabs |
+| this build | **Home, unchanged**: "Jump in", the same instance row, "Library" below |
+
+The pair reads 77 138, which is not a visual difference but two different pages.
+
+**So either the row is not pressable here or the press missed its rectangle.** That question has a one-line answer that I did not have time to run: the
+pages already print their press rectangles under a probe (`SIFT_HOME_PROBE` on this page), and the rule this session learned the hard way is that a press
+which does nothing is evidence about the press until a printed rect says otherwise.
+
+**Recorded rather than guessed**, because the two explanations imply opposite work: a missing handler is a behaviour to implement, and a missed rect is a
+coordinate to fix. The next round should print Home's rects, press the printed one, and only then say which it is.
+
+**What the pair does establish**: the two clients' Home pages at 1440x900 were within 32 715 of each other immediately before the press, so the rows are
+drawn alike; the divergence is in what happens when one is pressed.
