@@ -8783,3 +8783,26 @@ recorded with the line numbers so the next attempt does not rediscover this.
 **What this says about the defect's cost**: the strip is dead because the function that draws it collects its actions in one place at the end, and the strip
 was added to the drawing side without a matching entry on the collecting side. That is a plausible reason for a whole class of these: anything drawn early
 in a long function and pressed early has no action to set. The probes can find them; the fixes are each a small threading job.
+### The "Jump in" strip opens the instance now (2026-11-10)
+
+The threading fix, in the shape `toggled` already used in the same function:
+
+```rust
+let mut jump_in: Option<String> = None;          // beside `toggled`, before the strip is drawn
+// in the strip block, before its icon and Play, so those children still win their own rects:
+if ui.interact(strip, egui::Id::new(("jump-in", &recent.id)), Sense::click()).clicked() {
+    jump_in = Some(recent.id.clone());
+}
+// where the function applies `toggled`:
+if let Some(id) = jump_in { action = Action::Open(id); }
+```
+
+**Driven and verified**: a press at (170,145) on Home's strip now opens the instance page -- icon, "Fabric 26.3", "Fabric 26.3  •  Never
+played", and the Content / Files / Worlds / Logs / Share tabs -- where before the press did nothing at all.
+
+**This was a behaviour defect with no pixel signature.** The strip was drawn correctly and was completely dead; no count on any page could have found it,
+and it took a driven press in both clients plus the page's own printed rectangles to establish. It is the clearest example this session of the objective's
+interaction clause failing while its fidelity clause passed -- and the first of its class to be fixed.
+
+**Four rounds for four lines**, and the three that found it were worth more than the one that wrote it: the press that did nothing, the probe that
+showed no strip rect existed, and the grep that showed `action` was 500 lines downstream.

@@ -1126,6 +1126,9 @@ fn list(
     let State { menu, selected, .. } = state;
     let selected_ids = selected.clone();
     let mut toggled: Option<String> = None;
+    // **The strip's press, carried to the end like the ring's.** The row is drawn at 1132 and this function collects its
+    // action at 1654, so the id has to travel; the same shape `toggled` already uses.
+    let mut jump_in: Option<String> = None;
     let worlds = &state.worlds;
 
     let painter = ui.painter();
@@ -1160,6 +1163,15 @@ fn list(
         // of ref (29,31,35) against ours (22,24,28), invisible to a 40-point threshold and obvious to the eye in a crop.
         painter.rect_filled(strip, 12.0, theme.SURFACE_2);
         crate::pages::home::dashed_rect(&painter, strip, 12.0, theme.SURFACE_5);
+        // **The row is pressable, like the card it echoes.** The reference opens the instance on a press anywhere in the strip;
+        // this block drew the row and registered nothing, so a press did nothing -- a defect no pixel count can see. Registered
+        // here, before the icon, the badge and Play, so those children -- being later -- still win their own rects.
+        if ui
+            .interact(strip, egui::Id::new(("jump-in", &recent.id)), Sense::click())
+            .clicked()
+        {
+            jump_in = Some(recent.id.clone());
+        }
         // **104 and `CONTRAST`, measured at 1:1.** The reference\'s caret sits at x 192..202, twelve points right of the
         // last glyph, and it is as bright as the heading; this drew it at 96 in `SECONDARY`, hard against the "n" and a
         // shade below the text. Both are visible in a 4x crop and neither moves a number much -- which is exactly the kind
@@ -2131,6 +2143,11 @@ fn list(
             selected.remove(&id);
         }
         ui.ctx().request_repaint();
+    }
+    // **The strip's press, applied with the ring's.** `Action::Open` is what the library card reports, so a press on the row
+    // and a press on the card do the same thing -- which is what the reference does.
+    if let Some(id) = jump_in {
+        action = Action::Open(id);
     }
     if let Some((id, kebab)) = anchored {
         if let Some(item) = menu_popover(ui, theme, &id, kebab, rect, menu) {
