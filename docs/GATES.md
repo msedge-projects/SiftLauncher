@@ -9197,3 +9197,21 @@ Re-measured both pages with `SIFT_NEWS_SLIDE=1` set, since yesterday's figures w
 
 **All three figures now stand in a fully-specified state**: dark theme (background sampled from the frame), the news slide pinned, the same page on both
 clients, both windows 1440x900. Home **28 521**, Discover **77 465**, Skins **132 428**.
+### The instance page is missing its header divider (2026-11-10)
+
+Row 126 asserts a `border` under the instance page's header. Measured by scanning for a straight, neutral-coloured run across x 200..1100:
+
+| | rule rows found |
+|---|---|
+| reference | **y 152** (225 of 225 sampled columns matched) |
+| this build | **none** anywhere in y 130..320 |
+
+and the crop at (80..900, 130..175) shows it: a faint line across the reference's header foot and nothing at all in this build's.
+
+**So this is a missing element, not a misplaced one** -- the first of that kind found by measurement in some time. The instance page draws its icon (64x64 at x
+88..151 in both, verified the same round), its name, its loader line and its tab strip, and omits the rule the reference puts under them.
+
+**What closing it needs**: the header's own closure in `pages/instance.rs` -- one `hline` at the header's foot in the reference's rule colour (`SURFACE_5`-
+family, since the reference's line is a few points above its background), then the same scan to confirm y 152 appears.
+
+**Row 127 closes on this round's evidence**: the instance icon is 64x64 at x 88..151 in both, with a one-pixel difference at its top edge from antialiasing.
