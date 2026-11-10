@@ -8635,3 +8635,25 @@ they are separable:
 **Which to do first**: the drawing, on the existing stand-in art. Changing the texture first puts a real skin through a squash that has never been
 evaluated for it, and the page's 144 609-pixel difference is in the *shape* of the character (a tall flat plate) as much as in its colours. The
 measurement to beat is the same on both: the page's four-slab total, 135 498 at last count.
+### Real skins through the existing compositor made the page worse (2026-11-10)
+
+Wired the 45 baked textures into `art_texture`: decoded with `image::load_from_memory`, composed through the same `compose_front`, uploaded instead of
+`ART[index].atlas()` when the catalogue had a skin. It built and ran, and the page went from **135 498 to 147 250** -- **11 752 worse**.
+
+Two causes, visible in the crop:
+
+1. **The grid repeats one skin.** `SKINS` is this build's own eight-name sample list; the baked catalogue's names are the reference's (`Mr. Pack -
+   Asexual`, ...). Indexing the baked array by `SKINS`' position therefore draws the first files of *one section* in every cell -- three neighbours in the
+   grid are the same character. The reference's grid shows its `Default skins` section, which is a different set at a different offset.
+2. **The composed view is squashed.** `default_card` draws it into a `height/2`-wide box (`skins.rs:1414`), which was sized for the authored atlas's
+   aspect. `compose_front` produces its own `VIEW_W x VIEW_H`, and a real skin's front view is not that ratio -- hence the narrow, blurred columns.
+
+**Reverted** (`skins.rs`, `main.rs` restored, the generated module deleted); the assets themselves stay committed because they are the reference's own art and
+will be needed by whichever attempt gets the two causes right. The build is queued.
+
+**So the order I argued for last round was right and I did the opposite**: the drawing's aspect should have been fixed first, on art whose shape was already
+known, and only then the texture swapped. Doing both at once made the result unattributable -- and the crop shows both faults at once, which is exactly the
+confusion the staging was meant to avoid.
+
+**Next attempt, in order**: (1) `default_card` draws the composed view at `compose_front`'s own aspect, measured against the reference's cell shape;
+(2) map the catalogue properly -- the reference's `Default skins` section first, by name, not by index into this build's list.
