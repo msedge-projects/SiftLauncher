@@ -97,7 +97,7 @@ rather than of misplaced boxes. Two families of fix were tried and both reverted
 coverage factor (+1 312, worse). The remaining 2.5% is the same drawing in a different engine.
 
 **Why the third clause cannot either.** At one row per round -- the rate this session has managed on rows that need a drive -- the
-remaining 541 rows need more than the 114 rounds left. The ledger is a record of what has been proved, not a checklist that will be complete.
+remaining rows need more rounds than this project has left.
 
 ## The floor on text, measured rather than asserted
 
