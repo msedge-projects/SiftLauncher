@@ -9368,3 +9368,26 @@ structure row 205 asserts and does not yet have a number for.
 
 **What this cost**: one eprintln and one build, after three rounds of glyph counts and plate scans that produced nothing. The lesson is the one this budget keeps
 relearning at a price: **when a claim is about what the program lays out, print what the program lays out.**
+### The selected rail row's brand text is dimmer than the reference's (2026-11-10)
+
+Row 209 asserts `bg-[color-mix(in srgb, var(--color-brand) 30%, transparent)] text-brand`. Sampling the selected row (`Appearance`, y 246..286) at three points
+inside it, and the category heading above it:
+
+| | reference | this build |
+|---|---|---|
+| selected row, brightest ink | **(27,217,106)** | **(31,157,85)** |
+| selected row, mid | (28,204,101) | (29,183,94) |
+| selected row, right | (35,95,64) | (35,94,64) |
+| the heading's ink | (150,162,176) | (150,162,176) |
+
+**The heading matches exactly** -- row 205's `text-secondary` is (150,162,176) in both, which closes that part of it. **The selected row's ink does not**: the
+reference reaches full brand green and this build peaks 60 points below it in the green channel.
+
+**And the constant is right**: `theme.rs:512` gives `DARK.BRAND` as **(0x1b,0xd9,0x6a)** = (27,217,106), which is precisely the reference's value. So the label is
+not being drawn in `BRAND` -- it is being drawn in something dimmer, or blended with the row's fill.
+
+**Not fixed**: the ink's source is in the rail's row drawing, which the matrix cites at `:2704` but which my read of that line found to be a different widget (a
+folder dialog). The next attempt should search the rail's own draw for where the label's colour is chosen rather than trusting the row's citation.
+
+**What it would look like**: a selected row whose label is as green as the reference's, which is visible at 1:1 and is exactly the kind of difference the count
+cannot rank -- a handful of glyphs in a 46 000-pixel page.
