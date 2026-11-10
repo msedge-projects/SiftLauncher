@@ -8539,3 +8539,26 @@ which of those four terms is over-tall, by measuring the reference's date line a
 COPY_TO_DATE`, and the copy's own ink starts within a point in both).
 
 **Reverted** -- a change that moves 47 pixels in the wrong direction and shows nothing has no claim to stay.
+### The news card's internals are eight points too tall, not the section (2026-11-10)
+
+Measured first this time, as the previous round's note required. The article's art plate is a saturated band, so it can be found by colour:
+
+| | art band | copy's first ink row | art -> copy |
+|---|---|---:|---:|
+| reference | **370..479** | 566 | **196** |
+| this build, section gap 28 | **362..471** | 565 | **203** |
+| this build, section gap 36 | **370..479** | 573 | 203 |
+
+**So the art is eight points high and the copy is already in place** -- the distance between them is 203 where the reference's is 196. Raising the section gap
+moved the art exactly onto the reference's band (370..479 in both, to the pixel) and simultaneously pushed the copy eight points low, which cost **622**
+pixels: Home 29 370 -> 29 992.
+
+**The correct change is therefore two terms, not one**: the card's top moves down eight (so the art lands at 370) and the art-to-title gap shrinks by the same
+eight (so the copy stays at 566). Any change that moves only one of them trades the art against the copy, which is what the last two rounds did in opposite
+directions.
+
+**The exact terms**: `plan.card` sets the art's top; `ART_TO_TITLE` then `TITLE_TO_COPY` (with the title's measured height) set the copy. The eight belongs
+between the art and the title, and the card's own top needs to follow the section rather than lead it.
+
+**Reverted and recorded rather than attempted**, because the two-term change needs its own build and verification and this round's went to establishing
+which term is wrong -- the thing the last three rounds guessed at.
