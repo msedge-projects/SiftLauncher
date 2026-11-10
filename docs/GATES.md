@@ -9305,3 +9305,16 @@ defect survived every count for the whole session, and why the 4x crop was the o
 
 **So this is the clearest case yet of the count and the clone disagreeing**: a visible, unarguable improvement in the product, invisible to the metric the objective
 is written against. Both facts are true, and the record says both.
+### Three text clusters inspected at 2-3x: none has the card's overlap (2026-11-10)
+
+After the library card's title was found printed through its own meta line, the other text-bearing clusters on Home were inspected the same way:
+
+| cluster | crop | result |
+|---|---|---|
+| the "Jump in" strip | (150..600, 100..200) at 2x | clean -- name, green badge and meta line are three separated rows |
+| the sidebar checklist | (1160..1430, 100..290) at 2x | clean -- three rows, the first ticked and dimmed. Its strike is thin and dim, but **round 413 measured it at y 148 in both clients**, so the crop's impression that it was missing is superseded by a number |
+| the news card | (1155..1430, 510..620) at 3x | clean -- two-line title, four-line copy, no overlap |
+
+**So the card's overlap was specific to the card**, not a pattern across the page's text. That is worth knowing: the defect looked like it might be a family (a spacing constant shared by several widgets), and three crops say it was one draw with its own offset.
+
+**And the checklist is the case where a crop is the weaker instrument**: at 2x the strike is invisible, at 1 pixel in a colour two steps from the text, and only the scan at y 148 could decide it. The rule is not "crops beat counts" but "each defect has one instrument that can see it" -- overlapping text needs a crop, a 1-point rule needs a scan, and a placement needs a cross-correlation.
