@@ -1921,7 +1921,10 @@ fn list(
             format!("{} {}", instance.loader, instance.version)
         };
         painter.text(
-            egui::pos2(card.left() + 10.0, tile.bottom() + 26.0),
+            // **38, not 26: the meta line overlapped the title.** The name is 15-point semibold at `tile.bottom() + 18`, and this
+            // was drawn eight points below its top -- inside the name's own line box, so the two strings sat on top of each other.
+            // At 1:1 it read as slightly heavy text; at 4x it was unmistakable, and a page count of 28 521 could not see it.
+            egui::pos2(card.left() + 10.0, tile.bottom() + 38.0),
             Align2::LEFT_TOP,
             loader,
             fonts::body(13.0),

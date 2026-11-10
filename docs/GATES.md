@@ -9284,3 +9284,24 @@ crop showing two separated lines.
 
 **What it argues for, again**: a page's total ranks this defect below a thousand invisible sub-pixel differences. The only instruments that find it are a crop at 4x
 and an eye, and the only rule that would have caught it earlier is looking at every card's text at 4x once.
+### The card's title and meta line are separated: 26 -> 38 (2026-11-10)
+
+The overlap found at 4x last round was two draws eight points apart where a 15-point line needs about twenty:
+
+```rust
+painter.text(pos2(card.left() + 10.0, tile.bottom() + 18.0), ..., &instance.name, fonts::semibold(15.0), ...);
+painter.text(pos2(card.left() + 10.0, tile.bottom() + 26.0), ..., loader, fonts::body(13.0), ...);   // inside the name's line box
+```
+
+The meta line is now at **38**, twenty below the name's top. Verified by the same 4x crop as the finding: the title reads in white semibold with the grey
+loader line cleanly beneath it, where before the two overlapped by half their height.
+
+| | before | after |
+|---|---:|---:|
+| Home, four slabs | 28 521 | **28 521** |
+
+**The page total did not move.** Two overlapping strings of the same text cost almost the same as two separated ones at threshold 40 -- which is precisely why this
+defect survived every count for the whole session, and why the 4x crop was the only instrument that could see it.
+
+**So this is the clearest case yet of the count and the clone disagreeing**: a visible, unarguable improvement in the product, invisible to the metric the objective
+is written against. Both facts are true, and the record says both.
