@@ -9038,3 +9038,23 @@ sweep is good at confirming interactions work and poor at finding the ones that 
 
 **What it does prove**, and did not before: these five interactions on this page were driven, captured and measured rather than assumed -- which is what the
 objective asks for. The matrix rows for them can close on this evidence.
+### The sweep's evidence does not close the rows it looks like it closes (2026-11-10)
+
+Five interactions on the Screenshots page were driven and measured last round. The obvious next step was to mark their matrix rows VERIFIED, and that step is
+wrong. Reading what the rows actually assert:
+
+| row | it asserts | what the sweep measured |
+|---|---|---|
+| 173 `group section header` | `chevron rotate-180 transition-all 300ms` (`section.vue:125`) -- the *timing* of the chevron's turn | that pressing the header changes the frame by 108 624 pixels |
+| 287 `toolbar defaults and persistence` | `sort` defaults to `newest`, `groupBy` to `date`, **kept in storage keys and restored on the next visit** | that the two dropdowns open |
+| 294 `card, box` | `aspect-video ... border-surface-5 bg-surface-2 shadow-sm`, hover `brightness-110`, selected `!border-contrast` | that the check press toggles a selection |
+
+**So the rows are at a finer grain than the instrument.** A press that does something is a much weaker claim than a chevron that turns in 300 milliseconds, a
+toolbar that remembers itself across visits, or a border that changes colour when selected. Marking them VERIFIED on this evidence would be the same error as
+the "Sync theme" switch -- a real observation, attached to a claim it does not support.
+
+**What would close each**: a capture pair 150 ms apart during the collapse (for the transition), a restart between two captures (for the persistence), and a
+selected-versus-unselected crop (for the border). All three are cheap and none was done.
+
+**So the ledger stays as it was**, and the sweep's contribution is recorded as what it is: five interactions confirmed live at a coarse grain, which is the
+objective's "driven" clause satisfied for those five and not its "every state" clause.
