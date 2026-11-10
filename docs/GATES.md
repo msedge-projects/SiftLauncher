@@ -8237,3 +8237,24 @@ relative to a reference that may itself be comparing different rows.
 
 **Stopping permanently on this item.** It is worth a few hundred pixels, it has consumed six rounds, and every measurement has been consistent with more
 than one explanation. Recording it as OPEN-WITH-CAUSE in the matrix with this round's table is the honest end of it.
+### Discover's pagination row sits 27 points right (2026-11-09)
+
+Discover is the worst page in the table (82 179 differing) and 82 per cent of it is card artwork, so the clusters are only useful where they are not
+artwork. The two heaviest are x 960 y 192 (644) and x 928 y 192 (513), and at 3x they are the **pagination row**: filled circle, `2`, an ellipsis, and
+in the reference a final `9`.
+
+Measured by the brand-green ink on that row:
+
+| | green pixels at y 190..215 | centre |
+|---|---|---:|
+| reference | x **941..946** (the ring's left edge; the filled centre is covered by the numeral) | **943** |
+| this build | x **952..987** (the whole disc) | **970** |
+
+**Ours is 27 points right**, and the reference's row ends with a `9` that this build does not draw at all -- visible in the 3x crop as both the offset
+and the missing last page.
+
+**Not changed**: the round's build went to the card-row attempt, which was reverted. The lead is the pagination's own placement -- whether it is centred
+on a rect that differs, or right-aligned to a different edge -- and the missing final page is a second, separate defect in how the page count is chosen.
+
+**Why this is worth a row**: Discover has never been examined cluster by cluster in this session, and its flat share is only 18 per cent, which means
+almost every non-artwork difference it carries is still unlisted.
