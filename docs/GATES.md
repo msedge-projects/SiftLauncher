@@ -9347,3 +9347,24 @@ the same row pitch and the same row count, and is not the same as measuring eith
 
 **What would decide them**: the rail's row rectangles, which `SIFT_SETTINGS_PROBE` prints for the *content* but not for the rail; one eprintln in the rail's own
 loop would give the pitch and the count directly, the way the Home probe did for its cards.
+### The rail prints its own rows: thirteen, at a 44-point pitch (2026-11-10)
+
+One `eprintln` in `rail_rows()` under `SIFT_RAIL_ROWS`, and the two rows that three rounds of inference could not decide are decided in one launch:
+
+```
+rail rows=13
+rail tab=Appearance    rect=272.0,246.0 218.0x40.0
+rail tab=Features      rect=272.0,290.0 218.0x40.0
+rail tab=Behavior      rect=272.0,334.0 218.0x40.0
+rail tab=Language      rect=272.0,378.0 218.0x40.0
+...
+```
+
+* **row 207 (44-point pitch)**: 290 - 246 = **44**, and every consecutive row inside a category is 44 apart. **VERIFIED.**
+* **row 208 (thirteen rows at rest)**: `rail rows=13`. **VERIFIED.**
+
+**And the rects show the category gaps plainly** -- 378 to 464 is 86 (a heading plus its spacing), 552 to 638 the same, 770 to 856 the same -- which is the
+structure row 205 asserts and does not yet have a number for.
+
+**What this cost**: one eprintln and one build, after three rounds of glyph counts and plate scans that produced nothing. The lesson is the one this budget keeps
+relearning at a price: **when a claim is about what the program lays out, print what the program lays out.**

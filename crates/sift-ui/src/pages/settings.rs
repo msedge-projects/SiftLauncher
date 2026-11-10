@@ -3132,6 +3132,22 @@ fn rail_rows(dialog: Rect, scroll: f32, dev_mode: bool) -> Vec<RailRow> {
     }
 
 
+    // **The rail's own rectangles, printed.** Rows 207 (44-point pitch) and 208 (thirteen rows at rest) were both left
+    // OPEN because the only instruments for them were glyph counts and plate scans, neither of which can see a row. This
+    // prints what the rail actually lays out, which is the same shape the Home probe gives for its cards.
+    if std::env::var_os("SIFT_RAIL_ROWS").is_some() {
+        eprintln!("rail rows={}", rows.len());
+        for row in &rows {
+            eprintln!(
+                "rail tab={:?} rect={:.1},{:.1} {:.1}x{:.1}",
+                row.tab,
+                row.row.left(),
+                row.row.top(),
+                row.row.width(),
+                row.row.height()
+            );
+        }
+    }
     rows
 }
 
