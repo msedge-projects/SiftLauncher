@@ -8503,3 +8503,20 @@ wrapping the news block's art, title, copy and date -- all of which currently ca
 
 **Also established this round, so it is not tried again**: the copy's line breaks cannot be matched by narrowing the measure. `panel.rs:826-828` records
 the measurement -- "at -27 ... the sidebar worsens to 16 700 from 16 565: the break moves, but every one of the four lines shifts with it".
+### The banner overlap is the reference's own behaviour; the clip was a no-op (2026-11-10)
+
+Two findings, both from measurement rather than the crop that prompted them:
+
+**One, the copy is already aligned.** The news copy's first ink row is **566 in the reference and 565 here** -- one point apart, which is the same
+sub-pixel difference the rest of the page shows. The crop that suggested a 15-point offset was read against the wrong baseline.
+
+**Two, the reference overlaps the banner too.** Its fourth line, "managed by you.", is struck through by "Upgrade to Modrinth+" in exactly the way this
+build's is. So there was no clipping defect to fix: both clients draw the sidebar's text over the promo, and the clip I added at `banner_top` (626) was
+above all the content, so it changed **nothing** -- Home read 29 370 both before and after, to the pixel.
+
+**Reverted.** The clip is a correct thing to have when the news list grows past the pane, and it belongs in that change rather than before it, where it
+has no observable effect and therefore cannot be told from a no-op.
+
+**What the news-list work therefore needs**: more cards, not a clip. At 1440x900 this build draws one article and the reference draws one and a half --
+because the reference's list continues below the fold, and the fold is the banner. A second card drawn where the plan puts the first plus one card's
+height would land inside the banner's own area, which is when the clip earns its place.
