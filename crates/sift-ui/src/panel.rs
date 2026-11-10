@@ -881,7 +881,7 @@ pub fn draw(
     // gradient -- with the heading 17 points down inside it and the rows 13 points in from
     // its sides.
     let card_top = plan.getting_started - 16.0;
-    let card_bottom = plan.steps_first + 3.0 * ROW_PITCH - ROW_GAP + 13.0;
+    let card_bottom = plan.steps_first + 3.0 * ROW_PITCH - ROW_GAP + 13.0 + STEPS_TOP_NUDGE;
     let card = Rect::from_min_max(
         egui::pos2(rect.left() + PAD, card_top),
         egui::pos2(rect.right() - PAD, card_bottom),
@@ -939,7 +939,7 @@ pub fn draw(
         // 1px border puts the first row's fill at x 1166 against a card at 1153, and its right
         // edge at 1414. Flush rows were the widest thing in this slab that differed.
         let row = Rect::from_min_size(
-            egui::pos2(card.left() + HEADING_INSET, row_top(plan.steps_first, index)),
+            egui::pos2(card.left() + HEADING_INSET, row_top(plan.steps_first, index) + STEPS_TOP_NUDGE),
             egui::vec2(card.width() - 2.0 * HEADING_INSET, ROW_H),
         );
         // A step brightens under the pointer the way the sheet's does
@@ -1554,7 +1554,7 @@ fn plan_with_copy(panel: Rect, copy_height: f32, title_height: f32) -> Plan {
     // "Getting started" heading is at y 85 in both, the strike through the first row at **148 in the reference and 139 here**, and
     // the News heading at 313 against 300 -- so the rows start nine short and the card below them nine high. `HEADING_TO_BODY` is
     // shared with other panels, so the nudge is local rather than a change to it.
-    let steps_first = getting_started + HEADING_LINE + HEADING_TO_BODY + STEPS_TOP_NUDGE;
+    let steps_first = getting_started + HEADING_LINE + HEADING_TO_BODY;
     // The next heading is measured from the last row's bottom, not its top: the space
     // belongs to the section boundary, and a row is 36 tall.
     // **Not the section**: shifting the whole news section down by 20 measured far worse (sidebar 17 602 ->

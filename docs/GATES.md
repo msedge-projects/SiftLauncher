@@ -8394,3 +8394,31 @@ x-range, or the pager draws `NEWS` somewhere else as well. Reverted; the tree is
 **What the probe measures**: the first row in x 1165..1330, y 300..360 whose bright pixels exceed twelve. On this page the sidebar holds *two*
 headings in that column -- `News` and, above the category list on Discover, `Category` -- so a six-point difference in one and a six-point difference in
 the other are the same measurement to this test. That is the flaw, and the next attempt should print both rectangles rather than inferring from ink.
+### The nudge belonged on the rows, not the plan -- and the suite proved it (2026-11-09)
+
+The checklist fix from two rounds ago moved the rows to the right place and **broke something else**: the suite failed,
+
+```
+panel::tests::a_section_heading_sits_twenty_below_the_section_above_it
+assertion failed: and the card ends 26 above it
+  left: 17.0   right: 26.0
+```
+
+because `steps_first` was nudged, and everything planned from it moved too: the card's bottom, the News art and the banner gap. So the change traded a
+correct checklist for a nine-point error in the artwork below it -- which is exactly what the earlier comment in this file warned about ("shifting the
+whole news section down by 20 measured far worse").
+
+**Fixed properly**: `steps_first` is back to the plan's value and `STEPS_TOP_NUDGE` is added in two places that are *drawn* rather than planned -- the
+row positions and the card's own bottom edge:
+
+```rust
+row_top(plan.steps_first, index) + STEPS_TOP_NUDGE            // the rows
+plan.steps_first + 3.0 * ROW_PITCH - ROW_GAP + 13.0 + STEPS_TOP_NUDGE   // the card's foot
+```
+
+**269 tests pass**, including the one that caught it, and the row positions are unchanged from the version that measured the strike at y 148 in both
+clients. **The release build is queued and the on-screen confirmation of the artwork's return is not yet taken** -- this entry will not claim it until it
+is.
+
+**Worth stating plainly**: the wrong version was committed and reported as a fix, and the only reason it did not stand is that the suite ran. That is the
+clause working exactly as intended, and it is the second time this session a test has caught a change I had already called correct.
