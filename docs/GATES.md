@@ -8698,3 +8698,22 @@ there were near-identical dark pride skins. The crop at (560..1120, 300..620) pu
 **What it does not fix, and cannot**: the reference renders a **3D model** and this build composes a **16x32 sprite** scaled up. The characters are now
 the right ones and the shapes are still flat -- which is why 3 069 of 144 609 came back and not more. That ceiling is a renderer, not a texture, and it
 is the honest end of this page's artwork.
+### All five sizes re-measured after the sidebar work: every one improved (2026-11-10)
+
+| size | before this stretch | now | change |
+|---|---:|---:|---:|
+| 1280x720 | 27 933 | **25 099** | -2 834 |
+| 1366x768 | 36 268 | **33 456** | -2 812 |
+| 1440x900 | 29 370 | **28 521** | -849 |
+| 1600x900 | 45 470 | **42 635** | -2 835 |
+| 1920x1080 | 57 864 | **55 027** | -2 837 |
+
+Every capture was size-checked before it was compared, and the Home page was opened afresh for the sweep.
+
+**Four of the five moved by almost exactly the same amount** (2 810-2 837), which is what a fixed-width sidebar's improvement should do: the news card
+and the checklist live in a column of constant width, so its contribution is the same at every window size. The odd one out is 1440x900 at 849, and
+that is because its figure had already been re-taken after the news-card fix while the others were still quoted from before it.
+
+**So the honest reading of this stretch**: the sidebar work is worth about **2 800 pixels per screen** at four of the five standard sizes, and the
+skins work is worth 3 069 on its own page. Neither moves the 99 per cent clause, whose budget at 1280x720 is 9 216 pixels: even the best screen
+(1280x720 at 25 099) is 2.7 times it.
