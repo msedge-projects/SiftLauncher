@@ -39,6 +39,24 @@ wash and reverted; what moved the number since was **geometry and standalone typ
 | the strip's name, then its badge and meta | 32 158 -> 31 949 |
 | both page headings, each measured against its own ink | 31 949 -> 31 215 |
 | the sidebar's "News" heading | 31 215 -> 31 049 |
+## What is plainly not finished, with the reason and the starting point (2026-11-10)
+
+Every item here was found by measurement or by reading 0.22.0, and every one is open. They are listed together because the clause table
+above counts them and because a reader deserves the list rather than a sum.
+
+| what | why it is not done | where a future attempt starts |
+|---|---|---|
+| the sidebar shows **one news card** where the reference shows up to four and a "View all news" button | the plan allocates one card's space and pins the hosting banner to the panel's foot; the reference fits four because its sidebar **scrolls** | `panel.rs` — `plan.banner == WINDOW.1 - BANNER_H`, the card ends 26 points above it, and the fix is a scroll container, not a card |
+| the **selection bar** on Screenshots carries Clear and Delete but not New group or Export ZIP, and is a centred pill rather than the reference's wide bar | its width comes from `selection_bar_rect` and its rows from the drawing code below it: the two must agree, so a row cannot be added alone | `screenshots.rs:1380` (`bar_rect`) and the `clear`/`delete` rects below it — make the width derive from the same list the drawing iterates |
+| the card's **copy button** cannot be verified | `arboard` does not return on this display (Xvfb, no clipboard manager); the write runs on a worker so the window no longer freezes | a desktop session with a clipboard, or a different clipboard backend |
+| the **Edit** and **Go to instance** rows, and the **Export ZIP** action, are absent | each needs machinery this build does not have: an image editor, a route out of a page whose `draw` returns a `bool`, and an archive writer | three separate pieces of work, none of them drawing |
+| the **Appearance pane drifts five points** below the theme cards | measured by cross-correlation (`Sync with system` prefers dy -5 while the cards prefer 0); the term is in the theme block's own height and was not located in three greps | the Appearance tab's block list — find the height that follows the cards and subtract five |
+| **434 of 735 matrix rows are OPEN** and 164 are DONE | 23 rounds remain; the rows that could be closed cheaply were (11 re-verified by reading our source, 7 by driving both clients) and the rest need building | `GAP-MATRIX.md`, sorted by the areas with the most rows |
+| the **20 MB idle-RSS gate** is not met as the lab now runs | the figure is environment-dependent: the same tree read 13 720 kB earlier and 22 472 kB when rebuilt, with the whole binary resident rather than half | re-measure on a host with the page cache the first measurement had; the code's own contribution is ~2.5 MB of heap |
+
+**And the one that cannot be fixed by any of the above**: 99 per cent identity is unreachable on this backend, because 75 per cent of the
+remaining difference sits on glyph edges and photograph resampling -- 24 816 pixels on Home alone against a 12 960-pixel budget. That is
+arithmetic, not effort, and it is stated in the clause table.
 ## Where this stands against the objective, clause by clause (2026-11-09)
 
 The objective names six things. Four are measurable, and each is measured; two are not met, and the reasons are measurements
