@@ -8981,3 +8981,24 @@ together, so it wants one measurement that covers all four rather than a nudge t
 **What the number says about the page**: correcting the grid's offset would be worth at most a few thousand of the 172 200, because at its best alignment
 the grid still differs by 5 215. The remaining ~140 000 is the page's chrome, the sidebar and the artwork -- which is the same rasteriser ceiling as every
 other page, not a layout error.
+### There is no shared content inset: plain tabs are 2 out, scrolling tabs 12 to 16 (2026-11-10)
+
+Measured all four project tabs the same way -- cross-correlating the content region (x 90..700, y 200..700) against the reference over -20..+20:
+
+| tab | best shift | differing at best | kind |
+|---|---:|---:|---|
+| Description | **+2** | 1 226 | plain text content |
+| Versions | **+2** | 804 | plain text content |
+| Gallery | **-12** | 2 899 | inside a `ScrollArea` |
+| Files | **-16** | 758 | inside a `ScrollArea` |
+
+**So the "one content inset" hypothesis is wrong, and the split is informative**: the two plain tabs agree to the point at +2, and the two that live in
+scroll areas are 12 and 16 points out -- an order of magnitude larger. The difference is the scroll container, not the page.
+
+**What that means for a fix**: there is no constant to change once. The plain tabs are a 2-point matter (below the threshold worth touching at this
+budget); the scrolling ones need their content's own top measured -- `gallery()` and the files tab both draw into `egui::ScrollArea::vertical()` over a
+`ui.new_child`, and the first allocation inside a scroll area starts below the area's own top by whatever spacing the child ui carries.
+
+**And what it means for the page's 172 200**: at their best shifts the four tabs differ by 1 226, 804, 2 899 and 758 -- so the content of the project page is
+**within about 5 700 pixels of the reference in total**, and the remaining ~167 000 is the page chrome, the sidebar (19 804) and artwork. The largest
+figure in the table is not a content defect.
