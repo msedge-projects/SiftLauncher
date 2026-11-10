@@ -8920,3 +8920,25 @@ mode and the reference in dark. Pressing `Dark` and re-measuring gave 46 115.
 
 **So the sweep changes state, and state persists.** Every probe-driven press in this lab is a mutation: the theme, the switches, the selection. A later
 measurement is only comparable if the state it was taken in is known, which is the same lesson as the signed-out switch, arriving from the other side.
+### `pair.py` now refuses a theme mismatch, and the threshold is measured (2026-11-10)
+
+The scare at round 441 -- a 20x apparent regression caused by the client being in light mode after my own sweep pressed the Light card -- is now a
+refusal rather than a number. `pair.py` compares the two frames' own mean brightness after the size and breadcrumb checks:
+
+```
+$ python3 tools/parity/pair.py <name>
+mean brightness: ref 43.0, ours 42.7
+```
+
+and refuses at a difference over 25, with the reason printed. The threshold is not a guess -- the two cases it has to separate are:
+
+| pair | ref | ours | difference | verdict |
+|---|---:|---:|---:|---|
+| the scare (client in light) | 43.0 | 147.3 | **104.3** | REFUSED |
+| the good pair (both dark) | 43.0 | 42.7 | **0.3** | accepted |
+
+**So the instrument separates them by two orders of magnitude**, and 25 sits an order of magnitude above the noise a real layout change introduces.
+
+**What it protects against is not a bug but a class of them**: every press this lab makes is a mutation that persists -- the theme, the switches, the
+selection -- so a measurement taken after a sweep is a measurement of the sweep as much as of the page. Sizes and breadcrumbs both passed during the scare;
+neither could see it. Brightness can.

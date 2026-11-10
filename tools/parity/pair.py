@@ -93,6 +93,25 @@ def main():
     diff = ImageChops.difference(ref_crumb, our_crumb).convert("L")
     lit = sum(1 for p in diff.getdata() if p > 40)
     print("breadcrumb differing pixels: %d of %d" % (lit, ref_crumb.size[0] * ref_crumb.size[1]))
+
+    # **The state, not just the page.** A sweep two rounds ago pressed this build's "Light" theme card and the choice
+    # persisted; the next capture read 829 926 against a 46 204 baseline and the page was unrecognisable -- the client was
+    # in light mode and the reference in dark. Sizes and breadcrumbs both passed. So compare the two frames' own mean
+    # brightness, which separates a light theme from a dark one by a wide margin and moves by a couple of points for
+    # anything a real layout change does.
+    def mean_luma(im):
+        grey = im.convert("L").resize((64, 40))
+        pixels = list(grey.getdata())
+        return sum(pixels) / max(len(pixels), 1)
+
+    luma_ref, luma_our = mean_luma(ref_im), mean_luma(our_im)
+    print("mean brightness: ref %.1f, ours %.1f" % (luma_ref, luma_our))
+    if abs(luma_ref - luma_our) > 25.0:
+        print(
+            "REFUSED: the two frames differ by %.1f in mean brightness -- one client is in a different theme, "
+            "and every count from this pair would measure that instead of the page" % abs(luma_ref - luma_our)
+        )
+        return 3
     # Calibrated: the same page reads 419 of 23 600 (1.8%) from glyph rendering alone, so 15% is the floor at
     # which the words themselves must differ.
     if lit > 0.15 * ref_crumb.size[0] * ref_crumb.size[1]:
