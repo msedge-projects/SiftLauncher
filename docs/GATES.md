@@ -9458,8 +9458,9 @@ Row 210 asserts `hover:bg-surface-...` on an unselected rail row. Driven: pointe
 
 **So the hover is implemented and raises the row by 13 points on every channel**, and the un-hovered row matches the reference exactly.
 
-**What is missing is the reference's own hover value**: two attempts to capture it produced files of identical size (44 961 bytes) that **PIL cannot open** --
-the same corrupt result twice, so the capture path to that window failed rather than the measurement. Row 210 therefore closes on "hover exists with fill
+**What is missing is the reference's own hover value**: two attempts to capture it produced **1248x262** images -- the reference window was never
+resized to 1440x900, so the probe's co-ordinates fell outside the frame and raised rather than returning a colour. **CORRECTED after checking the file**: the
+captures were valid PNGs at the wrong size, not corrupt ones, and the failure was the window size it has been three times before. Row 210 therefore closes on "hover exists with fill
 (52,54,60)" and **not** on "the same fill as the reference", which is a weaker claim than the row asks for and is recorded as such.
 
 **This is the third kind of evidence gap this session has produced** -- after the rows with no capture and the rows citing only the reference -- and it is the
