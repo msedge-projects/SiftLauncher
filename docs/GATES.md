@@ -9466,3 +9466,30 @@ captures were valid PNGs at the wrong size, not corrupt ones, and the failure wa
 **This is the third kind of evidence gap this session has produced** -- after the rows with no capture and the rows citing only the reference -- and it is the
 most ordinary: a capture that silently failed. The check that would have caught it is the one `compare.py` already does on size and brightness, applied to every
 capture at the moment it is taken rather than at the moment it is used.
+### The reference window cannot be resized, and `getwindowgeometry` does not notice (2026-11-10)
+
+Wrote `tools/parity/drive.py` to resize both clients and *prove* it before capturing, because four rounds were lost to a reference window at 1248x262. It
+reports:
+
+```
+ref: wanted 1440x900, got 1440x900 -- ok
+ours: wanted 1440x900, got 1440x900 -- ok
+```
+
+and then the captures are:
+
+```
+hoverfix-ref.png   (1248, 262)
+hoverfix-ours.png  (1440, 900)
+```
+
+**So `xdotool windowsize` sets a geometry that `xdotool getwindowgeometry` reads back correctly and that `import -window` ignores** -- the reference
+application enforces its own surface size, and the window manager's idea of it is not the thing the capture sees. The guard I built would have passed a
+mismatched pair, which is worse than no guard.
+
+**What this explains**: every failed reference capture this session -- the hover, the context menu, the Home comparison -- was this, and each time I
+diagnosed it afterwards as a stray window or a corrupt file. It is neither: it is an application that will not be resized, plus a read-back that agrees with the
+request instead of with the pixels.
+
+**The check that would work**: compare the capture's *own* dimensions to the requested size, after the fact. That is exactly what `capture.py` and `pair.py`
+already do on their outputs, and it is what `drive.py` should assert -- on the PNG, not on xdotool.
