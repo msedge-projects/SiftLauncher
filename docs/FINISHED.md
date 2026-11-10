@@ -23,6 +23,27 @@ reference's filtering. Both are backend work rather than page work, and both are
 The bar: every screen at **≤2 000 differing pixels** in a 50/50 blend against the reference at 1440x900, both
 clients in the same state, with a capture behind every claim.
 
+## What I would tell whoever continues this (2026-11-10)
+
+**A number without a named element is a guess with a decimal point.** Every probe in `tools/parity` counts pixels in a rectangle and knows
+nothing about what is in it. Four findings this session were wrong for that one reason: a "226-wide rule" that was in both builds (a tolerance
+tighter than the standard), a "pager 27 points right" (a pair whose searches differed), a "checklist showing a different step" (both were struck,
+nine points apart), and a "News heading six points low" that turned out to be a switch reading different words. Each cost one to three rounds, and
+each was settled in one crop. **Crop first, name the element, then count.**
+
+**Check that both frames show the same thing before believing any difference.** Twice the pairs disagreed because one client was on a different
+page or tab; once because one had no search. `pair.py` names the page for this reason, and `align.py` exists because a count at a fixed threshold
+is not monotone in fidelity -- an offset can *improve* it (measured: dy +4 scored 27 256 inside the Settings plate where dy 0 scored 31 721).
+
+**Move the drawn thing, not the plan.** The two checklist attempts differed only in where the nudge was applied: changing `steps_first` moved the
+card, the art and the banner gap and broke a test; changing the row positions and the card's own foot fixed the alignment and left everything else
+alone. When a constant is shared, adding a local one is usually the fix and almost always the smaller change.
+
+**The rail is: Home, Discover (y 120), Skins, Screenshots (y 205), Servers.** Three captures this session were spoilt by using 205 for Discover.
+
+**And the honest one**: the pages that got the most attention (Settings, Discover, the sidebar) are now measured to within a few hundred pixels
+of their best, while 475 matrix rows remain OPEN and the 99 per cent clause is unreachable on this rasteriser. The remaining work is not in the
+places this session polished; it is in the pages nobody drove.
 ## How to reproduce any figure in this file (2026-11-10)
 
 The lab is two X displays in one container: **:100** is Sift Launcher, **:101** is Modrinth App 0.22.0 run from its extracted AppImage with its own
@@ -67,7 +88,7 @@ tighter than 40 will report differences the standard does not count, which is ho
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
 | Home | **31 356** | `homeCh239-ref.png` vs `homeCh239-our.png` (2026-11-09, verified pair: both 1440x900, both on Home, breadcrumbs 1.8% apart) | type of the news copy (13 points, the measured optimum) and the card's own foot; the news sidebar wraps one word later per line than the reference |
-| Discover | **77 641** | `discV-ref.png` vs `final-our.png` (2026-11-09, both on Discover with a populated search, both 1440x900). The checklist's rows are aligned to the pixel -- the strike through the first step reads y 148 in both -- and the artwork below kept its place. Was 79 574 before that fix, and 81 444 whole-frame |
+| Discover | **77 462** | `discV-ref.png` vs `hide-our.png` (2026-11-09, both on Discover with a populated search, both 1440x900). The checklist's rows are aligned to the pixel (its strike at y 148 in both) and the "Hide already installed" switch now carries the reference's own words; the artwork kept its place through both fixes. Was 79 574 before them, and 82 179 in the first pair taken this session |
 | (the remaining 17% flat is artwork) | | the other 83% is card artwork and the resampler |
 | Screenshots (populated) | **27 745** | `sc-away.png` vs `our-shots2.png` (2026-11-09, **one screenshot in both instances**) | 2 166 inside the card is the image resample; 3 688 elsewhere is the top chrome. Was 23 573 for two *empty* pages -- an empty page has nothing to misalign, and hid a 24-point double padding worth 11 338 |
 | Instance page | **30 471** | `inst-ref.png` vs `inst-our.png` (2026-11-09, both on Content, empty) | type; the sidebar is 16 816 of it |
