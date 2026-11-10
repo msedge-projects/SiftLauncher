@@ -4,7 +4,7 @@
 Modrinth-shaped pages, and it is **not** a 1:1 clone. Four of the objective's six clauses are measured and unmet; two are unreachable
 on this backend for reasons of arithmetic. The rest of this file is the evidence, page by page, and the history of what changed it.
 
-**What is met**: the tree builds and the suite passes (269 tests); five screen sizes are captured side by side and measured on the final build (**27 933 / 36 268 / 31 356 / 45 470 / 57 864** for 1280x720, 1366x768, 1440x900, 1600x900 and 1920x1080); 174 matrix
+**What is met**: the tree builds and the suite passes (269 tests); five screen sizes are captured side by side and measured on the final build (**27 933 / 36 268 / 29 370 / 45 470 / 57 864** for 1280x720, 1366x768, 1440x900, 1600x900 and 1920x1080); 174 matrix
 rows are DONE and 65 VERIFIED of 800 status-bearing rows (a further 38 OPEN-WITH-CAUSE, 16 NOT-IN-SOURCE, 19 RENDERER-RISK and 13 BLOCKED-SERVICE), each with a capture or a source line; every slice is committed with its measurement.
 
 **What is not met, in one line each**: 99 per cent identity (75 per cent of what remains is glyph edges and photo resampling -- 24 816
@@ -87,7 +87,7 @@ tighter than 40 will report differences the standard does not count, which is ho
 
 | screen | differing pixels | evidence | where the remainder is |
 |---|---:|---|---|
-| Home | **31 356** | `homeCh239-ref.png` vs `homeCh239-our.png` (2026-11-09, verified pair: both 1440x900, both on Home, breadcrumbs 1.8% apart) | type of the news copy (13 points, the measured optimum) and the card's own foot; the news sidebar wraps one word later per line than the reference |
+| Home | **29 370** | `homeCh239-ref.png` vs `final-home.png` (2026-11-09, verified pair: both 1440x900, both on Home). The sidebar's checklist and switch work carried the whole gain -- the sidebar slab fell 16 565 to 14 579 -- so the page is 1 986 better than the 31 356 quoted before it |
 | Discover | **77 462** | `discV-ref.png` vs `hide-our.png` (2026-11-09, both on Discover with a populated search, both 1440x900). The checklist's rows are aligned to the pixel (its strike at y 148 in both) and the "Hide already installed" switch now carries the reference's own words; the artwork kept its place through both fixes. Was 79 574 before them, and 82 179 in the first pair taken this session |
 | (the remaining 17% flat is artwork) | | the other 83% is card artwork and the resampler |
 | Screenshots (populated) | **27 745** | `sc-away.png` vs `our-shots2.png` (2026-11-09, **one screenshot in both instances**) | 2 166 inside the card is the image resample; 3 688 elsewhere is the top chrome. Was 23 573 for two *empty* pages -- an empty page has nothing to misalign, and hid a 24-point double padding worth 11 338 |

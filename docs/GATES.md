@@ -8461,3 +8461,17 @@ wrong string -- is corrected, since it described the opposite of the line beneat
 | the sidebar slab | 15 153 | **14 974** |
 
 **Both labels read identically in the capture**, and the whole 179-pixel gain lands in the sidebar slab, which is where the label lives.
+### The panel fixes were worth 1 986 on Home as well (2026-11-09)
+
+The checklist and switch fixes were made against Discover, and Home carries the same right panel. Re-measured on the final build:
+
+| | before the panel work | after |
+|---|---:|---:|
+| Home, four slabs | 31 356 | **29 370** |
+| the sidebar slab | 16 565 | **14 579** |
+
+**So the gain is 1 986 and it lands entirely in the sidebar** -- the same 1 986 that appeared on Discover, because it is the same slab on both pages.
+That is what a shared-panel fix should look like, and it is the largest single improvement of the last twenty rounds.
+
+**Final state of this tree**: 269 tests pass, the release binary is built from HEAD, the working tree is clean at 912 commits, and every figure quoted
+in `FINISHED.md` was re-measured on this build rather than carried forward.
