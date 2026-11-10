@@ -8000,3 +8000,22 @@ rounds proved that), Go to instance needs a route out of a page whose `draw` ret
 and the divider stays out because it would divide nothing.
 
 **Verified**: built and driven -- the menu now ends after two rows where it used to run four.
+### Selection driven on both, and my coordinate was the bug (2026-11-09)
+
+Pressing the card's selection circle opened the viewer instead. The code was right and I was wrong by two points: the probe prints the
+rectangles a press is read against, and on this card they are
+
+```
+card  2026-11-09_12.00.00.png  88.0,247.0 508.0x285.8
+check 2026-11-09_12.00.00.png 544.0,247.0  50.0x50.0
+```
+
+so the check box spans x 544..594 and y **247..297**, and the press that opened the viewer was at y 245 -- two points above it. `on_check`
+(`screenshots.rs:2975`) then correctly let the card take the press and activate.
+
+**Driven properly at (570,270), both clients show the same state**: the card selected, a filled white disc with a dark check at its top-right. The
+pair reads 54 970 with the card selected, against 39 559 unselected -- the difference being the selection ring, the scrim and the bar.
+
+**Why this is worth a row**: it is the first time this session that a "does not work" turned out to be a press outside a printed rectangle, which is
+the exact failure the matrix's own preamble warns about ("a press that does nothing is evidence about the press, not about the feature"). The probe
+that settles it existed the whole time, behind `SIFT_SHOTS_PROBE`.
