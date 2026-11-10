@@ -8873,3 +8873,32 @@ and this row -- the same family as the five-point drift already recorded there, 
 
 **Not fixed**: both. The switch needs its press wired to the state the probe already prints, and `Advanced rendering` needs the reference's dimmed
 treatment; the 36 points need one measurement of the row above it before anything moves.
+### CORRECTION: the Sync switch is disabled on purpose, and the reference is signed in (2026-11-10)
+
+Last round I called `Sync theme across devices` a real defect because the reference flips its switch and this build does not. Reading the code that
+refuses the press:
+
+```rust
+// settings.rs:3996
+Control::Switch { on } => {
+    // A sync switch is disabled while signed out: it keeps the value its row declares, refuses the press,
+    // and says why on hover (`layout.vue:60-75`).
+    if let Some(tip) = sync_switch_tooltip(label) {
+        ...state.hover_tip = Some((rect, tip));
+        Control::Switch { on }        // unchanged: the press is refused
+    } else { ... }
+```
+
+**So the dead press is the designed behaviour for a signed-out client**, and the reference's 1 147-pixel flip happened because its client is signed in -- its
+demo account -- not because of anything this build lacks. The sweep compared two clients in different account states, which is the same class of error as
+the pager at 205 and the checklist at y 145, and it is the third time a matching account state was the unstated premise.
+
+**Withdrawn**: "`Sync theme across devices` is a real defect here". The row matches the reference's own signed-out behaviour, and `layout.vue:60-75` is
+the source it was ported from.
+
+**What survives from the sweep**: `Advanced rendering` does nothing in either client, and the reference dims its label while this build does not -- a
+visual difference in the disabled treatment, not a behavioural one. And the reference's row sits at y **679** against this build's **643**, which no account
+state explains.
+
+**The lesson, in its sharpest form yet**: a behavioural comparison is only valid if both clients are in the same *state*, and state includes who is signed
+in. The lab has no signed-in account for this build, so every account-dependent control will look dead here and be live there.
