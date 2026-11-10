@@ -4369,19 +4369,13 @@ mod tests {
     /// the module note instead of being drawn dead.
     #[test]
     fn the_menu_carries_every_row_this_page_can_carry_out() {
-        // The group row sits second, where the reference puts it: Open, group, reveal, then the destructive one
-        // last.
-        assert_eq!(
-            MENU_ITEMS,
-            [
-                Item::Open,
-                Item::AddToGroup,
-                Item::ShowInFolder,
-                Item::Delete
-            ]
-        );
+        // **The rows the reference has and this page can carry out, and only those.** A right-click open lists Edit,
+        // Copy, Show in folder, Go to instance, a divider and Delete; Edit needs an image editor, Copy needs a clipboard that
+        // works on this display and Go to instance needs a route out of the page. What is left is these two, and the menu
+        // used to carry Open and Add to group as well -- neither of which the reference lists here.
+        assert_eq!(MENU_ITEMS, [Item::ShowInFolder, Item::Delete]);
         assert!(Item::Delete.danger(), "Delete is the row drawn in red");
-        assert!(!Item::Open.danger());
+        assert!(!Item::ShowInFolder.danger());
         assert_eq!(Item::ShowInFolder.label(), SHOW_IN_FOLDER);
     }
 
