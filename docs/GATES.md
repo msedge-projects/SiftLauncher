@@ -8323,3 +8323,21 @@ was taken on both clients in the same state.
 
 **The lesson, third time in ten rounds**: a finding is only a finding once both frames are known to show the same thing. Every invalid pair this session
 produced a confident, precise, wrong number -- 27 points, 10 189 pixels outside a plate, a 226-wide rule -- and each cost at least one round.
+### Discover's heaviest flat cell is the checklist, and the two frames disagree about which step is done (2026-11-09)
+
+With both frames finally in the same state, Discover reads **81 444 differing (17% flat)** and its heaviest flat cell is x 1184 y 128 (224), which at 2x
+is the **Getting started** checklist: the reference strikes through "Create first instance" and dims it, this build shows the same row ticked but with
+plain bright text and no line.
+
+**The code already does both.** `panel.rs:955-1016` is explicit: a completed row draws the check instead of the radio, dims the label to
+`#6d777c` ("sampled from the brightest pixel of the label's own box"), and then draws a line through it when `done`. So a row that is ticked but not
+struck is not a state this code can produce -- which means the two frames are showing **different steps**, and the difference is in which step each
+client considers complete, not in how a complete one is drawn.
+
+**That is what the evidence supports and no more**: `done_row = index == 0 && library_has_instance()`, so the first step's state depends on whether the
+library holds an instance. The reference's sidebar was populated from its own data directory; ours from `/tmp/matchdata`. Different libraries, different
+first step, and the checklist is the one part of the page that reflects that.
+
+**Not changed**, because changing the drawing would have made a working path wrong. **What would settle it**: run both clients against the same
+library contents, or capture the checklist on a page where neither has an instance -- neither is available in the rounds left, which is why this is
+recorded rather than fixed.
