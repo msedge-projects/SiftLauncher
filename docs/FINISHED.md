@@ -139,6 +139,25 @@ ones where both clients start from the same files and the same sign-in -- which,
 
 **What a reader should take from this**: a number in the table is the difference between two *programs-in-states*, not between two programs. Where the states
 differ, the number says so in its own cell, and no amount of page-level work will move it.
+## Why the type never quite matches, in one place (2026-11-11)
+
+Four hunts, four rounds, one cause. Every remaining text discrepancy on Home is a **font-metric difference**: the faces available to this build ink fewer rows
+at the same nominal size than the reference's web font does. The measurements, all at 1440x900 against a guard-certified pair:
+
+| element | reference | this build | outcome |
+|---|---|---|---|
+| library card title | 12 rows at `text-base` (16) | **12 rows at 16** | **matches** -- the fix was 15 -> 16 |
+| library card meta | 11 rows at `text-sm` (14) | **11 rows at 14** | **matches** -- the fix was 13 -> 14 |
+| `Jump in` strip meta | 11 rows | **11 rows at 14** | **matches** -- the fix was 13 -> 14 |
+| checklist rows | 14 rows at `text-base` (16) | 12 rows at 16, in either family | **2 rows short**; `label(16)` scores 387 px better than `body(16)` |
+| search placeholder | 14 rows at `text-base` (16) | 11 rows at 16, 12 at 18 | **3 rows short**; 18 costs 43 px more than 16 |
+
+**So the same nominal size matches three elements and falls short on two**, which is what makes this a metric difference rather than a size error: our 16 equals
+their 16 for a 12-row line but not for a 14-row one. The two shortfalls are the elements whose reference line is taller than its neighbours -- a 14-row band is
+not a 16-pixel font doing ordinary work, and this build has no face that produces one at a size the row can hold.
+
+**What would fix it**: a font whose cap height at 16 points matches the reference's. That is a dependency, not a parameter -- and the honest state is that the
+clone's type is right wherever the reference's line is 11 or 12 rows and short wherever it is 14.
 ## Per element, Home at 1440x900 (2026-11-10)
 
 The page totals average good elements with bad ones, so this is the same pair measured region by region -- `kb-ref.png` against `kb-our.png`, both 1440x900,
