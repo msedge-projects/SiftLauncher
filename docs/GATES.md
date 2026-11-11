@@ -10560,3 +10560,21 @@ So the grid draws the right eight, in the right order, from the right textures, 
 
 **The next step is arithmetic, not another crop**: map a fetched skin's 64x64 atlas into the 40x48 view by hand and compare against the drawn image. That is
 decidable without a browser, a build or a capture -- the only round in this stretch where the answer does not need the lab at all.
+### Corrected: the Skins grid does start with a different skin -- Steve, not Alex (2026-11-11)
+
+Two rounds ago the order hypothesis was marked **dropped** on the strength of a crop where the second cell (orange) matched. That crop was taken across an
+offset boundary and compared different rows. Cropped at the heading's own anchor -- `Default skins` inks at **363..375 in both**, so the grids start together --
+the first cell is plainly a different skin:
+
+| | first cell |
+|---|---|
+| reference | **brown hair, cyan shirt, brown trousers -- Steve** |
+| this build | **orange hair, green shirt, pale -- Alex** |
+
+**So the order is different after all**, and the earlier verdict was an artefact of a bad crop. The module's order is alphabetical (`Alex` first) and this build
+uses it; the reference shows Steve first, so its display order comes from somewhere else -- a database sort, a section's own ordering, or the grid being a
+subset of a longer list.
+
+**What is now established, each by a different instrument**: the eight assets are right (fetched by hash), `compose_front` is right (composed offline in Python
+and it is a proper Alex), the grid's position is right (heading bands identical), and **the order is wrong**. Three of the four were verified without capturing
+anything.
