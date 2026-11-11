@@ -9903,3 +9903,19 @@ allocator keeps the arena. Less cache, more churn, more resident memory -- the o
 The RSS gate's remaining gap is not in this cache.
 
 **Idle CPU stayed at 0 ticks** across the same walk, so neither setting regressed the lightness work.
+### The card menu's `View instance` is drawn and works (2026-11-11)
+
+The card's context menu had four of the reference's nine rows. `View instance` is the first added, because it needs no new state: the reference's own
+`InstanceItem.vue` opens the instance page from the card's press, and this build already has that verb.
+
+| | before | after |
+|---|---|---|
+| menu rows | Play, Edit, Duplicate instance, Open folder, Delete (5) | Play, **View instance**, Edit, Duplicate instance, Open folder, Delete (6) |
+| glyph | -- | `Glyph::Eye`, the reference's `EyeIcon` |
+
+**Verified by driving it**: pressing the new row changed **59 667 pixels** of content and landed on the instance page -- 64x64 icon, `Fabric 26.3`, and the
+metadata line `Fabric 26.3 - Never played`. So the row is not only drawn, it is wired to the verb it names.
+
+**Still missing from the reference's nine**: `Add to favorites` and `Add content` (no state for either here), `Copy path` (a clipboard write; the display has
+blocked clipboard writes before), and `Edit icon` (a submenu with no art). **And this build draws an `Edit` row the reference does not have** -- it opens the
+rename dialog, which the reference reaches from the card's kebab instead.

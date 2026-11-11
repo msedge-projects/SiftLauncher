@@ -396,6 +396,9 @@ pub enum Action {
 pub enum MenuItem {
     /// Launch the instance.
     Play,
+    /// Open the instance's page -- what a press on the card itself does (`InstanceItem.vue`).
+    /// The reference lists it fourth, after `Add content`; those two are not built here.
+    ViewInstance,
     /// Open the instance's settings page.
     Edit,
     /// Copy the instance.
@@ -409,8 +412,9 @@ pub enum MenuItem {
 impl MenuItem {
     /// Every row, in the order the popover draws them: play first, then the instance's own
     /// actions, the folder, and delete last.
-    pub const ALL: [MenuItem; 5] = [
+    pub const ALL: [MenuItem; 6] = [
         MenuItem::Play,
+        MenuItem::ViewInstance,
         MenuItem::Edit,
         MenuItem::Duplicate,
         MenuItem::OpenFolder,
@@ -424,6 +428,8 @@ impl MenuItem {
             // `app.instance.action.play` -- "Play" (:566-568)
             MenuItem::Play => "Play",
             // `app.instance.action.edit` -- "Edit" (:560-562)
+            // `app.instance.action.view-instance`
+            MenuItem::ViewInstance => "View instance",
             MenuItem::Edit => "Edit",
             // `app.library.instance.action.duplicate` -- "Duplicate instance" (:1133-1135)
             MenuItem::Duplicate => "Duplicate instance",
@@ -441,6 +447,7 @@ impl MenuItem {
     pub fn key(self) -> &'static str {
         match self {
             MenuItem::Play => "app.instance.action.play",
+            MenuItem::ViewInstance => "app.instance.action.view-instance",
             MenuItem::Edit => "app.instance.action.edit",
             MenuItem::Duplicate => "app.library.instance.action.duplicate",
             MenuItem::OpenFolder => "app.instance.action.open-folder",
@@ -453,6 +460,7 @@ impl MenuItem {
     pub fn glyph(self) -> Glyph {
         match self {
             MenuItem::Play => Glyph::Play,
+            MenuItem::ViewInstance => Glyph::Eye,
             MenuItem::Edit => Glyph::Edit,
             MenuItem::Duplicate => Glyph::ClipboardCopy,
             MenuItem::OpenFolder => Glyph::FolderOpen,
@@ -470,6 +478,7 @@ impl MenuItem {
         let id = id.to_owned();
         match self {
             MenuItem::Play => Action::Play(id),
+            MenuItem::ViewInstance => Action::Open(id),
             MenuItem::Edit => Action::Edit(id),
             MenuItem::Duplicate => Action::Duplicate(id),
             MenuItem::OpenFolder => Action::OpenFolder(id),
