@@ -10811,3 +10811,27 @@ fixed-size element should do: the card's type, the strip's meta and the banner's
 
 **The compressor is the frame itself**: 27 550 pixels differ at 1440x900 in a frame of 1 296 000, which is 2.1 per cent, and the sidebar's checklist and the
 news card account for 13 292 of it. Home is the best-measured page in the project and still 26 000 pixels short of the 1 per cent bar.
+### Where Home's 2 per cent actually sits: everywhere (2026-11-11)
+
+Home's figure was attributed to the rows that carry it, by counting differing pixels in 20-point bands across the frame:
+
+| band | differing | share | what is there |
+|---|---:|---:|---|
+| y 300..319 | 2 896 | 10.0% | the toolbar: search plate and the two buttons |
+| y 140..159 | 2 839 | 9.8% | the `Jump in` strip's title |
+| y 520..539 | 2 019 | 7.0% | the library card's title |
+| y 260..279 | 1 769 | 6.1% | the search field's placeholder |
+| y 620..639 | 1 664 | 5.7% | the card's meta and the sidebar's news copy |
+| y 80..99 | 1 603 | 5.5% | the page heading |
+| y 160..179 | 1 592 | 5.5% | the strip's meta line |
+| y 580..599 | 1 382 | 4.8% | card foot |
+| y 120..139 | 1 315 | 4.5% | strip top edge |
+| y 600..619 | 1 301 | 4.5% | news copy |
+
+**The top ten bands are 63 per cent of the total and no single band exceeds ten.** So the residual is not two bad elements but **every text run on the page**,
+each contributing its own hundred to three thousand pixels of glyph edges -- which is what the coverage measurements said from the other direction (this build's
+faces ink heavier than the browser's at the same nominal size).
+
+**That closes the attribution question and rules out the hypothesis it was written to test**: there is nothing left to fix that would move this page by
+thousands. The 26 000-pixel gap to the 1 per cent bar is the sum of dozens of runs that are each within a row of the reference, and no single change -- no
+size, no colour, no alignment -- can close it.
