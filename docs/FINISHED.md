@@ -139,6 +139,22 @@ ones where both clients start from the same files and the same sign-in -- which,
 
 **What a reader should take from this**: a number in the table is the difference between two *programs-in-states*, not between two programs. Where the states
 differ, the number says so in its own cell, and no amount of page-level work will move it.
+## What an element costs to add, measured on the create tile (2026-11-11)
+
+The `+ New instance` tile in the library grid took **six rounds**. Splitting them by what each round did:
+
+| rounds | what they did | outcome |
+|---|---|---|
+| 2 | measured the reference: rect 177x58 at x 299/y 379, fill, edge, contents | the element was fully specified |
+| **4** | **found where in the code to draw it** -- an anchor that matched inside a `SIFT_HOME_PROBE` guard, a revert that removed the probe line, and a move that landed in a menu block | one of them ended with the tile drawn |
+| 2 | placed and sized the contents: +50 down, plus 18 points at -58, label at +14 | aligned to two points |
+
+**So the measurements were cheap and the insertion was not**: two rounds to know exactly what to draw, four to draw it somewhere a reader would see it, two more to
+place it. The four are entirely an artefact of editing a 2,000-line draw function with text anchors that match more than once.
+
+**What that predicts for the rest of the matrix**: an element that already has a draw site near its siblings costs two rounds; an element that has none costs six. The
+422 OPEN rows are mostly the first kind -- corrections to drawings that exist -- which is why the closure rate on those (one or two a round when their evidence is a
+certified capture) is the number that matters, not the tile's six.
 ## Which figures are measurements of rendering, and which are not (2026-11-11)
 
 A page figure is only about rendering when both clients show the same *content*. Six things set content independently of the code, and each has bitten this

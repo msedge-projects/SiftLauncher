@@ -11278,3 +11278,17 @@ twelve columns wide in the same place, and every letter of `New instance` within
 
 **So the create tile is finished**: rect within one point, fill and edge exact, contents aligned to two points, and a press that opens the dialog. It took six
 rounds, four of them on placement and one on a probe that vanished with a revert -- and the last two were each one measurement and one build.
+### The finished tile costs another 137 at every size (2026-11-11)
+
+| size | now | after the rect fix | change |
+|---|---:|---:|---:|
+| 1280x720 | 26 009 | 25 867 | +142 |
+| 1366x768 | 34 306 | 34 170 | +136 |
+| **1440x900** | **28 855** | 28 719 | **+136** |
+| 1600x900 | 43 053 | 42 915 | +138 |
+| 1920x1080 | 55 684 | 55 553 | +131 |
+
+**The tile's contents getting *right* cost 137 pixels.** A plus drawn eighteen points wide where fourteen had drawn a single column, and a label at sixteen points where
+it was fourteen: both now match the reference's ink to two points, and both add disagreement because this renderer's glyph edges land on different pixels from the
+browser's. **The counts are a measure of where two renderers disagree, not of whether they agree on what to draw**, and nine rounds of this stretch have now
+demonstrated it.
