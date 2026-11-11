@@ -45,6 +45,21 @@ def window(display, title):
     return found.stdout.strip() if found.returncode == 0 else ""
 
 
+def binary_is_current():
+    """(True, detail) when the release binary is newer than every source file it was built from.
+
+    A sweep once measured the build before a revert, because the source changed and the binary did not. Nothing caught it:
+    the window was alive, the sizes matched, the plates matched, and the figures were simply of a different program.
+    """
+    probe = run("find /scratch/crates/sift-ui/src -name '*.rs' -newer /scratch/crates/sift-ui/target/release/SiftUi -print -quit")
+    if probe.returncode != 0:
+        return False, "cannot compare the binary against its sources"
+    stale = probe.stdout.strip()
+    if stale:
+        return False, "the binary predates " + stale
+    return True, "binary newer than every source file"
+
+
 def live_process(name):
     """True when a non-zombie process with this name is running in the container.
 
@@ -129,6 +144,20 @@ def selftest():
         print("SELFTEST FAILED: bash is running and was reported dead")
         return 1
     print("selftest ok: liveness says alive for bash and dead for a name nothing runs")
+    fresh, detail = binary_is_current()
+    if not fresh:
+        print("selftest NOTE: the tree is currently stale -- " + detail)
+    # The comparison must be able to report staleness: a source file touched after the binary has to show up.
+    touched = run("touch -d '+5 minutes' /scratch/crates/sift-ui/src/main.rs")
+    stale_seen = False
+    if touched.returncode == 0:
+        fresh_after, _ = binary_is_current()
+        stale_seen = not fresh_after
+        run("touch -d '-5 minutes' /scratch/crates/sift-ui/src/main.rs")
+    if not stale_seen:
+        print("SELFTEST FAILED: a source file newer than the binary was not reported stale")
+        return 1
+    print("selftest ok: a source touched after the binary reads as stale, and the touch is undone")
     return 0
 
 
@@ -140,6 +169,11 @@ def main():
     tag = args[args.index("--tag") + 1] if "--tag" in args else "drive"
     want = tuple(int(value) for value in size.split("x"))
 
+    fresh, detail = binary_is_current()
+    if not fresh:
+        print("build: " + detail + " -- REFUSED, a capture would describe a program that is not in the tree")
+        return 5
+    print("build: " + detail)
     for role, display in DISPLAYS.items():
         if not live_process(PROCESSES[role]):
             print(role + ": no live " + PROCESSES[role] + " process -- REFUSED, a zombie still owns a window and still draws its last frame")

@@ -10405,3 +10405,26 @@ search field 16), which moved a few thousand glyph pixels and left the rest of t
 **The discarded sweep is the useful part**: it is the third time this session a number described a build that was not the one in the source tree, after the
 stale window and the five captures that were never written. The guard catches the last two; **nothing yet catches a stale binary**, and the check that would is
 to compare the binary's modification time against the newest source file before every sweep.
+### `drive.py` refuses a stale binary, and proves it can (2026-11-11)
+
+A sweep once measured the build *before* a revert -- source changed, binary not rebuilt, every other check satisfied. The guard now compares the release
+binary's modification time against every `.rs` under the crate and refuses when any source is newer:
+
+```
+$ python3 tools/parity/drive.py --size 1440x900 --tag stale1
+build: binary newer than every source file
+ref: .scratch/cap/stale1-ref.png (1440x900)
+ours: .scratch/cap/stale1-ours.png (1440x900)
+reference news plate: 1
+PAIR OK
+```
+
+**And the refusal is selftested by making it fire**: the selftest touches `main.rs` five minutes into the future, asks the check again, requires it to report
+stale, and then restores the timestamp --
+
+```
+selftest ok: a source touched after the binary reads as stale, and the touch is undone
+```
+
+**So the guard now answers four questions before a pair exists**: is the binary current, is the process alive, is its window mapped, and is the file the size it
+claims. Every one of the four was made to say no once before being trusted, and three of them were made to say no by a real failure earlier in this session.
