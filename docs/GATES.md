@@ -10932,3 +10932,23 @@ is the one that counts: **a 1:1 crop is only evidence if it went through the sam
 
 **What survives from the two rounds**: the toolbar's row is genuinely sensitive to window width in the reference (full-width field with no buttons in one state,
 narrow field with buttons in another), which is a responsive behaviour this build does not have -- and that is a real finding, just not the one I recorded.
+### Resolved: the reference always draws the create buttons (2026-11-11)
+
+The two contradictory captures are settled by a third: at **1280x720** the reference's toolbar reads the field (holding `fab`), a clear `x`, **`+ New group`**
+and **`+ New instance`** -- the same layout as at 1440x900 in the drive-certified pair.
+
+| capture | width | buttons |
+|---|---|---|
+| drive-certified pair | 1440x900 | **present** |
+| this round | 1280x720 | **present** |
+| round 530's 1:1 crop | 1440x900, taken outside the guard | absent |
+
+**So the buttons are always drawn and the round-530 crop is an anomaly**, not a responsive state. It was taken after a rail click, without the size check,
+and most plausibly mid-transition or from a window the resize had left inconsistent -- the same class as the wedged reference and the dead-window capture
+earlier in this stretch.
+
+**Both rounds' code changes are therefore withdrawn and the reverted source is correct**: the buttons stay, the field keeps its width, and the page's toolbar
+matches at both sizes it was measured at.
+
+**What this costs and teaches**: two rounds went to a defect that did not exist, and both started from an observation that did not pass through the guard. The
+rule is the one already written after the first such case and not applied: **no claim from a capture that `drive.py` did not certify**, however clear the crop.
