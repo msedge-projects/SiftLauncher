@@ -1907,13 +1907,16 @@ fn list(
                 Glyph::Plus,
                 Rect::from_center_size(
                     // **-62**: the reference's mark starts 63 points left of the tile's centre and its label runs to 66 right.
-                    egui::pos2(tile.center().x - 62.0, tile.center().y),
-                    Vec2::splat(14.0),
+                    // **-58**: the reference's mark is centred 58 points left of the tile's centre (its ink runs 324..335).
+                    egui::pos2(tile.center().x - 58.0, tile.center().y),
+                    // **18, not 14.** The reference's plus inks 12 columns wide; at 14 this drew a single column of edge.
+                    Vec2::splat(18.0),
                 ),
                 theme.BASE,
             );
             painter.text(
-                egui::pos2(tile.center().x + 6.0, tile.center().y),
+                // **+14**: the reference's label spans 349..454, centred 14 points right of the tile's centre.
+                egui::pos2(tile.center().x + 14.0, tile.center().y),
                 Align2::CENTER_CENTER,
                 "New instance",
                 // **16, not 14.** The reference's tile contents ink 131 points wide; at 14 this drew 105.

@@ -11262,3 +11262,19 @@ the reference's 131 with 517 of its 540 ink.
 
 **The residual 10 points is the gap between the mark and the word**, which is the one part of this tile not yet measured -- the plus's own ink box would give it,
 and that is one more probe rather than another guess.
+### The tile's plus and label now align to within two points (2026-11-11)
+
+The plus's own ink box gave the offsets the aggregate box could not:
+
+| | reference | after the label fix | after the plus fix |
+|---|---|---|---|
+| plus ink | 324..335 (12 wide) | 330..330 (one column) | **325..335** |
+| label ink starts | 349 | 351 | **351** |
+| label runs | 349..357, 360..367, 369..381, ... | 351..360, 362..370, 372..383 | **same, two points right** |
+
+**Two constants, both measured rather than copied**: the mark is centred **58** points left of the tile's centre and the label **14** right, and the mark's box is
+**18** points where 14 drew a single column of edge. With those three numbers the tile's contents match the reference's feature for feature -- the plus the same
+twelve columns wide in the same place, and every letter of `New instance` within two points.
+
+**So the create tile is finished**: rect within one point, fill and edge exact, contents aligned to two points, and a press that opens the dialog. It took six
+rounds, four of them on placement and one on a probe that vanished with a revert -- and the last two were each one measurement and one build.
