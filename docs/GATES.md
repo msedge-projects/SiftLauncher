@@ -11311,3 +11311,19 @@ the differences the type table already records for every other string on the pag
 
 **What would isolate the disc**: a colour test against the disc's own fill, sampled from its centre rather than searched by hue, and a scan radius of ten points
 around it instead of a rectangle over the whole pager row.
+### The pager's type: 16, and the disc is now 36 against 32 (2026-11-11)
+
+Located by eye at 8x first -- this round's rule -- and the disc and its numeral were then measured from that point:
+
+| | reference | before | after |
+|---|---|---|---|
+| numeral ink | ~14 rows | ~10 rows | larger |
+| disc | x 930..961 (**32** wide), y 182..217 | ~35 wide | x 952..987 (**36** wide) |
+| row position | -- | -- | still **~22 points right** |
+
+**The type was 14 (`TAB_TEXT`) where the reference's numerals are 16**, which also made the right-aligned row narrower and pushed every item right -- the offset
+was a symptom, not a separate fault. At 16 the numeral is right and the disc is now **four points wider than the reference's**, so the next correction is the disc's
+size rather than its text.
+
+**Recorded with its residual**: the disc is 36 where the reference's is 32, and the row is still ~22 right. Both are now single-constant questions -- the disc's
+diameter and the row's right edge -- rather than the several things they looked like from a crop.

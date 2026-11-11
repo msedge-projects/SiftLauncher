@@ -1783,7 +1783,9 @@ fn pagination(
                     rect.center(),
                     Align2::CENTER_CENTER,
                     number.to_string(),
-                    fonts::semibold(TAB_TEXT),
+                    // **16, not TAB_TEXT.** The reference's selected numeral inks 14 rows and this drew 10, which also made
+                    // the right-aligned row 27 points narrower and pushed every item to its right.
+                    fonts::semibold(16.0),
                     if current {
                         theme.BUTTON_TEXT_SELECTED
                     } else {
@@ -1802,7 +1804,7 @@ fn pagination(
                     rect.center(),
                     Align2::CENTER_CENTER,
                     "…",
-                    fonts::semibold(TAB_TEXT),
+                    fonts::semibold(16.0),
                     theme.BASE,
                 );
             }
