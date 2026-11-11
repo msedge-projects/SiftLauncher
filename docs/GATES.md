@@ -10531,3 +10531,17 @@ the same monotonicity failure this project has recorded four times already.
 
 **Two differences remain visible in the crop**, and neither is the assets: the grid's **order** differs from the reference's, and the grid sits **lower** on the
 page because the `Add skin` card above it is taller. Those are the next two measurements.
+### Skins: the artwork is right, the first cell is not (2026-11-11)
+
+After the eight real defaults landed, the grid draws real skin textures in both clients. Cropped side by side at 1440x900, one difference is unambiguous and
+one is not:
+
+* **The first cell holds a different skin in each.** The reference's is dark-haired; this build's is pale. The module's own order is alphabetical
+  (`Alex, Ari, Efe, Kai, Makena, Noor, Steve, Sunny`) and this build uses that order, so the reference's *display* order must come from elsewhere -- the
+  app's database, a section sort, or a different variant being chosen for the first slot. **Not resolved.**
+* **The `Add skin` card above the grid is taller here**, which is what made the first composite look like the whole grid sat lower. **Not measured**: the
+  probe that looked for the card's plate fill found that fill in neither client, so the offset claim in the previous round's risk note was wrong and is
+  withdrawn rather than repeated.
+
+**So the asset defect is fixed and confirmed by eye, and the order and spacing questions are open with their evidence stated.** The next step on order is to
+read how `default_skins.rs`'s entries are sorted into sections rather than guessing from the module's file order.
