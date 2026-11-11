@@ -11147,3 +11147,22 @@ correct element in a wrong place and made the next measurement harder**, which i
 
 **What the next round does**: measure the reference's card's own rect (left, right, top, bottom) in the same capture the tile was measured in -- one probe, both
 shapes -- and only then place the tile from the gap that comes out of it.
+### The library card was 12 points narrow and its grid 20 points tight (2026-11-11)
+
+The create tile's position could not be explained by this file's own numbers, so both shapes were measured in one capture:
+
+| | measured | this build, before | after |
+|---|---|---|---|
+| card plate | x **88..267** (180 wide) | 88..255 (168) | **88..267** |
+| gap to the next cell | **32** points of page background (268..298) | 12 | 32 |
+| second cell starts | **299** | 268 | 300 |
+
+**Both constants were wrong, and they explained each other's error**: a card 12 points narrow and a gap 20 points tight put the second grid cell 31 points left of
+where the reference's tile sits -- the exact discrepancy that made the tile look impossible to place. Measured together, 180 plus 32 lands the next cell at 300
+and the tile's own left edge at 299.
+
+**Also corrected in the record**: the tile's fill is **(39,41,46)** -- the card's raised plate -- not the page's (22,24,28) as last round's probe assumed, because
+that probe had taken the card's fill for the page's.
+
+**What is left of the tile**: drawing it. Its rect is 177x58 at x 299, y 379, outlined one point in (65,67,73) on the raised fill, with a plus and `New instance`.
+The geometry is now known from measurements that agree.

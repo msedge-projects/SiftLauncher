@@ -164,13 +164,17 @@ fn row_targets_at(rect: Rect, index: usize, shift: f32) -> (Rect, Rect, Rect) {
     // first plate starts at x 88 and is 168 wide with the pack's icon filling its top and the name and
     // loader+version under it. This build drew one full-width row per instance with the Play pill and the kebab
     // inside it, which is a different object on a different page.
-    const CARD_W: f32 = 168.0;
+    // **180, not 168.** Measured on the reference's own card in the capture the create tile was measured in: its plate fill
+    // (39,41,46) runs to x 267 from x 88, and the next grid cell starts at 299 -- 180 wide with a 32-point gap. The old 168 and
+    // 12 put this build's second cell 31 points left of the reference's, which is what made the tile's position look impossible.
+    const CARD_W: f32 = 180.0;
     // **215, not 208.** Measured on the reference's own card at x 150: 354..568. At 208 this build's grey loader line ran into the
     // plate's bottom edge, which is what the 2x crop shows; the extra 7 is the padding under it.
     // **239, so the plate foot lands on the reference's 568.** The card starts at 329 here and 354 there; 329 + 239 = 568 gives the
     // same bottom edge, and 20 points of padding under the loader against the reference's 21.
     const CARD_H: f32 = 239.0;
-    const GAP: f32 = 12.0;
+    // **32, not 12**, from the same capture: the page background (22,24,28) runs from 268 to 298 between the card and the tile.
+    const GAP: f32 = 32.0;
     let columns = ((rect.width() + GAP) / (CARD_W + GAP)).floor().max(1.0) as usize;
     let column = index % columns;
     let row = index / columns;
