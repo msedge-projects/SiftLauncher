@@ -10739,3 +10739,14 @@ calendar, so the cell had the right string and the wrong mark.
 
 **Both changes are small and the search that found them was two greps**: one for the string that differs on screen with assertions excluded, one for the
 glyph. That is the countermeasure this stretch arrived at after five wrong-site failures, and this is the first round it worked on the first attempt.
+### The speculative week tier in `project.rs` is reverted (2026-03-11)
+
+Last round added `7..=13 => "Last week"` to `project.rs::relative` on the strength of one Discover capture, and recorded it as unverified. It then failed that
+file's own test -- `the_relative_dates_follow_the_sources_ladder` pins **12 days -> "12 days ago"** -- and it never affected Discover in the first place, whose
+formatter is `shell.rs::relative_age`.
+
+**So it is removed**, leaving one verified change rather than a verified one beside a speculative one that contradicts a pinned expectation. If the project
+page's ladder is wrong, its own capture will say so, and the test will be the thing that has to change with it.
+
+**The lesson is the one about scope, not about weeks**: a change made for page A and kept for page B is untested in both, and the test that catches it will be
+B's, at the moment when A's fix looks already done.

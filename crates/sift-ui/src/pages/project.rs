@@ -591,9 +591,6 @@ fn relative(published: Date, now: Date) -> String {
     match days {
         i64::MIN..=0 => "today".to_owned(),
         1 => "yesterday".to_owned(),
-        // **A week is a week, not seven days.** The reference formats with `Intl.RelativeTimeFormat` at `numeric: "auto"`,
-        // which names the largest unit that fits: its Discover card reads "Last week" for nine days, where this counted days.
-        7..=13 => "Last week".to_owned(),
         2..=25 => format!("{days} days ago"),
         26..=45 => "a month ago".to_owned(),
         46..=319 => format!("{} months ago", days / 30),
