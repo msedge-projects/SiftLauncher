@@ -10468,3 +10468,25 @@ let copy = title + title_height.max(TITLE_LINE) + TITLE_TO_COPY + 1.0;   // was 
 **Which settles the rule the last round proposed**: a multi-line block must be fixed in one build, because the parts interact. Size alone merges lines; size plus
 line without the anchor leaves every line 2 points high and costs pixels; all three together gain 438. The same three-part fix probably applies to the checklist
 (whose 2-row gap is metrics) and the remaining three news bands (which are the date and the second paragraph).
+### The hosting banner's headline was printed through itself (2026-11-11)
+
+The sidebar's last three divergent bands were the promo banner, cropped at 3x: this build drew **"Get your next server"** and **"on Modrinth."** on top of
+each other, where the reference draws two clean lines.
+
+Cause, measured: the reference's headline inks at **690..706** (16 rows) and **720..732** (13 rows) -- a **30-point pitch** -- and this build used
+`HOSTING_LINE = 28` from a top of 31. A 23-point label inks about 16 rows, so a 28-point pitch lets the second line's cap height land inside the first's
+descenders, and the band profile saw the two as one 20-row band.
+
+| | before | HOSTING_TOP 40, line 30 | **HOSTING_TOP 35, line 30** | reference |
+|---|---|---|---|---|
+| headline line 1 | merged with line 2 | 696..711 (5 low) | **691..706** | 691..706 |
+| headline line 2 | merged | separate, matches | 720..724 + 726..731 | 720..732 |
+| sidebar | 13 292 | 13 914 | **12 890** | -- |
+| Home, 1440x900 | 27 930 | 28 552 | **27 528** | -- |
+
+**402 pixels better and a visible defect gone**: the two lines no longer overlap, and the first sits exactly where the reference's does. The second line now
+splits into two bands of its own (720..724 and 726..731) where the reference has one of thirteen rows -- the gap is a single row, and it is what a 30-point
+pitch with this face's descenders leaves.
+
+**Note the middle row of that table**: aligning the first line at 40 (the arithmetic answer from `banner.top() + 31`) measured *worse* than 35, because the
+banner's top is not `rect.bottom() - BANNER_H` on this page. The band, again, was the arbiter.

@@ -326,9 +326,12 @@ const BANNER_PAD: f32 = 15.0;
 /// Where the banner's first heading line is drawn, from the banner's top: its ink sits at y 689
 /// in the reference with the banner at 650, and this build's 23-point face puts its ink three
 /// points into the draw position.
-const HOSTING_TOP: f32 = 31.0;
+// 40, not 31: the reference's first headline line inks at 690..706 with the banner at 650.
+const HOSTING_TOP: f32 = 35.0;
 /// The pitch between the banner's two heading lines.
-const HOSTING_LINE: f32 = 28.0;
+// **30, the reference's own pitch** -- its lines ink at 690..706 and 720..732. At 28 the two lines merged into one
+// 20-row band, which is what "Get your next server" printed through "on Modrinth." looked like.
+const HOSTING_LINE: f32 = 30.0;
 /// The chip's mark box: the reference's logo ink is 16 points at x 1154..1169. This build paints
 /// it through [`crate::brand::paint_mark`], whose ink is three quarters of its box, so a 20-point
 /// box lands the same 16 points of ink.
