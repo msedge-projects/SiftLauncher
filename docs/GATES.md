@@ -10593,3 +10593,29 @@ content and the total does not move by roughly its own size, the change did not 
 
 **What is known for the next attempt**: the order to draw is `Steve, Alex, Ari, Noor, ...`; the place that draws it is not the texture collection; and the
 cells are laid out with textures looked up by name, so a reorder only needs the *placement* loop changed.
+### Skins: the grid drew the fallback atlases, not the skins (2026-11-11)
+
+**Four rounds of asset, composition and ordering work could not change a pixel because none of it was on the drawing path.** The placement loop in
+`skins.rs:1403` passed `art_texture(ui.ctx(), state, index % ART.len())` -- four hand-authored fallback atlases -- so every cell showed the same flat
+pictures no matter what the catalogue, the composition or the order said.
+
+```rust
+// before
+art_texture(ui.ctx(), state, index % ART.len()),
+// after
+GRID_ORDER.get(index).and_then(|name| skin_texture(ui.ctx(), state, name)),
+```
+
+| | before | after |
+|---|---:|---:|
+| Skins page, 1440x900 | 150 496 | **127 044** |
+| first row | Alex, Ari, Noor, Sunny | **Steve, Alex, Ari, ...** |
+
+**23 452 pixels better, and better than the 131 114 the page scored before any of the asset work** -- so the correctness and the figure finally agree on this
+page, which the last three rounds said they could not.
+
+**The first three cells now match the reference's order exactly.** The fourth does not: the reference has Noor (purple hair) where this build draws a
+different skin, so the order list is right for three of eight and the remainder needs the same treatment -- read from the capture, one row at a time.
+
+**The lesson is the one this project keeps paying for**: `skin_texture` was correct, the assets were correct, the order was correct, and the page did not
+use any of them. **A change that reaches no pixels is not a wrong change -- it is a change to something the frame does not call.**

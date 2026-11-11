@@ -1397,10 +1397,13 @@ fn defaults_section(
             &painter,
             tile,
             theme,
-            // This build authors four arts for its eight catalogue rows, so the second row
-            // repeats the first. A row with no art at all would be a card the reference draws
-            // and this page leaves empty.
-            art_texture(ui.ctx(), state, index % ART.len()),
+            // **The skin itself, not the fallback art.** This drew `art_texture(index % ART.len())` -- four hand-authored
+            // atlases -- so the grid showed the same flat pictures whatever the catalogue said, and changing the assets, the
+            // composition or the order could not move a pixel. The texture gathered at the top of this function is the one the
+            // page means: `skin_texture` for the name this cell holds.
+            GRID_ORDER
+                .get(index)
+                .and_then(|name| skin_texture(ui.ctx(), state, name)),
             index == 0,
         );
     }
