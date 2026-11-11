@@ -9995,3 +9995,27 @@ what is drawn; the shell owns what is on disk.
 
 **`label_with(favorite)` is the one state-dependent label in the menu** -- every other row keeps `label()`, and the test that pins the labels still pins
 them, with the favourite row asserting its default spelling.
+### `drive.py` reported five verified captures it never wrote (2026-11-11)
+
+A five-size sweep was run with the guard written earlier. It printed, for every size:
+
+```
+1280x720   both verified
+1366x768   both verified
+1440x900   both verified
+1600x900   both verified
+1920x1080  both verified
+```
+
+**and no file exists for any of them.** `ls -t` in both `.scratch/cap` (host) and `/scratch/.scratch/cap` (container) shows the newest entries are the
+favourite-row captures from the previous round; a `find` for `sweep1280x720*` returns nothing on either side.
+
+So the guard that was written to stop mismatched pairs is **reporting success for captures it did not make**, which is worse than the fault it was
+written to catch: the earlier `xdotool getwindowgeometry` lied about a size, and now this lies about a file.
+
+**The likely fault**, to be checked rather than assumed: `drive.py` runs its PIL probe as a *host* process on a path with `/scratch/` stripped, and reads
+`stdout.split()` without checking the exit code -- so a probe that fails to open the file may still leave `probe` non-empty from something else, and the
+code that turns that into `(w, h)` is not the check it looks like. The fix is to make the probe **exit non-zero** when it cannot open the file and to treat
+a non-zero exit as REFUSED, rather than parsing whatever came back.
+
+**No five-size figure is quoted from this run.** The table in `FINISHED.md` stands as the last measured one, and this round adds no number to it.
