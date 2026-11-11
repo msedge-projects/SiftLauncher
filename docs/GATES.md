@@ -11114,3 +11114,18 @@ beside the card, which this build reaches differently. So the modal comparison n
 beside the one in the toolbar, and the answer to where a reader with no instances starts.
 
 **Recorded, not fixed**: the modal's face is measured only on this side, and one side is not a comparison.
+### The reference's library grid has a create tile and a hover ring, and no kebab (2026-11-11)
+
+Captured the reference's card region before pressing anything, as the last round's lesson required, then hovered it:
+
+1. **The grid has a `+ New instance` tile beside the card.** It is a card-shaped plate at the second grid cell, with a plus and the words, drawn whether the pointer
+   is there or not. This build draws **one card and nothing beside it**, so a reader with a single instance has no in-grid way to add another -- the toolbar's
+   button is the only route, and the reference has both.
+2. **The card's top-right shows a circular ring on hover**, not a kebab: a one-point circle at the art's corner, which is the selection control the reference uses
+   for its multi-select. No `...` menu appears anywhere on the card at rest or hovered.
+
+**So the reference's Edit path is not on the card at all**: neither a right-click (which does nothing there) nor a hover kebab opens it. It is behind the
+instance page's own header, which is where this build reaches it from the card menu -- an interaction difference rather than a missing drawing.
+
+**Recorded as two additions and one difference**: the create tile (new, absent here), the hover ring (new, absent here), and the route to Edit (different, and now
+understood well enough that a future round should stop looking for it on the card).
