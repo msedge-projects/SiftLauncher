@@ -1387,13 +1387,16 @@ fn list(
     // by the same two points and hide the difference. The reference: New group 851..951, New instance 964..1113.
     // **154, not 150.** The reference's button measures x 962..1115; this build's 964..1113.
     const INSTANCE_W: f32 = 154.0;
-    const GROUP_W: f32 = 103.0;
+    // **131, not 103.** The reference's quiet button fills x 824..952 (129 points at its widest row); this build's filled
+    // 847..945 (99). The rounded ends cost about two points of fill, so the rect is the fill plus two.
+    const GROUP_W: f32 = 131.0;
     // **8, not 27.** The column ends at 1 116 -- proved by the reference's empty state centring at 602, which is the
     // centre of 88..1116 -- and the reference's own New instance button ends at 1 108. Eight points of padding inside
     // that column, not twenty-seven from an edge the column never reaches. Assuming 27 was right only if the column ran
     // to 1 140, which widening it to would have broken every centred empty state: Screenshots went 23 729 -> 24 080.
     const RIGHT_PAD: f32 = 2.0;
-    const BETWEEN: f32 = 12.0;
+    // **5, not 12.** The reference's quiet button ends at 952 and the brand one starts at 962; this build's ended at 945.
+    const BETWEEN: f32 = 5.0;
     let instance_right = toolbar.right() - RIGHT_PAD;
     let instance_left = instance_right - INSTANCE_W;
     let group_right = instance_left - BETWEEN;

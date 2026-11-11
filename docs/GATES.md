@@ -10985,3 +10985,17 @@ cap height, which is the same metric difference the type table records elsewhere
 
 **And the fill measurement incidentally recorded both brand steps**: (27,217,106) at rest and (34,255,132) hovered, both matching the reference. That is the first
 time this project has measured a hover step's colour rather than inferring it.
+### The quiet `New group` button: 28 points narrow, 7 short (2026-11-11)
+
+Same method as the brand button -- find the fill, then compare -- reading a row above the label so the text does not break the run:
+
+| | reference | before | after |
+|---|---|---|---|
+| quiet button fill | x 824..952 (129) | x 847..945 (99) | **x 826..952 (127)** |
+| the search field's right edge | ~813 | ~830 | ~816 |
+
+**Two constants, both wrong**: `GROUP_W` was 103 where the fill says 129 plus the rounded ends, and `BETWEEN` was 12 where the reference leaves 952 to 962 -- ten
+points, not twelve. With `GROUP_W` 131 and `BETWEEN` 5 the button lands within **two** points of the reference at both rows sampled.
+
+**Which closes the toolbar row**: search field, quiet button, brand button all measured against the reference's own edges at 1440x900, and each within two
+points. The row that produced the largest band of Home's residual has been measured element by element rather than inferred from one another.
