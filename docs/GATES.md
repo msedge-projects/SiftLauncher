@@ -10750,3 +10750,18 @@ page's ladder is wrong, its own capture will say so, and the test will be the th
 
 **The lesson is the one about scope, not about weeks**: a change made for page A and kept for page B is untested in both, and the test that catches it will be
 B's, at the moment when A's fix looks already done.
+### Discover: two of the three findings were artefacts of a scaled composite (2026-11-11)
+
+Last round reported two differences besides the date cell -- a **missing card divider** and a **shorter card**. Both are wrong, and both came from reading a
+scaled-down composite rather than a 1:1 crop:
+
+* **No divider exists in either client.** Cropped at 1:1 across x 80..700, y 360..400, both show the same rounded card edges and an empty gap. What looked
+  like a rule was the card's own bottom edge, half a pixel wide after a 0.7x downscale.
+* **The cards are the same height.** The plate at x 300 runs **120..230 in both**, to the row.
+
+**So Discover had one real difference, not three**: the date cell's clock and "Last week", both fixed, and the page moved 76 087 -> 76 067 with them. Everything
+else a reader would look at on that screen is already in the same place.
+
+**The failure is worth naming because it is cheap to repeat**: a composite that scales two crops and stacks them introduces and hides edges that do not exist in
+either client, and every measurement from it inherits that error. **Any claim of "a missing element" should be made from a 1:1 crop of the region**, and both
+of this round's withdrawals would have been avoided by one.
