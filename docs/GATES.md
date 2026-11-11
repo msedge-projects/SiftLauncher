@@ -11327,3 +11327,15 @@ size rather than its text.
 
 **Recorded with its residual**: the disc is 36 where the reference's is 32, and the row is still ~22 right. Both are now single-constant questions -- the disc's
 diameter and the row's right edge -- rather than the several things they looked like from a crop.
+### The Discover pager was already right; two rounds edited the versions table's (2026-11-11)
+
+The last two rounds changed `project.rs`'s `TAB_TEXT` and `PAGER_BUTTON` on the strength of a crop of Discover's pager. **Discover's pager is not in that file.** It is
+`shell.rs::draw_pager`, which already uses `PAGER_CELL` 36 and a **16-point numeral**, with its own comment recording the reference's current-page disc at
+924..959 by 182..217.
+
+**So both changes are reverted**: they touched the *versions table's* pager, where there was no evidence at all, and where 16 and 32 may be wrong in the other
+direction. The seventh wrong-site of the stretch, and the first one that would have changed a *different page's* rendering without anyone looking at it.
+
+**What survives**: the 8x crop's finding that the Discover pager's row sits ~22 points right of the reference's, which is a right-edge question in `draw_pager`, and
+the disc measurement of 32 against a code comment's 36 -- a disagreement between two measurements of the same disc, which the next attempt should settle by
+sampling the disc's fill from its centre rather than by any hue test.
