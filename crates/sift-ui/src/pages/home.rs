@@ -1363,7 +1363,10 @@ fn list(
         // the `Jump in` section is the worlds below (`pages/Index.vue:99-103`).
         "Library",
         // **24, measured.** The reference's ink is 23 rows tall and 73 wide; 26 drew 25 and 83.
-        fonts::heading(24.0),
+        // **inter-600, not inter-800.** `heading()` ships the 800 face: 770 ink pixels in an 83-point box, where the reference
+        // fills 548 in 80 at the same 23 rows. 700 took it to 702 in 82; 600 lands the box at **exactly 80 wide** and the ink at 634,
+        // so the weight was the whole difference and the residual 86 is the face's own heavier stroke. Three faces measured.
+        fonts::semibold(24.0),
         theme.CONTRAST,
     );
 

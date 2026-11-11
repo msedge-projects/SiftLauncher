@@ -11063,3 +11063,20 @@ Row 90 asks for the pager's ellipsis. Cropped from the certified Discover pair, 
 **Two differences are visible at the same time and neither is the ellipsis's presence**: the reference's selected numeral is **larger and brighter** in a larger
 disc, and its ellipsis is drawn as three dots at **mid-height** where this build's sits on the baseline -- the same character, set differently. Both belong with the
 type-metric differences already recorded rather than with this row.
+### The `Library` heading was extra-bold; the reference's is semibold (2026-11-11)
+
+`fonts::heading()` ships the **inter-800** face, and the heading had used it since it was written. Measured against the reference's own ink box, three faces in
+the same 24-point size:
+
+| face | box | rows | ink | reference |
+|---|---|---:|---:|---|
+| inter-800 (`heading`, as shipped) | 83 wide | 23 | 770 | 80 wide, 23 rows, **548 ink** |
+| inter-700 (`title`) | 82 wide | 23 | 702 | |
+| **inter-600 (`semibold`, kept)** | **80 wide** | 23 | **634** | |
+
+**600 lands the box exactly**: 80 points against the reference's 80, where 800 overshot by three. The residual 86 ink pixels (16 per cent) is the face's own
+heavier stroke at the same width -- the difference every other measurement in this project has shown, now isolated from a weight that was simply one step too
+heavy.
+
+**This was found by trying to close a matrix row about the `--font-weight-bold` token**, failing to decide it, and measuring the heading instead. The row is
+still OPEN; the heading is 136 ink pixels lighter and three points narrower.
