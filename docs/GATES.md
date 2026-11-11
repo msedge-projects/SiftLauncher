@@ -9816,3 +9816,26 @@ What was checked, and all of it absent:
 thing missing is a credential: either `gh auth login` (device flow) in this environment, or a token exported for the session.
 
 **The work is not blocked by it.** The commits are the record; the push is a transport detail that will take one command once a credential exists.
+### Pushed: 938 commits on GitHub (2026-11-11)
+
+The push had been failing all session with `could not read Username for 'https://github.com'`. The cause was not a missing credential but an empty `$HOME` in
+the shell: `gh` was looking for its config in a home directory that did not resolve, so `gh auth status` reported no accounts while two were logged in at
+`/root/.config/gh/hosts.yml`.
+
+**Two accounts are logged in on this machine**, which is what the user asked:
+
+| account | status |
+|---|---|
+| **MSedgeMC** | logged in, was active |
+| **msedge-projects** | logged in, now active |
+
+The first push attempt with `MSedgeMC` active was refused: `Permission to msedge-projects/SiftLauncher.git denied to MSedgeMC` (403). Switching to
+`msedge-projects` -- the account that owns the repository -- and pushing with `gh` as the credential helper succeeded:
+
+```
+$ GH_CONFIG_DIR=/root/.config/gh git -c credential.helper='!gh auth git-credential' push origin master
+   8140954..79e9b61  master -> master
+```
+
+**So the record is off this machine**: every commit from the session's start to `79e9b61` is on GitHub, and the 'all commits are local' caveat that has ended
+every report since the beginning is now false and should not be repeated.
