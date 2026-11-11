@@ -10328,3 +10328,23 @@ coverage difference that no size will fix), or those rows are not drawn by the c
 **The test that separates them is a deliberately oversized value** -- 16 or 18 -- and seeing whether the band moves at all.
 
 **The 14 is kept**: it is closer to the reference's intent and demonstrably harmless, but it is recorded as **unverified**, not as a fix.
+### Three sizes, no movement: the checklist's draw site is still not found (2026-03-11)
+
+The checklist's clear rows measure 12 rows of ink where the reference has 14. Three sizes were tried in the call at `panel.rs:533`, each rebuilt and
+re-measured against a guard-certified pair:
+
+| size | band | page total |
+|---|---|---:|
+| 13 | 12 rows | 28 368 |
+| 14 | 12 rows | 28 368 |
+| **18** | **12 rows** | **28 368** |
+
+**An eighteen-point label cannot render at the same height as a thirteen-point one.** So that call is not drawing what the capture shows -- it belongs to the
+*project* page's sidebar, whose rows are laid out at `panel.rs:486` (`card.top() + PROJECT_STEPS_TOP + index * PROJECT_ROW_PITCH`), and Home's checklist is
+drawn somewhere else.
+
+**What this cost, and what it bought**: three builds and three captures to prove a negative. What it bought is certainty -- the remaining shape of this defect
+is now "find the call that draws Home's checklist", not "guess another size", and the previous two rounds' null results are explained rather than mysterious.
+
+**The lesson is the one the last round stated and this round applied**: when a change meant to move geometry does not move the page total by a pixel, the
+change did not reach the pixels. **The total is the cheap proof of that**, and it should be checked before the band, every time.
