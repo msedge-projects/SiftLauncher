@@ -10835,3 +10835,22 @@ faces ink heavier than the browser's at the same nominal size).
 **That closes the attribution question and rules out the hypothesis it was written to test**: there is nothing left to fix that would move this page by
 thousands. The 26 000-pixel gap to the 1 per cent bar is the sum of dozens of runs that are each within a row of the reference, and no single change -- no
 size, no colour, no alignment -- can close it.
+### The search field has no focus ring, and its text is dimmer (2026-11-11)
+
+A behavioural pass instead of a visual one: clicked the library's search field in both clients and typed `fab`.
+
+**What matches**: the field is on the same row in both (a raised plate at **y 248**), the click focuses it, and the text appears as it is typed.
+
+**What does not**:
+
+| | reference | this build |
+|---|---|---|
+| focus ring | **a green ring around the plate** | none |
+| typed text | white | grey |
+
+**Two things to fix, and the first is a state this project has never drawn**: every comparison so far has been of a *resting* field, where the two are identical
+-- which is why 1440x900's search plate has been measured a dozen times without this appearing. **The ring only exists while the field has the caret**, and no
+capture before this one had a caret in it.
+
+**And that is the general lesson for the remaining rounds**: the matrix's states are mostly rest states, and the interactions -- focus, hover, press, drag --
+each have their own drawing that no resting capture can show. A behavioural pass per page is the only way to find them.
