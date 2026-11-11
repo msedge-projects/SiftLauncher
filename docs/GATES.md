@@ -10019,3 +10019,32 @@ code that turns that into `(w, h)` is not the check it looks like. The fix is to
 a non-zero exit as REFUSED, rather than parsing whatever came back.
 
 **No five-size figure is quoted from this run.** The table in `FINISHED.md` stands as the last measured one, and this round adds no number to it.
+### Five sizes, re-measured with a guard that can fail (2026-11-11)
+
+`drive.py` was rewritten so that every step checks its own exit status and the pair is REFUSED unless **the PNG's own dimensions** match the size
+requested -- and `--selftest` proves the check fires:
+
+```
+$ python3 tools/parity/drive.py --selftest
+selftest ok: a missing file reads as None, so an unwritten capture cannot pass
+```
+
+With both clients on Home at every size:
+
+| size | differing | title bar | rail | content | sidebar |
+|---|---:|---:|---:|---:|---:|
+| 1280x720 | **25 938** | 2 832 | 397 | 15 486 | 7 223 |
+| 1366x768 | **34 174** | 2 707 | 397 | 23 788 | 7 282 |
+| 1440x900 | **29 274** | 1 693 | 397 | 13 454 | 13 730 |
+| 1600x900 | **43 440** | 2 973 | 397 | 26 340 | 13 730 |
+| 1920x1080 | **55 768** | 3 215 | 397 | 27 695 | 24 461 |
+
+**Every pair passed `PAIR OK` on its own pixels**, which is the difference between this table and the one attempted two rounds ago: that run reported five
+verified sizes and wrote nothing at all.
+
+**The figures are 200-800 higher than the last quoted table** (25 099 / 33 456 / 28 467 / 42 635 / 55 027). The difference is state, not regression: the
+sidebar's news article rotates every ten seconds and the two clients are not synchronised to it, so the sidebar column carries whichever plate each was
+showing. That is the same 20 542-pixel article effect documented in `FINISHED.md`, and the reason `SIFT_NEWS_SLIDE` exists.
+
+**The rail is 397 at every size**, which is the one column that does not depend on content -- and the best evidence in the table that the frame's fixed parts
+are close.
