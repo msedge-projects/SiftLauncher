@@ -2445,6 +2445,7 @@ fn tooltip_below(painter: &egui::Painter, anchor: Rect, label: &str, theme: &cra
                 }
             }
             Action::OpenFolder(id) => self.open_instance_folder(&id),
+            Action::CopyPath(id) => self.copy_instance_path(&id),
             Action::Delete(id) => self.delete_instance(&id),
             Action::OpenWorld { instance, world } => {
                 // One world's launch: the engine turns the world into
@@ -2656,6 +2657,14 @@ fn tooltip_below(painter: &egui::Painter, anchor: Rect, label: &str, theme: &cra
     /// `xdg-open` takes the same single argument, and macOS's `open` is not handled because
     /// no build targets it. A spawn (not a wait) is deliberate: the file manager outlives
     /// this process, and blocking a frame on it would freeze the window until it closed.
+    /// Put an instance's folder on the clipboard. The reference's `Copy path` writes the same text the folder
+    /// action would open, and says so in a toast -- without a file manager, this is the action that still works.
+    fn copy_instance_path(&mut self, id: &str) {
+        let path = Self::instance_dir(id);
+        self.clipboard = Some(path.display().to_string());
+        self.toast = Some(format!("Copied {}.", path.display()));
+    }
+
     fn open_instance_folder(&mut self, id: &str) {
         let path = Self::instance_dir(id);
         let opener = if cfg!(windows) { "explorer" } else { "xdg-open" };

@@ -373,6 +373,8 @@ pub enum Action {
     Duplicate(String),
     /// The menu's `Open folder`: show the instance's folder in the file manager.
     OpenFolder(String),
+    /// The menu's `Copy path`: put the instance's folder on the clipboard.
+    CopyPath(String),
     /// The menu's `Delete`: remove the instance's folder from disk.
     Delete(String),
     /// A world row: launch `world` inside `instance`. Quick-play is not wired, so the shell
@@ -405,6 +407,8 @@ pub enum MenuItem {
     Duplicate,
     /// Show the instance's folder.
     OpenFolder,
+    /// Put the instance's folder path on the clipboard (`app.instance.action.copy-path`).
+    CopyPath,
     /// Delete the instance.
     Delete,
 }
@@ -412,12 +416,13 @@ pub enum MenuItem {
 impl MenuItem {
     /// Every row, in the order the popover draws them: play first, then the instance's own
     /// actions, the folder, and delete last.
-    pub const ALL: [MenuItem; 6] = [
+    pub const ALL: [MenuItem; 7] = [
         MenuItem::Play,
         MenuItem::ViewInstance,
-        MenuItem::Edit,
         MenuItem::Duplicate,
         MenuItem::OpenFolder,
+        MenuItem::CopyPath,
+        MenuItem::Edit,
         MenuItem::Delete,
     ];
 
@@ -430,6 +435,8 @@ impl MenuItem {
             // `app.instance.action.edit` -- "Edit" (:560-562)
             // `app.instance.action.view-instance`
             MenuItem::ViewInstance => "View instance",
+            // `app.instance.action.copy-path`
+            MenuItem::CopyPath => "Copy path",
             MenuItem::Edit => "Edit",
             // `app.library.instance.action.duplicate` -- "Duplicate instance" (:1133-1135)
             MenuItem::Duplicate => "Duplicate instance",
@@ -448,6 +455,7 @@ impl MenuItem {
         match self {
             MenuItem::Play => "app.instance.action.play",
             MenuItem::ViewInstance => "app.instance.action.view-instance",
+            MenuItem::CopyPath => "app.instance.action.copy-path",
             MenuItem::Edit => "app.instance.action.edit",
             MenuItem::Duplicate => "app.library.instance.action.duplicate",
             MenuItem::OpenFolder => "app.instance.action.open-folder",
@@ -461,6 +469,7 @@ impl MenuItem {
         match self {
             MenuItem::Play => Glyph::Play,
             MenuItem::ViewInstance => Glyph::Eye,
+            MenuItem::CopyPath => Glyph::Link,
             MenuItem::Edit => Glyph::Edit,
             MenuItem::Duplicate => Glyph::ClipboardCopy,
             MenuItem::OpenFolder => Glyph::FolderOpen,
@@ -479,6 +488,7 @@ impl MenuItem {
         match self {
             MenuItem::Play => Action::Play(id),
             MenuItem::ViewInstance => Action::Open(id),
+            MenuItem::CopyPath => Action::CopyPath(id),
             MenuItem::Edit => Action::Edit(id),
             MenuItem::Duplicate => Action::Duplicate(id),
             MenuItem::OpenFolder => Action::OpenFolder(id),
@@ -3252,9 +3262,10 @@ mod tests {
         let expected = [
             ("Play", "app.instance.action.play"),
             ("View instance", "app.instance.action.view-instance"),
-            ("Edit", "app.instance.action.edit"),
             ("Duplicate instance", "app.library.instance.action.duplicate"),
             ("Open folder", "app.instance.action.open-folder"),
+            ("Copy path", "app.instance.action.copy-path"),
+            ("Edit", "app.instance.action.edit"),
             ("Delete", "app.library.instance.action.delete"),
         ];
         assert_eq!(MenuItem::ALL.len(), expected.len());
@@ -3557,20 +3568,20 @@ mod tests {
         menu_press(MenuKey::Char('d'), &mut menu, 10.0);
         assert_eq!(
             menu.highlight,
-            Some(3),
+            Some(2),
             "'d' lands on Duplicate instance, the first label that starts with it"
         );
         menu_press(MenuKey::Char('e'), &mut menu, 10.2);
         assert_eq!(
             menu.highlight,
-            Some(5),
+            Some(6),
             "'de' extends the buffer inside the window, and Delete is what starts with it"
         );
         assert_eq!(menu.typed, "de");
         menu_press(MenuKey::Char('e'), &mut menu, 11.0);
         assert_eq!(
             menu.highlight,
-            Some(2),
+            Some(5),
             "a letter 800 ms later starts a new buffer, and 'e' is Edit"
         );
         assert_eq!(menu.typed, "e");
@@ -3585,6 +3596,7 @@ mod tests {
             | Action::Edit(ours)
             | Action::Duplicate(ours)
             | Action::OpenFolder(ours)
+            | Action::CopyPath(ours)
             | Action::Delete(ours) => ours.as_str() == id,
             Action::OpenWorld { instance, .. } => instance.as_str() == id,
             Action::None | Action::Create | Action::Import => false,

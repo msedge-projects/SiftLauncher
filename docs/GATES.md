@@ -9935,3 +9935,23 @@ The failures were all index or list assertions the new row legitimately shifts:
 grows cannot silently change where a keystroke lands.
 
 **Fixed, and the suite is green at 269 again**, with the corrected indices pushed as a follow-up commit.
+### `Copy path` is in the card menu and copies the right folder (2026-11-11)
+
+The second of the four missing menu rows, and the one that works without a file manager. Pressed on the card's menu, it puts the instance's folder on the
+clipboard and says so:
+
+> **Copied /tmp/matchdata/SiftLauncher/instances/Fabric 26.3.**
+
+| | before | after |
+|---|---|---|
+| menu rows | Play, View instance, Edit, Duplicate, Open folder, Delete (6) | Play, View instance, Duplicate, Open folder, **Copy path**, Edit, Delete (7) |
+| order | not the reference's | reference order, with this build's `Edit` where the reference has `Edit icon` |
+| glyph | -- | `Glyph::Link` |
+
+**Wired through a new `Action::CopyPath`**, handled beside `Action::OpenFolder` -- the same `instance_dir` lookup, written to the shell's clipboard and
+announced in the toast, which is the pattern the folder action already used when no file manager is present.
+
+**The tests caught the insertion this time before the push**: the menu-labels test and all three type-ahead indices moved again (`d` -> 2, `de` -> 6,
+`e` -> 5), and the `names()` test required the new variant to name its instance -- which is the test doing exactly what its comment says it exists for.
+
+**Still missing**: `Add to favorites` and `Add content` (no state for either in this build), `Edit icon` (a submenu with no art).
