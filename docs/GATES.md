@@ -10186,3 +10186,23 @@ radius 7 the facets are visible at 3x.
 
 **Both recorded, neither fixed.** The first needs the bright element located -- one more probe, reading *where* the (150,162,176) pixel is; the second is the
 renderer class already documented 19 times in the matrix as RENDERER-RISK.
+### Corrected: the completed row is brighter by *coverage*, not by a stray pixel (2026-11-11)
+
+Last round's claim -- "the completed row carries an ink 54 points too bright" -- came from the single brightest pixel in the band, which is the wrong
+statistic for a line of type. Measuring the band's mean instead (`x 1200..1370, y 141..154`):
+
+| | mean sum | pixels above sum 300 |
+|---|---:|---:|
+| reference | **212.9** | 423 |
+| this build | **244.4** | 708 |
+
+**So the row is brighter, but not because anything is the wrong colour.** The label and the strike are both drawn in `SURFACE_5`, whose sum is 208 --
+within four of the reference's mean of 212.9. This build's 244.4 is *above its own ink colour*, which means its glyphs cover more of the band: heavier
+antialiasing, more lit pixels per stroke, 67 per cent more of them above the threshold.
+
+**That is a rasteriser property, not a style bug**, and it belongs beside the faceted ring rather than in a list of things to change. The earlier single-pixel
+reading would have sent me looking for a `SECONDARY` fill that does not exist in that row -- the exact error this project has made before, and the reason the
+mean is now the recorded figure.
+
+**What it costs the page**: text that covers more area also differs more, which is the same mechanism that made matching the reference's font sizes *raise* the
+count. Both findings point the same way: this renderer's glyphs are heavier than the browser's, and no colour or size change fixes coverage.
