@@ -10365,3 +10365,21 @@ module to 16, rebuild once, and see whether the band moves. If it does, bisect; 
 call through `fonts::` with a expression argument).
 
 **Recorded rather than attempted**, because a bisect needs a build-and-capture cycle per step and this round has one left at most.
+### The checklist is drawn in `panel::draw` at 16 points, and its row ink is a font-metric difference (2026-03-11)
+
+The draw site is finally established, by following `row_label` rather than guessing at functions: **`panel.rs:1044`**, inside `pub fn draw` -- the same function
+that draws Discover's facets and that `shell.rs:2952` calls on every page. It draws the label at `fonts::label(STEP_SIZE)` with **`STEP_SIZE = 16.0`**, so the
+size was never wrong; the *face* was.
+
+| attempt | sidebar total | row band |
+|---|---:|---|
+| `label(16)` (as shipped) | 13 730 | 12 rows |
+| `body(16)` | **14 117** | **12 rows** |
+| reference | -- | **14 rows** |
+
+**Switching the face moved the sidebar by 387 pixels and did not change the band at all.** So the remaining two rows are the font's own metrics: this
+project's faces ink 12 rows at 16 points where the reference's ink 14, exactly as the checklist's 13-point row matched their 16px one and the card's 16 needed
+to stay 16. No size or family available here closes it without oversizing the glyphs for the row they sit in.
+
+**Reverted to `label(16)`**, which scores 387 pixels better and is the reference's own nominal size. **The band stays 2 rows short, and the cause is now
+named: font metrics, not layout, size or family.**
