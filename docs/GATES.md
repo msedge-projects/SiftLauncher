@@ -10545,3 +10545,18 @@ one is not:
 
 **So the asset defect is fixed and confirmed by eye, and the order and spacing questions are open with their evidence stated.** The next step on order is to
 read how `default_skins.rs`'s entries are sorted into sections rather than guessing from the module's file order.
+### Skins: variant and order eliminated; the first cell's composition is the remaining suspect (2026-11-11)
+
+Three hypotheses for the first cell, two of them tested and dropped:
+
+| hypothesis | test | result |
+|---|---|---|
+| the grid's **order** differs | crop: the second cell (orange) matches in both clients | **dropped** -- the order is the same |
+| **slim** skins compose differently | every name in the module carries **both** Slim and Classic, and the eight assets fetched are the **Classic** ones | **dropped** -- variant cannot distinguish them |
+| the **front-view composition** is wrong | `FACES` is classic-only: head (8,8), body (20,20), arms at x 44 and 36 | **open** -- this is what is left |
+
+So the grid draws the right eight, in the right order, from the right textures, and the first cell still shows a different-looking skin. What remains is
+`compose_front` itself: which atlas cells it reads into which view pixels.
+
+**The next step is arithmetic, not another crop**: map a fetched skin's 64x64 atlas into the 40x48 view by hand and compare against the drawn image. That is
+decidable without a browser, a build or a capture -- the only round in this stretch where the answer does not need the lab at all.
