@@ -10510,3 +10510,24 @@ single colour, or the cell's paint call (one of `painter.image` at 1417, 1856, 2
 
 **Recorded, not half-fixed**: this is the largest visual defect found in many rounds -- eight wrong images on a page whose subject *is* images -- and it needs
 a build and a crop to confirm, not a guess between four paint sites.
+### The eight default skins are the right eight now (2026-11-11)
+
+The grid's flat colour blocks were a **wrong-asset** bug, not a rendering one: `skins_assets.rs` carried the first forty-five entries of the reference's
+`default_skins.rs` -- the `Mr_Pack_*` pride-flag variants -- and `by_name("Alex")` found nothing in that catalogue, so `skin_texture` fell through to the flat
+fallback atlases.
+
+**The real eight are not embedded in the reference either**: each is a URL to `textures.minecraft.net/texture/<hash>`. All eight were fetched (200, 64x64,
+29-51 unique colours each) and are now in `assets/skins/default_NN_Name.png`, with `skins_assets.rs` rewritten to map the eight names to them. The forty-five
+flag PNGs are deleted -- nothing queried them.
+
+| | before | after | reference |
+|---|---|---|---|
+| grid cells | eight flat colour blocks | **eight real skin textures** | eight real skin textures |
+| Skins page, 1440x900 | 131 114 | **150 988** | -- |
+
+**The page got worse by 19 874 pixels, and that is the expected direction**: detailed textures differ from the reference's in every pixel where the two
+renderings disagree, where flat blocks differed in few. A page of wrong-but-simple images scores better than a page of right-but-differently-rendered ones --
+the same monotonicity failure this project has recorded four times already.
+
+**Two differences remain visible in the crop**, and neither is the assets: the grid's **order** differs from the reference's, and the grid sits **lower** on the
+page because the `Add skin` card above it is taller. Those are the next two measurements.
