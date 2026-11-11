@@ -1406,6 +1406,11 @@ fn list(
     // one step too dark.
     painter.rect_filled(field, 10, theme.SURFACE_4);
     painter.rect_stroke(field, 10, Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
+    // **A brand ring while the field has the caret.** The reference draws one and this field drew none, so its focused
+    // state was pixel-identical to its resting one -- which is why a dozen resting captures of this row never showed it.
+    if state.query_focused {
+        painter.rect_stroke(field, 10, Stroke::new(2.0, theme.BRAND), egui::StrokeKind::Inside);
+    }
     crate::icons::draw(
         &painter,
         Glyph::Search,
@@ -1430,9 +1435,11 @@ fn list(
         shown_text,
         fonts::body(16.0),
         if state.query.is_empty() {
+            // The placeholder is dimmed; **typed text is white** -- the reference's own field reads `focus:text-contrast`,
+            // and this drew `BASE`, which is a step darker.
             crate::shell::tint(theme.BG, (150, 162, 176), 0.72)
         } else {
-            theme.BASE
+            theme.CONTRAST
         },
     );
     // The reference's two buttons beside the field: "New group" and the brand "New instance".

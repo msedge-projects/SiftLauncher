@@ -211,6 +211,16 @@ impl Search {
         // `--surface-4` inside a one-pixel `--surface-5` ring at radius 14: the capture's
         // field is #34363c with a #42444a edge, not the raised plate this used to be.
         painter.rect_filled(rect, 14, theme.SURFACE_4);
+        // **A brand ring while the field has the caret.** The reference draws one, and this field drew none -- so the
+        // focused state was pixel-identical to the resting one, which is why a dozen resting captures never showed it.
+        if self.focused {
+            painter.rect_stroke(
+                rect,
+                14,
+                egui::Stroke::new(2.0, theme.BRAND),
+                egui::StrokeKind::Inside,
+            );
+        }
         painter.rect_stroke(
             rect,
             14,

@@ -10854,3 +10854,21 @@ capture before this one had a caret in it.
 
 **And that is the general lesson for the remaining rounds**: the matrix's states are mostly rest states, and the interactions -- focus, hover, press, drag --
 each have their own drawing that no resting capture can show. A behavioural pass per page is the only way to find them.
+### The search field's focus ring and white text (2026-11-11)
+
+A behavioural pass -- click the field, type `fab`, capture -- found a state this project had never drawn:
+
+| | before | after | reference |
+|---|---|---|---|
+| focus ring | none | **2-point brand ring** | brand ring |
+| typed text | `BASE` | **`CONTRAST` (white)** | white |
+
+**Both were missing drawings, not approximations**, and both are now identical to the reference at 3x.
+
+**The ring is drawn in `pages/home.rs` beside the field's plate**, gated on `state.query_focused`; a first attempt put it in
+`widgets/search.rs`, which is a different control the toolbar does not use -- the sixth wrong-site of this stretch, and the same shape as the others: a
+widget with the right name that the page never calls.
+
+**What this proves about the remaining work**: the resting-state captures that produced most of the matrix cannot see focus, hover, press or drag. Every one of
+those is a separate drawing that may be absent entirely, and the way to find it is to drive the state and look -- four captures this round, against a dozen
+resting captures of the same row that showed nothing.
