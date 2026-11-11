@@ -150,6 +150,39 @@ def page_row(path):
         return None
 
 
+RAIL_INDEX_PROBE = ("import sys",
+                    "from PIL import Image",
+                    "im = Image.open(sys.argv[1]).convert('RGB')",
+                    "top = int(sys.argv[2])",
+                    "runs = 0",
+                    "inside = False",
+                    "for y in range(" + str(RAIL_BOX[1]) + ", top):",
+                    "    ink = False",
+                    "    for x in range(" + str(RAIL_BOX[0] + 12) + ", " + str(RAIL_BOX[2] - 12) + "):",
+                    "        r, g, b = im.getpixel((x, y))",
+                    "        if r + g + b > 180:",
+                    "            ink = True",
+                    "            break",
+                    "    if ink and not inside:",
+                    "        runs += 1",
+                    "        inside = True",
+                    "    elif not ink and inside:",
+                    "        inside = False",
+                    "print(runs)")
+
+
+def rail_index(path, highlight_y):
+    """How many icon runs sit above the highlighted row, which is the page's index in the rail."""
+    probe = subprocess.run(["python3", "-c", "\n".join(RAIL_INDEX_PROBE), path, str(highlight_y)],
+                           capture_output=True, text=True)
+    if probe.returncode != 0:
+        return -1
+    try:
+        return int(probe.stdout.strip())
+    except ValueError:
+        return -1
+
+
 def selftest():
     missing = host_path("/scratch/.scratch/cap/definitely-not-here-481.png")
     if png_size(missing) is not None:
@@ -235,11 +268,17 @@ def main():
         got = page_row(captured[role])
         rows[role] = got
     if None not in rows.values() and rows["ref"][0] > 40 and rows["ours"][0] > 40:
-        if abs(rows["ref"][1] - rows["ours"][1]) > 12:
-            print("page: the rail's brand row is at y " + str(rows["ref"][1]) + " on the reference and y "
-                  + str(rows["ours"][1]) + " here -- REFUSED, the two clients are on different pages")
+        # **How many icons sit above the highlight**, not where it is: the two rails have different
+        # spacing (ours 80/120/166/214/260, the reference 62/106/150/194/238), so the same page is at a
+        # different y in each and an absolute comparison refuses correct pairs.
+        idx = {}
+        for role in ("ref", "ours"):
+            idx[role] = rail_index(captured[role], rows[role][1])
+        if idx["ref"] != idx["ours"]:
+            print("page: the highlight is the " + str(idx["ref"]) + "th icon on the reference and the "
+                  + str(idx["ours"]) + "th here -- REFUSED, the two clients are on different pages")
             return 6
-        print("page: both clients highlight the rail at y ~" + str(rows["ref"][1]))
+        print("page: both clients highlight their " + str(idx["ref"]) + "th rail icon")
     else:
         print("page: undetermined (no brand-coloured rail row)")
     if want == (1440, 900):

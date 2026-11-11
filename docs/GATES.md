@@ -10765,3 +10765,31 @@ else a reader would look at on that screen is already in the same place.
 **The failure is worth naming because it is cheap to repeat**: a composite that scales two crops and stacks them introduces and hides edges that do not exist in
 either client, and every measurement from it inherits that error. **Any claim of "a missing element" should be made from a 1:1 crop of the region**, and both
 of this round's withdrawals would have been avoided by one.
+### Two guard bugs and one state mismatch, found by pointing the pipeline at Servers (2026-11-11)
+
+Servers was the next uncropped screen. Reaching it produced three findings, none of them about Servers.
+
+**1. The stale-binary check caught me.** The revert of `project.rs` had been tested but not rebuilt into the release binary, and the guard refused the first
+capture:
+
+```
+build: the binary predates /scratch/crates/sift-ui/src/pages/project.rs -- REFUSED
+```
+
+That is the exact failure it was written for, one round after it was written.
+
+**2. The page check compared absolute rows, and the rails are laid out differently** -- ours 80/120/166/214/260, the reference 62/106/150/194/238. So the
+same page sits at a different y in each, and comparing rows would refuse *correct* pairs. It now counts **how many icons sit above the highlight**, which is
+the page's index and independent of spacing:
+
+```
+page: the highlight is the 4th icon on the reference and the 5th here -- REFUSED, the two clients are on different pages
+page: both clients highlight their 5th rail icon | PAIR OK
+```
+
+**3. The reference's Servers page is empty.** With both clients certified on the 5th icon, the reference draws an empty page and this build lists `All the Mods
+10` and `Modrinth SMP` -- because the reference has no servers saved and this build has cached entries. **The 94 697-pixel figure is therefore not a
+measurement of rendering**, and Servers joins Discover's search results in the list of screens whose content must be matched before a figure means anything.
+
+**What the guard cannot see** is a data difference behind the same page. That is the sixth content dependency and the first that is not a state of the
+application but a state of its stored records.
