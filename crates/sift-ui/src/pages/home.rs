@@ -1385,7 +1385,8 @@ fn list(
     // row above the labels: search ends 806, New group 831..945, New instance 969..1108.
     // **150 and 103, measured at the buttons' mid-height** rather than near their rounded corners, where both shrink
     // by the same two points and hide the difference. The reference: New group 851..951, New instance 964..1113.
-    const INSTANCE_W: f32 = 150.0;
+    // **154, not 150.** The reference's button measures x 962..1115; this build's 964..1113.
+    const INSTANCE_W: f32 = 154.0;
     const GROUP_W: f32 = 103.0;
     // **8, not 27.** The column ends at 1 116 -- proved by the reference's empty state centring at 602, which is the
     // centre of 88..1116 -- and the reference's own New instance button ends at 1 108. Eight points of padding inside
@@ -1501,8 +1502,9 @@ fn list(
         painter.text(
             egui::pos2(button.center().x + 6.0, button.center().y),
             Align2::CENTER_CENTER,
+            // **16, not 13.** The reference's label inks 12 rows and 128 wide inside its button; this build's 9 and 101.
             label,
-            fonts::semibold(13.0),
+            fonts::semibold(16.0),
             if brand { theme.ACCENT_CONTRAST } else { theme.BASE },
         );
         // A press on "+ New instance" opens the create dialog. The press is recorded here and read by the

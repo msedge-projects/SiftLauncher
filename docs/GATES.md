@@ -10965,3 +10965,23 @@ Recorded as a visual difference with its crop, not as a measurement.
 
 **What the next round needs**: the same button captured **unhovered** in both, so the hover step can be separated from the resting fill -- the two clients may
 already differ at rest, in which case this is a colour-constant question and not a hover one.
+### The create button measured edge to edge: width 154, label 16 (2026-11-11)
+
+Last round's impression -- a darker, gradient fill and a smaller label -- was partly right and partly an artefact of upscaling a crop. Finding each button's own
+rect first, by its green, then comparing interiors:
+
+| | reference | before | after |
+|---|---|---|---|
+| button rect | 154x36, x 962..1115 | 150x36, x 964..1113 | **154x36** |
+| label ink | 12 rows, 128 wide | 9 rows, 101 wide | **12 rows**, 111 wide |
+| fill, hovered | (34,255,132) | (34,255,133) | unchanged |
+| fill, at rest | -- | (27,217,106) | unchanged |
+
+**The fill was never wrong.** (34,255,132) against (34,255,133) is the same green; the 'darker and gradient' reading came from a 4x LANCZOS upscale of a crop
+that included the neighbouring button's edge. **The width was wrong by four points and the label by three**, and both are now fixed.
+
+**The label's remaining difference is shape, not size**: 12 rows of ink in both, but 111 wide against 128 -- this face sets `+ New instance` narrower at the same
+cap height, which is the same metric difference the type table records elsewhere.
+
+**And the fill measurement incidentally recorded both brand steps**: (27,217,106) at rest and (34,255,132) hovered, both matching the reference. That is the first
+time this project has measured a hover step's colour rather than inferring it.
