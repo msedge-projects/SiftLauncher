@@ -3465,7 +3465,8 @@ mod tests {
         // **239**: the card starts 25 points higher than the reference's here, so it has to be 25 taller for its foot to land
         // on the reference's 568. The plate's own fill is under the threshold; its bottom border is not.
         assert_eq!(card.height(), 239.0);
-        assert_eq!(card.width(), 168.0);
+        // **180, measured**: the reference's plate fill runs x 88..267 in the same capture its create tile was measured in.
+        assert_eq!(card.width(), 180.0);
         assert!(card.contains_rect(play), "the pill is on the card");
         assert!(card.contains_rect(kebab), "the kebab is on the card");
         // **Diagonal, not side by side.** The play disc sits on the art's lower right (x 185..227) and the kebab at the
