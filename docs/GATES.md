@@ -10999,3 +10999,25 @@ points, not twelve. With `GROUP_W` 131 and `BETWEEN` 5 the button lands within *
 
 **Which closes the toolbar row**: search field, quiet button, brand button all measured against the reference's own edges at 1440x900, and each within two
 points. The row that produced the largest band of Home's residual has been measured element by element rather than inferred from one another.
+### The toolbar fixes raised the figure by 205 at every size (2026-11-11)
+
+The buttons are now within two points of the reference's own edges -- and the page got worse, by almost exactly the same amount at each size:
+
+| size | now | before the fixes | change |
+|---|---:|---:|---:|
+| 1280x720 | 24 909 | 24 704 | +205 |
+| 1366x768 | 33 210 | 33 007 | +203 |
+| 1440x900 | 27 757 | 27 550 | **+207** |
+| 1600x900 | 41 959 | 41 752 | +207 |
+| 1920x1080 | 54 584 | 54 377 | +207 |
+
+**A fixed-size element changes the total by a fixed amount**, which is why the four larger sizes agree to the pixel and 1366 differs by two. The toolbar is 36 points
+tall at every size and does not reflow, so its cost is constant.
+
+**And the cost is positive**: the label grew from 13 to 16 points to match the reference's 12 rows of ink, and a larger label was drawn by this renderer has more
+glyph edge than a smaller one drawn by the browser. **The right page scores 207 worse than the wrong one**, at all five sizes, which is the same trade as the Skins
+page's twenty thousand -- and the sixth instance of counts not being monotone in fidelity.
+
+**So the honest reading of the table is not 'Home regressed'**: the toolbar was measured against the reference's edges, the buttons now land within two points,
+and the figure records the cost of drawing that correctly with a heavier face. Any future sweep that shows Home rising by ~200 should check this note before
+treating it as a regression.
