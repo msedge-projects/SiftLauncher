@@ -10227,3 +10227,18 @@ difference.
 
 **So the method works when the band counts match**, and the fix is to pair by *position* rather than by index when they do not. Recorded here rather than rebuilt
 this round: the three bands that matter are named, with their numbers.
+### The `Jump in` strip's meta line: 14 points and 44 down, band identical (2026-11-11)
+
+The band profile had named it: reference y161..171 (11 rows), this build y158..166 (9 rows). The reference's own meta runs are `text-sm`, which is 14 points,
+and this drew 13 at `strip.top() + 40`.
+
+| | before | after | reference |
+|---|---|---|---|
+| strip meta band | 158..166 (9 rows) | **161..171 (11)** | 161..171 (11) |
+| Home, 1440x900 | 28 454 | **28 388** | -- |
+
+**And here the count went the right way**: -66 pixels, where matching the card's type had raised it by 52. So the coverage penalty is real but not universal -- when
+the element also *moves*, the layout gain outweighs the extra ink, and the two effects can be told apart only by measuring both.
+
+**Three elements in a row have now been a point small** (the card's title, its meta, and this). The pattern is no longer a coincidence to note: this build's
+`body(13.0)` is the wrong default wherever the reference says `text-sm`, and the remaining 13-point text on the page is where the next defects are.

@@ -1318,12 +1318,13 @@ fn list(
             theme.BRAND,
         );
         painter.text(
-            egui::pos2(tile.right() + 12.0, strip.top() + 40.0),
+            egui::pos2(tile.right() + 12.0, strip.top() + 44.0),
             Align2::LEFT_TOP,
             // "Fabric 26.3 • Never played": the reference names the loader *and* the game version here. Ours printed
             // the loader alone, which reads like a different instance than the card below it.
+            // `text-sm` on the reference's own meta line, which is 14 points -- the same size the card's meta needed.
             format!("{} {} • Never played", recent.loader, recent.version),
-            fonts::body(13.0),
+            fonts::body(14.0),
             theme.SECONDARY,
         );
         // The strip's own kebab, beside Play: the reference's row ends with one, and ours had nothing there.
