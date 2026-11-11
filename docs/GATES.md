@@ -9769,3 +9769,27 @@ can evict.
 
 **What the gate would need**: either a smaller working set -- evict the page caches the tabs no longer show -- or the acknowledgement, already in `FINISHED.md`,
 that `ps`'s RSS counts 19 MB of things this process does not allocate.
+### Signed in as msedgemc, and the sidebar checklist does not notice (2026-11-11)
+
+Reported by the user: signed in as **msedgemc**. Captured this build at 1440x900 on the Servers page, signed in:
+
+| element | state in the capture |
+|---|---|
+| `Create first instance` | **ticked and struck** -- correct, an instance exists |
+| `Sign in to Minecraft` | **empty circle** |
+| `Sign in to Modrinth` | **empty circle** |
+| rail, bottom | a logout affordance is drawn |
+
+**So the two sign-in rows stay unticked while the account is signed in.** Either the checklist reads a different flag from the one the sign-in sets, or the client is
+not actually holding a session and the logout affordance is static -- the two readings are indistinguishable from the pixels, and I did **not** restart the client to
+settle it, because a session held in memory would be lost by the restart the probe needed.
+
+**The account is not in `app-settings.json`** either: `/tmp/matchdata/SiftLauncher/app-settings.json` holds chips, dev_mode, selects, sliders, switches, texts and
+theme, and no account field. So whatever holds the session is runtime state or a separate store -- which is why the checklist may be reading a durable flag that
+nothing wrote.
+
+**What would decide it, without a restart**: the reference's own checklist behaves the same way when signed in, and the app's account dialog (if the rail's avatar
+opens one) would print the username. A click on the avatar opened nothing in this capture, which is itself a finding worth chasing separately.
+
+**Recorded, not fixed.** The matrix has a row for the checklist's four states; this adds the case that matters most -- signed in, and the row still asks you to sign
+in.
