@@ -11292,3 +11292,22 @@ rounds, four of them on placement and one on a probe that vanished with a revert
 it was fourteen: both now match the reference's ink to two points, and both add disagreement because this renderer's glyph edges land on different pixels from the
 browser's. **The counts are a measure of where two renderers disagree, not of whether they agree on what to draw**, and nine rounds of this stretch have now
 demonstrated it.
+### The pager's disc did not isolate, and what the crop does say (2026-11-11)
+
+Two probes tried to measure the pager's selected disc by its green. Both failed for the same reason: the region's green is not one object -- the tab strip above
+shares the hue, so the bounds came back spanning **173 points on the reference and 147 here**, which is the union of several green things rather than the disc.
+**Recorded as a failed instrument rather than a measurement.**
+
+**What the 1:1 crop does establish** (round 540's Dicovery pair, `disc10`):
+
+| | reference | this build |
+|---|---|---|
+| the selected page | `1` in a green disc, **larger numeral, larger disc** | smaller on both |
+| the ellipsis | three dots at **mid-height** | three dots on the **baseline** |
+| the rest | `2`, `961`, the next chevron | the same, in the same order |
+
+**So the pager's remaining differences are two type metrics**, not geometry: a numeral size and the ellipsis's vertical placement -- which is exactly the shape of
+the differences the type table already records for every other string on the page.
+
+**What would isolate the disc**: a colour test against the disc's own fill, sampled from its centre rather than searched by hue, and a scan radius of ten points
+around it instead of a rectangle over the whole pager row.
