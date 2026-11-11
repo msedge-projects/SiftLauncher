@@ -10490,3 +10490,23 @@ pitch with this face's descenders leaves.
 
 **Note the middle row of that table**: aligning the first line at 40 (the arithmetic answer from `banner.top() + 31`) measured *worse* than 35, because the
 banner's top is not `rect.bottom() - BANNER_H` on this page. The band, again, was the arbiter.
+### Skins: the default skins render as flat colour blocks (2026-11-11)
+
+The profile-and-crop pipeline was pointed at a screen nobody had cropped. Skins is **structurally divergent**, not offset:
+
+| | reference | this build |
+|---|---|---|
+| text bands in the content column | 13 | 8 |
+| unmatched bands | 4, including one of **156 rows** | 3, including one of **215 rows** |
+| page, 1440x900 | -- | 131 114 |
+
+**The crop shows why**: the layout matches -- title, `Saved skins`, `Add skin`, `Default skins`, the eight-cell grid, the demo-account bar, the sign-in button --
+but the reference's eight default skins each show their real texture (faces, hair, clothing, all distinct) and **this build renders all eight as flat colour
+blocks**, green and purple and blue rectangles with no detail.
+
+**The texture path resolves**: `skins.rs:828` calls `skin_texture` for every cell, which finds the reference's baked 64x64 PNG through
+`skins_assets::by_name` and uploads it via `baked_texture`. So the defect is downstream of that -- either `baked_texture` composes the front view into a
+single colour, or the cell's paint call (one of `painter.image` at 1417, 1856, 2153, 2278) draws a tint rather than the texture.
+
+**Recorded, not half-fixed**: this is the largest visual defect found in many rounds -- eight wrong images on a page whose subject *is* images -- and it needs
+a build and a crop to confirm, not a guess between four paint sites.
