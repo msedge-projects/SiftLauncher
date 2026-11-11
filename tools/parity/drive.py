@@ -18,6 +18,7 @@ import time
 
 TITLES = {"ref": "Modrinth App", "ours": "Sift Launcher"}
 DISPLAYS = {"ref": ":101", "ours": ":100"}
+PROCESSES = {"ref": "ModrinthApp", "ours": "SiftUi"}
 CAPTURE_DIR = "/scratch/.scratch/cap"
 PROBE = "import sys; from PIL import Image; im = Image.open(sys.argv[1]); print(im.size[0], im.size[1])"
 PLATE_BOX = (1150, 300, 1430, 640)  # the news card inside the sidebar, at 1440x900
@@ -42,6 +43,22 @@ def run(cmd):
 def window(display, title):
     found = run('DISPLAY=' + display + ' xdotool search --name "' + title + '" | tail -1')
     return found.stdout.strip() if found.returncode == 0 else ""
+
+
+def live_process(name):
+    """True when a non-zombie process with this name is running in the container.
+
+    Zombies are the reason this exists: `ps` still lists them, `xdotool` still finds their window, and `import` still
+    returns the last thing that window drew -- so a capture of a dead client looks exactly like a capture of a live one.
+    """
+    listed = run("ps -eo stat=,comm= | awk '$2 == \"" + name + "\" && $1 !~ /Z/ { print $2 }'")
+    return listed.returncode == 0 and listed.stdout.strip() != ""
+
+
+def mapped(display, title):
+    """True when the window exists *and* is viewable, not merely known to the X server."""
+    found = run('DISPLAY=' + display + ' xdotool search --onlyvisible --name "' + title + '" | tail -1')
+    return found.returncode == 0 and found.stdout.strip() != ""
 
 
 def png_size(path):
@@ -104,6 +121,14 @@ def selftest():
             print("SELFTEST FAILED: a capture of plate " + str(index) + " was read as " + str(told))
             return 1
     print("selftest ok: each plate signature reads back as its own index")
+    # Liveness must be able to say no: a name nothing runs must read as dead, and a running one as alive.
+    if live_process("definitely-not-a-process-481"):
+        print("SELFTEST FAILED: a process that does not exist was reported alive")
+        return 1
+    if not live_process("bash"):
+        print("SELFTEST FAILED: bash is running and was reported dead")
+        return 1
+    print("selftest ok: liveness says alive for bash and dead for a name nothing runs")
     return 0
 
 
@@ -116,10 +141,13 @@ def main():
     want = tuple(int(value) for value in size.split("x"))
 
     for role, display in DISPLAYS.items():
+        if not live_process(PROCESSES[role]):
+            print(role + ": no live " + PROCESSES[role] + " process -- REFUSED, a zombie still owns a window and still draws its last frame")
+            return 4
+        if not mapped(display, TITLES[role]):
+            print(role + ": no mapped window on " + display + " -- REFUSED")
+            return 4
         wid = window(display, TITLES[role])
-        if not wid:
-            print(role + ": no window on " + display)
-            return 2
         run("DISPLAY=" + display + " xdotool windowsize " + wid + " " + str(want[0]) + " " + str(want[1]))
     time.sleep(3.0)
 

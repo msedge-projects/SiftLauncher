@@ -10258,3 +10258,33 @@ the thing being photographed is alive.**
 
 **So the band stays OPEN** with its numbers, and two things are needed: the real draw site for the toolbar placeholder, and a liveness check in `drive.py` before
 it captures anything.
+### `drive.py` refuses a dead client, and the refusal is proven (2026-11-11)
+
+Three captures this session came from windows whose processes were gone -- a wedged reference, five sizes never written, and a zombie from 1 November whose
+dead window still returned its last frame. `xdotool` finds the window either way; only the process table tells them apart.
+
+So the guard now requires, before it resizes anything:
+
+```
+$ python3 tools/parity/drive.py --size 1440x900 --tag dead
+ours: no live SiftUi process -- REFUSED, a zombie still owns a window and still draws its last frame   [exit 4]
+```
+
+and with the client restarted it passes as before:
+
+```
+1440x900 -> ref ... (1440x900) | ours ... (1440x900) | reference news plate: 1 | PAIR OK
+1280x720 -> ref ... (1280x720) | ours ... (1280x720) | PAIR OK
+```
+
+**The check is `ps` filtered on a non-zombie state**, plus `xdotool search --onlyvisible` for a mapped window -- because a process can be alive with its window
+unmapped, which is the wedged case. Both are selftested:
+
+```
+selftest ok: a missing file reads as None, so an unwritten capture cannot pass
+selftest ok: each plate signature reads back as its own index
+selftest ok: liveness says alive for bash and dead for a name nothing runs
+```
+
+**So the guard now answers three questions before a pair exists**: is the process alive, is its window mapped, and is the file it wrote the size it claims.
+Each answer can be no, and each was made to say no once before being trusted.
