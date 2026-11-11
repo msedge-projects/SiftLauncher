@@ -1425,8 +1425,10 @@ fn list(
         // +41, not +38: the reference\'s text starts at x 129 against this build\'s 127.
         egui::pos2(field.left() + 40.0, field.center().y),
         Align2::LEFT_CENTER,
+        // **16, the field's own size**: `Input.vue:26,55` gives the default input `text-base`, and the band profile
+        // measured this line 5 rows short of the reference's at 15.
         shown_text,
-        fonts::body(15.0),
+        fonts::body(16.0),
         if state.query.is_empty() {
             crate::shell::tint(theme.BG, (150, 162, 176), 0.72)
         } else {

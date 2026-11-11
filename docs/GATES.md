@@ -10288,3 +10288,22 @@ selftest ok: liveness says alive for bash and dead for a name nothing runs
 
 **So the guard now answers three questions before a pair exists**: is the process alive, is its window mapped, and is the file it wrote the size it claims.
 Each answer can be no, and each was made to say no once before being trusted.
+### The search placeholder: 15 -> 16 points, and why 18 was rejected (2026-11-11)
+
+The band profile's last divergent band was the library toolbar's `Search` placeholder: reference **y260..273 (14 rows)**, this build y262..270 (9 rows) at
+15 points. The real draw site is `pages/home.rs:1419` (not `widgets/search.rs`, which was tried first and moved nothing).
+
+| size | band | Home, 1440x900 |
+|---|---|---:|
+| 15 points | 262..270 (9 rows) | -- |
+| **16 points** | 262..272 (11 rows) | **28 368** |
+| 18 points | 261..272 (12 rows) | 28 411 |
+
+**16 is kept**: it is the field's own size in the reference's source (`Input.vue:26,55` -- default inputs are `text-base`), it gives the lowest count of the
+three, and 18 buys one row of geometry for 43 pixels.
+
+**And 14 rows is not reachable with this font at any sane size.** The checklist taught the same lesson from the other direction: this build's 13-point face
+matches the reference's 16px ink, so their type is not the same shape as ours. Chasing the band by nominal size would end in a placeholder three points too
+wide for its field -- the element would match a profile and stop matching its own box.
+
+**So the band stays 3 rows short**, recorded with the three sizes measured rather than a fourth guess.
