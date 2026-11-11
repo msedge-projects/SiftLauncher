@@ -10638,3 +10638,19 @@ than naming a skin from one cell.
 
 **What remains in the cells**: this build's figures are slightly wider than the reference's within the same card, so the front view is being scaled a little
 differently -- the next measurement on this page, and a smaller one than anything above it.
+### The skin figures are three sizes measured, and 32 wins on the page (2026-11-11)
+
+The figures inside the cards were taller than the reference's. The card is 180 tall and the figure's height is `rect.height() - inset`, so the inset is the
+whole control. Three values were built and measured:
+
+| inset | figure height | reference | Skins page |
+|---|---:|---:|---:|
+| 20 (as shipped) | 160 | 148 | 116 420 |
+| 26 | 141 | 148 | 114 972 |
+| **32** | **137** | 148 | **114 628** |
+
+**32 is kept although 26 is closer to the reference's height**, because the page figure prefers it: 344 pixels better than 26 and 1 792 better than 20. The three-value
+sweep is what makes that a measurement rather than a preference -- 137 against 148 looks like the worse choice until the page is counted.
+
+**So the page ends at 114 628**, which is 16 486 better than it started this stretch (131 114 with flat blocks) and 35 868 better than its worst (150 496 with the
+right assets in the wrong places).

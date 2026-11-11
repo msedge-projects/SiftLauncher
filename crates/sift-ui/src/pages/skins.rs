@@ -1421,7 +1421,9 @@ fn default_card(
 ) {
     painter.rect_filled(rect, CARD_RADIUS, theme.RAISED_BG);
     if let Some(texture) = texture {
-        let height = rect.height() - 20.0;
+        // **32, not 20.** Measured inside the first card: the reference's figure inks 148 rows of a 180-row card,
+        // this build's 160. The figure is the front view at 16x32, so its height is the whole inset.
+        let height = rect.height() - 32.0;
         painter.image(
             texture.id(),
             Rect::from_center_size(rect.center(), egui::vec2(height / 2.0, height)),
