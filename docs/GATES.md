@@ -11050,3 +11050,16 @@ measured difference of its own, with the numbers above.
 
 **Where to look next**: the reference's own class for its page heading, and this build's constant for it -- a one-line comparison that would turn 40 per cent of
 extra ink into either a weight change or a font change.
+### Pager: the ellipsis is there and the sequence matches; the type is small (2026-11-11)
+
+Row 90 asks for the pager's ellipsis. Cropped from the certified Discover pair, both clients read:
+
+```
+1 (selected, in a green disc)   2   ...   961   >
+```
+
+**So the sequence, the selected page, the ellipsis and the next chevron all match**, and the row closes on the property it names.
+
+**Two differences are visible at the same time and neither is the ellipsis's presence**: the reference's selected numeral is **larger and brighter** in a larger
+disc, and its ellipsis is drawn as three dots at **mid-height** where this build's sits on the baseline -- the same character, set differently. Both belong with the
+type-metric differences already recorded rather than with this row.
