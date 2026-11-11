@@ -10165,3 +10165,24 @@ would have broken the checklist, whose ink was already right. **The source gives
 order is: read the class, measure the band, and change nothing when the band already agrees.
 
 **The one-point offset in the checklist** is left as it is: measured, recorded, smaller than the tolerance of the comparison being used to judge it.
+### The completed checklist row is 54 points too bright, and its neighbour's ring is faceted (2026-11-11)
+
+A single-pass ink profile over both captures found the sidebar disagreeing at 22 row-bands, the worst at **y 142..155 (delta 87)** -- the checklist's first row.
+Cropped at 3x, two differences are visible at once and both measure:
+
+| | reference | this build |
+|---|---|---|
+| brightest pixel in the completed row (x 1240..1300, y 140..160) | **(96,107,113)** | **(150,162,176)** = `SECONDARY` |
+| pixels above sum 260 in the row | 436 | 667 |
+| the empty row's ring | a thin, smooth circle | a faceted, scalloped circle |
+
+**So the completed row carries an ink 54 points too bright**, even though the label and the strike are both drawn in `SURFACE_5` (66,68,74). Something in that row
+-- the check glyph's plate, or the strike's own edge -- is reaching `SECONDARY`, and the *brightest* pixel is the right instrument to find it because a mean over
+the row would hide one bright element among dim ones.
+
+**And the ring's facets are the rasteriser**, not a parameter: the code draws `circle_stroke(radius 7.0, 1.5 points, SECONDARY)`, which is the same
+instruction the reference's CSS border-shape issues. The browser antialiases a fractional stroke; this renderer tessellates a polygon and feathers it, and at
+radius 7 the facets are visible at 3x.
+
+**Both recorded, neither fixed.** The first needs the bright element located -- one more probe, reading *where* the (150,162,176) pixel is; the second is the
+renderer class already documented 19 times in the matrix as RENDERER-RISK.
