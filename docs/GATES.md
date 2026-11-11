@@ -10428,3 +10428,21 @@ selftest ok: a source touched after the binary reads as stale, and the touch is 
 
 **So the guard now answers four questions before a pair exists**: is the binary current, is the process alive, is its window mapped, and is the file the size it
 claims. Every one of the four was made to say no once before being trusted, and three of them were made to say no by a real failure earlier in this session.
+### The news card's copy: 14 on a 17.5 line measured, and reverted (2026-11-11)
+
+Its five divergent bands were the sidebar's remaining account. The copy was `body(13)` on a 16-point line whose own constant carried `// guess: re-measure`, and
+the reference's lines run 17 to 18 apart with 11 rows of ink each.
+
+| | before | 14 on 17.5 | reference |
+|---|---|---|---|
+| copy line 1 | 9 rows | **11 rows** | 11 rows |
+| line 2 | 9 | 14 (two lines merging) | 11 |
+| line tops | 565, 581, 597, 615 | 564, 581, 598, 618 | 566, 583, 601, 620 |
+| Home, 1440x900 | 28 368 | **28 620** | -- |
+
+**The first line's ink height now matches exactly**, and every line still sits two to three points high; but the second band grows to fourteen rows because the
+larger face pushes its descenders into the next line's box, and the page figure worsens by 252 pixels.
+
+**Reverted.** The change buys one matched band and one merged one, and costs a measured figure -- which is the wrong trade for a card whose text is a paragraph
+rather than a label. What is now known, and was not before: the copy's size should be 14, its line 17.5, and the whole block needs to move down two points
+before either is worth keeping. That is the sequence for a round that can spend the build.
