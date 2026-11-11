@@ -10446,3 +10446,25 @@ larger face pushes its descenders into the next line's box, and the page figure 
 **Reverted.** The change buys one matched band and one merged one, and costs a measured figure -- which is the wrong trade for a card whose text is a paragraph
 rather than a label. What is now known, and was not before: the copy's size should be 14, its line 17.5, and the whole block needs to move down two points
 before either is worth keeping. That is the sequence for a round that can spend the build.
+### The news copy fixed as one block: size, line and anchor together (2026-11-11)
+
+The previous round changed the copy's size and line but not its anchor, matched one band, merged another, and cost 252 pixels -- so it was reverted. This round
+changed all three together:
+
+```rust
+const COPY_SIZE: f32 = 14.0;   // was 13
+const COPY_LINE: f32 = 17.5;   // was 16, with a `// guess: re-measure` beside it
+let copy = title + title_height.max(TITLE_LINE) + TITLE_TO_COPY + 1.0;   // was -1.0
+```
+
+| | before | after |
+|---|---:|---:|
+| sidebar | 13 730 | **13 292** |
+| Home, 1440x900 | 28 368 | **27 930** |
+| divergent sidebar bands | 5 | **3** |
+
+**438 pixels better, and the copy's first line now matches the reference's band exactly** -- it no longer appears in the divergence list at all.
+
+**Which settles the rule the last round proposed**: a multi-line block must be fixed in one build, because the parts interact. Size alone merges lines; size plus
+line without the anchor leaves every line 2 points high and costs pixels; all three together gain 438. The same three-part fix probably applies to the checklist
+(whose 2-row gap is metrics) and the remaining three news bands (which are the date and the second paragraph).

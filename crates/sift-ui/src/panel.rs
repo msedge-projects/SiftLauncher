@@ -269,14 +269,14 @@ const TITLE_TO_COPY: f32 = 8.0;
 /// The copy's size: 12 points, from the reference's measurement.
 // **13, measured.** 14 gave a sidebar of 16 817, 12 gave 16 956, and 13 gives **16 565**; 13.5 gives 17 236,
 // so the optimum is the integer and not a value between it and 14.
-const COPY_SIZE: f32 = 13.0;
+const COPY_SIZE: f32 = 14.0;
 
 /// How many lines the copy takes in the reference: the article's summary wraps twice at
 /// the panel's inner width, which is why the card reserves room for two.
 const COPY_LINES: usize = 3;
 
 /// One line of the copy's box.
-const COPY_LINE: f32 = 16.0; // guess: re-measure
+const COPY_LINE: f32 = 17.5; // measured: the reference's copy lines sit 17 to 18 apart
 
 /// The room two lines of copy are given, and the least the card ever reserves for them.
 const COPY_H: f32 = COPY_LINE * COPY_LINES as f32;
@@ -1541,7 +1541,8 @@ fn news_rows(copy_height: f32, title_height: f32) -> NewsRows {
     // **The title's measured height, not one line's allowance.** "Joining your server just got easier" wraps to two
     // lines, and the reference's copy therefore begins a line lower than a one-line title's -- which is the 18-point
     // offset the band breakdown found.
-    let copy = title + title_height.max(TITLE_LINE) + TITLE_TO_COPY - 1.0;
+    // **+1, not -1**: at the reference's size the copy sat two points high, and this is the only term that moves the whole block.
+    let copy = title + title_height.max(TITLE_LINE) + TITLE_TO_COPY + 1.0;
     let date = copy + copy_height + COPY_TO_DATE;
     NewsRows {
         art,
