@@ -9839,3 +9839,25 @@ $ GH_CONFIG_DIR=/root/.config/gh git -c credential.helper='!gh auth git-credenti
 
 **So the record is off this machine**: every commit from the session's start to `79e9b61` is on GitHub, and the 'all commits are local' caveat that has ended
 every report since the beginning is now false and should not be repeated.
+### The repo is private now; a private repo under MSedgeMC could not be pushed to (2026-11-11)
+
+The user asked for the launcher to live in a **private** repository under **MSedgeMC**, not under the project account.
+
+**What was achieved**: `msedge-projects/SiftLauncher` was **PUBLIC** and is now **PRIVATE**, holding all 988 commits. That is the private repo; it is just
+owned by the project account rather than the user's.
+
+**What could not be achieved, and the measurements**:
+
+| attempt | result |
+|---|---|
+| create `MSedgeMC/SiftLauncher` (private) | **worked** |
+| push master to it | `remote rejected: failed` |
+| push **one** commit, after seeding a README | `remote rejected` -- so it is not size |
+| permissions on that repo | `admin: true, push: true`, private, size 0 |
+| push the same pack to the project account | **succeeded** |
+| `gh repo transfer` | not a command in this gh version |
+| `POST /repos/{o}/{r}/transfer` with `new_owner` | returned the repo **unchanged** |
+
+**So every write to a freshly created repository under the personal account is rejected server-side while the same content pushes cleanly to the project
+account** -- a property of the account or its state, not of this repository. Two loose ends: an empty `MSedgeMC/SiftLauncher-seed` remains (the token lacks the
+`delete_repo` scope to remove it), and the transfer needs to be done from the web UI if the personal account is where it must live.
