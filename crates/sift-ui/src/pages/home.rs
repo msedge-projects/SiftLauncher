@@ -1880,11 +1880,13 @@ fn list(
             "home page={rect:?} rows={} field={field:?}",
             shown.len().min(ROWS_SHOWN)
         );
+    }
         // **The create tile.** The reference's grid draws a `+ New instance` plate in the cell after the last card --
         // measured 177x58 at x 299, y 379, a one-point (65,67,73) edge on the (39,41,46) raised fill. This build drew cards
         // only, so a reader with one instance had no way to add another from the grid; the toolbar button was the only route.
         {
             let next = shown.len().min(ROWS_SHOWN);
+            let _ = ();
             // The tile sits on the flat grid, so it takes index only: a grouped page draws its headers between the rows
             // and the tile would land beside a heading rather than under the last card.
             let (cell, _, _) = row_targets_at(rect, next, 0.0);
@@ -1919,7 +1921,6 @@ fn list(
                 instance.id
             );
         }
-    }
     for (index, instance) in shown.iter().copied().take(ROWS_SHOWN).enumerate() {
         // Grouped pages restart the grid inside each group and push it down by the headers above it.
         // **A group's cards start below its own header**, not at it: with the shift alone the first group's cards

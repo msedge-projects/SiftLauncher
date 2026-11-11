@@ -11191,3 +11191,17 @@ should run on every new drawing: a log line in the block, read before a capture 
 **Reverted rather than re-placed**: the first attempt to move the block put it inside a menu-sizing block, which is a second failed insertion of the same kind. The
 next round inserts it **after the probe's closing brace by line number**, in a patch that changes nothing else, and verifies with the same `eprintln!` before
 any capture.
+### The create tile draws (2026-11-11)
+
+Moved **by line index** rather than by text anchor -- out of the `SIFT_HOME_PROBE` guard and to the line after its closing brace -- and the capture shows
+`+ New instance` in the second grid cell, on the raised fill with its one-point edge, a plus and the label.
+
+**Two things this round learned about the instrument, not the page**:
+
+1. The `eprintln!` that found the wrong brace was **lost when the file was reverted**, so the second build's empty log proved nothing -- the block was drawing
+   and there was simply nothing to print. **A probe that disappears with a revert makes the next run lie**, and the check that caught it was `grep -c` on the
+   source, not the log.
+2. The tile's *position* is not yet measured: the capture shows it in the second cell, and the reference's is at y 379 with the card's top at 329, so the tile is
+   likely 50 points below the card's top rather than at its top edge.
+
+**So the element exists and matches the reference's shape**; where it sits inside the cell is the next measurement.
