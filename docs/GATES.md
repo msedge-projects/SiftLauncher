@@ -11227,3 +11227,23 @@ reference's does. It is the first element this stretch has added end to end -- m
 
 **What it is not**: a keyboard target. The tile takes a pointer press and has no focus ring, and the reference's may; that is one drive with Tab, and it belongs
 with the other interaction states rather than here.
+### Five sizes after the grid work: up ~960 at every size (2026-11-11)
+
+| size | now | before the grid work | change |
+|---|---:|---:|---:|
+| 1280x720 | 25 867 | 24 909 | +958 |
+| 1366x768 | 34 170 | 33 210 | +960 |
+| **1440x900** | **28 719** | 27 757 | **+962** |
+| 1600x900 | 42 915 | 41 959 | +956 |
+| 1920x1080 | 55 553 | 54 584 | +969 |
+
+**A fixed-size element again**: the card and the tile do not reflow with the window, so all five sizes move by the same ~960. The reader should know what this
+is before reading it as a regression -- **the page gained an element and a corrected width**, and the count rose because the new drawing disagrees with the
+reference in a thousand places that were previously *empty* on this side and therefore neutral.
+
+**And one number in the record was off**: the card's plate fill measures **89..264, 176 wide**, with the page background starting at 268. The 180 this build
+now uses is within four points of that, and the earlier "88..267" reading included the antialiased edge. So the width is right to four points and the remainder of
+the rise is the tile's own contents -- the plus and the label, whose offsets were copied from the toolbar's button rather than measured on this plate.
+
+**What that means for the next round**: measure the tile's plus and label inside the tile, the way the toolbar's were measured inside its button. That is one probe
+and should recover part of the 960.
