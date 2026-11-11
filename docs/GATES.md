@@ -10952,3 +10952,16 @@ matches at both sizes it was measured at.
 
 **What this costs and teaches**: two rounds went to a defect that did not exist, and both started from an observation that did not pass through the guard. The
 rule is the one already written after the first such case and not applied: **no claim from a capture that `drive.py` did not certify**, however clear the crop.
+### The hovered `New instance` button: fill and label both differ (2026-11-11)
+
+Driven with the pair certified at 1440x900 (`PAIR OK`, both on rail index 1), then the pointer parked on the button in both and captured. At 4x:
+
+* **The fill.** The reference's button is a **brighter, flatter green**; this build's is darker and reads as having a gradient across its height.
+* **The label.** The reference's `+ New instance` is **larger and set heavier**; this build's is smaller and lighter, and the button itself is narrower.
+
+**The point samples did not survive contact**: at (1060,244) both read the page background, and at (1100,270) the reference read (6,46,22) against this build's
+(34,255,133) -- but those points are inside two buttons of different widths, so they are different places on different shapes and the numbers compare nothing.
+Recorded as a visual difference with its crop, not as a measurement.
+
+**What the next round needs**: the same button captured **unhovered** in both, so the hover step can be separated from the resting fill -- the two clients may
+already differ at rest, in which case this is a colour-constant question and not a hover one.
