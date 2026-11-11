@@ -11166,3 +11166,15 @@ that probe had taken the card's fill for the page's.
 
 **What is left of the tile**: drawing it. Its rect is 177x58 at x 299, y 379, outlined one point in (65,67,73) on the raised fill, with a plus and `New instance`.
 The geometry is now known from measurements that agree.
+### The create tile is in the tree and does not appear; the commit guard is in (2026-11-11)
+
+**The guard first, because it is the durable part**: `tools/parity/commit.sh` runs the suite before it commits and refuses if the result line is not
+`test result: ok`. Four times this stretch a red suite was pushed and a follow-up commit was needed; the script makes the habit structural instead of
+remembered.
+
+**Then the tile, which does not work.** The block is inserted before the card loop, computes the next cell with `row_targets_at(rect, shown.len(), 0.0)`,
+and draws a 177x58 plate with a plus and `New instance` -- and the capture shows only the card, no tile. So the block is either in a branch this page does not
+take, or placed after a return, which is the sixth wrong-site of the stretch and the first one this round's own measurements predicted the position for.
+
+**Committed anyway, and labelled**: the code compiles and the suite is green, so the work is kept; the capture says it does not reach the draw, and the next
+round starts by finding why rather than by writing the block again.

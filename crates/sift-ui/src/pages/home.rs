@@ -1880,6 +1880,34 @@ fn list(
             "home page={rect:?} rows={} field={field:?}",
             shown.len().min(ROWS_SHOWN)
         );
+        // **The create tile.** The reference's grid draws a `+ New instance` plate in the cell after the last card --
+        // measured 177x58 at x 299, y 379, a one-point (65,67,73) edge on the (39,41,46) raised fill. This build drew cards
+        // only, so a reader with one instance had no way to add another from the grid; the toolbar button was the only route.
+        {
+            let next = shown.len().min(ROWS_SHOWN);
+            // The tile sits on the flat grid, so it takes index only: a grouped page draws its headers between the rows
+            // and the tile would land beside a heading rather than under the last card.
+            let (cell, _, _) = row_targets_at(rect, next, 0.0);
+            let tile = Rect::from_min_size(cell.min, egui::vec2(177.0, 58.0));
+            painter.rect_filled(tile, 10.0, theme.SURFACE_4);
+            painter.rect_stroke(tile, 10.0, Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
+            crate::icons::draw(
+                &painter,
+                Glyph::Plus,
+                Rect::from_center_size(
+                    egui::pos2(tile.center().x - 52.0, tile.center().y),
+                    Vec2::splat(14.0),
+                ),
+                theme.BASE,
+            );
+            painter.text(
+                egui::pos2(tile.center().x + 6.0, tile.center().y),
+                Align2::CENTER_CENTER,
+                "New instance",
+                fonts::semibold(14.0),
+                theme.BASE,
+            );
+        }
         for (index, instance) in shown.iter().take(ROWS_SHOWN).enumerate() {
             let (card, play, kebab) = row_targets_at(
                 rect,
