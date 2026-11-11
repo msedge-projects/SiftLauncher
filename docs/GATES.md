@@ -11247,3 +11247,18 @@ the rise is the tile's own contents -- the plus and the label, whose offsets wer
 
 **What that means for the next round**: measure the tile's plus and label inside the tile, the way the toolbar's were measured inside its button. That is one probe
 and should recover part of the 960.
+### The tile's contents: 16 points, and a wider plus gap (2026-11-11)
+
+Measured the ink inside each tile, which is the check that matters for a plate whose rect already matches:
+
+| | reference | before | after |
+|---|---|---|---|
+| ink box | x 324..454 (**131** wide) | x 336..440 (105) | x 326..446 (**121**) |
+| ink rows | 12 | 12 | 12 |
+| ink count | 540 | 418 | **517** |
+
+**The label was 14 points where the reference's is 16**, and the plus sat 52 points left of centre instead of 62. Both corrected, and the block now spans 121 of
+the reference's 131 with 517 of its 540 ink.
+
+**The residual 10 points is the gap between the mark and the word**, which is the one part of this tile not yet measured -- the plus's own ink box would give it,
+and that is one more probe rather than another guess.

@@ -1906,7 +1906,8 @@ fn list(
                 &painter,
                 Glyph::Plus,
                 Rect::from_center_size(
-                    egui::pos2(tile.center().x - 52.0, tile.center().y),
+                    // **-62**: the reference's mark starts 63 points left of the tile's centre and its label runs to 66 right.
+                    egui::pos2(tile.center().x - 62.0, tile.center().y),
                     Vec2::splat(14.0),
                 ),
                 theme.BASE,
@@ -1915,7 +1916,8 @@ fn list(
                 egui::pos2(tile.center().x + 6.0, tile.center().y),
                 Align2::CENTER_CENTER,
                 "New instance",
-                fonts::semibold(14.0),
+                // **16, not 14.** The reference's tile contents ink 131 points wide; at 14 this drew 105.
+                fonts::semibold(16.0),
                 theme.BASE,
             );
         }
