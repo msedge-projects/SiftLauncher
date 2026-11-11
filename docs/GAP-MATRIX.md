@@ -5729,3 +5729,22 @@ entry for that round does. The rows below were closed this session and their evi
 
 **What is still missing**, and cannot be added honestly: for the other ~229 DONE and VERIFIED rows, the capture that decided them was taken in an earlier
 session or is named only in `GATES.md` by round. Adding a filename to those rows now would be inventing evidence rather than recording it.
+
+## The library card's context menu, row by row (2026-11-11)
+
+Measured by right-clicking the card in both clients at 1440x900, then corrected against the reference's own source (`use-library.ts:1275-1330`), which showed states a still capture could not.
+
+| row | reference | this build | status |
+|---|---|---|---|
+| Stop / Play | `Stop` while playing, `Play` while not -- mutually exclusive (`:1283-1298`) | always `Play` | **OPEN-WITH-CAUSE**: no instance has ever run here, so the playing state cannot be produced |
+| Add to favorites | membership of `group:favorites`, label flips (`:1298-1314`) | not drawn | **OPEN**: the core flag exists (`Instance::favorite`, `instance.cfg`); the menu row is the next slice |
+| Add content | drawn only while `canAddContent` (`!quarantined && !link && !installing`) | not drawn | **OPEN-WITH-CAUSE**: no content dialog to open |
+| View instance | `EyeIcon`, opens the instance page | **drawn, `Glyph::Eye`, opens the page** | **VERIFIED** 2026-11-11: the press moved 59 667 px and landed on the instance page |
+| Duplicate instance | `:1320` | drawn | DONE |
+| Open folder | `:1325` | drawn | DONE |
+| Copy path | `:1330` | **drawn, `Glyph::Link`, writes the folder to the clipboard** | **VERIFIED** 2026-11-11: the toast read `Copied .../instances/Fabric 26.3.` |
+| Edit icon | a submenu of icons | not drawn | **OPEN-WITH-CAUSE**: no icon set to choose from |
+| Delete | `:1340` | drawn | DONE |
+| Edit | **not in the reference's card menu** | drawn, opens the rename dialog | **DIVERGENCE**: the reference reaches the same dialog from the card's kebab |
+
+**Nine of the reference's rows, plus one of this build's own**: two verified, three done, three open with a recorded cause, one divergence.
