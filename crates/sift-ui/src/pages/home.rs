@@ -375,6 +375,8 @@ pub enum Action {
     OpenFolder(String),
     /// The menu's `Copy path`: put the instance's folder on the clipboard.
     CopyPath(String),
+    /// The menu's `Add to favorites` / `Remove from favorites`: persist the instance's flag.
+    SetFavorite(String, bool),
     /// The menu's `Delete`: remove the instance's folder from disk.
     Delete(String),
     /// A world row: launch `world` inside `instance`. Quick-play is not wired, so the shell
@@ -398,6 +400,9 @@ pub enum Action {
 pub enum MenuItem {
     /// Launch the instance.
     Play,
+    /// Toggle the instance's favourite flag. The label depends on the instance's state, which is why
+    /// it is the one row drawn through `label_with` rather than `label`.
+    Favorite,
     /// Open the instance's page -- what a press on the card itself does (`InstanceItem.vue`).
     /// The reference lists it fourth, after `Add content`; those two are not built here.
     ViewInstance,
@@ -416,8 +421,9 @@ pub enum MenuItem {
 impl MenuItem {
     /// Every row, in the order the popover draws them: play first, then the instance's own
     /// actions, the folder, and delete last.
-    pub const ALL: [MenuItem; 7] = [
+    pub const ALL: [MenuItem; 8] = [
         MenuItem::Play,
+        MenuItem::Favorite,
         MenuItem::ViewInstance,
         MenuItem::Duplicate,
         MenuItem::OpenFolder,
@@ -425,6 +431,15 @@ impl MenuItem {
         MenuItem::Edit,
         MenuItem::Delete,
     ];
+
+    /// **The label for an instance whose favourite state is known.** Only one row changes its text, and the
+    /// reference flips exactly that one (`use-library.ts:1298-1308`).
+    pub fn label_with(self, favorite: bool) -> &'static str {
+        match self {
+            MenuItem::Favorite if favorite => "Remove from favorites",
+            other => other.label(),
+        }
+    }
 
     /// The label, verbatim. The key it is read from is [`MenuItem::key`], and each comment
     /// below carries the line of `app-frontend/src/locales/en-US/index.json` that states it.
@@ -434,6 +449,7 @@ impl MenuItem {
             MenuItem::Play => "Play",
             // `app.instance.action.edit` -- "Edit" (:560-562)
             // `app.instance.action.view-instance`
+            MenuItem::Favorite => "Add to favorites",
             MenuItem::ViewInstance => "View instance",
             // `app.instance.action.copy-path`
             MenuItem::CopyPath => "Copy path",
@@ -454,6 +470,7 @@ impl MenuItem {
     pub fn key(self) -> &'static str {
         match self {
             MenuItem::Play => "app.instance.action.play",
+            MenuItem::Favorite => "app.instance.action.add-to-favorites",
             MenuItem::ViewInstance => "app.instance.action.view-instance",
             MenuItem::CopyPath => "app.instance.action.copy-path",
             MenuItem::Edit => "app.instance.action.edit",
@@ -468,6 +485,7 @@ impl MenuItem {
     pub fn glyph(self) -> Glyph {
         match self {
             MenuItem::Play => Glyph::Play,
+            MenuItem::Favorite => Glyph::Star,
             MenuItem::ViewInstance => Glyph::Eye,
             MenuItem::CopyPath => Glyph::Link,
             MenuItem::Edit => Glyph::Edit,
@@ -487,6 +505,7 @@ impl MenuItem {
         let id = id.to_owned();
         match self {
             MenuItem::Play => Action::Play(id),
+            MenuItem::Favorite => Action::SetFavorite(id.clone(), false),
             MenuItem::ViewInstance => Action::Open(id),
             MenuItem::CopyPath => Action::CopyPath(id),
             MenuItem::Edit => Action::Edit(id),
@@ -631,6 +650,9 @@ pub struct State {
     /// Every drawn instance's `saves/` folder names, read when the set of instances last
     /// changed. Held here rather than re-read per frame: see `State::refresh_worlds`.
     worlds: Vec<(String, Vec<(String, String)>)>,
+    /// The ids of the instances marked as favourites, read when the set of instances last changed
+    /// and updated in place by the menu's toggle.
+    pub favorites: Vec<String>,
     /// The instance ids `worlds` was read for. A create or a delete changes this list, and
     /// that change is what triggers the re-read.
     scanned: Vec<String>,
@@ -696,6 +718,7 @@ impl State {
         // instance by id, and an id that is gone would leave a panel anchored to nothing.
         self.menu.close();
         self.worlds = read_worlds(instances);
+        self.favorites = read_favorites(instances);
     }
 }
 
@@ -708,6 +731,16 @@ impl State {
 /// call without a pointer.
 pub fn press_menu_row(row: MenuItem, id: &str, state: &mut State) -> Action {
     match row {
+        // The page flips its own copy for the label, and the shell writes the flag to disk.
+        MenuItem::Favorite => {
+            let on = !state.favorites.iter().any(|favorite| favorite == id);
+            if on {
+                state.favorites.push(id.to_owned());
+            } else {
+                state.favorites.retain(|favorite| favorite != id);
+            }
+            Action::SetFavorite(id.to_owned(), on)
+        }
         MenuItem::Delete => {
             state.confirm_delete = Some(id.to_owned());
             Action::None
@@ -2172,7 +2205,8 @@ fn list(
         action = Action::Open(id);
     }
     if let Some((id, kebab)) = anchored {
-        if let Some(item) = menu_popover(ui, theme, &id, kebab, rect, menu) {
+        let favorite = state.favorites.iter().any(|favorite| favorite == &id);
+        if let Some(item) = menu_popover(ui, theme, &id, favorite, kebab, rect, menu) {
             menu.close();
             pressed = Some((id, item));
         }
@@ -2531,6 +2565,7 @@ fn menu_popover(
     ui: &mut Ui,
     theme: &Theme,
     id: &str,
+    favorite: bool,
     anchor: Rect,
     bounds: Rect,
     menu: &mut Menu,
@@ -2580,7 +2615,7 @@ fn menu_popover(
     let mut width = MENU_MIN_WIDTH;
     for item in MenuItem::ALL {
         let label = painter.layout_no_wrap(
-            item.label().to_owned(),
+            item.label_with(favorite).to_owned(),
             fonts::semibold(crate::theme::FONT_SIZE_NM),
             theme.CONTRAST,
         );
@@ -2657,7 +2692,7 @@ fn menu_popover(
                 row.center().y,
             ),
             Align2::LEFT_CENTER,
-            item.label(),
+            item.label_with(favorite),
             fonts::semibold(crate::theme::FONT_SIZE_NM),
             ink,
         );
@@ -3071,6 +3106,23 @@ mod order_tests {
     }
 }
 
+/// **The instances marked as favourites**, read from each instance's own `instance.cfg`. The reference keeps this as a
+/// group membership (`group:favorites`); this build has no group index for it and stores the flag per instance instead.
+fn read_favorites(instances: &[Entry]) -> Vec<String> {
+    let root = crate::data::instances_dir();
+    instances
+        .iter()
+        .take(ROWS_SHOWN)
+        .filter(|instance| {
+            let cfg = root.join(&instance.id).join("instance.cfg");
+            std::fs::read_to_string(cfg)
+                .map(|text| text.lines().any(|line| line.trim() == "favorite=true"))
+                .unwrap_or(false)
+        })
+        .map(|instance| instance.id.clone())
+        .collect()
+}
+
 fn read_worlds(instances: &[Entry]) -> Vec<(String, Vec<(String, String)>)> {
     let root = crate::data::instances_dir();
     instances
@@ -3261,6 +3313,7 @@ mod tests {
     fn the_menu_labels_are_the_reference_strings() {
         let expected = [
             ("Play", "app.instance.action.play"),
+            ("Add to favorites", "app.instance.action.add-to-favorites"),
             ("View instance", "app.instance.action.view-instance"),
             ("Duplicate instance", "app.library.instance.action.duplicate"),
             ("Open folder", "app.instance.action.open-folder"),
@@ -3568,20 +3621,20 @@ mod tests {
         menu_press(MenuKey::Char('d'), &mut menu, 10.0);
         assert_eq!(
             menu.highlight,
-            Some(2),
+            Some(3),
             "'d' lands on Duplicate instance, the first label that starts with it"
         );
         menu_press(MenuKey::Char('e'), &mut menu, 10.2);
         assert_eq!(
             menu.highlight,
-            Some(6),
+            Some(7),
             "'de' extends the buffer inside the window, and Delete is what starts with it"
         );
         assert_eq!(menu.typed, "de");
         menu_press(MenuKey::Char('e'), &mut menu, 11.0);
         assert_eq!(
             menu.highlight,
-            Some(5),
+            Some(6),
             "a letter 800 ms later starts a new buffer, and 'e' is Edit"
         );
         assert_eq!(menu.typed, "e");
@@ -3598,6 +3651,7 @@ mod tests {
             | Action::OpenFolder(ours)
             | Action::CopyPath(ours)
             | Action::Delete(ours) => ours.as_str() == id,
+            Action::SetFavorite(ours, _) => ours.as_str() == id,
             Action::OpenWorld { instance, .. } => instance.as_str() == id,
             Action::None | Action::Create | Action::Import => false,
         }

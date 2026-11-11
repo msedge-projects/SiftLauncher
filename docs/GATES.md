@@ -9975,3 +9975,23 @@ visible behaviour.
 
 **Core suite green: 230 + 8 tests.** The menu row itself is the next slice, because its label depends on the instance's state and the menu's
 `label()` currently returns a `&'static str` with no state to read.
+### `Add to favorites` is drawn, toggles, and flips its own label (2026-11-11)
+
+The row the reference builds out of a group membership, implemented as a per-instance flag and verified end to end:
+
+| | before | after |
+|---|---|---|
+| menu rows | Play, View instance, Duplicate, Open folder, Copy path, Edit, Delete (7) | Play, **Add to favorites**, View instance, Duplicate, Open folder, Copy path, Edit, Delete (8) |
+| the row | -- | star glyph, second position, which is the reference's |
+
+**Driven, twice**:
+
+1. Pressing `Add to favorites` produced the toast **"Added Fabric 26.3 to favorites."** -- so the flag reached `instance.cfg`.
+2. Reopening the menu showed **`Remove from favorites`** in the same position -- so the page's own copy flipped, and the label reads it.
+
+**How it is wired**: `State::favorites` is read from each `instance.cfg` when the instance set changes (the same refresh that reads `saves/`), the row's
+press flips that copy and returns `Action::SetFavorite(id, on)`, and the shell writes the flag through `sift_core`'s `Instance::set_favorite`. The page owns
+what is drawn; the shell owns what is on disk.
+
+**`label_with(favorite)` is the one state-dependent label in the menu** -- every other row keeps `label()`, and the test that pins the labels still pins
+them, with the favourite row asserting its default spelling.

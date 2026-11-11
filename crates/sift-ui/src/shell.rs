@@ -2446,6 +2446,7 @@ fn tooltip_below(painter: &egui::Painter, anchor: Rect, label: &str, theme: &cra
             }
             Action::OpenFolder(id) => self.open_instance_folder(&id),
             Action::CopyPath(id) => self.copy_instance_path(&id),
+            Action::SetFavorite(id, on) => self.set_instance_favorite(&id, on),
             Action::Delete(id) => self.delete_instance(&id),
             Action::OpenWorld { instance, world } => {
                 // One world's launch: the engine turns the world into
@@ -2659,6 +2660,25 @@ fn tooltip_below(painter: &egui::Painter, anchor: Rect, label: &str, theme: &cra
     /// this process, and blocking a frame on it would freeze the window until it closed.
     /// Put an instance's folder on the clipboard. The reference's `Copy path` writes the same text the folder
     /// action would open, and says so in a toast -- without a file manager, this is the action that still works.
+    /// Persist an instance's favourite flag. The page has already flipped its own copy for the label, so this only
+    /// writes -- and says so, because a toggle that changes nothing visible and nothing said is a press with no answer.
+    fn set_instance_favorite(&mut self, id: &str, on: bool) {
+        let path = Self::instance_dir(id);
+        match sift_core::instance::Instance::open(&path) {
+            Ok(mut instance) => match instance.set_favorite(on) {
+                Ok(()) => {
+                    self.toast = Some(if on {
+                        format!("Added {} to favorites.", instance.name())
+                    } else {
+                        format!("Removed {} from favorites.", instance.name())
+                    });
+                }
+                Err(error) => self.toast = Some(format!("Could not save the favorite: {error}")),
+            },
+            Err(error) => self.toast = Some(format!("Could not read the instance: {error}")),
+        }
+    }
+
     fn copy_instance_path(&mut self, id: &str) {
         let path = Self::instance_dir(id);
         self.clipboard = Some(path.display().to_string());
