@@ -139,6 +139,30 @@ ones where both clients start from the same files and the same sign-in -- which,
 
 **What a reader should take from this**: a number in the table is the difference between two *programs-in-states*, not between two programs. Where the states
 differ, the number says so in its own cell, and no amount of page-level work will move it.
+## Which figures are measurements of rendering, and which are not (2026-11-11)
+
+A page figure is only about rendering when both clients show the same *content*. Six things set content independently of the code, and each has bitten this
+project at least once:
+
+| dependency | what it changes | screens affected | matched by |
+|---|---|---|---|
+| **theme** | every colour on the screen | all | `compare.py` refuses a brightness mismatch |
+| **news plate** | one rotating sidebar card, worth 829 px at every size | Home, Discover, Skins, Screenshots, Servers | `drive.py` names the plate each run |
+| **search results** | the whole card grid on Discover | Discover | nothing -- needs the same query typed in both |
+| **account state** | the checklist, the sync switch, all signed-in surfaces | every page with the sidebar | nothing -- this build has no sign-in to match with |
+| **stored records** | the server list, the screenshot files, the instances | Servers, Screenshots, Home | nothing -- the reference has no servers and its own file dates |
+| **screenshot/instance dates** | the captions under every tile | Screenshots, Home | nothing -- both clients hold their own files |
+
+**What the guard does check, per capture**: the binary is newer than its sources, both processes are alive, both windows are mapped, both PNGs are the size
+requested, both rails highlight the same index, and (at 1440x900) the reference is showing the news plate the signatures expect. **Every one of those was made to
+fail on purpose before being trusted.**
+
+**What it cannot check** is everything in the last three rows: a data difference behind an identical page. The flag for a reader is the crop -- Discover's
+76 067 and Servers' 94 697 look like ordinary measurements and one of them is a list of records that only one client has.
+
+**So the pages whose figures are rendering measurements at present** are Home, Skins and Settings -- the three with no data dependency beyond the plate --
+and the pages whose figures are *content* measurements are Discover (until the query is matched), Servers (until the reference has servers) and Screenshots
+(until the files match). Recorded rather than quoted.
 ## The screen where the number is worst and the page is most right (2026-11-11)
 
 Skins is the clearest case in this project of the metric and the goal pointing opposite ways.
