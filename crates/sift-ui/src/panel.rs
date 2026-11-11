@@ -1756,7 +1756,10 @@ mod tests {
         assert_eq!(plan.banner, g::WINDOW.1 - BANNER_H, "the banner is pinned to the foot");
         assert_eq!(
             plan.banner - (plan.card + plan.news_rows.height),
-            26.0,
+            // **24, not 26.** The copy's line grew from 16 to 17.5 to match the reference's own 17-18, which makes
+            // the card 2 taller and eats two of the gap below it; that trade is worth 438 pixels on the page and is
+            // recorded here rather than hidden by shrinking the copy box back.
+            24.0,
             // **Still 26**: the card's top rose eight and its height fell eight by the same change, so the gap is
             // where it was. The 18 this briefly asserted was my arithmetic, not the layout's.
             "and the card ends 26 above it"
