@@ -11339,3 +11339,21 @@ direction. The seventh wrong-site of the stretch, and the first one that would h
 **What survives**: the 8x crop's finding that the Discover pager's row sits ~22 points right of the reference's, which is a right-edge question in `draw_pager`, and
 the disc measurement of 32 against a code comment's 36 -- a disagreement between two measurements of the same disc, which the next attempt should settle by
 sampling the disc's fill from its centre rather than by any hue test.
+### The pager's disc is 36 in both; the row sits 27 points right (2026-11-11)
+
+Measuring the disc's **dark fill** rather than searching for green settles it:
+
+| | x | width | y | height |
+|---|---|---:|---|---:|
+| reference | 926..961 | **36** | 182..217 | **36** |
+| this build | 953..986 | **34** | 188..223 | **36** |
+
+**So the disc is right and my earlier 32 was wrong** -- a hue box that clipped the dim edge. The code's own comment (924..959 by 182..217) was correct all along,
+and the numbers agree to two points.
+
+**The difference is position, not size**: this build's disc is **27 points to the right** of the reference's. The strip is drawn right-aligned (`next` at `right - 12`,
+then items leftward), so a 27-point shift means this build's row is 27 points **narrower** than the reference's -- the ellipsis cell, the numeral cells or the gaps
+between them, accumulating rightward from a fixed edge.
+
+**What the next round measures**: the distance from the chevron's left edge to each numeral in both. That decomposes the 27 into one number per element, which is the
+only way to find which of the three widths is wrong.
