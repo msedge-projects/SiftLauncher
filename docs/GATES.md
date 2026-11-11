@@ -10720,3 +10720,22 @@ that does not contain that word -- possibly by composing a unit and a suffix sep
 **Kept, not reverted**: the week tier in `project.rs` is correct for that page on the reference's own evidence (`Intl.RelativeTimeFormat` at `numeric: auto`
 names the largest unit), and it costs the project page at most one string's worth of pixels. It is recorded as unverified for Discover, where it had no
 effect.
+### Discover's date cell fixed: a clock and "Last week" (2026-11-11)
+
+Both differences closed, and both were found by searching for **what the frame draws** rather than for the word on screen:
+
+| | before | after |
+|---|---|---|
+| text | 9 days ago | **Last week** |
+| icon | calendar | **clock** |
+| Discover, 1440x900 | 76 087 | **76 067** |
+
+**The formatter is `shell.rs::relative_age`, not `project.rs::relative`** -- the latter is called only from its own tests, which is why the week tier added
+there last round changed nothing. `relative_age` already capitalised `Today` and `Yesterday`, which is what the reference's `Last week` does, and that was the
+clue: a capitalised string in the capture belongs to the formatter that capitalises.
+
+**The icon is `Glyph::Calendar` in the same card** and is now `Glyph::Clock`: the reference marks a *relative* age with a clock and an absolute date with a
+calendar, so the cell had the right string and the wrong mark.
+
+**Both changes are small and the search that found them was two greps**: one for the string that differs on screen with assertions excluded, one for the
+glyph. That is the countermeasure this stretch arrived at after five wrong-site failures, and this is the first round it worked on the first attempt.

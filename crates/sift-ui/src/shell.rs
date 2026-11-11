@@ -4119,9 +4119,11 @@ fn card(
             label.clone(),
             theme.SECONDARY,
         );
+        // **A clock, not a calendar.** The reference's card marks a *relative* age with a clock glyph and an absolute
+        // date with a calendar; this cell is the former ("Last week"), so the calendar beside it was the wrong mark.
         icons::draw(
             painter,
-            Glyph::Calendar,
+            Glyph::Clock,
             Rect::from_center_size(
                 egui::pos2(right - label.size().x - 8.0 - 10.0, y),
                 Vec2::splat(20.0),
@@ -4312,6 +4314,10 @@ fn relative_age(stamp: &str) -> String {
     match seconds / 86_400 {
         0 => "Today".to_owned(),
         1 => "Yesterday".to_owned(),
+        // **A week is named, not counted.** The reference formats with `Intl.RelativeTimeFormat` at `numeric: "auto"`,
+        // which names the largest unit that fits: its Discover card reads "Last week" for nine days, where this counted
+        // days. Measured on the first result card at 1440x900.
+        7..=13 => "Last week".to_owned(),
         days if days < 30 => format!("{days} days ago"),
         // Rounded, not truncated: 325 days is eleven months to a reader, and the reference says so.
         days if days < 365 => format!("{} months ago", ((days + 15) / 30).max(1)),
