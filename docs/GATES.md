@@ -11178,3 +11178,16 @@ take, or placed after a return, which is the sixth wrong-site of the stretch and
 
 **Committed anyway, and labelled**: the code compiles and the suite is green, so the work is kept; the capture says it does not reach the draw, and the next
 round starts by finding why rather than by writing the block again.
+### The tile block was inside `SIFT_HOME_PROBE` (2026-11-11)
+
+One `eprintln!` in the block answered it: **zero lines in the log**, so the block never ran. Reading the enclosing lines showed why -- the block had been
+inserted **inside the `if std::env::var_os("SIFT_HOME_PROBE").is_some()` guard**, the diagnostic branch that prints the page's rect. The block was
+therefore correct, compiled, and unreachable unless a debugging variable was set.
+
+**So the sixth wrong-site was not a wrong function but a wrong brace**: the anchor line was the card loop, the nearest preceding `if` was the probe's, and the
+insertion went between them instead of after the guard's close. **The line that found it cost thirty seconds and one rebuild**, and it is the check this project
+should run on every new drawing: a log line in the block, read before a capture is taken.
+
+**Reverted rather than re-placed**: the first attempt to move the block put it inside a menu-sizing block, which is a second failed insertion of the same kind. The
+next round inserts it **after the probe's closing brace by line number**, in a patch that changes nothing else, and verifies with the same `eprintln!` before
+any capture.
