@@ -1963,8 +1963,9 @@ fn list(
         painter.text(
             egui::pos2(card.left() + 10.0, tile.bottom() + 18.0),
             Align2::LEFT_TOP,
+            // `text-base font-semibold` on the card's title (`InstanceItem.vue:249`): 16 points, not the 15 this drew.
             &instance.name,
-            fonts::semibold(15.0),
+            fonts::semibold(16.0),
             theme.CONTRAST,
         );
         let loader = if instance.version.is_empty() {
@@ -1976,10 +1977,11 @@ fn list(
             // **38, not 26: the meta line overlapped the title.** The name is 15-point semibold at `tile.bottom() + 18`, and this
             // was drawn eight points below its top -- inside the name's own line box, so the two strings sat on top of each other.
             // At 1:1 it read as slightly heavy text; at 4x it was unmistakable, and a page count of 28 521 could not see it.
-            egui::pos2(card.left() + 10.0, tile.bottom() + 40.0),
+            egui::pos2(card.left() + 10.0, tile.bottom() + 41.0),
             Align2::LEFT_TOP,
+            // `text-sm text-secondary` on the meta line (`InstanceItem.vue:260`): 14 points, not 13.
             loader,
-            fonts::body(13.0),
+            fonts::body(14.0),
             theme.SECONDARY,
         );
 

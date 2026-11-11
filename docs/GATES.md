@@ -10119,3 +10119,27 @@ not placement, and it is now the only difference in that line.
 
 **So "within two rows" became a number, and the number was a defect.** The two rows of slack were the offset, and closing them moved the page by 42 pixels
 -- smaller than the estimate written before the measurement, which is the usual order of things here.
+### The card's type was a point small: 16/14 now, and both bands match (2026-11-11)
+
+The remaining difference in the card's text was ink height -- 11 rows against the reference's 12 for the title, 9 against 11 for the meta. The reference's own
+classes say why (`InstanceItem.vue:249, 260`): `text-base font-semibold` for the title and `text-sm text-secondary` for the meta, which are **16 and 14
+points**. This build drew 15 and 13.
+
+| | before | after | reference |
+|---|---|---|---|
+| title band | 518..528 (11 rows) | **518..529 (12)** | 518..529 (12) |
+| meta band | 539..547 (9) | **541..551 (11)** | 541..551 (11) |
+
+**Both bands are now identical to the reference**, and the meta's offset needed one more point (40 -> 41) once its line box grew.
+
+**And the page got worse**:
+
+| | total, 1440x900 |
+|---|---:|
+| 15/13 points, meta at 38 | 28 444 |
+| 15/13 points, meta at 40 | 28 402 |
+| **16/14 points, meta at 41** | **28 454** |
+
+**Matching the reference's type raised the count by 52 pixels.** Larger glyphs have more edges, and every edge is a place this rasteriser and the browser
+disagree. The element is now exactly right and the number says it got worse -- the fourth clear instance of counts not being monotone in fidelity, and the
+cleanest: two font sizes chosen to match the reference, verified by ink bands, and a page figure that prefers the wrong ones.
