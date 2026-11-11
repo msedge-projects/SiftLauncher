@@ -10206,3 +10206,24 @@ mean is now the recorded figure.
 
 **What it costs the page**: text that covers more area also differs more, which is the same mechanism that made matching the reference's font sizes *raise* the
 count. Both findings point the same way: this renderer's glyphs are heavier than the browser's, and no colour or size change fixes coverage.
+### The profile's two classes, separated: one real geometry defect, the rest is coverage (2026-11-11)
+
+Pairing ink bands by index in both captures was meant to tell fixable geometry from the renderer's coverage. It did -- but only for the content column, because
+the sidebar's band counts differ (20 against 21) and every pair after the first divergence compares different elements: the -49, -80 and -203 deltas are
+misalignment, not layout.
+
+**The sidebar's extra band is the coverage finding again**: our completed checklist row's ink crosses the 110 threshold and the reference's does not, so this
+build reports a band the reference has no matching band for. That is the same 244.4-against-212.9 mean measured two rounds ago, and it is not a structural
+difference.
+
+**The content column has 8 bands on both sides, so its pairs are real**, and two of them disagree:
+
+| band | reference | this build | reading |
+|---|---|---|---|
+| 2 | y161..171 (11 rows) | y158..166 (**9 rows**) | the `Jump in` strip's meta line: a point small, and 3 rows high as a consequence |
+| 4 | y260..273 (14 rows) | y262..270 (9 rows) | the strip's title: also short by five rows |
+
+**Cropped and read at 2x**, the strip's meta line is visibly smaller than the reference's -- the same class of defect the card's title had, in a different element.
+
+**So the method works when the band counts match**, and the fix is to pair by *position* rather than by index when they do not. Recorded here rather than rebuilt
+this round: the three bands that matter are named, with their numbers.
