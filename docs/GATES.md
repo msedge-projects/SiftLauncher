@@ -10793,3 +10793,21 @@ measurement of rendering**, and Servers joins Discover's search results in the l
 
 **What the guard cannot see** is a data difference behind the same page. That is the sixth content dependency and the first that is not a state of the
 application but a state of its stored records.
+### Five sizes on Home: every one better than the last table (2026-11-11)
+
+Home is one of the three pages whose figure is a rendering measurement rather than a content one, and it has taken most of this stretch's fixes -- the card's
+type, the strip's meta line, the hosting banner's pitch, the news copy's size and anchor.
+
+| size | now | last table | change |
+|---|---:|---:|---:|
+| 1280x720 | **24 704** | 25 077 | -373 |
+| 1366x768 | **33 007** | 33 381 | -374 |
+| 1440x900 | **27 550** | 28 368 | **-818** |
+| 1600x900 | **41 752** | 42 567 | -815 |
+| 1920x1080 | **54 377** | 55 028 | -651 |
+
+**Every size improved, and the pair of sizes that share a height (1440 and 1600) improved by nearly the same amount** -- 818 and 815 -- which is what a fix to a
+fixed-size element should do: the card's type, the strip's meta and the banner's headline do not change with the window, so their gains do not either.
+
+**The compressor is the frame itself**: 27 550 pixels differ at 1440x900 in a frame of 1 296 000, which is 2.1 per cent, and the sidebar's checklist and the
+news card account for 13 292 of it. Home is the best-measured page in the project and still 26 000 pixels short of the 1 per cent bar.
