@@ -10348,3 +10348,20 @@ is now "find the call that draws Home's checklist", not "guess another size", an
 
 **The lesson is the one the last round stated and this round applied**: when a change meant to move geometry does not move the page total by a pixel, the
 change did not reach the pixels. **The total is the cheap proof of that**, and it should be checked before the band, every time.
+### Home's checklist is drawn by neither of the two functions its name suggests (2026-03-11)
+
+Five candidates were eliminated by reading, not by guessing:
+
+| candidate | why it is not the one |
+|---|---|
+| `panel.rs:533` (the checklist row's label) | 13, 14 and 18 points all render 12 rows and leave the page at 28 368 |
+| `panel::draw` (`shell.rs:2952`) | it is **Discover's** sidebar -- categories and facets |
+| `panel.rs:486` | the *project* page's rows, laid out off `PROJECT_STEPS_TOP` |
+| `shell.rs:896` (`circle_stroke`) | a card with a 22-point mark, not the checklist's 7-point ring |
+| `shell.rs`'s `body(12.0)` at 373/834 | a dialog's helper text and a label, not the rows |
+
+**So the row is drawn somewhere not yet read**, and the way to find it is decisive rather than another read: change **every** `body(13.0)` in the sidebar's
+module to 16, rebuild once, and see whether the band moves. If it does, bisect; if it does not, the rows use a size the grep has not shown (a constant, or a
+call through `fonts::` with a expression argument).
+
+**Recorded rather than attempted**, because a bisect needs a build-and-capture cycle per step and this round has one left at most.
