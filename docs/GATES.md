@@ -10654,3 +10654,27 @@ sweep is what makes that a measurement rather than a preference -- 137 against 1
 
 **So the page ends at 114 628**, which is 16 486 better than it started this stretch (131 114 with flat blocks) and 35 868 better than its worst (150 496 with the
 right assets in the wrong places).
+### Discover, measured whole for the first time: two differences, both named (2026-11-11)
+
+First it had to be made a valid pair at all: the rail click that put this build on Discover put the reference on **Home**, and the resulting 122 715 figure
+compared two different pages. The reference's Discover row is at **y 106**, not the 62 its Home row sits at. With both on Discover and the guard certifying
+the pair:
+
+| | value |
+|---|---|
+| Discover, 1440x900 | **76 319** |
+| content | 58 882 |
+| sidebar | 14 572 |
+
+**And the two pages agree on almost everything a reader would check**: the Modpacks/Mods/Resource Packs/Data Packs/Shaders/Servers tabs, `Search modpacks...`,
+`Sort by: Relevance`, `View: 20`, the pagination `1 2 ... 961`, the first pack `Fabulously Optimized` with its `FO` badge, the summary, the `Client Lightweight
+Multiplayer Optimization Fabric` chips, `19.2M`, `5,072` and the `+ Install` button -- all present and in the same places.
+
+**Two differences, both visible in the crop and neither a mystery**:
+
+1. **The relative date's vocabulary.** The reference reads **`Last week`** where this build reads **`9 days ago`**. Both describe the same timestamp, but the
+   reference rounds to words (`Last week`, and presumably `Last month`) where this build counts days.
+2. **The card's divider.** The reference rules a line under each card; this build draws none, which is also why its first card ends higher.
+
+**So Discover is much closer than its figure suggested** -- 76 319 differing pixels over a page where a reader would struggle to name a structural difference --
+and the two things that are actually wrong are a string and a rule.
