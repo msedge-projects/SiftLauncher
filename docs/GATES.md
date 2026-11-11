@@ -10098,3 +10098,24 @@ expected and correctly reported `None`, which is how the mistake in the test its
 
 **So the ambiguity that has been explained in prose for two rounds is now a line of output**, and a table taken on the wrong plate can no longer be
 recorded without its run saying so.
+### The card's meta line sat two points high: measured at the band, fixed (2026-11-11)
+
+Rows 130-132 had been left OPEN as "within two rows", which is a guess dressed as a measurement. Reading the ink bands of the card's two text lines, in
+both clients at 1440x900:
+
+| band | reference | before | after |
+|---|---|---|---|
+| title | 518..529 | **518..528** | 518..528 |
+| meta | **541..551** | 539..547 | **541..549** |
+
+**The title's top was already identical** at 518. **The meta line was two points high**, so its offset went from 38 to 40 -- the same two points.
+
+| | before | after |
+|---|---:|---:|
+| Home, 1440x900 | 28 444 | **28 366** |
+
+**And what remains is not position**: the reference's meta band is 11 rows tall and this build's is 9, with both starting at 541. That is glyph weight or size,
+not placement, and it is now the only difference in that line.
+
+**So "within two rows" became a number, and the number was a defect.** The two rows of slack were the offset, and closing them moved the page by 78 pixels
+-- small, but it is the difference between a matched element and a nearly-matched one.
