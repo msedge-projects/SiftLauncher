@@ -10918,3 +10918,17 @@ route to an action the reference offers once, and removing them would match the 
 
 **Recorded, not removed**: deleting two working buttons is a page-level change that shifts every figure below them, and it should be done with the capture in
 hand for the after-state -- which is one round's work, not this one's.
+### Withdrawn: the reference does have the create buttons, and my 1:1 capture was outside the guard (2026-11-11)
+
+Round 530 concluded from a 1:1 crop that the reference's Home has **no** `+ New group` / `+ New instance` buttons, and this round removed them from this
+build. Both were wrong.
+
+**The drive-certified pair at 1440x900 shows the reference's row as**: a narrower field holding `fab`, a clear `x`, then `+ New group` and `+ New instance`
+-- the layout this build already had. The earlier crop that showed a full-width field and no buttons was **captured outside `drive.py`**, after a rail click
+and without the size check, so it was a different window state -- most likely a width at which the reference drops the buttons.
+
+**So the removal is reverted**, and the buttons stay. The record now carries two contradictory captures of the same row, and the one taken through the guard
+is the one that counts: **a 1:1 crop is only evidence if it went through the same checks as a pair.**
+
+**What survives from the two rounds**: the toolbar's row is genuinely sensitive to window width in the reference (full-width field with no buttons in one state,
+narrow field with buttons in another), which is a responsive behaviour this build does not have -- and that is a real finding, just not the one I recorded.
