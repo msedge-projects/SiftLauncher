@@ -694,7 +694,7 @@ pub struct Skin {
 /// **The order the grid draws them in**, which is not alphabetical. Measured from the reference's own grid at 1440x900:
 /// its first row is Steve, Alex, Ari, Noor. The catalogue in `default_skins.rs` is alphabetical, so the display order comes
 /// from the app, not from the file -- this is that order, read off the capture.
-pub const GRID_ORDER: [&str; 8] = ["Steve", "Alex", "Ari", "Noor", "Kai", "Efe", "Makena", "Sunny"];
+pub const GRID_ORDER: [&str; 8] = ["Steve", "Alex", "Ari", "Efe", "Kai", "Makena", "Noor", "Sunny"];
 
 pub const SKINS: [Skin; 8] = [
     Skin {

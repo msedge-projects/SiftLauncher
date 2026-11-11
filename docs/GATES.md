@@ -10619,3 +10619,22 @@ different skin, so the order list is right for three of eight and the remainder 
 
 **The lesson is the one this project keeps paying for**: `skin_texture` was correct, the assets were correct, the order was correct, and the page did not
 use any of them. **A change that reaches no pixels is not a wrong change -- it is a change to something the frame does not call.**
+### Skins: both rows in the reference's order, and the page's best figure (2026-11-11)
+
+The grid's order, read row by row from the capture -- row one `Steve, Alex, Ari, Efe`, row two `Kai, Makena, Noor, Sunny` -- and set as `GRID_ORDER`:
+
+| | before | after |
+|---|---:|---:|
+| Skins page, 1440x900 | 150 496 | **116 420** |
+| first row | Alex, Ari, Noor, Sunny | **Steve, Alex, Ari, Efe** |
+
+**116 420 is the best figure this page has ever scored** -- better than the 131 114 it had while showing eight flat blocks, and better by 34 076 than the
+150 496 it scored with the right assets in the wrong places. The three changes that got here were: the right eight assets fetched by hash, the grid drawing
+`skin_texture` instead of the fallback atlases, and the reference's own order.
+
+**The composed sheet was what made the order legible**: with all eight skins rendered offline side by side, the reference's fourth cell -- purple hair -- was
+identifiable as **Efe**, not Noor, and the row-two cells as Kai, Makena, Noor and Sunny. Reading a grid by eye against a labelled strip is far more reliable
+than naming a skin from one cell.
+
+**What remains in the cells**: this build's figures are slightly wider than the reference's within the same card, so the front view is being scaled a little
+differently -- the next measurement on this page, and a smaller one than anything above it.
