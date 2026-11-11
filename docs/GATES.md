@@ -10888,3 +10888,33 @@ and the 1:1 crop is the evidence, so the note is the suspect -- it may have been
 
 **Recorded rather than corrected in code**, because moving our buttons off that row and widening the field is a layout change that every one of this page's
 figures depends on, and it needs the reference's second row captured first to see where the buttons actually went.
+### Home's toolbar is two rows in the reference, and has no create buttons (2026-11-11)
+
+Captured the reference's content column top to bottom at 1:1, with the field unfocused:
+
+```
+y 200..240   Library
+y 240..275   the search field, spanning the whole column 88..1116
+y 290..330   the filter chips: Last played, Custom group, |, filter, + Add filter
+y 330..       the instance card
+```
+
+**There are no `+ New group` or `+ New instance` buttons anywhere on the page.**
+
+| | reference | this build |
+|---|---|---|
+| the search field | the whole column | 88..755 |
+| `+ New group`, `+ New instance` | **absent** | 928..1113 on the search row |
+| clear button in the field | absent | present |
+
+**Which explains the largest single band of Home's residual**: y 300..319 holds **2 896 differing pixels, 10 per cent of the page's total**, and that is exactly where
+this build draws two buttons the reference does not have.
+
+**And it corrects a measurement this project has carried for hundreds of rounds** -- that the reference's search ends at 806 with its buttons at 851..1113. That
+came from a row above the labels and cannot be reproduced: the field reaches 1 116 and there is nothing beside it.
+
+**Where the reference creates instances**: its rail carries a `+` beneath the five page icons, which this build also draws. So the toolbar buttons are a second
+route to an action the reference offers once, and removing them would match the page and lose nothing.
+
+**Recorded, not removed**: deleting two working buttons is a page-level change that shifts every figure below them, and it should be done with the capture in
+hand for the after-state -- which is one round's work, not this one's.
