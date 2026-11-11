@@ -9861,3 +9861,23 @@ owned by the project account rather than the user's.
 **So every write to a freshly created repository under the personal account is rejected server-side while the same content pushes cleanly to the project
 account** -- a property of the account or its state, not of this repository. Two loose ends: an empty `MSedgeMC/SiftLauncher-seed` remains (the token lacks the
 `delete_repo` scope to remove it), and the transfer needs to be done from the web UI if the personal account is where it must live.
+### The repository is public at msedge-projects/SiftLauncher, 990 commits (2026-11-11)
+
+At the user's direction the project account's repository is **PUBLIC** (it had been made private during the attempt to move it to the personal account):
+
+**https://github.com/msedge-projects/SiftLauncher**
+
+| | value |
+|---|---|
+| visibility | **PUBLIC** |
+| commits, local | **990** |
+| commits, remote (fetched) | **990** |
+| HEAD, both | `b2f4e21` |
+| unpushed | 0 |
+
+**Reconciled rather than assumed**: the API's paging header suggested 1 909 commits, which disagreed with the local count; a `git fetch` then `rev-list --count`
+gives **990 on both sides at the same SHA**, and the API's default-branch head is that same commit. The paging figure was an artefact of counting with `per_page=1`
+across a repository whose refs include more than the default branch.
+
+**So the record is public, current, and identical on both sides** -- the state the objective asks for ('every slice committed'), and the first time in this session
+that has been true of the remote.
