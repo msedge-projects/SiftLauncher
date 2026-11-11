@@ -11099,3 +11099,18 @@ the six -- one drive, one crop, one number.
 
 **So the record carries the question rather than an answer**: `fonts::heading()` is a helper that ships a face one step heavier than the one page measured so
 far, and six call sites inherit it unmeasured.
+### Our Edit modal's title is the 800 face; the reference's needs the kebab, not a right-click (2026-11-11)
+
+Drove both clients toward the Edit modal to measure `shell.rs:207`'s title against the reference's.
+
+**This build's path works in two presses**: a right-click on the instance card opens the eight-item menu (Play, Remove from favourites, View instance,
+Duplicate instance, Open folder, Copy path, Edit, Delete) and `Edit` opens the modal, whose title `Edit instance` is visibly the **heavy 800 face** -- the same
+one `heading()` ships and the same one the `Library` heading wore until this stretch.
+
+**The reference does not open a menu on a right-click.** The same press landed on its card and produced no menu at all; its Edit action is behind the kebab
+beside the card, which this build reaches differently. So the modal comparison needs the kebab driven, not the card.
+
+**And the press surfaced something else**: the reference's Home draws a **`+ New instance` plate** in its empty area below the card -- a second create route
+beside the one in the toolbar, and the answer to where a reader with no instances starts.
+
+**Recorded, not fixed**: the modal's face is measured only on this side, and one side is not a comparison.
