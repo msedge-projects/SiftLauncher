@@ -10112,10 +10112,10 @@ both clients at 1440x900:
 
 | | before | after |
 |---|---:|---:|
-| Home, 1440x900 | 28 444 | **28 366** |
+| Home, 1440x900 | 28 444 | **28 402** |
 
 **And what remains is not position**: the reference's meta band is 11 rows tall and this build's is 9, with both starting at 541. That is glyph weight or size,
 not placement, and it is now the only difference in that line.
 
-**So "within two rows" became a number, and the number was a defect.** The two rows of slack were the offset, and closing them moved the page by 78 pixels
--- small, but it is the difference between a matched element and a nearly-matched one.
+**So "within two rows" became a number, and the number was a defect.** The two rows of slack were the offset, and closing them moved the page by 42 pixels
+-- smaller than the estimate written before the measurement, which is the usual order of things here.
