@@ -139,6 +139,25 @@ ones where both clients start from the same files and the same sign-in -- which,
 
 **What a reader should take from this**: a number in the table is the difference between two *programs-in-states*, not between two programs. Where the states
 differ, the number says so in its own cell, and no amount of page-level work will move it.
+## The screen where the number is worst and the page is most right (2026-11-11)
+
+Skins is the clearest case in this project of the metric and the goal pointing opposite ways.
+
+| | Skins page, 1440x900 | the grid |
+|---|---:|---|
+| before the asset fix | **131 114** | eight flat colour blocks -- the wrong forty-five assets, none of them the page's eight |
+| after | **150 988** | eight real skin textures, fetched from Mojang by hash and composed the way the page composes them |
+
+**The page improved by every measure that matters to a reader and worsened by 19 874 pixels**, because detailed artwork disagrees with a differently-rendered
+reference in almost every pixel where flat blocks disagreed in few. Nothing about the capture, the guard or the comparison is wrong: the figure is an honest
+count of differing pixels, and it prefers the wrong page.
+
+**This is the fifth instance of counts not being monotone in fidelity** -- after the Settings plate that scored better at dy +4 than dy 0, the font match that
+raised Home by 52, the card's text overlap that cost nothing to fix, and the strip's meta line that lowered it by 66. Skins is the largest and cleanest: eight
+images changed from wrong to right, and the number moved the wrong way by twenty thousand.
+
+**What this means for the objective's 99 per cent clause**: on a page whose subject is artwork, the clause cannot be met by making the artwork correct. It can
+only be met by making this renderer produce the same pixels as a browser, which no amount of asset work changes.
 ## Why the type never quite matches, in one place (2026-11-11)
 
 Four hunts, four rounds, one cause. Every remaining text discrepancy on Home is a **font-metric difference**: the faces available to this build ink fewer rows
