@@ -20,6 +20,18 @@ TITLES = {"ref": "Modrinth App", "ours": "Sift Launcher"}
 DISPLAYS = {"ref": ":101", "ours": ":100"}
 CAPTURE_DIR = "/scratch/.scratch/cap"
 PROBE = "import sys; from PIL import Image; im = Image.open(sys.argv[1]); print(im.size[0], im.size[1])"
+PLATE_BOX = (1150, 300, 1430, 640)  # the news card inside the sidebar, at 1440x900
+PLATE_SIGNATURES = {0: ".scratch/cap/plate0.png", 1: ".scratch/cap/plate1.png"}
+PLATE_CHECK = ("import sys", "from PIL import Image",
+                "a = Image.open(sys.argv[1]).convert('RGB').crop(" + str(PLATE_BOX) + ")",
+                "b = Image.open(sys.argv[2]).convert('RGB')",
+                "n = 0",
+                "for y in range(b.size[1]):",
+                "    for x in range(b.size[0]):",
+                "        p, q = a.getpixel((x, y)), b.getpixel((x, y))",
+                "        if max(abs(p[i] - q[i]) for i in range(3)) > 40:",
+                "            n += 1",
+                "print(n)")
 
 
 def run(cmd):
@@ -53,12 +65,45 @@ def host_path(container_path):
     return container_path
 
 
+def news_plate(ref_path):
+    """Which of the two news plates the reference is showing, or None when it cannot be told.
+
+    The carousel rotates every ten seconds, so a table's figures depend on a state that changes while it is
+    being measured. Signatures are this build's own sidebar at each pinned plate; the closer one wins.
+    """
+    scores = {}
+    for index, signature in PLATE_SIGNATURES.items():
+        if not __import__("os").path.exists(signature):
+            return None
+        probe = subprocess.run(["python3", "-c", "\n".join(PLATE_CHECK), ref_path, signature],
+                               capture_output=True, text=True)
+        if probe.returncode != 0:
+            return None
+        try:
+            scores[index] = int(probe.stdout.strip())
+        except ValueError:
+            return None
+    best = min(scores, key=lambda key: scores[key])
+    other = max(scores, key=lambda key: scores[key])
+    if scores[best] * 2 > scores[other]:
+        return None
+    return best
+
+
 def selftest():
     missing = host_path("/scratch/.scratch/cap/definitely-not-here-481.png")
     if png_size(missing) is not None:
         print("SELFTEST FAILED: the probe returned a size for a file that does not exist")
         return 1
     print("selftest ok: a missing file reads as None, so an unwritten capture cannot pass")
+    # The plate check must tell the two plates apart, not merely answer something.
+    for index in (0, 1):
+        full = '.scratch/cap/pin' + str(index) + '.png'
+        told = news_plate(full)
+        if told != index:
+            print("SELFTEST FAILED: a capture of plate " + str(index) + " was read as " + str(told))
+            return 1
+    print("selftest ok: each plate signature reads back as its own index")
     return 0
 
 
@@ -78,6 +123,7 @@ def main():
         run("DISPLAY=" + display + " xdotool windowsize " + wid + " " + str(want[0]) + " " + str(want[1]))
     time.sleep(3.0)
 
+    captured = {}
     for role, display in DISPLAYS.items():
         wid = window(display, TITLES[role])
         if not wid:
@@ -92,7 +138,11 @@ def main():
         if got != want:
             print(role + ": wrote " + path + " but it is " + str(got) + ", wanted " + str(want) + " -- REFUSED")
             return 3
-        print(role + ": " + host_path(path) + " (" + str(got[0]) + "x" + str(got[1]) + ")")
+        captured[role] = host_path(path)
+        print(role + ": " + captured[role] + " (" + str(got[0]) + "x" + str(got[1]) + ")")
+    if want == (1440, 900):
+        plate = news_plate(captured["ref"])
+        print("reference news plate: " + (str(plate) if plate is not None else "undetermined"))
     print("PAIR OK")
     return 0
 

@@ -10072,3 +10072,29 @@ The carousel has **two** plates, so the mismatch was binary. Each plate was pinn
 
 **So the ambiguity is now measured rather than explained**: 829 pixels, binary, and removable in one environment variable. Every future figure should state
 which plate it was taken on, and `SIFT_NEWS_SLIDE=1` is the value that matches the reference as it currently stands.
+### `drive.py` names the news plate on every run, and proves it can tell them apart (2026-11-11)
+
+The carousel rotates every ten seconds in the reference, so any figure is only comparable while both clients show the same plate. Rather than
+remembering which plate a session was on, the guard now reports it:
+
+```
+$ python3 tools/parity/drive.py --size 1440x900 --tag platecheck3
+ref: .scratch/cap/platecheck3-ref.png (1440x900)
+ours: .scratch/cap/platecheck3-ours.png (1440x900)
+reference news plate: 1
+PAIR OK
+```
+
+**And the check is tested, not assumed.** `--selftest` now proves both properties:
+
+```
+selftest ok: a missing file reads as None, so an unwritten capture cannot pass
+selftest ok: each plate signature reads back as its own index
+```
+
+The second is the one that matters: a check that answers *something* is worthless -- it must answer **0 for a plate-0 capture and 1 for a plate-1
+capture**, which is exactly what it does when handed the two full captures. The first attempt at this selftest fed a crop where a full frame was
+expected and correctly reported `None`, which is how the mistake in the test itself was caught.
+
+**So the ambiguity that has been explained in prose for two rounds is now a line of output**, and a table taken on the wrong plate can no longer be
+recorded without its run saying so.
