@@ -529,8 +529,10 @@ pub fn project_getting_started_card(
         painter.text(
             egui::pos2(row.left() + 36.0, row.center().y),
             Align2::LEFT_CENTER,
+            // **14, not 13.** Paired by position rather than index, the checklist's clear rows measure 14 rows of ink in the
+            // reference and 12 here; the completed row only looked matched because both sides are dimmed by the strike.
             *label,
-            fonts::body(13.0),
+            fonts::body(14.0),
             ink,
         );
         if ticked {

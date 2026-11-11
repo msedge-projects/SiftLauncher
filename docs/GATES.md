@@ -10307,3 +10307,24 @@ matches the reference's 16px ink, so their type is not the same shape as ours. C
 wide for its field -- the element would match a profile and stop matching its own box.
 
 **So the band stays 3 rows short**, recorded with the three sizes measured rather than a fourth guess.
+### The sidebar paired by position; the checklist's 14 changed nothing (2026-11-11)
+
+Index pairing broke on the sidebar because its band counts differ (24 reference, 25 here). Pairing **by position within six rows** instead gives a usable
+account, and the differences are legible:
+
+| band | reference | this build | reading |
+|---|---|---|---|
+| 189..202 | 14 rows | 12 rows | checklist row, clear: a point small |
+| 237..250 | 14 rows | 12 rows | the same |
+| 566..634 | 11, 11, 10, 15 rows | 9, 9, 9, 19 | the news card's title and copy: short, with one line taller |
+| 671..706 | 7, 16 rows | 9, 20 | the news copy: taller |
+| 720..732 | 13 rows | 7 rows | short by six |
+
+**And the checklist's clear rows were changed from 13 to 14 points, rebuilt, and re-measured: nothing moved.** The source has `fonts::body(14.0)`, the
+binary is from 06:35, a live process is running, and both bands are still 12 rows with the page total unchanged at 28 368.
+
+**So one of two things is true**, and they need different rounds: either this font rasterises 13 and 14 identically (in which case the checklist rows are a
+coverage difference that no size will fix), or those rows are not drawn by the call that was edited (in which case the size is still wrong somewhere else).
+**The test that separates them is a deliberately oversized value** -- 16 or 18 -- and seeing whether the band moves at all.
+
+**The 14 is kept**: it is closer to the reference's intent and demonstrably harmless, but it is recorded as **unverified**, not as a fix.
