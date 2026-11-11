@@ -10700,3 +10700,23 @@ page: the rail's brand row is at y 63 on the reference and y 114 here -- REFUSED
 
 **So the guard now answers five questions before a pair exists**: is the binary current, is the process alive, is its window mapped, is the file the size it
 claims, and are both clients on the same page. Three of the five were added because a real measurement went wrong without them.
+### Discover's date cell: a clock and a week, against a calendar and nine days (2026-11-11)
+
+Cropped at the card's foot, the difference is two things rather than one:
+
+| | icon | text |
+|---|---|---|
+| reference | **clock** | **Last week** |
+| this build | **calendar** | 9 days ago |
+
+**And the week tier added to `project.rs::relative` did not change it.** The page moved by 70 pixels (76 319 -> 76 249) and the string is byte-identical, so
+Discover's card is formatted by something else -- the same wrong-site failure as the checklist's label and the search placeholder, and now the fifth of this
+stretch.
+
+**So the two fixes are**: a clock glyph where this draws a calendar, and the week tier in whichever function Discover actually calls. Neither is hard; both
+need the call site found first, and `grep`ping for the string "ago" found only the project page's function, so the Discover path formats its date somewhere
+that does not contain that word -- possibly by composing a unit and a suffix separately.
+
+**Kept, not reverted**: the week tier in `project.rs` is correct for that page on the reference's own evidence (`Intl.RelativeTimeFormat` at `numeric: auto`
+names the largest unit), and it costs the project page at most one string's worth of pixels. It is recorded as unverified for Discover, where it had no
+effect.
