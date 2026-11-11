@@ -9793,3 +9793,26 @@ opens one) would print the username. A click on the avatar opened nothing in thi
 
 **Recorded, not fixed.** The matrix has a row for the checklist's four states; this adds the case that matters most -- signed in, and the row still asks you to sign
 in.
+### Push needs a credential in this environment, not a browser session (2026-11-11)
+
+The user is signed in to GitHub; the push still fails, because a browser session is not a credential any process here can read:
+
+```
+$ git push origin master
+fatal: could not read Username for 'https://github.com': No such device or address
+```
+
+What was checked, and all of it absent:
+
+| path | state |
+|---|---|
+| SSH keys (`~/.ssh/*.pub`) | none |
+| `GITHUB_TOKEN` / `GH_TOKEN` in the environment | unset |
+| `~/.git-credentials` | absent |
+| `git config credential.helper` | unset |
+| `gh auth status` | **not logged into any host** (the binary is present) |
+
+**So the repository is complete and unpushed -- 937 commits on `master` against `origin` https://github.com/msedge-projects/SiftLauncher.git --** and the one
+thing missing is a credential: either `gh auth login` (device flow) in this environment, or a token exported for the session.
+
+**The work is not blocked by it.** The commits are the record; the push is a transport detail that will take one command once a credential exists.
