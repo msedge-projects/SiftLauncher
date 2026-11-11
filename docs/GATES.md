@@ -11080,3 +11080,22 @@ heavy.
 
 **This was found by trying to close a matrix row about the `--font-weight-bold` token**, failing to decide it, and measuring the heading instead. The row is
 still OPEN; the heading is 136 ink pixels lighter and three points narrower.
+### Five more sites still use the 800 face, and none is measured (2026-11-11)
+
+The `Library` heading's fix raises the same question everywhere `fonts::heading()` is called -- it ships **inter-800**, and one measured use was a step too heavy:
+
+| site | what it draws | measured? |
+|---|---|---|
+| `pages/servers.rs:1542` | a section heading | no -- the Servers page has no comparable data |
+| `pages/servers.rs:1696` | the page heading | no -- same |
+| `pages/servers.rs:2096, 2104` | the promo card's title | no -- same |
+| `pages/about.rs:228` | the About page's heading | no -- not reachable from the rail |
+| `shell.rs:207` | the **Edit instance** modal's title | no -- the capture exists (`edit-drive1.png`) but is not attributed |
+| `shell.rs:363` | the **Install / Join** modal's title | no |
+
+**Left unchanged deliberately.** The evidence for 600 is one heading on one page; applying it to a modal title in a smaller size is exactly the extrapolation that has
+produced five wrong-site fixes and two withdrawn findings in this stretch. Each needs its own capture and its own ink count, and the modal pair is the cheapest of
+the six -- one drive, one crop, one number.
+
+**So the record carries the question rather than an answer**: `fonts::heading()` is a helper that ships a face one step heavier than the one page measured so
+far, and six call sites inherit it unmeasured.
