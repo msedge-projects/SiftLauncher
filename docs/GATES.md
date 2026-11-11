@@ -10048,3 +10048,27 @@ showing. That is the same 20 542-pixel article effect documented in `FINISHED.md
 
 **The rail is 397 at every size**, which is the one column that does not depend on content -- and the best evidence in the table that the frame's fixed parts
 are close.
+### Pinning the news plate removes the ambiguity, and the figures come back (2026-11-11)
+
+The carousel has **two** plates, so the mismatch was binary. Each plate was pinned in turn and compared against the reference's sidebar at 1440x900:
+
+| our pinned plate | differing in the sidebar (x 1150..1430, y 300..640) |
+|---|---:|
+| 0 | 44 482 of 95 200 |
+| **1** | **8 074 of 95 200** |
+
+**So the reference is showing plate 1**, and with this build pinned to the same one every size re-measures as:
+
+| size | matched plate | mismatched (last round) | difference |
+|---|---:|---:|---:|
+| 1280x720 | **25 109** | 25 938 | +829 |
+| 1366x768 | **33 346** | 34 174 | +828 |
+| 1440x900 | **28 444** | 29 274 | +830 |
+| 1600x900 | **42 611** | 43 440 | +829 |
+| 1920x1080 | **54 939** | 55 768 | +829 |
+
+**The mismatch is a constant 829 pixels at every size**, which is what a fixed-size sidebar plate should cost -- and it confirms the earlier table
+(25 099 / 33 456 / 28 467 / 42 635 / 55 027) was taken with matched plates: the new figures sit within 100 of it at every size.
+
+**So the ambiguity is now measured rather than explained**: 829 pixels, binary, and removable in one environment variable. Every future figure should state
+which plate it was taken on, and `SIFT_NEWS_SLIDE=1` is the value that matches the reference as it currently stands.
