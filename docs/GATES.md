@@ -11217,3 +11217,13 @@ below the card's top. One offset, one build, and the element now measures within
 **So the grid has its second cell**, drawn as the reference draws it -- a 177x58 outline on the raised fill, plus and `New instance`, at the cell the arithmetic
 of card-width-plus-gap puts at x 299. This is the first **added control** of the stretch rather than a corrected drawing, and the first element whose geometry was
 known before it was written: rect, fill, edge and contents were all measured in the round before the code.
+### The create tile is a control, not a picture of one (2026-11-11)
+
+Wired its press to the same `state.open_create` the toolbar's button sets, and drove it: a press at the tile's measured centre (**388, 407**) opens the create
+dialog -- `Already know what you want to play?`, the search field, `Choose instance type`, `Custom setup` and `Start from a mod or modpack`.
+
+**So the grid's second cell is now complete**: the right rect to within a point, the right fill and edge, the right words, and a press that does what the
+reference's does. It is the first element this stretch has added end to end -- measured, drawn, placed and driven -- rather than corrected after the fact.
+
+**What it is not**: a keyboard target. The tile takes a pointer press and has no focus ring, and the reference's may; that is one drive with Tab, and it belongs
+with the other interaction states rather than here.

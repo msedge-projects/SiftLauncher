@@ -1892,6 +1892,14 @@ fn list(
             let (cell, _, _) = row_targets_at(rect, next, 0.0);
             // **+50 down.** The reference's tile top is y 379 with its card's top at 329; this build drew it at 320, the cell's own top.
             let tile = Rect::from_min_size(cell.min + egui::vec2(0.0, 50.0), egui::vec2(177.0, 58.0));
+            // **The press**, so the tile is a control and not a picture of one: it sets the same `open_create` the toolbar's
+            // button does, which is the dialog the reference opens from this plate.
+            if ui
+                .interact(tile, egui::Id::new("library-create-tile"), Sense::click())
+                .clicked()
+            {
+                state.open_create = true;
+            }
             painter.rect_filled(tile, 10.0, theme.SURFACE_4);
             painter.rect_stroke(tile, 10.0, Stroke::new(1.0, theme.SURFACE_5), egui::StrokeKind::Inside);
             crate::icons::draw(
