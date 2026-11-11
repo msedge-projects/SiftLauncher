@@ -9881,3 +9881,25 @@ across a repository whose refs include more than the default branch.
 
 **So the record is public, current, and identical on both sides** -- the state the objective asks for ('every slice committed'), and the first time in this session
 that has been true of the remote.
+### A smaller texture cache makes RSS worse: measured, reverted (2026-11-11)
+
+The image cache is already bounded -- **8 MiB or 96 entries**, whichever comes first -- and a page walk showed Discover accounting for one full budget
+(`+6 412 kB` of anonymous heap) and Screenshots for thumbnails (`+2 116 kB`). The obvious move was to halve it, so it was halved and the same walk repeated:
+
+| after visiting | 8 MiB / 96 entries | **4 MiB / 48 entries** |
+|---|---:|---:|
+| Home, fresh | 22 348 / 5 552 | 22 596 / 5 556 |
+| Discover | 30 404 / 11 964 | 31 668 / **13 040** |
+| Skins | 30 672 / 12 100 | 31 848 / 13 156 |
+| Screenshots | 32 792 / 14 216 | 33 956 / 15 264 |
+| Servers | 33 104 / **14 516** | 34 256 / **15 564** |
+
+(VmRSS / RssAnon, kB.)
+
+**The smaller cache uses a megabyte more**, at every page, because evicting sooner means decoding again: a re-decoded texture is allocated, uploaded, freed, and the
+allocator keeps the arena. Less cache, more churn, more resident memory -- the opposite of the intent.
+
+**So the change is reverted**, and the finding is worth keeping: the cache was already tuned at the point where its budget is smaller than the churn it would save.
+The RSS gate's remaining gap is not in this cache.
+
+**Idle CPU stayed at 0 ticks** across the same walk, so neither setting regressed the lightness work.
