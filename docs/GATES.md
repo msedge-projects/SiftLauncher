@@ -11205,3 +11205,15 @@ Moved **by line index** rather than by text anchor -- out of the `SIFT_HOME_PROB
    likely 50 points below the card's top rather than at its top edge.
 
 **So the element exists and matches the reference's shape**; where it sits inside the cell is the next measurement.
+### The create tile lands within one point of the reference (2026-11-11)
+
+| | reference | first draw | after +50 |
+|---|---|---|---|
+| rect | x 299..476, y **379..436** | x 300..476, y 320..377 | **x 300..476, y 379..436** |
+
+**The columns were right on the first draw and the rows were 59 points high**: the tile had been placed at its cell's top, where the reference places it 50 points
+below the card's top. One offset, one build, and the element now measures within **one point** of the reference on every edge.
+
+**So the grid has its second cell**, drawn as the reference draws it -- a 177x58 outline on the raised fill, plus and `New instance`, at the cell the arithmetic
+of card-width-plus-gap puts at x 299. This is the first **added control** of the stretch rather than a corrected drawing, and the first element whose geometry was
+known before it was written: rect, fill, edge and contents were all measured in the round before the code.
