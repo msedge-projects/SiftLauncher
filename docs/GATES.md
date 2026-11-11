@@ -10242,3 +10242,19 @@ the element also *moves*, the layout gain outweighs the extra ink, and the two e
 
 **Three elements in a row have now been a point small** (the card's title, its meta, and this). The pattern is no longer a coincidence to note: this build's
 `body(13.0)` is the wrong default wherever the reference says `text-sm`, and the remaining 13-point text on the page is where the next defects are.
+### The search placeholder is 5 rows short, and the file that draws it is not the one named `search` (2026-11-11)
+
+The band profile leaves exactly one divergent band on the content column: **ref y260..273 (14 rows), ours y262..270 (9 rows)**. Cropped, it is the library
+toolbar's search field, and its placeholder is visibly larger in the reference.
+
+`Input.vue:26,55` gives the size -- `size == 'small' ? 'text-sm' : 'text-base'`, so **16 points** -- and `widgets/search.rs:256` draws a placeholder at 13. That
+was changed to 16, rebuilt, and re-measured: **the band did not move and the page total did not move** (28 388 both times), so that call site is not the one
+drawing this field. The change is reverted rather than left in unverified.
+
+**And the first attempt at verifying it captured a dead window**: the two `SiftUi` processes were `defunct` zombies from 1 November, so `import` returned the
+last content of a destroyed window and the comparison was between two identical stale images. That is the third capture this session taken from a window whose
+process was gone -- after the wedged reference and the five sizes that were never written -- and it is the same class of failure each time: **nothing checks that
+the thing being photographed is alive.**
+
+**So the band stays OPEN** with its numbers, and two things are needed: the real draw site for the toolbar placeholder, and a liveness check in `drive.py` before
+it captures anything.
