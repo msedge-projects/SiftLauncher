@@ -10678,3 +10678,25 @@ Multiplayer Optimization Fabric` chips, `19.2M`, `5,072` and the `+ Install` but
 
 **So Discover is much closer than its figure suggested** -- 76 319 differing pixels over a page where a reader would struggle to name a structural difference --
 and the two things that are actually wrong are a string and a rule.
+### `drive.py` refuses a pair from two different pages (2026-11-11)
+
+The guard checked size, liveness, binary freshness and the news plate, and **nothing checked that the two clients were on the same page** -- which is how a
+Home-against-Discover pair produced a 122 715 that looked like a measurement.
+
+The rail names the page: its current icon is brand green, and its row differs per page. So the check finds the greenest pixel in each rail and compares the
+row, without needing the two rails to be pixel-identical (they are not):
+
+```
+$ python3 tools/parity/drive.py --size 1440x900 --tag pagecheck
+page: both clients highlight the rail at y ~113
+PAIR OK
+
+$ # reference moved to Home, this build left on Discover
+$ python3 tools/parity/drive.py --size 1440x900 --tag mismatch
+page: the rail's brand row is at y 63 on the reference and y 114 here -- REFUSED, the two clients are on different pages   [exit 6]
+```
+
+**Both directions proven**: the check passes on a matched pair (y ~113 in both) and refuses a mismatched one (63 against 114) with a message naming the rows.
+
+**So the guard now answers five questions before a pair exists**: is the binary current, is the process alive, is its window mapped, is the file the size it
+claims, and are both clients on the same page. Three of the five were added because a real measurement went wrong without them.

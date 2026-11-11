@@ -21,7 +21,21 @@ DISPLAYS = {"ref": ":101", "ours": ":100"}
 PROCESSES = {"ref": "ModrinthApp", "ours": "SiftUi"}
 CAPTURE_DIR = "/scratch/.scratch/cap"
 PROBE = "import sys; from PIL import Image; im = Image.open(sys.argv[1]); print(im.size[0], im.size[1])"
-PLATE_BOX = (1150, 300, 1430, 640)  # the news card inside the sidebar, at 1440x900
+PLATE_BOX = (1150, 300, 1430, 640)
+# The rail's current-page icon is brand green in both clients, so the row it sits on names the page without
+# needing the two rails to be pixel-identical -- which they are not.
+RAIL_BOX = (18, 48, 66, 900)
+PAGE_PROBE = ("import sys",
+               "from PIL import Image",
+               "im = Image.open(sys.argv[1]).convert('RGB')",
+               "best = (-1, None)",
+               "for y in range(" + str(RAIL_BOX[1]) + ", " + str(RAIL_BOX[3]) + "):",
+               "    for x in range(" + str(RAIL_BOX[0]) + ", " + str(RAIL_BOX[2]) + "):",
+               "        r, g, b = im.getpixel((x, y))",
+               "        score = g - max(r, b)",
+               "        if score > best[0]:",
+               "            best = (score, y)",
+               "print(best[0], best[1] if best[1] is not None else -1)")  # the news card inside the sidebar, at 1440x900
 PLATE_SIGNATURES = {0: ".scratch/cap/plate0.png", 1: ".scratch/cap/plate1.png"}
 PLATE_CHECK = ("import sys", "from PIL import Image",
                 "a = Image.open(sys.argv[1]).convert('RGB').crop(" + str(PLATE_BOX) + ")",
@@ -122,6 +136,20 @@ def news_plate(ref_path):
     return best
 
 
+def page_row(path):
+    """(score, y) of the greenest pixel in the rail -- the current page's icon."""
+    probe = subprocess.run(["python3", "-c", "\n".join(PAGE_PROBE), path], capture_output=True, text=True)
+    if probe.returncode != 0:
+        return None
+    parts = probe.stdout.split()
+    if len(parts) != 2:
+        return None
+    try:
+        return int(parts[0]), int(parts[1])
+    except ValueError:
+        return None
+
+
 def selftest():
     missing = host_path("/scratch/.scratch/cap/definitely-not-here-481.png")
     if png_size(missing) is not None:
@@ -202,6 +230,18 @@ def main():
             return 3
         captured[role] = host_path(path)
         print(role + ": " + captured[role] + " (" + str(got[0]) + "x" + str(got[1]) + ")")
+    rows = {}
+    for role in ("ref", "ours"):
+        got = page_row(captured[role])
+        rows[role] = got
+    if None not in rows.values() and rows["ref"][0] > 40 and rows["ours"][0] > 40:
+        if abs(rows["ref"][1] - rows["ours"][1]) > 12:
+            print("page: the rail's brand row is at y " + str(rows["ref"][1]) + " on the reference and y "
+                  + str(rows["ours"][1]) + " here -- REFUSED, the two clients are on different pages")
+            return 6
+        print("page: both clients highlight the rail at y ~" + str(rows["ref"][1]))
+    else:
+        print("page: undetermined (no brand-coloured rail row)")
     if want == (1440, 900):
         plate = news_plate(captured["ref"])
         print("reference news plate: " + (str(plate) if plate is not None else "undetermined"))
