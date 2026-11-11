@@ -10578,3 +10578,18 @@ subset of a longer list.
 **What is now established, each by a different instrument**: the eight assets are right (fetched by hash), `compose_front` is right (composed offline in Python
 and it is a proper Alex), the grid's position is right (heading bands identical), and **the order is wrong**. Three of the four were verified without capturing
 anything.
+### The grid's display order: read from the capture, and the first attempt did not take (2026-11-11)
+
+The reference's first row, read at 1440x900: **Steve, Alex, Ari, Noor**. So it is not alphabetical, and `GRID_ORDER` was added with that sequence and used
+where the textures are collected.
+
+**It did not change what is drawn**: after the rebuild the first row is still Alex, Ari, Noor, Sunny. The page moved by 492 pixels (150 988 -> 150 496), which
+is the size of a small re-collection, not of a reordering -- so the grid's cells are being placed by something other than the list the textures are gathered
+from.
+
+**That is the fourth time in this stretch that a plausible edit reached no pixels** (the checklist's label at three sizes, the search placeholder's file, and
+now this), and each time the tell was the same: the page figure barely moved. **The rule holds and is cheap**: if a change is meant to reorder or move
+content and the total does not move by roughly its own size, the change did not reach the draw.
+
+**What is known for the next attempt**: the order to draw is `Steve, Alex, Ari, Noor, ...`; the place that draws it is not the texture collection; and the
+cells are laid out with textures looked up by name, so a reorder only needs the *placement* loop changed.

@@ -691,6 +691,11 @@ pub struct Skin {
 /// five at 1440 and the Slim tab a shorter one. No licence, file, download or texture URL is
 /// recorded here: the reference's skins are either Mojang's or the player's own upload, and
 /// neither is this page's to invent.
+/// **The order the grid draws them in**, which is not alphabetical. Measured from the reference's own grid at 1440x900:
+/// its first row is Steve, Alex, Ari, Noor. The catalogue in `default_skins.rs` is alphabetical, so the display order comes
+/// from the app, not from the file -- this is that order, read off the capture.
+pub const GRID_ORDER: [&str; 8] = ["Steve", "Alex", "Ari", "Noor", "Kai", "Efe", "Makena", "Sunny"];
+
 pub const SKINS: [Skin; 8] = [
     Skin {
         name: "Alex",
@@ -823,9 +828,9 @@ pub fn draw(
     // Every sample skin's view, uploaded on first use and read by name below: the grid
     // closure cannot borrow the state mutably, and a view does not change while the page is
     // up.
-    let textures: Vec<(&'static str, Option<egui::TextureHandle>)> = SKINS
+    let textures: Vec<(&'static str, Option<egui::TextureHandle>)> = GRID_ORDER
         .iter()
-        .map(|skin| (skin.name, skin_texture(ui.ctx(), state, skin.name)))
+        .map(|name| (*name, skin_texture(ui.ctx(), state, name)))
         .collect();
 
     // The page owns its rect (`pages/mod.rs`'s seam); paint the page colour first so the
