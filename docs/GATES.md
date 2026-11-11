@@ -10143,3 +10143,25 @@ points**. This build drew 15 and 13.
 **Matching the reference's type raised the count by 52 pixels.** Larger glyphs have more edges, and every edge is a place this rasteriser and the browser
 disagree. The element is now exactly right and the number says it got worse -- the fourth clear instance of counts not being monotone in fidelity, and the
 cleanest: two font sizes chosen to match the reference, verified by ink bands, and a page figure that prefers the wrong ones.
+### The checklist's type matches, though its class name says otherwise (2026-11-11)
+
+After the card's title was found a point small, the same check was run on the sidebar. The reference's checklist is `text-base` with `font-medium leading-5`
+rows (`features/onboarding/checklist.vue:92, 122`), which reads as 16 points -- and this build draws those rows at **13**.
+
+**The pixels say they match anyway:**
+
+| element | reference band | this build |
+|---|---|---|
+| checklist row 1 | 141..152 (12 rows) | 142..153 (12 rows) |
+| checklist row 2 | 189..200 + 202..203 | 190..201 + 203..204 |
+| sidebar heading | 90..95 + 97..98 | 90..98 |
+
+**Twelve rows of ink on both sides**, with this build's a single point lower. So the two font stacks reach the same ink height from different nominal sizes --
+the reference's 16px web font and this build's 13-point face have nearly the same cap height -- and changing 13 to 16 on the strength of the class name would
+have made the element **three points too large**.
+
+**Which is the limit of last round's method, stated plainly**: reading the reference's classes fixed the card because the card's ink was also wrong by a row; it
+would have broken the checklist, whose ink was already right. **The source gives the intent, the band gives the result, and only the band can decide** -- so the
+order is: read the class, measure the band, and change nothing when the band already agrees.
+
+**The one-point offset in the checklist** is left as it is: measured, recorded, smaller than the tolerance of the comparison being used to judge it.
