@@ -3251,6 +3251,7 @@ mod tests {
     fn the_menu_labels_are_the_reference_strings() {
         let expected = [
             ("Play", "app.instance.action.play"),
+            ("View instance", "app.instance.action.view-instance"),
             ("Edit", "app.instance.action.edit"),
             ("Duplicate instance", "app.library.instance.action.duplicate"),
             ("Open folder", "app.instance.action.open-folder"),
@@ -3556,20 +3557,20 @@ mod tests {
         menu_press(MenuKey::Char('d'), &mut menu, 10.0);
         assert_eq!(
             menu.highlight,
-            Some(2),
+            Some(3),
             "'d' lands on Duplicate instance, the first label that starts with it"
         );
         menu_press(MenuKey::Char('e'), &mut menu, 10.2);
         assert_eq!(
             menu.highlight,
-            Some(4),
+            Some(5),
             "'de' extends the buffer inside the window, and Delete is what starts with it"
         );
         assert_eq!(menu.typed, "de");
         menu_press(MenuKey::Char('e'), &mut menu, 11.0);
         assert_eq!(
             menu.highlight,
-            Some(1),
+            Some(2),
             "a letter 800 ms later starts a new buffer, and 'e' is Edit"
         );
         assert_eq!(menu.typed, "e");

@@ -9919,3 +9919,19 @@ metadata line `Fabric 26.3 - Never played`. So the row is not only drawn, it is 
 **Still missing from the reference's nine**: `Add to favorites` and `Add content` (no state for either here), `Copy path` (a clipboard write; the display has
 blocked clipboard writes before), and `Edit icon` (a submenu with no art). **And this build draws an `Edit` row the reference does not have** -- it opens the
 rename dialog, which the reference reaches from the card's kebab instead.
+### The tests a new menu row shifts, and the fact I pushed before reading them (2026-11-11)
+
+Adding `View instance` as the menu's second row broke **two** tests, and the commit went up before either was read -- `267 passed; 2 failed` is what the
+push carried. That is a process failure worth naming: the suite was not consulted before the push, only after.
+
+The failures were all index or list assertions the new row legitimately shifts:
+
+| test | what it asserted | now |
+|---|---|---|
+| `the_menu_labels_are_the_reference_strings` | the exact five labels | six, with `View instance` second |
+| `..._type_ahead_...` | `d` -> 2, `de` -> 4, `e` -> 1 | `d` -> **3**, `de` -> **5**, `e` -> **2** |
+
+**All three type-ahead indices moved by exactly the one row inserted above them** -- which is the assertion doing its job: it pins positions, so a menu that
+grows cannot silently change where a keystroke lands.
+
+**Fixed, and the suite is green at 269 again**, with the corrected indices pushed as a follow-up commit.
