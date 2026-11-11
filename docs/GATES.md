@@ -9955,3 +9955,23 @@ announced in the toast, which is the pattern the folder action already used when
 `e` -> 5), and the `names()` test required the new variant to name its instance -- which is the test doing exactly what its comment says it exists for.
 
 **Still missing**: `Add to favorites` and `Add content` (no state for either in this build), `Edit icon` (a submenu with no art).
+### Favourites begin at the core: the reference stores a group, this build a flag (2026-11-11)
+
+The two menu rows still missing need state, so the reference's own source was read rather than guessed at:
+
+```ts
+const isFavorite = item.instance.group_ids.includes(FAVORITES_GROUP_ID)   // use-library.ts:1275
+export const FAVORITES_GROUP_ID = 'group:favorites'                       // helpers/instance-groups.ts:3
+```
+
+**Favourites are a group membership**, toggled by rewriting `group_ids`, and the row's label flips between `Add to favorites` and `Remove from
+favorites` (`use-library.ts:1298-1314`). **Driving that source also corrected the menu the captures gave:** the reference's list begins with `Stop`
+*when the instance is playing* and `Play` when it is not -- the two are mutually exclusive -- and `Add content` is drawn only while `canAddContent`
+(`!quarantined && !link && !installing`). This build always draws `Play`, which a still capture could not show.
+
+**This slice, in the core**: `Instance::favorite()` and `Instance::set_favorite(bool)`, keeping the flag in `instance.cfg` as `favorite=true`.
+That is not the reference's storage -- it has no group index here to join -- but it is per-instance, it survives a restart, and it produces the same
+visible behaviour.
+
+**Core suite green: 230 + 8 tests.** The menu row itself is the next slice, because its label depends on the instance's state and the menu's
+`label()` currently returns a `&'static str` with no state to read.

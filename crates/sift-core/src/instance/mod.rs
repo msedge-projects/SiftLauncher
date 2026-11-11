@@ -42,6 +42,21 @@ impl Instance {
         })
     }
 
+    /// **Whether the instance is marked as a favourite.** The reference stores this as membership of a
+    /// `group:favorites` group (`use-library.ts:1275`); this build keeps it in `instance.cfg` as `favorite=true`,
+    /// which is per-instance and leaves the group index alone. The visible behaviour is the same: the card menu's
+    /// label becomes `Remove from favorites`.
+    pub fn favorite(&self) -> bool {
+        self.settings.get_str("favorite", "false") == "true"
+    }
+
+    /// Mark or unmark the instance, written straight back to `instance.cfg`.
+    pub fn set_favorite(&mut self, on: bool) -> Result<()> {
+        self.settings
+            .map_mut()
+            .set("favorite", if on { "true" } else { "false" });
+        crate::ini::save_ini_file(self.settings.path(), self.settings.map())
+    }
     /// Like [`Instance::open`] but returns `None` for folders without
     /// `instance.cfg` (the discovery skip case).
     pub fn try_open(root: &Path) -> Result<Option<Instance>> {
