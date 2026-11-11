@@ -10872,3 +10872,19 @@ widget with the right name that the page never calls.
 **What this proves about the remaining work**: the resting-state captures that produced most of the matrix cannot see focus, hover, press or drag. Every one of
 those is a separate drawing that may be absent entirely, and the way to find it is to drive the state and look -- four captures this round, against a dozen
 resting captures of the same row that showed nothing.
+### The toolbar row is laid out differently, and the clear button is ours alone (2026-11-11)
+
+Cropped at 1:1 across the whole column (x 80..1140, y 230..300) with both fields focused and both showing `fab`:
+
+| | reference | this build |
+|---|---|---|
+| the field | spans the **whole column**, 88..1116 | ends at ~755 |
+| a clear button | **none** | an `x` at the field's right |
+| `+ New group` / `+ New instance` | **not on this row** | at the row's right, 928..1113 |
+
+**Which contradicts a note this project has been carrying for hundreds of rounds**: that the reference's search ends at 806 and its buttons run 851..1113,
+measured 'from a row above the labels'. The crop says the field reaches the column's right edge and the buttons are not beside it. **One of the two is wrong**,
+and the 1:1 crop is the evidence, so the note is the suspect -- it may have been measured on a different page or before a layout change in the reference.
+
+**Recorded rather than corrected in code**, because moving our buttons off that row and widening the field is a layout change that every one of this page's
+figures depends on, and it needs the reference's second row captured first to see where the buttons actually went.
