@@ -10383,3 +10383,25 @@ to stay 16. No size or family available here closes it without oversizing the gl
 
 **Reverted to `label(16)`**, which scores 387 pixels better and is the reference's own nominal size. **The band stays 2 rows short, and the cause is now
 named: font metrics, not layout, size or family.**
+### Five sizes, current build -- and a sweep that had to be thrown away (2026-11-11)
+
+The first sweep this round read **28 754** at 1440x900 where a single verified capture read 28 368. The difference was 386 pixels, which is the size of the
+`body(16)` checklist experiment reverted an hour earlier: **the source was reverted but the binary had not been rebuilt**, so the sweep measured the previous
+build. The tell was the single-capture comparison, taken after a fresh relaunch, disagreeing with the sweep by exactly a known experiment's effect.
+
+Rebuilt, relaunched, and re-swept. Every pair certified by the guard:
+
+| size | differing | previous plate-matched table |
+|---|---:|---:|
+| 1280x720 | **25 077** | 25 109 |
+| 1366x768 | **33 381** | 33 346 |
+| 1440x900 | **28 368** | 28 444 |
+| 1600x900 | **42 567** | 42 611 |
+| 1920x1080 | **55 028** | 54 939 |
+
+**Three sizes improved, two are within 45 pixels of the older figures** -- consistent with the type fixes of the last several rounds (card 16/14, strip meta 14,
+search field 16), which moved a few thousand glyph pixels and left the rest of the frame where it was.
+
+**The discarded sweep is the useful part**: it is the third time this session a number described a build that was not the one in the source tree, after the
+stale window and the five captures that were never written. The guard catches the last two; **nothing yet catches a stale binary**, and the check that would is
+to compare the binary's modification time against the newest source file before every sweep.
