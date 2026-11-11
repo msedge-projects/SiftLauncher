@@ -11032,3 +11032,21 @@ reference's dim words catches whole words of ours.
 
 **So row 143 closes on the property it names** (the set and order), and the brightness of an inactive tab is recorded as a separate, unmeasured difference: the
 counts above are a threshold artefact, not a colour measurement, and the next attempt should sample each label's brightest pixel rather than count its lit columns.
+### The `Library` heading is 40 per cent heavier than the reference's (2026-11-11)
+
+Row 400 asks whether `--font-weight-bold` is carried. Trying to decide it by measuring the boldest text on Home found something else first:
+
+| | ink pixels | rows |
+|---|---:|---:|
+| reference `Library` | **548** | 23 |
+| this build `Library` | **770** | 23 |
+
+**Same height, 40 per cent more ink.** So the heading is the right *size* and too heavy -- either a weight step above the reference's (this build's semibold
+against a lighter face at the same size) or the same heavy-glyph effect recorded elsewhere, but at a magnitude none of those measurements showed (they were 2 to
+10 per cent; this is 40).
+
+**And it does not decide row 400**: an element that may not be bold at all cannot say whether bold is 700. The row stays OPEN, and the heading's weight is now a
+measured difference of its own, with the numbers above.
+
+**Where to look next**: the reference's own class for its page heading, and this build's constant for it -- a one-line comparison that would turn 40 per cent of
+extra ink into either a weight change or a font change.
