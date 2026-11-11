@@ -11129,3 +11129,21 @@ instance page's own header, which is where this build reaches it from the card m
 
 **Recorded as two additions and one difference**: the create tile (new, absent here), the hover ring (new, absent here), and the route to Edit (different, and now
 understood well enough that a future round should stop looking for it on the card).
+### The create tile measured: 177 by 58, one-point edge, page fill (2026-11-11)
+
+The `+ New instance` tile beside the reference's card, measured from the 1:1 capture:
+
+| property | value |
+|---|---|
+| rect | x **299..476** (177 wide), y **379..436** (58 tall) |
+| fill | **(39,41,46)** -- the page's own background, so the tile is an outline, not a plate |
+| border | **(65,67,73)**, one point |
+| contents | a plus and `New instance`, centred |
+
+**Not drawn this round, and the reason is a measurement that does not yet agree with an earlier one.** This file's own comment records the reference's card as
+"starting at x 88 and 168 wide" -- which would put the second grid cell at x 268, not 299. The tile's left edge is 31 points further right than that arithmetic
+predicts, so either the card is not 168 wide, or the gap is not 12, or the tile is not in the second cell. **Drawing it at a guessed offset would have put a
+correct element in a wrong place and made the next measurement harder**, which is the failure this stretch has repeated most often.
+
+**What the next round does**: measure the reference's card's own rect (left, right, top, bottom) in the same capture the tile was measured in -- one probe, both
+shapes -- and only then place the tile from the gap that comes out of it.
