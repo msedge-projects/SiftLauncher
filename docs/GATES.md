@@ -11021,3 +11021,14 @@ page's twenty thousand -- and the sixth instance of counts not being monotone in
 **So the honest reading of the table is not 'Home regressed'**: the toolbar was measured against the reference's edges, the buttons now land within two points,
 and the figure records the cost of drawing that correctly with a heavier face. Any future sweep that shows Home rising by ~200 should check this note before
 treating it as a regression.
+### Discover's tabs: set and order verified, inactive ink too bright (2026-11-11)
+
+Row 143 asks for the tab set and their order, and both are right: the certified Discover pair reads **Modpacks, Mods, Resource Packs, Data Packs, Shaders, Servers**
+in both clients, the selected one first and brand-coloured in both.
+
+**Measuring the labels instead of reading them found something else**: scanning the label row (y 86..102) for ink above 110 finds **4 runs in the reference and 12
+in this build** -- not because the words differ, but because this build's **inactive labels are brighter**, so a threshold that catches only fragments of the
+reference's dim words catches whole words of ours.
+
+**So row 143 closes on the property it names** (the set and order), and the brightness of an inactive tab is recorded as a separate, unmeasured difference: the
+counts above are a threshold artefact, not a colour measurement, and the next attempt should sample each label's brightest pixel rather than count its lit columns.
